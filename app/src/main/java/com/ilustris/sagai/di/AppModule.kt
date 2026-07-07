@@ -426,8 +426,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideDebugImageFallbackService(sideEffectService: SideEffectService): DebugImageFallbackService =
-        DebugImageFallbackService(sideEffectService)
+    fun provideDebugImageFallbackService(): DebugImageFallbackService = DebugImageFallbackService()
 
     @Provides
     @Singleton

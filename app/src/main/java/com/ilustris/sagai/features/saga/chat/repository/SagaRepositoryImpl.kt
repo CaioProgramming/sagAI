@@ -2,7 +2,8 @@ package com.ilustris.sagai.features.saga.chat.repository
 
 import android.icu.util.Calendar
 import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.data.executeRequest
@@ -28,7 +29,7 @@ class SagaRepositoryImpl
         private val gemmaClient: GemmaClient,
         private val imageCropHelper: ImageCropHelper,
         private val fileHelper: FileHelper,
-        private val imagenClient: ImagenClient,
+        private val imageGenerationService: ImageGenerationService,
         private val backupService: BackupService,
     ) : SagaRepository {
         private val sagaDao: SagaDao by lazy {
@@ -75,28 +76,27 @@ class SagaRepositoryImpl
             characters: List<Character>,
         ) = executeRequest {
             val context = generateIconContext(saga, characters)
-            val newIcon =
-                imagenClient
-                    .generateIntegratedImage(
+            imageGenerationService
+                .enqueue(
+                    ImageGenerationRequest(
                         genre = saga.genre,
                         imageReference = null,
                         context = context,
                         imageType = ImageType.COVER,
                         variationId = saga.variationId,
-                    )
-
-            if (newIcon.isFailure) {
-                throw newIcon.error.value
-            }
-
-            val file =
-                fileHelper.saveFile(
-                    fileName = saga.title,
-                    data = newIcon.getSuccess(),
-                    path = "${saga.id}",
-                )
-
-            updateSaga(saga.copy(icon = file!!.absolutePath))
+                        label = saga.title,
+                        silent = true,
+                        showReveal = false,
+                    ),
+                ) { bitmap ->
+                    val file =
+                        fileHelper.saveFile(
+                            fileName = saga.title,
+                            data = bitmap,
+                            path = "${saga.id}",
+                        ) ?: error("Failed to save saga icon")
+                    updateSaga(saga.copy(icon = file.absolutePath))
+                }.getOrThrow()
         }
 
         override fun generateSagaIconStream(
@@ -106,36 +106,39 @@ class SagaRepositoryImpl
             kotlinx.coroutines.flow.flow {
                 try {
                     val context = generateIconContext(saga, characters)
-                    imagenClient
-                        .generateIntegratedImageStream(
-                            genre = saga.genre,
-                            imageReference = null,
-                            context = context,
-                            imageType = ImageType.COVER,
-                            variationId = saga.variationId,
-                        ).collect { state ->
-                            when (state) {
-                                is StreamingState.Reasoning -> {
-                                    emit(StreamingState.Reasoning(state.chunk))
-                                }
-
-                                is StreamingState.Success -> {
-                                    val file =
-                                        fileHelper.saveFile(
-                                            fileName = saga.title,
-                                            data = state.data.data,
-                                            path = "${saga.id}",
-                                        )
-                                    val updatedSaga =
-                                        updateSaga(saga.copy(icon = file!!.absolutePath))
-                                    emit(StreamingState.Success(updatedSaga))
-                                }
-
-                                is StreamingState.Error -> {
-                                    emit(StreamingState.Error(state.message, state.throwable))
-                                }
-                            }
-                        }
+                    imageGenerationService
+                        .enqueue(
+                            ImageGenerationRequest(
+                                genre = saga.genre,
+                                imageReference = null,
+                                context = context,
+                                imageType = ImageType.COVER,
+                                variationId = saga.variationId,
+                                label = saga.title,
+                                silent = false,
+                                showReveal = true,
+                            ),
+                        ) { bitmap ->
+                            val file =
+                                fileHelper.saveFile(
+                                    fileName = saga.title,
+                                    data = bitmap,
+                                    path = "${saga.id}",
+                                ) ?: error("Failed to save saga icon")
+                            updateSaga(saga.copy(icon = file.absolutePath))
+                        }.fold(
+                            onSuccess = { updatedSaga ->
+                                emit(StreamingState.Success(updatedSaga))
+                            },
+                            onFailure = { error ->
+                                emit(
+                                    StreamingState.Error(
+                                        error.message ?: "Failed to generate saga icon stream",
+                                        error,
+                                    ),
+                                )
+                            },
+                        )
                 } catch (e: Exception) {
                     emit(StreamingState.Error(e.message ?: "Failed to generate saga icon stream", e))
                 }

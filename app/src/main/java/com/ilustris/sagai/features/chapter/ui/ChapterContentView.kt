@@ -67,7 +67,6 @@ fun ChapterContentView(
     val viewModel = hiltViewModel<ChapterViewModel>()
     val sagaContent by viewModel.saga.collectAsStateWithLifecycle()
     val isGeneratingState by viewModel.isGenerating.collectAsStateWithLifecycle()
-    val reasoningMessage by viewModel.reasoningMessage.collectAsStateWithLifecycle()
 
     val genre =
         remember(sagaContent) {
@@ -206,7 +205,6 @@ fun ChapterContentView(
 
     StarryLoader(
         isGeneratingState || isGenerating,
-        reasoningMessage ?: loadingMessage,
         brushColors = genre.colorPalette(),
     )
 }

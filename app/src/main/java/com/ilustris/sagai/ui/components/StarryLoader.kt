@@ -88,9 +88,9 @@ fun StarryLoader(
     val brush = themeBrushColors()
     val setBlur = LocalBlurState.current
     DisposableEffect(isLoading && useAsDialog) {
-        setBlur(isLoading)
+        setBlur(if (isLoading) BlurIntensity.Strong else BlurIntensity.None)
         onDispose {
-            setBlur(false)
+            setBlur(BlurIntensity.None)
         }
     }
 

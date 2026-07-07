@@ -97,8 +97,6 @@ fun SagaDetailView(
     var sagaToDelete by remember { mutableStateOf<Saga?>(null) }
     val initialSection by viewModel.initialSection.collectAsStateWithLifecycle()
 
-    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
-    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     var showReview by remember { mutableStateOf(false) }
     var showEmotionalReview by remember { mutableStateOf(false) }
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
@@ -198,17 +196,6 @@ fun SagaDetailView(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
         )
-
-        AnimatedVisibility(isGenerating) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                StarryLoader(
-                    isLoading = true,
-                    loadingMessage = loadingMessage ?: emptyString(),
-                    textStyle = MaterialTheme.typography.labelMedium,
-                    brushColors = resume?.saga?.genre?.colorPalette() ?: holographicGradient,
-                )
-            }
-        }
 
         if (showPremiumSheet) {
             OnboardingDialog(

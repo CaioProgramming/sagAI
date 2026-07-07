@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
@@ -43,15 +42,11 @@ class SagaDetailViewModel
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val stringResourceHelper: StringResourceHelper,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
-        private val debugImageFallbackService: DebugImageFallbackService,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
         val sagaResume = MutableStateFlow<SagaDetailResume?>(null)
-        val isGenerating = MutableStateFlow(false)
         val showIntro = MutableStateFlow(false)
-        private val _loadingMessage = MutableStateFlow<String?>(null)
-        val loadingMessage: StateFlow<String?> = _loadingMessage.asStateFlow()
         val backupEnabled = sagaDetailUseCase.getBackupEnabled()
 
         val showPremiumSheet = MutableStateFlow(false)
@@ -73,13 +68,6 @@ class SagaDetailViewModel
 
         /** One entry SFX per detail visit — cleared when the screen is hidden. */
         private var pendingEntryVfxSagaId: Int? = null
-
-        init {
-            debugImageFallbackService.bindImageGenerationLoadingPause(viewModelScope) {
-                isGenerating.value = false
-                _loadingMessage.value = null
-            }
-        }
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
@@ -182,32 +170,8 @@ class SagaDetailViewModel
 
         fun regenerateIcon() {
             val currentSagaId = sagaResume.value?.saga?.id ?: return
-            isGenerating.value = true
-            _loadingMessage.value = stringResourceHelper.getString(R.string.saga_detail_regenerating_icon)
             viewModelScope.launch(Dispatchers.IO) {
-                sagaDetailUseCase
-                    .regenerateSagaIconStream(currentSagaId)
-                    .collect { state ->
-                        when (state) {
-                            is StreamingState.Reasoning -> {
-                                _loadingMessage.value = state.chunk
-                            }
-
-                            is StreamingState.Success -> {
-                                isGenerating.value = false
-                                _loadingMessage.value = null
-                            }
-
-                            is StreamingState.Error -> {
-                                isGenerating.value = false
-                                _loadingMessage.value =
-                                    stringResourceHelper.getString(
-                                        R.string.saga_detail_error_regenerating_icon,
-                                        state.message,
-                                    )
-                            }
-                        }
-                    }
+                sagaDetailUseCase.regenerateSagaIconStream(currentSagaId).collect { }
             }
         }
 

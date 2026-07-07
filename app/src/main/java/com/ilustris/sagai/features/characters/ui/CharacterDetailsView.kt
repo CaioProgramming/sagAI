@@ -152,39 +152,16 @@ fun CharacterDetailsContent(
     openEvent: (Timeline?) -> Unit = {},
 ) {
     val viewModel: CharacterDetailsViewModel = hiltViewModel()
-    val genre = detailData.sagaInfo.genre
-    val resolvedColor = MaterialTheme.colorScheme.primary
-
-    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val imagePalette by viewModel.imagePalette.collectAsStateWithLifecycle()
 
-    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
-    val imageReasoning by viewModel.imageReasoning.collectAsStateWithLifecycle()
-
-    val blurEffect by animateDpAsState(if (isGenerating) 15.dp else 0.dp)
-
-    Box(modifier = Modifier.blur(blurEffect)) {
-        CharacterDetailsLoaded(
-            detailData = detailData,
-            openEvent = openEvent,
-            onOpenCharacterBrain = onOpenCharacterBrain,
-            viewModel = viewModel,
-            imagePalette = imagePalette,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope,
-        )
-    }
-
-    StarryLoader(
-        isLoading = isGenerating,
-        loadingMessage = loadingMessage,
-        subtitle = imageReasoning,
-        textStyle =
-            MaterialTheme.typography.labelLarge.copy(
-                resolvedColor,
-                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-            ),
-        brushColors = genre.colorPalette(),
+    CharacterDetailsLoaded(
+        detailData = detailData,
+        openEvent = openEvent,
+        onOpenCharacterBrain = onOpenCharacterBrain,
+        viewModel = viewModel,
+        imagePalette = imagePalette,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
     )
 
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()

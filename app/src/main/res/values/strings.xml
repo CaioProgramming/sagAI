@@ -377,7 +377,8 @@
     <string name="debug_controls">Debug controls</string>
     <string name="debug_image_fallback_title">Test environment</string>
     <string name="debug_image_fallback_subtitle">To generate this image, copy the prompt below, open Gemini to create and review it, then choose the image to use in the app.</string>
-    <string name="debug_image_fallback_copy_prompt">Copy prompt again</string>
+    <string name="debug_image_fallback_prompt_card_title">Image prompt</string>
+    <string name="debug_image_fallback_copy_prompt">Copy prompt</string>
     <string name="debug_image_fallback_expand_prompt">Show full prompt</string>
     <string name="debug_image_fallback_collapse_prompt">Show less</string>
     <string name="debug_image_fallback_open_gemini">Open Gemini</string>
@@ -482,6 +483,19 @@
     <string name="character_stat_height">Height</string>
     <string name="character_stat_weight">Weight</string>
     <string name="character_generating">Generating %1$s…</string>
+    <string name="image_generation_default_label">Generating image…</string>
+    <string name="image_generation_awaiting_manual">Awaiting manual image</string>
+    <string name="image_generation_queue_badge">+%1$d queued</string>
+    <string name="image_generation_panel_expand">Expand image generation panel</string>
+    <string name="image_generation_panel_collapse">Collapse image generation panel</string>
+    <string name="image_generation_reasoning_placeholder">Preparing visual…</string>
+    <string name="image_generation_reveal_icon">Character icon ready</string>
+    <string name="image_generation_reveal_cover">Cover image ready</string>
+    <string name="image_generation_reveal_dismiss">Continue</string>
+    <string name="image_generation_fallback_cancel">Cancel</string>
+    <string name="image_generation_character_icon">Generating %1$s icon…</string>
+    <string name="image_generation_chapter_cover">Generating chapter cover…</string>
+    <string name="image_generation_saga_icon">Generating saga icon…</string>
 
     <!-- Chat -->
     <string name="regenerate_audio">Regenerate audio…</string>

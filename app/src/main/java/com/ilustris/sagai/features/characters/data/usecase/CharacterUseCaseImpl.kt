@@ -2,7 +2,8 @@ package com.ilustris.sagai.features.characters.data.usecase
 
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
@@ -61,7 +62,7 @@ class CharacterUseCaseImpl
         private val eventsRepository: CharacterEventRepository,
         private val characterArcDao: CharacterArcDao,
         private val characterRelationUseCase: CharacterRelationUseCase,
-        private val imagenClient: ImagenClient,
+        private val imageGenerationService: ImageGenerationService,
         private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
         private val imageSegmentationHelper: ImageSegmentationHelper,
@@ -92,48 +93,32 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest(true) {
-                val image =
-                    imagenClient
-                        .generateIntegratedImage(
+                val contextString = characterImageContext(character)
+                val result =
+                    imageGenerationService.enqueue(
+                        ImageGenerationRequest(
                             genre = saga.genre,
                             imageReference = null,
-                            context =
-                                buildString {
-                                    appendLine(
-                                        character.toAINormalize(
-                                            listOf(
-                                                "id",
-                                                "image",
-                                                "sagaId",
-                                                "joinedAt",
-                                                "smartZoom",
-                                                "knowledge",
-                                                "firstSceneId",
-                                                "emojified",
-                                                "hexColor",
-                                            ),
-                                        ),
-                                    )
-                                },
+                            context = contextString,
                             imageType = ImageType.ICON,
                             variationId = saga.variationId,
-                        )
-
-                if (image.isFailure) {
-                    throw image.error.value
-                }
-
-                val file =
-                    fileHelper.saveFile(
-                        character.name,
-                        image.getSuccess(),
-                        path = "${saga.id}/characters/",
-                    )!!
-                val newCharacter =
-                    character.copy(image = file.path)
-                repository.updateCharacter(newCharacter)
-
-                newCharacter to ""
+                            label = character.name,
+                            silent = true,
+                            showReveal = false,
+                        ),
+                    ) { bitmap ->
+                        val file =
+                            fileHelper.saveFile(
+                                character.name,
+                                bitmap,
+                                path = "${saga.id}/characters/",
+                            ) ?: error("Failed to save generated image")
+                        val newCharacter = character.copy(image = file.path)
+                        repository.updateCharacter(newCharacter)
+                        newCharacter
+                    }
+                val updatedCharacter = result.getOrThrow()
+                updatedCharacter to ""
             }
 
         override suspend fun generateCharacterImageStream(
@@ -142,71 +127,51 @@ class CharacterUseCaseImpl
         ): Flow<StreamingState<GeneratedContent<Pair<Character, String>>>> =
             flow {
                 try {
-                    val contextString =
-                        buildString {
-                            appendLine(
-                                character.toAINormalize(
-                                    listOf(
-                                        "id",
-                                        "image",
-                                        "sagaId",
-                                        "joinedAt",
-                                        "smartZoom",
-                                        "knowledge",
-                                        "firstSceneId",
-                                        "emojified",
-                                        "hexColor",
+                    val contextString = characterImageContext(character)
+                    val result =
+                        imageGenerationService.enqueue(
+                            ImageGenerationRequest(
+                                genre = saga.genre,
+                                imageReference = null,
+                                context = contextString,
+                                imageType = ImageType.ICON,
+                                variationId = saga.variationId,
+                                label = character.name,
+                                silent = false,
+                                showReveal = true,
+                            ),
+                        ) { bitmap ->
+                            val file =
+                                fileHelper.saveFile(
+                                    character.name,
+                                    bitmap,
+                                    path = "${saga.id}/characters/",
+                                ) ?: error("Failed to save generated image")
+                            val newCharacter = character.copy(image = file.path)
+                            repository.updateCharacter(newCharacter)
+                            newCharacter
+                        }
+
+                    result.fold(
+                        onSuccess = { updatedCharacter ->
+                            emit(
+                                StreamingState.Success(
+                                    GeneratedContent(
+                                        updatedCharacter to "",
+                                        "Image generation complete!",
                                     ),
                                 ),
                             )
-                        }
-
-                    imagenClient
-                        .generateIntegratedImageStream(
-                            genre = saga.genre,
-                            imageReference = null,
-                            context = contextString,
-                            imageType = ImageType.ICON,
-                            variationId = saga.variationId,
-                        ).collect { state ->
-                            when (state) {
-                                is StreamingState.Reasoning -> {
-                                    emit(
-                                        StreamingState
-                                            .Reasoning(state.chunk),
-                                    )
-                                }
-
-                                is StreamingState.Success -> {
-                                    val bitmap = state.data.data
-                                    val file =
-                                        fileHelper.saveFile(
-                                            character.name,
-                                            bitmap,
-                                            path = "${saga.id}/characters/",
-                                        ) ?: error("Failed to save generated image")
-
-                                    val newCharacter = character.copy(image = file.path)
-                                    repository.updateCharacter(newCharacter)
-
-                                    emit(
-                                        StreamingState.Success(
-                                            GeneratedContent(
-                                                newCharacter to state.data.finalMessage.orEmpty(),
-                                                state.data.finalMessage,
-                                            ),
-                                        ),
-                                    )
-                                }
-
-                                is StreamingState.Error -> {
-                                    emit(
-                                        StreamingState
-                                            .Error(state.message, state.throwable),
-                                    )
-                                }
-                            }
-                        }
+                        },
+                        onFailure = { error ->
+                            emit(
+                                StreamingState.Error(
+                                    error.message ?: "Unknown error generating character image stream",
+                                    error,
+                                ),
+                            )
+                        },
+                    )
                 } catch (e: Exception) {
                     emit(
                         StreamingState.Error(
@@ -215,6 +180,25 @@ class CharacterUseCaseImpl
                         ),
                     )
                 }
+            }
+
+        private fun characterImageContext(character: Character): String =
+            buildString {
+                appendLine(
+                    character.toAINormalize(
+                        listOf(
+                            "id",
+                            "image",
+                            "sagaId",
+                            "joinedAt",
+                            "smartZoom",
+                            "knowledge",
+                            "firstSceneId",
+                            "emojified",
+                            "hexColor",
+                        ),
+                    ),
+                )
             }
 
         @Deprecated("Smart zoom is deprecated and no longer scheduled from chat or avatars.")

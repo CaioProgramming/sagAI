@@ -8,14 +8,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -63,6 +68,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import com.google.firebase.installations.FirebaseInstallations
+import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.core.navigation.SagaNavigationTracker
@@ -71,10 +77,15 @@ import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.notifications.SagaNotificationRouter
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
-import com.ilustris.sagai.features.debug.ui.ManualImageFallbackSheet
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
+import com.ilustris.sagai.features.imagegeneration.model.IslandExpansion
+import com.ilustris.sagai.features.imagegeneration.ui.ImageGenerationContainer
+import com.ilustris.sagai.features.imagegeneration.ui.ImageGenerationRevealOverlay
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.BlurProvider
+import com.ilustris.sagai.ui.components.BlurTarget
 import com.ilustris.sagai.ui.components.SagaInAppNotificationBanner
 import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
@@ -108,7 +119,10 @@ class MainActivity : ComponentActivity() {
     lateinit var sideEffectService: SideEffectService
 
     @Inject
-    lateinit var debugImageFallbackService: com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
+    lateinit var imageGenerationService: ImageGenerationService
+
+    @Inject
+    lateinit var debugImageFallbackService: DebugImageFallbackService
 
     @Inject
     lateinit var sagaThemeManager: SagaThemeManager
@@ -287,140 +301,172 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                BlurProvider {
-                    Scaffold(
-                        modifier =
-                            Modifier
-                                .background(MaterialTheme.colorScheme.background)
-                                .fillMaxSize(),
-                        bottomBar = {
-                            // SagaBottomNavigation(navController, route)
-                        },
-                    ) { padding ->
-                        AnimatedContent(isOnline, transitionSpec = {
-                            fadeIn() togetherWith fadeOut()
-                        }) {
-                            if (it) {
-                                SharedTransitionLayout {
-                                    val entryProvider =
-                                        remember(
-                                            navigator,
-                                            padding,
-                                            this@SharedTransitionLayout,
-                                        ) {
-                                            createSagaEntryProvider(
+                val imageGenState by imageGenerationService.uiState.collectAsState()
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    BlurProvider {
+                        Scaffold(
+                            modifier =
+                                Modifier
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .fillMaxSize(),
+                            bottomBar = {
+                                // SagaBottomNavigation(navController, route)
+                            },
+                        ) { padding ->
+                            AnimatedContent(isOnline, transitionSpec = {
+                                fadeIn() togetherWith fadeOut()
+                            }) {
+                                if (it) {
+                                    SharedTransitionLayout {
+                                        val entryProvider =
+                                            remember(
                                                 navigator,
                                                 padding,
                                                 this@SharedTransitionLayout,
-                                            )
+                                            ) {
+                                                createSagaEntryProvider(
+                                                    navigator,
+                                                    padding,
+                                                    this@SharedTransitionLayout,
+                                                )
+                                            }
+                                        val showImageGenPanel =
+                                            imageGenState is ImageGenerationUiState.Generating ||
+                                                imageGenState is ImageGenerationUiState.AwaitingManualFallback
+
+                                        ImageGenerationContainer(
+                                            state = imageGenState,
+                                            debugImageFallbackService = debugImageFallbackService,
+                                            onExpand = {
+                                                imageGenerationService.setIslandExpansion(
+                                                    IslandExpansion.Expanded,
+                                                )
+                                            },
+                                            onCollapse = {
+                                                imageGenerationService.setIslandExpansion(
+                                                    IslandExpansion.Compact,
+                                                )
+                                            },
+                                            onCancel = imageGenerationService::cancelCurrent,
+                                            modifier = Modifier.fillMaxSize(),
+                                        ) {
+                                            Box(modifier = Modifier.fillMaxSize()) {
+                                                BlurTarget(modifier = Modifier.fillMaxSize()) {
+                                                    NavDisplay(
+                                                        entries =
+                                                            navigationState.toEntries(
+                                                                entryProvider,
+                                                            ),
+                                                        onBack = { navigator.goBack() },
+                                                        transitionSpec = {
+                                                            fadeIn(
+                                                                tween(
+                                                                    SAGA_THEME_TRANSITION_MS,
+                                                                    easing = FastOutSlowInEasing,
+                                                                ),
+                                                            ) togetherWith
+                                                                fadeOut(
+                                                                    tween(
+                                                                        SAGA_THEME_TRANSITION_MS,
+                                                                        easing = FastOutSlowInEasing,
+                                                                    ),
+                                                                )
+                                                        },
+                                                        popTransitionSpec = {
+                                                            slideInVertically(
+                                                                tween(
+                                                                    SAGA_THEME_TRANSITION_MS,
+                                                                    easing = FastOutSlowInEasing,
+                                                                ),
+                                                            ) { it / 4 } +
+                                                                fadeIn(
+                                                                    tween(
+                                                                        SAGA_THEME_TRANSITION_MS,
+                                                                        easing = EaseIn,
+                                                                    ),
+                                                                ) togetherWith
+                                                                slideOutVertically(
+                                                                    tween(
+                                                                        SAGA_THEME_TRANSITION_MS,
+                                                                        easing = FastOutSlowInEasing,
+                                                                    ),
+                                                                ) { it / 4 } +
+                                                                fadeOut(
+                                                                    tween(
+                                                                        SAGA_THEME_TRANSITION_MS,
+                                                                        easing = EaseIn,
+                                                                    ),
+                                                                )
+                                                        },
+                                                        predictivePopTransitionSpec = {
+                                                            slideInVertically(
+                                                                tween(
+                                                                    SAGA_THEME_TRANSITION_MS,
+                                                                    easing = FastOutSlowInEasing,
+                                                                ),
+                                                            ) { it / 4 } +
+                                                                fadeIn(
+                                                                    tween(
+                                                                        SAGA_THEME_TRANSITION_MS,
+                                                                        easing = FastOutSlowInEasing,
+                                                                    ),
+                                                                ) togetherWith
+                                                                slideOutVertically(
+                                                                    tween(
+                                                                        SAGA_THEME_TRANSITION_MS,
+                                                                        easing = FastOutSlowInEasing,
+                                                                    ),
+                                                                ) { it / 4 } +
+                                                                fadeOut(
+                                                                    tween(
+                                                                        SAGA_THEME_TRANSITION_MS,
+                                                                        easing = FastOutSlowInEasing,
+                                                                    ),
+                                                                )
+                                                        },
+                                                    )
+                                                }
+
+                                                SagaInAppNotificationBanner(
+                                                    notification = inAppNotification,
+                                                    onOpen = { deepLink ->
+                                                        navigateDeepLink(deepLink)
+                                                        sagaNotificationRouter.dismissInApp()
+                                                    },
+                                                    onDismiss = { sagaNotificationRouter.dismissInApp() },
+                                                    modifier =
+                                                        Modifier
+                                                            .align(Alignment.TopCenter)
+                                                            .zIndex(2f)
+                                                            .then(
+                                                                if (!showImageGenPanel) {
+                                                                    Modifier.statusBarsPadding()
+                                                                } else {
+                                                                    Modifier
+                                                                },
+                                                            ).padding(horizontal = 12.dp, vertical = 8.dp)
+                                                            .fillMaxWidth(),
+                                                )
+
+                                                SagaSnackBar(
+                                                    snackBarMessage = globalSnackBar,
+                                                    genre = currentGenre,
+                                                    modifier =
+                                                        Modifier
+                                                            .align(Alignment.BottomCenter)
+                                                            .navigationBarsPadding()
+                                                            .padding(horizontal = 16.dp, vertical = 16.dp)
+                                                            .fillMaxWidth()
+                                                            .clip(sagaShape()),
+                                                    onDismiss = { sagaThemeManager.dismissSnackBar() },
+                                                )
+                                            }
                                         }
-                                    Box(modifier = Modifier.fillMaxSize()) {
-                                        NavDisplay(
-                                            entries =
-                                                navigationState.toEntries(
-                                                    entryProvider,
-                                                ),
-                                            onBack = { navigator.goBack() },
-                                            transitionSpec = {
-                                                fadeIn(
-                                                    tween(
-                                                        SAGA_THEME_TRANSITION_MS,
-                                                        easing = FastOutSlowInEasing,
-                                                    ),
-                                                ) togetherWith
-                                                    fadeOut(
-                                                        tween(
-                                                            SAGA_THEME_TRANSITION_MS,
-                                                            easing = FastOutSlowInEasing,
-                                                        ),
-                                                    )
-                                            },
-                                            popTransitionSpec = {
-                                                slideInVertically(
-                                                    tween(
-                                                        SAGA_THEME_TRANSITION_MS,
-                                                        easing = FastOutSlowInEasing,
-                                                    ),
-                                                ) { it / 4 } +
-                                                    fadeIn(
-                                                        tween(
-                                                            SAGA_THEME_TRANSITION_MS,
-                                                            easing = EaseIn,
-                                                        ),
-                                                    ) togetherWith
-                                                    slideOutVertically(
-                                                        tween(
-                                                            SAGA_THEME_TRANSITION_MS,
-                                                            easing = FastOutSlowInEasing,
-                                                        ),
-                                                    ) { it / 4 } +
-                                                    fadeOut(
-                                                        tween(
-                                                            SAGA_THEME_TRANSITION_MS,
-                                                            easing = EaseIn,
-                                                        ),
-                                                    )
-                                            },
-                                            predictivePopTransitionSpec = {
-                                                slideInVertically(
-                                                    tween(
-                                                        SAGA_THEME_TRANSITION_MS,
-                                                        easing = FastOutSlowInEasing,
-                                                    ),
-                                                ) { it / 4 } +
-                                                    fadeIn(
-                                                        tween(
-                                                            SAGA_THEME_TRANSITION_MS,
-                                                            easing = FastOutSlowInEasing,
-                                                        ),
-                                                    ) togetherWith
-                                                    slideOutVertically(
-                                                        tween(
-                                                            SAGA_THEME_TRANSITION_MS,
-                                                            easing = FastOutSlowInEasing,
-                                                        ),
-                                                    ) { it / 4 } +
-                                                    fadeOut(
-                                                        tween(
-                                                            SAGA_THEME_TRANSITION_MS,
-                                                            easing = FastOutSlowInEasing,
-                                                        ),
-                                                    )
-                                            },
-                                        )
-
-                                        SagaInAppNotificationBanner(
-                                            notification = inAppNotification,
-                                            onOpen = { deepLink ->
-                                                navigateDeepLink(deepLink)
-                                                sagaNotificationRouter.dismissInApp()
-                                            },
-                                            onDismiss = { sagaNotificationRouter.dismissInApp() },
-                                            modifier =
-                                                Modifier
-                                                    .align(Alignment.TopCenter)
-                                                    .zIndex(2f)
-                                                    .statusBarsPadding()
-                                                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                                                    .fillMaxWidth(),
-                                        )
-
-                                        SagaSnackBar(
-                                            snackBarMessage = globalSnackBar,
-                                            genre = currentGenre,
-                                            modifier =
-                                                Modifier
-                                                    .align(Alignment.BottomCenter)
-                                                    .navigationBarsPadding()
-                                                    .padding(horizontal = 16.dp, vertical = 16.dp)
-                                                    .fillMaxWidth()
-                                                    .clip(sagaShape()),
-                                            onDismiss = { sagaThemeManager.dismissSnackBar() },
-                                        )
                                     }
+                                } else {
+                                    NoInternetScreen()
                                 }
-                            } else {
-                                NoInternetScreen()
                             }
                         }
                     }
@@ -501,12 +547,11 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    if (BuildConfig.DEBUG && activeSideEffect is SideEffect.DebugImageManualFallback) {
-                        val effect = activeSideEffect as SideEffect.DebugImageManualFallback
-                        ManualImageFallbackSheet(
-                            prompt = effect.prompt,
-                            debugImageFallbackService = debugImageFallbackService,
-                            onDismiss = { activeSideEffect = null },
+                    val revealState = imageGenState as? ImageGenerationUiState.Reveal
+                    if (revealState != null) {
+                        ImageGenerationRevealOverlay(
+                            state = revealState,
+                            onDismiss = imageGenerationService::dismissReveal,
                         )
                     }
                 }

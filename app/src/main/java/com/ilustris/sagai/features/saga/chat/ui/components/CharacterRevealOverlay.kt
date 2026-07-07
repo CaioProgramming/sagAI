@@ -37,6 +37,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.share.ui.CharacterCard
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
+import com.ilustris.sagai.ui.components.BlurIntensity
 import com.ilustris.sagai.ui.components.LocalBlurState
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.gradient
@@ -53,9 +54,9 @@ fun CharacterRevealOverlay(
 
     val setBlur = LocalBlurState.current
     DisposableEffect(Unit) {
-        setBlur(true)
+        setBlur(BlurIntensity.Strong)
         onDispose {
-            setBlur(false)
+            setBlur(BlurIntensity.None)
         }
     }
 

@@ -2,7 +2,8 @@ package com.ilustris.sagai.features.chapter.data.usecase
 
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
@@ -55,7 +56,7 @@ class ChapterUseCaseImpl
         private val characterUseCase: CharacterUseCase,
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
-        private val imagenClient: ImagenClient,
+        private val imageGenerationService: ImageGenerationService,
         private val fileHelper: FileHelper,
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
@@ -222,38 +223,35 @@ class ChapterUseCaseImpl
                 val (saga, chapter) = fetchContext(chapterId)
                 val characters =
                     chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
-
-                val genCover =
-                    imagenClient
-                        .generateIntegratedImage(
-                            genre = saga.data.genre,
-                            imageReference = null,
-                            context =
-                                buildCoverPromptContext(
-                                    chapter.data.narrativeGuide,
-                                    characters,
-                                    saga,
-                                ),
-                            imageType = ImageType.COVER,
-                            variationId = saga.data.variationId,
-                        )
-
-                if (genCover.isFailure) {
-                    throw genCover.error.value
-                }
-
-                val coverFile =
-                    fileHelper.saveFile(
-                        chapter.data.title,
-                        genCover.getSuccess(),
-                        path = "${saga.data.id}/chapters/",
-                    )!!
-                val newChapter =
-                    chapter.data.copy(
-                        coverImage = coverFile.path,
+                val context =
+                    buildCoverPromptContext(
+                        chapter.data.narrativeGuide,
+                        characters,
+                        saga,
                     )
 
-                chapterRepository.updateChapter(newChapter)
+                imageGenerationService
+                    .enqueue(
+                        ImageGenerationRequest(
+                            genre = saga.data.genre,
+                            imageReference = null,
+                            context = context,
+                            imageType = ImageType.COVER,
+                            variationId = saga.data.variationId,
+                            label = chapter.data.title,
+                            silent = true,
+                            showReveal = false,
+                        ),
+                    ) { bitmap ->
+                        val coverFile =
+                            fileHelper.saveFile(
+                                chapter.data.title,
+                                bitmap,
+                                path = "${saga.data.id}/chapters/",
+                            ) ?: error("Failed to save chapter cover")
+                        val newChapter = chapter.data.copy(coverImage = coverFile.path)
+                        chapterRepository.updateChapter(newChapter)
+                    }.getOrThrow()
             }
 
         @OptIn(PublicPreviewAPI::class)
@@ -263,43 +261,54 @@ class ChapterUseCaseImpl
                     val (saga, chapter) = fetchContext(chapterId)
                     val characters =
                         chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
+                    val context =
+                        buildCoverPromptContext(
+                            chapter.data.narrativeGuide,
+                            characters,
+                            saga,
+                        )
 
-                    imagenClient
-                        .generateIntegratedImageStream(
-                            genre = saga.data.genre,
-                            imageReference = null,
-                            context =
-                                buildCoverPromptContext(
-                                    chapter.data.narrativeGuide,
-                                    characters,
-                                    saga,
-                                ),
-                            imageType = ImageType.COVER,
-                            variationId = saga.data.variationId,
-                        ).collect { state ->
-                            if (state is StreamingState.Success) {
-                                val bitmap = state.data.data
-                                val coverFile =
-                                    fileHelper.saveFile(
-                                        chapter.data.title,
-                                        bitmap,
-                                        path = "${saga.data.id}/chapters/",
-                                    ) ?: error("Failed to save chapter cover")
-
-                                val newChapter = chapter.data.copy(coverImage = coverFile.path)
-                                val updated = chapterRepository.updateChapter(newChapter)
+                    imageGenerationService
+                        .enqueue(
+                            ImageGenerationRequest(
+                                genre = saga.data.genre,
+                                imageReference = null,
+                                context = context,
+                                imageType = ImageType.COVER,
+                                variationId = saga.data.variationId,
+                                label = chapter.data.title,
+                                silent = false,
+                                showReveal = true,
+                            ),
+                        ) { bitmap ->
+                            val coverFile =
+                                fileHelper.saveFile(
+                                    chapter.data.title,
+                                    bitmap,
+                                    path = "${saga.data.id}/chapters/",
+                                ) ?: error("Failed to save chapter cover")
+                            val newChapter = chapter.data.copy(coverImage = coverFile.path)
+                            chapterRepository.updateChapter(newChapter)
+                        }.fold(
+                            onSuccess = { updated ->
                                 emit(
                                     StreamingState.Success(
                                         GeneratedContent(
                                             updated,
-                                            state.data.finalMessage,
+                                            "Image generation complete!",
                                         ),
                                     ),
                                 )
-                            } else {
-                                emit(state as StreamingState<GeneratedContent<Chapter>>)
-                            }
-                        }
+                            },
+                            onFailure = { error ->
+                                emit(
+                                    StreamingState.Error(
+                                        error.message ?: "Error generating chapter cover stream",
+                                        error,
+                                    ),
+                                )
+                            },
+                        )
                 } catch (e: Exception) {
                     emit(StreamingState.Error(e.message ?: "Error generating chapter cover stream"))
                 }

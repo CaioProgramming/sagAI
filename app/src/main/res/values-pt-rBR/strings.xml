@@ -339,7 +339,8 @@
     <string name="debug_controls">Controles de depuração</string>
     <string name="debug_image_fallback_title">Ambiente de teste</string>
     <string name="debug_image_fallback_subtitle">Para gerar a imagem, copie o prompt abaixo, abra o Gemini para criar e validar, e depois escolha a imagem aqui no app.</string>
-    <string name="debug_image_fallback_copy_prompt">Copiar prompt novamente</string>
+    <string name="debug_image_fallback_prompt_card_title">Prompt da imagem</string>
+    <string name="debug_image_fallback_copy_prompt">Copiar prompt</string>
     <string name="debug_image_fallback_expand_prompt">Ver prompt completo</string>
     <string name="debug_image_fallback_collapse_prompt">Ver menos</string>
     <string name="debug_image_fallback_open_gemini">Abrir Gemini</string>
@@ -656,6 +657,19 @@
     <string name="character_stat_height">Altura</string>
     <string name="character_stat_weight">Peso</string>
     <string name="character_generating">Gerando %1$s…</string>
+    <string name="image_generation_default_label">Gerando imagem…</string>
+    <string name="image_generation_awaiting_manual">Aguardando imagem manual</string>
+    <string name="image_generation_queue_badge">+%1$d na fila</string>
+    <string name="image_generation_panel_expand">Expandir painel de geração de imagem</string>
+    <string name="image_generation_panel_collapse">Recolher painel de geração de imagem</string>
+    <string name="image_generation_reasoning_placeholder">Preparando visual…</string>
+    <string name="image_generation_reveal_icon">Ícone do personagem pronto</string>
+    <string name="image_generation_reveal_cover">Capa pronta</string>
+    <string name="image_generation_reveal_dismiss">Continuar</string>
+    <string name="image_generation_fallback_cancel">Cancelar</string>
+    <string name="image_generation_character_icon">Gerando ícone de %1$s…</string>
+    <string name="image_generation_chapter_cover">Gerando capa do capítulo…</string>
+    <string name="image_generation_saga_icon">Gerando ícone da saga…</string>
 
     <!-- Chat -->
     <string name="regenerate_audio">Regenerar áudio…</string>

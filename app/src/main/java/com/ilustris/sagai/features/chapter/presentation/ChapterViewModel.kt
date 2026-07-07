@@ -2,19 +2,15 @@ package com.ilustris.sagai.features.chapter.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.features.chapter.data.model.ChapterInfo
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class ChapterViewModel
@@ -22,21 +18,11 @@ class ChapterViewModel
     constructor(
         private val sagaHistoryUseCase: SagaHistoryUseCase,
         private val chapterUseCase: ChapterUseCase,
-        private val debugImageFallbackService: DebugImageFallbackService,
     ) : ViewModel() {
         val saga = MutableStateFlow<SagaContent?>(null)
         val chaptersInfo = MutableStateFlow<List<ChapterInfo>>(emptyList())
-
         val isGenerating = MutableStateFlow(false)
-        val reasoningMessage = MutableStateFlow<String?>(null)
         val showPremiumSheet = MutableStateFlow(false)
-
-        init {
-            debugImageFallbackService.bindImageGenerationLoadingPause(viewModelScope) {
-                isGenerating.value = false
-                reasoningMessage.value = null
-            }
-        }
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
@@ -70,32 +56,7 @@ class ChapterViewModel
 
         fun generateIcon(chapterId: Int) {
             viewModelScope.launch(Dispatchers.IO) {
-                isGenerating.value = true
-                chapterUseCase
-                    .generateChapterCoverStream(
-                        chapterId,
-                    ).collect {
-                        when (it) {
-                            is StreamingState.Error -> {
-                                reasoningMessage.emit("Erro ao gerar capa do capítulo...")
-                                delay(3.seconds)
-                                reasoningMessage.emit(null)
-                                isGenerating.value = false
-                            }
-
-                            is StreamingState.Reasoning -> {
-                                isGenerating.value = true
-                                reasoningMessage.emit(it.chunk)
-                            }
-
-                            is StreamingState.Success<*> -> {
-                                reasoningMessage.emit("Capa do capítulo gerada com sucesso!")
-                                delay(3.seconds)
-                                reasoningMessage.emit(null)
-                                isGenerating.value = false
-                            }
-                        }
-                    }
+                chapterUseCase.generateChapterCoverStream(chapterId).collect { }
             }
         }
     }
