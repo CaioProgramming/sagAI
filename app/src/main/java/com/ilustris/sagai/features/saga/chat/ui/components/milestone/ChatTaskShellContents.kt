@@ -118,9 +118,7 @@ class NarrativeAdvanceShellContent(
         Column(
             modifier =
                 Modifier
-                    .clickable {
-                        scope.onToggle()
-                    }.fillMaxWidth()
+                    .fillMaxWidth()
                     .padding(16.dp)
                     .gradientFill(Brush.verticalGradient(morphingGradient())),
             horizontalAlignment = Alignment.CenterHorizontally,

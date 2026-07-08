@@ -14,6 +14,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
@@ -37,7 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -251,10 +254,15 @@ private fun TaskShellBottomDraggableRegion(
             )
         }
 
-    val sheetHeightPx = draggableState.requireOffset()
-    val revealExpanded =
-        draggableState.currentValue != TaskShellExpansion.Collapsed ||
-            sheetHeightPx > bottomCompactPx + ExpandedRevealThresholdPx
+    val rawSheetHeightPx = draggableState.requireOffset()
+    val sheetHeightPx =
+        if (draggableState.currentValue == TaskShellExpansion.Collapsed) {
+            bottomCompactPx
+        } else {
+            rawSheetHeightPx
+        }
+
+    val showExpanded = slot.expansion != TaskShellExpansion.Collapsed
 
     val dragSnapThresholdPx = with(density) { 40.dp.toPx() }
 
@@ -269,10 +277,7 @@ private fun TaskShellBottomDraggableRegion(
 
     androidx.compose.runtime.LaunchedEffect(slot.expansion) {
         if (draggableState.currentValue != slot.expansion) {
-            draggableState.animateTo(
-                targetValue = slot.expansion,
-                animationSpec = ShellMotionTween,
-            )
+            draggableState.snapTo(slot.expansion)
         }
     }
 
@@ -286,10 +291,7 @@ private fun TaskShellBottomDraggableRegion(
         slot.rememberScope(
             onMinimize = {
                 scope.launch {
-                    draggableState.animateTo(
-                        targetValue = TaskShellExpansion.Collapsed,
-                        animationSpec = ShellMotionTween,
-                    )
+                    draggableState.snapTo(TaskShellExpansion.Collapsed)
                 }
             },
             onToggle = {
@@ -308,10 +310,7 @@ private fun TaskShellBottomDraggableRegion(
             },
             onRequestFull = {
                 scope.launch {
-                    draggableState.animateTo(
-                        targetValue = TaskShellExpansion.Full,
-                        animationSpec = ShellMotionTween,
-                    )
+                    draggableState.snapTo(TaskShellExpansion.Full)
                 }
             },
         )
@@ -322,10 +321,30 @@ private fun TaskShellBottomDraggableRegion(
                 .coerceIn(0f, 1f)
         }
     val expandedAlpha by animateFloatAsState(
-        targetValue = if (revealExpanded) expansionProgress.coerceAtLeast(0.08f) else 0f,
+        targetValue = if (showExpanded) expansionProgress.coerceAtLeast(0.08f) else 0f,
         animationSpec = ShellFadeInTween,
         label = "bottomDraggableExpandedAlpha",
     )
+
+    val onCompactTap: () -> Unit = {
+        when (slot.content.compactClick) {
+            TaskShellCompactClick.Toggle ->
+                if (slot.expansion == TaskShellExpansion.Collapsed) {
+                    shellScope.onToggle()
+                } else {
+                    shellScope.onMinimize()
+                }
+
+            TaskShellCompactClick.RequestFull ->
+                if (slot.expansion == TaskShellExpansion.Collapsed) {
+                    shellScope.onRequestFull()
+                } else {
+                    shellScope.onMinimize()
+                }
+
+            TaskShellCompactClick.None -> Unit
+        }
+    }
 
     Column(
         modifier =
@@ -339,6 +358,9 @@ private fun TaskShellBottomDraggableRegion(
                 Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
+                    .pointerInput(slot.expansion, slot.content.compactClick) {
+                        detectTapGestures { onCompactTap() }
+                    }
                     .anchoredDraggable(
                         state = draggableState,
                         orientation = Orientation.Vertical,
@@ -348,7 +370,7 @@ private fun TaskShellBottomDraggableRegion(
             slot.content.Compact(shellScope)
         }
 
-        if (revealExpanded && slot.content.isExpandable) {
+        if (showExpanded && slot.content.isExpandable) {
             Box(
                 modifier =
                     Modifier
