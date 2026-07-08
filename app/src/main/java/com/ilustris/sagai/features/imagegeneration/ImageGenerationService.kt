@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
@@ -34,6 +35,10 @@ class ImageGenerationService
         private val debugImageFallbackService: DebugImageFallbackService,
     ) {
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    
+        private companion object {
+            private const val RevealDismissTimeoutMs = 30_000L
+        }
 
         private val _uiState = MutableStateFlow<ImageGenerationUiState>(ImageGenerationUiState.Idle)
         val uiState: StateFlow<ImageGenerationUiState> = _uiState.asStateFlow()
@@ -190,7 +195,21 @@ class ImageGenerationService
                                 )
                             val dismissSignal = CompletableDeferred<Unit>()
                             revealDismissSignal = dismissSignal
-                            dismissSignal.await()
+                            val dismissed =
+                                withTimeoutOrNull(RevealDismissTimeoutMs) {
+                                    dismissSignal.await()
+                                }
+                            // Safety: if the user never dismisses the overlay, the queue must not block forever.
+                            if (dismissed == null) {
+                                Timber.w(
+                                    "ImageGenerationService: reveal dismiss timed out (%d ms). Auto-dismissing.",
+                                    RevealDismissTimeoutMs,
+                                )
+                                // Unblock the queue for the current request.
+                                dismissSignal.complete(Unit)
+                                _uiState.value = ImageGenerationUiState.Idle
+                            }
+                            revealDismissSignal = null
                         } else if (!request.silent) {
                             _uiState.value = ImageGenerationUiState.Idle
                         }
