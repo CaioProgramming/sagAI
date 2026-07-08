@@ -49,7 +49,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -76,16 +78,10 @@ import com.ilustris.sagai.features.characters.ui.components.buildMessagePreviewA
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaSummary
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import com.ilustris.sagai.features.home.ui.components.DynamicPromptShellContent
 import com.ilustris.sagai.features.home.ui.components.HomeSplashLoader
 import com.ilustris.sagai.features.home.ui.components.PremiumShellContent
 import com.ilustris.sagai.features.home.ui.components.TrophyShelf
-import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
-import com.ilustris.sagai.ui.components.taskshell.TaskShellLayout
-import com.ilustris.sagai.ui.components.taskshell.TaskShellSlotState
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
@@ -94,6 +90,9 @@ import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
+import com.ilustris.sagai.ui.components.taskshell.TaskShellLayout
+import com.ilustris.sagai.ui.components.taskshell.TaskShellSlotState
 import com.ilustris.sagai.ui.theme.SAGA_THEME_TRANSITION_MS
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
@@ -236,12 +235,19 @@ private fun HomeContent(
                 onExpansionChange = { expansion ->
                     bottomExpansion = expansion
                     when (expansion) {
-                        TaskShellExpansion.Full -> onAction(HomeUiAction.OpenPremium)
-                        TaskShellExpansion.Collapsed ->
+                        TaskShellExpansion.Full -> {
+                            onAction(HomeUiAction.OpenPremium)
+                        }
+
+                        TaskShellExpansion.Collapsed -> {
                             if (state.showPremiumOnboarding) {
                                 onAction(HomeUiAction.DismissPremiumOnboarding)
                             }
-                        else -> Unit
+                        }
+
+                        else -> {
+                            Unit
+                        }
                     }
                 },
             )
@@ -250,7 +256,7 @@ private fun HomeContent(
         }
 
     TaskShellLayout(
-        modifier = modifier,
+        modifier = modifier.background(MaterialTheme.colorScheme.background),
         topSlot = topSlot,
         bottomSlot = bottomSlot,
     ) {
@@ -315,8 +321,7 @@ private fun ChatList(
                                             interactionSource = remember { MutableInteractionSource() },
                                         ) {
                                             onAction(HomeUiAction.OpenPremium)
-                                        }
-                                        .wrapContentWidth()
+                                        }.wrapContentWidth()
                                         .align(Alignment.CenterVertically),
                                 iconModifier =
                                     Modifier.sharedElement(
@@ -362,8 +367,7 @@ private fun ChatList(
                             Modifier
                                 .clickable {
                                     onAction(HomeUiAction.CreateFakeSaga)
-                                }
-                                .padding(16.dp)
+                                }.padding(16.dp)
                                 .gradientFill(debugBrush)
                                 .clip(RoundedCornerShape(15.dp))
                                 .fillMaxWidth(),
@@ -574,8 +578,7 @@ fun ChatCard(
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
                                             animatedVisibilityScope,
-                                        )
-                                        .weight(1f),
+                                        ).weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime

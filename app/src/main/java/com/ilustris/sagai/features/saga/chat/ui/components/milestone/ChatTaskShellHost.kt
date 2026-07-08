@@ -1,8 +1,11 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,8 +22,8 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.vibrate
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.saga.chat.presentation.ChatUiState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiAction
+import com.ilustris.sagai.features.saga.chat.presentation.ChatUiState
 import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
 import com.ilustris.sagai.ui.components.taskshell.TaskShellLayout
 import com.ilustris.sagai.ui.components.taskshell.TaskShellSlotState
@@ -115,11 +118,18 @@ fun ChatTaskShellHost(
             null
         }
 
+    val backgroundColor by animateColorAsState(
+        when {
+            topSlot?.expansion == TaskShellExpansion.Expanded -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.background
+        },
+    )
     TaskShellLayout(
         modifier =
             modifier
-                .fillMaxSize()
+                .background(backgroundColor)
                 .navigationBarsPadding()
+                .statusBarsPadding()
                 .imePadding(),
         topSlot = topSlot,
         bottomSlot = bottomSlot,

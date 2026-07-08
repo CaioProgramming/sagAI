@@ -29,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
@@ -102,11 +101,13 @@ fun TaskShellBar(
             contentDescription = null,
             tint = MaterialTheme.colorScheme.surfaceContainer,
             modifier =
-                Modifier.size(24.dp).dropShadow(shape) {
-                    this.brush = brush
-                    radius = 5f
-                    spread = 0.5f
-                },
+                Modifier
+                    .size(24.dp)
+                    .dropShadow(shape) {
+                        this.brush = brush
+                        radius = 5f
+                        spread = 0.5f
+                    },
         )
 
         AnimatedContent(
@@ -148,7 +149,11 @@ fun TaskShellChevron(
 ) {
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(24.dp).padding(4.dp).alpha(0.5f),
+        modifier =
+            modifier
+                .size(12.dp)
+                .padding(4.dp)
+                .alpha(0.5f),
     ) {
         val chevronRotation by animateFloatAsState(
             targetValue = if (isExpanded) 90f else -90f,

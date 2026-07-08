@@ -1,33 +1,44 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.presentation.model.toUi
-import com.ilustris.sagai.ui.components.taskshell.TaskShellChevron
 import com.ilustris.sagai.ui.components.taskshell.TaskShellCompactClick
 import com.ilustris.sagai.ui.components.taskshell.TaskShellContent
 import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
 import com.ilustris.sagai.ui.components.taskshell.TaskShellScope
+import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.morphingGradient
+import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shimmerize
+import com.ilustris.sagai.ui.theme.rememberVectorShape
+import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
 
 class ObjectiveShellContent(
@@ -42,18 +53,36 @@ class ObjectiveShellContent(
 
     @Composable
     override fun Compact(scope: TaskShellScope) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(16.dp)) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+            val iconColor by animateColorAsState(
+                if (scope.expansion == TaskShellExpansion.Expanded) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+            )
+            val themeBrush = sagaBrush()
+            val shadowAlpha by animateFloatAsState(
+                if (isLoading) 1f else 0f,
+            )
             Icon(
                 themePainter(),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                 modifier =
                     Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            scope.onToggle()
+                        }.padding(8.dp)
                         .size(24.dp)
-                        .reactiveShimmer(
-                            isPlaying = isLoading,
-                            shimmerColors = MaterialTheme.colorScheme.primary.shimmerize(),
-                        ),
+                        .dropShadow(rememberVectorShape(themeIconVector())) {
+                            brush = themeBrush
+                            radius = 10f
+                            spread = 1f
+                            alpha = shadowAlpha
+                        }.gradientFill(progressiveBrush(tintColor = iconColor, progress = progress))
+                        .reactiveShimmer(isLoading),
             )
         }
     }
@@ -86,13 +115,15 @@ class NarrativeAdvanceShellContent(
         val actionUi = action.toUi()
         val titleRes = if (isProcessing) actionUi.holdingTextRes else (actionUi.titleRes ?: R.string.continue_text)
 
-        Row(
+        Column(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    .clickable {
+                        scope.onToggle()
+                    }.fillMaxWidth()
+                    .padding(16.dp)
+                    .gradientFill(Brush.verticalGradient(morphingGradient())),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
                 themePainter(),
@@ -101,31 +132,25 @@ class NarrativeAdvanceShellContent(
                 modifier = Modifier.size(24.dp),
             )
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                Text(
-                    text = stringResource(titleRes),
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (!isProcessing) {
-                    Text(
-                        text = stringResource(R.string.advance_pull_hint),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-            TaskShellChevron(
-                isExpanded = scope.expansion != TaskShellExpansion.Collapsed,
-                onClick = scope.onRequestFull,
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
             )
+
+            if (!isProcessing) {
+                Text(
+                    text = stringResource(R.string.advance_pull_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 

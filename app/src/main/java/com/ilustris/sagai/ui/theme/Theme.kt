@@ -91,7 +91,7 @@ private val DarkColorScheme =
         secondary = MaterialColor.Blue400,
         tertiary = MaterialColor.Teal700,
         background = Color.Black,
-        surfaceContainer = MaterialColor.Gray800.darker(.5f),
+        surfaceContainer = MaterialColor.Gray900,
     )
 
 private val LightColorScheme =
@@ -100,8 +100,8 @@ private val LightColorScheme =
         secondary = MaterialColor.Blue800,
         tertiary = MaterialColor.Teal300,
         onPrimary = MaterialColor.White,
-        background = MaterialColor.Gray100,
-        surfaceContainer = Color.White,
+        background = MaterialColor.White,
+        surfaceContainer = MaterialColor.Gray50,
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
     surface = Color(0xFFFFFBFE),
@@ -173,7 +173,8 @@ fun ThemeIcon(
                         .graphicsLayer {
                             clip = false
                             alpha = 0.8f * clampedGlow
-                        }.blur(glowRadius * clampedGlow),
+                        }
+                        .blur(glowRadius * clampedGlow),
             )
         }
         Icon(
