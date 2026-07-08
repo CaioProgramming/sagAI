@@ -594,6 +594,7 @@ abstract class UseCaseModule {
     abstract fun providesWikiUseCase(wikiUseCaseImpl: WikiUseCaseImpl): WikiUseCase
 
     @Binds
+    @Singleton
     abstract fun providesSagaContentManager(sagaContentManagerImpl: SagaContentManagerImpl): SagaContentManager
 
     @Binds

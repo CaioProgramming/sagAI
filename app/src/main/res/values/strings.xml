@@ -605,6 +605,10 @@
     <string name="advance_saga_ending">Write the finale</string>
     <string name="releasing_ending">Writing the finale...</string>
     <string name="advance_pull_hint">Swipe up to continue</string>
+    <string name="narrative_advance_shell_expand">Expand</string>
+    <string name="narrative_advance_shell_collapse">Collapse</string>
+    <string name="narrative_advance_shell_release">Release to continue</string>
+    <string name="task_shell_minimize">Minimize</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Congratulations! Keep going!</string>

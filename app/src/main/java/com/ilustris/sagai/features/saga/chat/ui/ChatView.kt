@@ -70,7 +70,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -136,7 +135,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
-import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiAction
@@ -149,10 +147,8 @@ import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDia
 import com.ilustris.sagai.features.saga.chat.ui.components.MessageOptionsSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.AdvancePullContainer
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.AdvancePullIndicator
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ChatTaskShellHost
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.saga.detail.ui.SagaReview
@@ -436,7 +432,6 @@ fun ChatContent(
     val content = uiState.sagaContent ?: stableContent ?: return
     val saga = remember(content) { content.data }
     val listState = rememberLazyListState()
-    var advancePullProgress by remember { mutableFloatStateOf(0f) }
 
     var showReactions by remember {
         mutableStateOf<MessageContent?>(null)
@@ -513,34 +508,28 @@ fun ChatContent(
                                 .alpha(.4f),
                     )
 
-                    ConstraintLayout(
-                        Modifier
-                            .padding(
-                                top = padding.calculateTopPadding(),
-                            )
-                            .fillMaxSize(),
+                    ChatTaskShellHost(
+                        uiState = uiState,
+                        sagaContent = content,
+                        progress = progressState.value,
+                        onAction = onAction,
+                        modifier =
+                            Modifier
+                                .padding(top = padding.calculateTopPadding())
+                                .fillMaxSize(),
                     ) {
-                        rememberCoroutineScope()
-                        val (debugControls, messages, chatInput, topBar, bottomGradient, objectiveOverlay, advancePullIndicator) =
-                            createRefs()
+                        ConstraintLayout(
+                            Modifier.fillMaxSize(),
+                        ) {
+                            rememberCoroutineScope()
+                            val (debugControls, messages, chatInput, topBar, bottomGradient) =
+                                createRefs()
 
                         val narrativeState = uiState.narrativeUiState
-                        val showAdvancePull =
+                        val advanceBlocksInput =
                             narrativeState.showAdvanceTrigger &&
                                 uiState.onboardingType == null &&
                                 !uiState.selectionState.isSelectionMode
-                        val advanceIsGenerating =
-                            narrativeState.phase is NarrativePhase.Processing ||
-                                uiState.isGenerating ||
-                                uiState.isLoading
-
-                        LaunchedEffect(showAdvancePull) {
-                            if (!showAdvancePull) {
-                                advancePullProgress = 0f
-                            } else {
-                                listState.animateScrollToItem(0)
-                            }
-                        }
 
                         val onSendMessage: (Boolean) -> Unit =
                             remember(onAction, uiState.editingMessage) {
@@ -603,14 +592,19 @@ fun ChatContent(
                                 { onAction(ChatUiAction.CancelEdit) }
                             }
 
-                        AdvancePullContainer(
+                        ChatList(
+                            saga = content,
+                            actList = uiState.messages,
+                            mainCharacter = uiState.mainCharacter,
+                            characters = uiState.characters,
+                            wikis = uiState.wikis,
+                            activeGenre = uiState.activeGenre,
+                            flatEvents = uiState.flatEvents,
                             listState = listState,
-                            enabled = showAdvancePull && !advanceIsGenerating,
-                            isProcessing = showAdvancePull && advanceIsGenerating,
-                            onAdvance = { onAction(ChatUiAction.AdvanceNarrative) },
-                            onPullProgress = { progress ->
-                                advancePullProgress = if (showAdvancePull) progress else 0f
-                            },
+                            reasoningChunk = uiState.reasoningChunk,
+                            reviewGenerationState = reviewGenerationState,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
                             modifier =
                                 Modifier
                                     .constrainAs(messages) {
@@ -620,23 +614,8 @@ fun ChatContent(
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
                                         height = Dimension.fillToConstraints
-                                    },
-                        ) {
-                            ChatList(
-                                saga = content,
-                                actList = uiState.messages,
-                                mainCharacter = uiState.mainCharacter,
-                                characters = uiState.characters,
-                                wikis = uiState.wikis,
-                                activeGenre = uiState.activeGenre,
-                                flatEvents = uiState.flatEvents,
-                                listState = listState,
-                                reasoningChunk = uiState.reasoningChunk,
-                                reviewGenerationState = reviewGenerationState,
-                                sharedTransitionScope = sharedTransitionScope,
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                modifier = Modifier.fillMaxSize(),
-                                onMessageAction =
+                                    }.fillMaxSize(),
+                            onMessageAction =
                                     remember(onAction, content) {
                                         { action ->
                                             when (action) {
@@ -700,7 +679,6 @@ fun ChatContent(
                                 selectedMessageIds = uiState.selectionState.selectedMessageIds,
                                 audioPlaybackState = uiState.audioPlaybackState,
                             )
-                        }
 
                         Box(
                             Modifier
@@ -721,7 +699,7 @@ fun ChatContent(
                                 }
 
                                 hasActiveTimeline &&
-                                    !showAdvancePull &&
+                                    !advanceBlocksInput &&
                                     !uiState.selectionState.isSelectionMode -> {
                                     BottomInputState.Chat
                                 }
@@ -797,24 +775,6 @@ fun ChatContent(
                                     Unit
                                 }
                             }
-                        }
-
-                        if (showAdvancePull && narrativeState.displayAdvanceAction != null) {
-                            AdvancePullIndicator(
-                                action = narrativeState.displayAdvanceAction!!,
-                                pullProgress = advancePullProgress,
-                                isGenerating = advanceIsGenerating,
-                                modifier =
-                                    Modifier
-                                        .zIndex(3f)
-                                        .constrainAs(advancePullIndicator) {
-                                            bottom.linkTo(parent.bottom)
-                                            start.linkTo(parent.start)
-                                            end.linkTo(parent.end)
-                                        }
-                                        .padding(bottom = padding.calculateBottomPadding() + 24.dp)
-                                        .imePadding(),
-                            )
                         }
 
                         AnimatedVisibility(
@@ -904,18 +864,6 @@ fun ChatContent(
                             }
                         }
 
-                        val currentObjectiveText =
-                            content.getCurrentTimeLine()?.data?.displayObjective()
-                        val showObjective =
-                            uiState.showCurrentObjective && !currentObjectiveText.isNullOrBlank()
-                        val objectiveSparkModifier =
-                            Modifier.sharedElement(
-                                rememberSharedContentState(
-                                    key = "saga_${saga.id}_spark",
-                                ),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            )
-
                         val alpha by animateFloatAsState(
                             if (listState.canScrollForward.not()) 0f else 1f,
                             animationSpec = tween(450, easing = EaseIn),
@@ -934,46 +882,6 @@ fun ChatContent(
                                     },
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            AnimatedVisibility(
-                                visible = !showObjective,
-                                enter = fadeIn(tween(300)),
-                                exit = fadeOut(tween(200)),
-                            ) {
-                                val isWorking = uiState.isGenerating || uiState.isLoading
-                                val brush =
-                                    if (isWorking) {
-                                        Brush.verticalGradient(
-                                            morphingGradient(),
-                                        )
-                                    } else {
-                                        progressiveBrush(resolvedColor, progressState.value)
-                                    }
-                                Image(
-                                    themePainter(),
-                                    contentDescription = null,
-                                    colorFilter =
-                                        ColorFilter.tint(
-                                            MaterialTheme.colorScheme.onBackground.copy(
-                                                alpha = .5f,
-                                            ),
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .sharedElement(
-                                                rememberSharedContentState(
-                                                    key = "saga_${saga.id}_spark",
-                                                ),
-                                                animatedVisibilityScope = animatedVisibilityScope,
-                                            )
-                                            .size(32.dp)
-                                            .clip(CircleShape)
-                                            .clickable {
-                                                onAction(ChatUiAction.ShowObjective)
-                                            }
-                                            .gradientFill(brush),
-                                )
-                            }
-
                             val subtitle =
                                 if (saga.isEnded) {
                                     stringResource(id = R.string.chat_card_saga_ended)
@@ -1038,27 +946,6 @@ fun ChatContent(
                                 color = resolvedColor,
                                 trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                             )
-                        }
-
-                        AnimatedVisibility(
-                            showObjective,
-                            enter = fadeIn(tween(300)) + slideInVertically { -it / 2 },
-                            exit = fadeOut(tween(200)) + slideOutVertically { -it / 2 },
-                            modifier =
-                                Modifier.constrainAs(objectiveOverlay) {
-                                    top.linkTo(parent.top)
-                                    start.linkTo(parent.start)
-                                    end.linkTo(parent.end)
-                                },
-                        ) {
-                            ObjectiveOverlay(
-                                title = stringResource(R.string.current_objective),
-                                objective = currentObjectiveText.orEmpty(),
-                                progress = progressState.value,
-                                sparkModifier = objectiveSparkModifier,
-                            ) {
-                                onAction(ChatUiAction.DismissObjective)
-                            }
                         }
 
                         if (BuildConfig.DEBUG && isDebug && saga.isEnded.not() && !uiState.selectionState.isSelectionMode) {
@@ -1144,6 +1031,7 @@ fun ChatContent(
                                 )
                             }
                         }
+                    }
                     }
                 }
             }

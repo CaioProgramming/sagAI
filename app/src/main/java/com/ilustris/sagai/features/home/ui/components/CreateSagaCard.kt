@@ -28,6 +28,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIcon
 
@@ -46,17 +47,10 @@ fun CreateSagaCard(
 
         Row(
             modifier
-                .dropShadow(shape) {
-                    this.brush = genreBrush
-                    radius = 10f
-                    spread = 2f
-                }.clip(shape)
-                .background(MaterialTheme.colorScheme.background, shape)
-                .background(fadeGradientBottom(MaterialTheme.colorScheme.primary))
+                .background(MaterialTheme.colorScheme.primary)
                 .clickable {
                     onCreateNewChat()
-                }.padding(16.dp)
-                .alpha(0.5f),
+                }.padding(18.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -65,7 +59,7 @@ fun CreateSagaCard(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier =
-                    Modifier.size(12.dp),
+                    Modifier.size(24.dp),
             )
 
             Column(

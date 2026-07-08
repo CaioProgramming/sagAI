@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.debug.ui
 
+import ai.atick.material.MaterialColor
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -22,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -38,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -48,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.file.readUriAsBitmap
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.sagaBrush
 
 private fun openGeminiWeb(context: Context) {
@@ -166,8 +171,13 @@ fun ManualImageFallbackContent(
                     Modifier
                         .weight(1f)
                         .clip(MaterialTheme.shapes.medium)
-                        .background(sagaBrush()),
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .background(fadeGradientBottom(MaterialColor.BlueA400)),
                 shape = MaterialTheme.shapes.medium,
+                colors =
+                    ButtonDefaults.buttonColors().copy(
+                        containerColor = Color.Transparent,
+                    ),
             ) {
                 Text(
                     text = stringResource(R.string.debug_image_fallback_open_gemini),

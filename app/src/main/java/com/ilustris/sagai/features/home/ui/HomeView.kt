@@ -76,14 +76,20 @@ import com.ilustris.sagai.features.characters.ui.components.buildMessagePreviewA
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaSummary
-import com.ilustris.sagai.features.home.ui.components.CreateSagaCard
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.ilustris.sagai.features.home.ui.components.DynamicPromptShellContent
 import com.ilustris.sagai.features.home.ui.components.HomeSplashLoader
+import com.ilustris.sagai.features.home.ui.components.PremiumShellContent
 import com.ilustris.sagai.features.home.ui.components.TrophyShelf
+import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
+import com.ilustris.sagai.ui.components.taskshell.TaskShellLayout
+import com.ilustris.sagai.ui.components.taskshell.TaskShellSlotState
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.features.premium.MiniPremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
@@ -169,16 +175,6 @@ fun HomeView(
         }
     }
 
-    if (uiState.showPremiumOnboarding && uiState.isLoading.not()) {
-        OnboardingDialog(
-            type = OnboardingType.PREMIUM_GUIDE,
-            force = true,
-            onDismiss = {
-                viewModel.handleAction(HomeUiAction.DismissPremiumOnboarding)
-            },
-        )
-    }
-
     if (uiState.showBackupSheet) {
         BackupSheet(true, {
             viewModel.handleAction(HomeUiAction.DismissBackupSheet)
@@ -205,16 +201,70 @@ private fun HomeContent(
     openSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ChatList(
-        state = state,
-        onAction = onAction,
-        padding = padding,
-        sharedTransitionScope = sharedTransitionScope,
-        splashAnimatedContentScope = splashAnimatedContentScope,
-        navAnimatedVisibilityScope = navAnimatedVisibilityScope,
-        openSettings = openSettings,
+    var topExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
+    var bottomExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
+
+    LaunchedEffect(state.showPremiumOnboarding) {
+        if (state.showPremiumOnboarding) {
+            bottomExpansion = TaskShellExpansion.Full
+        } else if (bottomExpansion == TaskShellExpansion.Full) {
+            bottomExpansion = TaskShellExpansion.Collapsed
+        }
+    }
+
+    val topSlot =
+        state.dynamicNewSagaTexts?.let { prompt ->
+            TaskShellSlotState(
+                content =
+                    DynamicPromptShellContent(
+                        prompt = prompt,
+                        onCreateNewSaga = { onAction(HomeUiAction.CreateNewSaga) },
+                    ),
+                expansion = topExpansion,
+                onExpansionChange = { topExpansion = it },
+            )
+        }
+
+    val bottomSlot =
+        if (!state.isPremium) {
+            TaskShellSlotState(
+                content =
+                    PremiumShellContent(
+                        onDismissPremium = { onAction(HomeUiAction.DismissPremiumOnboarding) },
+                    ),
+                expansion = bottomExpansion,
+                onExpansionChange = { expansion ->
+                    bottomExpansion = expansion
+                    when (expansion) {
+                        TaskShellExpansion.Full -> onAction(HomeUiAction.OpenPremium)
+                        TaskShellExpansion.Collapsed ->
+                            if (state.showPremiumOnboarding) {
+                                onAction(HomeUiAction.DismissPremiumOnboarding)
+                            }
+                        else -> Unit
+                    }
+                },
+            )
+        } else {
+            null
+        }
+
+    TaskShellLayout(
         modifier = modifier,
-    )
+        topSlot = topSlot,
+        bottomSlot = bottomSlot,
+    ) {
+        ChatList(
+            state = state,
+            onAction = onAction,
+            padding = padding,
+            sharedTransitionScope = sharedTransitionScope,
+            splashAnimatedContentScope = splashAnimatedContentScope,
+            navAnimatedVisibilityScope = navAnimatedVisibilityScope,
+            openSettings = openSettings,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
@@ -359,23 +409,6 @@ private fun ChatList(
                 )
             }
 
-            item {
-                AnimatedContent(state.dynamicNewSagaTexts, transitionSpec = {
-                    fadeIn(tween(700)) togetherWith fadeOut(tween(400))
-                }) {
-                    it?.let { dynamicContent ->
-                        CreateSagaCard(
-                            dynamicNewSagaTexts = dynamicContent,
-                            onCreateNewChat = { onAction(HomeUiAction.CreateNewSaga) },
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
-                        )
-                    }
-                }
-            }
-
             items(
                 state.activeSagas,
                 key = { saga -> saga.data.id },
@@ -456,18 +489,6 @@ private fun ChatList(
                             ),
                     )
                 }
-            }
-
-            item {
-                MiniPremiumCard(
-                    modifier =
-                        Modifier
-                            .animateItem()
-                            .padding(horizontal = 32.dp, vertical = 16.dp)
-                            .clickable {
-                                onAction(HomeUiAction.OpenPremium)
-                            },
-                )
             }
 
             item {

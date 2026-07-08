@@ -493,6 +493,10 @@
     <string name="advance_saga_ending">Escrever o desfecho</string>
     <string name="releasing_ending">Escrevendo o desfecho...</string>
     <string name="advance_pull_hint">Deslize para cima para continuar</string>
+    <string name="narrative_advance_shell_expand">Expandir</string>
+    <string name="narrative_advance_shell_collapse">Recolher</string>
+    <string name="narrative_advance_shell_release">Solte para continuar</string>
+    <string name="task_shell_minimize">Minimizar</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Parabéns! Continue assim!</string>

@@ -34,6 +34,7 @@ fun ObjectiveOverlay(
     progress: Float,
     sparkModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
+    applyStatusBarsPadding: Boolean = true,
     onDismiss: () -> Unit,
 ) {
     val shape = sagaShape() ?: RoundedCornerShape(12.dp)
@@ -43,73 +44,35 @@ fun ObjectiveOverlay(
     Column(
         modifier =
             modifier
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .background(resolvedColor)
+                .padding(16.dp)
                 .fillMaxWidth()
-                .dropShadow(
-                    shape = shape,
-                    shadow =
-                        Shadow(
-                            radius = 4.dp,
-                            spread = 1.dp,
-                            color = resolvedColor,
-                            offset = DpOffset.Zero,
-                        ),
-                ).clip(shape)
-                .background(cardColor, shape)
                 .clickable(onClick = onDismiss),
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                themePainter(),
-                null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
-            )
+        Icon(
+            themePainter(),
+            null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                Text(
-                    text = title,
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f),
-                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+        Text(
+            text = title,
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                ),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
 
-                Text(
-                    text = objective,
-                    style =
-                        MaterialTheme.typography.labelLarge,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-
-        LinearProgressIndicator(
-            modifier =
-                Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
-                    .height(3.dp),
-            progress = { progress },
-            drawStopIndicator = {},
-            gapSize = 0.dp,
-            color = resolvedColor,
-            trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+        Text(
+            text = objective,
+            style =
+                MaterialTheme.typography.labelLarge,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
