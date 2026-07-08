@@ -12,8 +12,17 @@ import kotlin.math.min // Added for scaling
 
 fun cropBitmapToCircle(bitmap: Bitmap?): Bitmap? {
     if (bitmap == null) return null
-    val width = bitmap.width
-    val height = bitmap.height
+    // Some sources (e.g. image loaders) may provide hardware bitmaps.
+    // Canvas drawing in SW mode can't draw HARDWARE configs.
+    val safeBitmap =
+        if (bitmap.config == Bitmap.Config.HARDWARE) {
+            bitmap.copy(Bitmap.Config.ARGB_8888, false)
+        } else {
+            bitmap
+        }
+
+    val width = safeBitmap.width
+    val height = safeBitmap.height
     val outputBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 
     val canvas = Canvas(outputBitmap)
@@ -27,7 +36,7 @@ fun cropBitmapToCircle(bitmap: Bitmap?): Bitmap? {
     paint.color = Color.BLACK // Dummy color for mask shape
     canvas.drawCircle(width / 2f, height / 2f, radius, paint)
     paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
-    canvas.drawBitmap(bitmap, rect, rect, paint)
+    canvas.drawBitmap(safeBitmap, rect, rect, paint)
 
     return outputBitmap
 }
