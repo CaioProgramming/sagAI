@@ -37,7 +37,8 @@ class ImageGenerationService
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
         private companion object {
-            private const val RevealDismissTimeoutMs = 30_000L
+            // Auto-dismiss reveal after a short time so the queue can't get stuck.
+            private const val RevealDismissTimeoutMs = 15_000L
         }
 
         private val _uiState = MutableStateFlow<ImageGenerationUiState>(ImageGenerationUiState.Idle)
@@ -126,6 +127,11 @@ class ImageGenerationService
             activeLabel = request.label
             activeImageType = request.imageType
 
+            // Auto-expand the island when the request will show the reveal overlay.
+            if (request.showReveal && !request.silent) {
+                islandExpansion = IslandExpansion.Expanded
+            }
+
             if (!request.silent) {
                 emitGenerating(request, reasoning = null)
             }
@@ -142,12 +148,16 @@ class ImageGenerationService
                                 debugImageFallbackService.isAwaitingUser.collectLatest { awaiting ->
                                     if (awaiting) {
                                         val prompt = debugImageFallbackService.pendingPrompt.value.orEmpty()
+                                    // Auto-expand while waiting for manual fallback.
+                                    islandExpansion = IslandExpansion.Expanded
                                         _uiState.value =
                                             ImageGenerationUiState.AwaitingManualFallback(
                                                 prompt = prompt,
                                                 expansion = islandExpansion,
                                             )
                                     } else if (_uiState.value is ImageGenerationUiState.AwaitingManualFallback) {
+                                        // Manual fallback resolved; collapse back automatically.
+                                        islandExpansion = IslandExpansion.Compact
                                         emitGenerating(request, reasoning = null)
                                     }
                                 }
@@ -187,6 +197,8 @@ class ImageGenerationService
                         val persisted = work.onBitmap(bitmap)
 
                         if (request.showReveal && !request.silent) {
+                            // Keep panel expanded while the reveal overlay is visible.
+                            islandExpansion = IslandExpansion.Expanded
                             _uiState.value =
                                 ImageGenerationUiState.Reveal(
                                     bitmap = bitmap,
@@ -209,6 +221,8 @@ class ImageGenerationService
                                 dismissSignal.complete(Unit)
                                 _uiState.value = ImageGenerationUiState.Idle
                             }
+                            // Reveal finished (dismissed by user or timeout). Collapse for next work.
+                            islandExpansion = IslandExpansion.Compact
                             revealDismissSignal = null
                         } else if (!request.silent) {
                             _uiState.value = ImageGenerationUiState.Idle
