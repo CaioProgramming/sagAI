@@ -10,7 +10,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.ui.components.SagaNotificationEvent
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,8 +21,6 @@ interface SagaContentManager {
     val narrativeProcessingUiState: StateFlow<Boolean>
     val narrativeUiState: StateFlow<NarrativeUiState>
     val contentReasoning: MutableStateFlow<String?>
-
-    var notificationUpdate: MutableStateFlow<SagaNotificationEvent?>
 
     val milestoneUpdate: MutableStateFlow<SagaMilestone?>
     val showObjectiveOverlay: StateFlow<Boolean>

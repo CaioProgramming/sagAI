@@ -21,6 +21,8 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.globalshell.GlobalShellService
+import com.ilustris.sagai.core.globalshell.NewMessageEffect
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -74,6 +76,7 @@ class MessageUseCaseImpl
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val timelineUseCase: TimelineUseCase,
         private val sagaContentManager: SagaContentManager,
+        private val globalShellService: GlobalShellService,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -139,12 +142,27 @@ class MessageUseCaseImpl
             message: Message,
             isFromUser: Boolean,
         ) = executeRequest {
-            messageRepository.saveMessage(
+            val saved =
+                messageRepository.saveMessage(
                 message.copy(
                     status = MessageStatus.OK,
                     timestamp = System.currentTimeMillis(),
                 ),
             )
+            if (saved.senderType == SenderType.CHARACTER) {
+                globalShellService.post(
+                    NewMessageEffect(
+                        messageId = saved.id,
+                        sagaId = saga.data.id,
+                        sagaTitle = saga.data.title,
+                        genre = saga.data.genre,
+                        speakerName = saved.speakerName ?: emptyString(),
+                        rawText = saved.text,
+                        deepLink = "saga://chat/${saga.data.id}/false",
+                    ),
+                )
+            }
+            saved
         }
 
         override suspend fun analyzeMessageTone(
@@ -332,7 +350,8 @@ class MessageUseCaseImpl
                 character?.fullName()
                     ?: reply.message.speakerName
                     ?: reply.newCharacter?.name
-            return messageRepository.saveMessage(
+            val savedMessage =
+                messageRepository.saveMessage(
                 Message(
                     id = 0,
                     sagaId = saga.data.id,
@@ -344,6 +363,20 @@ class MessageUseCaseImpl
                     characterId = character?.id,
                 ),
             )
+            if (savedMessage.senderType == SenderType.CHARACTER) {
+                globalShellService.post(
+                    NewMessageEffect(
+                        messageId = savedMessage.id,
+                        sagaId = saga.data.id,
+                        sagaTitle = saga.data.title,
+                        genre = saga.data.genre,
+                        speakerName = savedMessage.speakerName ?: emptyString(),
+                        rawText = savedMessage.text,
+                        deepLink = "saga://chat/${saga.data.id}/false",
+                    ),
+                )
+            }
+            return savedMessage
         }
 
         private fun resolveExistingCharacterForReply(

@@ -74,19 +74,18 @@ import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.core.navigation.SagaNavigationTracker
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
-import com.ilustris.sagai.core.notifications.SagaNotificationRouter
+import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.imagegeneration.model.IslandExpansion
-import com.ilustris.sagai.features.imagegeneration.ui.ImageGenerationContainer
 import com.ilustris.sagai.features.imagegeneration.ui.ImageGenerationRevealOverlay
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.components.BlurTarget
-import com.ilustris.sagai.ui.components.SagaInAppNotificationBanner
+import com.ilustris.sagai.ui.components.globalshell.GlobalShellHost
 import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
 import com.ilustris.sagai.ui.navigation.FAQKey
@@ -128,10 +127,10 @@ class MainActivity : ComponentActivity() {
     lateinit var sagaThemeManager: SagaThemeManager
 
     @Inject
-    lateinit var sagaNotificationRouter: SagaNotificationRouter
+    lateinit var sagaNavigationTracker: SagaNavigationTracker
 
     @Inject
-    lateinit var sagaNavigationTracker: SagaNavigationTracker
+    lateinit var globalShellService: GlobalShellService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -186,16 +185,12 @@ class MainActivity : ComponentActivity() {
                 sagaNavigationTracker.update(currentKey)
             }
 
-            LaunchedEffect(Unit) {
-                sagaNotificationRouter.start()
-            }
-
             SagAITheme(genre = themeGenre) {
                 Timber.d("MainActivity: SagAITheme block")
 
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
-                val inAppNotification by sagaNotificationRouter.inAppNotification.collectAsState()
+                val globalShellState by globalShellService.uiState.collectAsState()
 
                 LaunchedEffect(Unit) {
                     sideEffectService.sideEffects.collect { effect ->
@@ -331,26 +326,23 @@ class MainActivity : ComponentActivity() {
                                                     this@SharedTransitionLayout,
                                                 )
                                             }
-                                        val showImageGenPanel =
-                                            imageGenState is ImageGenerationUiState.Generating ||
-                                                imageGenState is ImageGenerationUiState.AwaitingManualFallback
-
-                                        ImageGenerationContainer(
-                                            state = imageGenState,
+                                        GlobalShellHost(
+                                            globalState = globalShellState,
+                                            imageGenState = imageGenState,
                                             debugImageFallbackService = debugImageFallbackService,
-                                            onExpand = {
-                                                imageGenerationService.setIslandExpansion(
-                                                    IslandExpansion.Expanded,
-                                                )
+                                            onImageSetExpansion = { expansion ->
+                                                imageGenerationService.setIslandExpansion(expansion)
                                             },
-                                            onCollapse = {
-                                                imageGenerationService.setIslandExpansion(
-                                                    IslandExpansion.Compact,
-                                                )
+                                            onImageCancel = imageGenerationService::cancelCurrent,
+                                            onNavigate = { deepLink ->
+                                                navigateDeepLink(deepLink)
                                             },
-                                            onCancel = imageGenerationService::cancelCurrent,
+                                            onDismiss = { globalShellService.dismiss() },
+                                            onSetGlobalExpansion = { expansion ->
+                                                globalShellService.setExpansion(expansion)
+                                            },
                                             modifier = Modifier.fillMaxSize(),
-                                        ) {
+                                            content = {
                                             Box(modifier = Modifier.fillMaxSize()) {
                                                 BlurTarget(modifier = Modifier.fillMaxSize()) {
                                                     NavDisplay(
@@ -428,27 +420,6 @@ class MainActivity : ComponentActivity() {
                                                     )
                                                 }
 
-                                                SagaInAppNotificationBanner(
-                                                    notification = inAppNotification,
-                                                    onOpen = { deepLink ->
-                                                        navigateDeepLink(deepLink)
-                                                        sagaNotificationRouter.dismissInApp()
-                                                    },
-                                                    onDismiss = { sagaNotificationRouter.dismissInApp() },
-                                                    modifier =
-                                                        Modifier
-                                                            .align(Alignment.TopCenter)
-                                                            .zIndex(2f)
-                                                            .then(
-                                                                if (!showImageGenPanel) {
-                                                                    Modifier.statusBarsPadding()
-                                                                } else {
-                                                                    Modifier
-                                                                },
-                                                            ).padding(horizontal = 12.dp, vertical = 8.dp)
-                                                            .fillMaxWidth(),
-                                                )
-
                                                 SagaSnackBar(
                                                     snackBarMessage = globalSnackBar,
                                                     genre = currentGenre,
@@ -462,7 +433,7 @@ class MainActivity : ComponentActivity() {
                                                     onDismiss = { sagaThemeManager.dismissSnackBar() },
                                                 )
                                             }
-                                        }
+                                        })
                                     }
                                 } else {
                                     NoInternetScreen()

@@ -1,11 +1,13 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,13 +36,16 @@ import com.ilustris.sagai.ui.components.taskshell.TaskShellContent
 import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
 import com.ilustris.sagai.ui.components.taskshell.TaskShellScope
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.iconDropShadow
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.rememberVectorShape
 import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.shimmerize
 import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
+import kotlin.time.Duration.Companion.seconds
 
 class ObjectiveShellContent(
     private val title: String,
@@ -157,51 +163,26 @@ class NarrativeAdvanceShellContent(
         val actionUi = action.toUi()
         val titleRes = if (isProcessing) actionUi.holdingTextRes else (actionUi.titleRes ?: R.string.continue_text)
 
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+        Box(Modifier.fillMaxWidth().fillMaxHeight(.5f), contentAlignment = Alignment.Center) {
+            val morphingGradient = Brush.verticalGradient(morphingGradient())
             Icon(
                 themePainter(),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.background,
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .reactiveShimmer(
+                            true,
+                            repeatMode = RepeatMode.Restart,
+                            shimmerColors = Color.White.shimmerize(),
+                            duration = 10.seconds,
+                        ).dropShadow(rememberVectorShape(themeIconVector())) {
+                            brush = morphingGradient
+                            radius = 10f
+                            spread = 1f
+                        },
             )
-
-            Text(
-                text = stringResource(titleRes),
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            reasoning?.let { chunk ->
-                Text(
-                    text = chunk,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            if (!isProcessing) {
-                Text(
-                    text =
-                        stringResource(
-                            if (dragProgress > 0.85f) {
-                                R.string.narrative_advance_shell_release
-                            } else {
-                                R.string.advance_pull_hint
-                            },
-                        ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
         }
     }
 }

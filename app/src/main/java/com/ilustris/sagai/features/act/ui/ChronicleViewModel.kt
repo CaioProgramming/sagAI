@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.globalshell.BookReadyEffect
+import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.usecase.BookUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -46,6 +48,7 @@ class ChronicleViewModel
         private val bookUseCase: BookUseCase,
         private val visualConfigService: GenreVisualConfigService,
         private val sagaRepository: SagaRepository,
+        private val globalShellService: GlobalShellService,
     ) : ViewModel() {
         private val _state = MutableStateFlow<ChronicleState>(ChronicleState.Idle)
         val state = _state.asStateFlow()
@@ -124,6 +127,16 @@ class ChronicleViewModel
                         is StreamingState.Success -> {
                             _state.value = ChronicleState.Idle
                             // Emit nav event after successful generation
+                            globalShellService.post(
+                                BookReadyEffect(
+                                    actId = actContent.data.id,
+                                    sagaId = saga.data.id,
+                                    sagaTitle = saga.data.title,
+                                    genre = saga.data.genre,
+                                    actTitle = actContent.data.title,
+                                    deepLink = "saga://book_reader/${saga.data.id}/${actContent.data.id}",
+                                ),
+                            )
                             _navigationEvent.tryEmit(
                                 BookReaderKey(
                                     saga.data.id,

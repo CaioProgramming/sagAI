@@ -46,6 +46,11 @@ data class SagaNotificationEvent(
     val icon: Bitmap? = null,
     val largeIcon: Bitmap? = null,
     val style: NotificationStyle = NotificationStyle.DEFAULT,
+    /**
+     * Optional deep link used for system notifications (when background).
+     * When null, the notification manager falls back to the legacy chat deep link.
+     */
+    val deepLink: String? = null,
 )
 
 enum class NotificationStyle {

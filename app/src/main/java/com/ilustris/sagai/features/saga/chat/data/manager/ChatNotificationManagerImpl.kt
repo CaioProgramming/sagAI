@@ -164,6 +164,7 @@ class ChatNotificationManagerImpl
             )
 
             val formatChatDeepLink = "saga://chat/${event.sagaId}/false"
+            val targetDeepLink = event.deepLink ?: formatChatDeepLink
 
             when (event.style) {
                 NotificationStyle.CHAT -> {
@@ -173,6 +174,7 @@ class ChatNotificationManagerImpl
                         character = null,
                         message = event.message,
                         largeIcon = event.icon ?: event.largeIcon,
+                        deepLink = targetDeepLink,
                     )
                 }
 
@@ -181,7 +183,7 @@ class ChatNotificationManagerImpl
                         title = event.sagaTitle,
                         content = event.message,
                         largeIcon = event.largeIcon ?: event.icon,
-                        pendingIntent = createPendingIntent(formatChatDeepLink),
+                        pendingIntent = createPendingIntent(targetDeepLink),
                         genreColor = saga.data.genre.resolveColor(null),
                         smallIconResId = R.drawable.ic_spark,
                         priority = NotificationCompat.PRIORITY_DEFAULT,
@@ -192,7 +194,7 @@ class ChatNotificationManagerImpl
                     sendMinimalNotification(
                         saga = saga.data,
                         message = event.message,
-                        pendingIntent = createPendingIntent(formatChatDeepLink),
+                        pendingIntent = createPendingIntent(targetDeepLink),
                     )
                 }
             }
@@ -218,8 +220,10 @@ class ChatNotificationManagerImpl
             character: Character?,
             message: String,
             largeIcon: Bitmap?,
+            deepLink: String?,
         ) {
-            val pendingIntent = createPendingIntent(chatDeepLink(saga.id.toString()))
+            val targetDeepLink = deepLink ?: chatDeepLink(saga.id.toString())
+            val pendingIntent = createPendingIntent(targetDeepLink)
             // Extract character name from message if available, or use saga title
             val characterName = character?.name ?: saga.title
             val finalIcon = cropBitmapToCircle(largeIcon)

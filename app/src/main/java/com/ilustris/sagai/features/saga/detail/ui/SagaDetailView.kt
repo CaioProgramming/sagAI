@@ -70,6 +70,7 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.sagaShape
+import com.ilustris.sagai.core.globalshell.rememberOverlayVisibilityTracker
 
 @Composable
 fun SagaDetailView(
@@ -98,6 +99,7 @@ fun SagaDetailView(
     val initialSection by viewModel.initialSection.collectAsStateWithLifecycle()
 
     var showReview by remember { mutableStateOf(false) }
+    val overlayVisibilityTracker = rememberOverlayVisibilityTracker()
     var showEmotionalReview by remember { mutableStateOf(false) }
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     val drawer by viewModel.detailDrawer.collectAsStateWithLifecycle()
@@ -119,6 +121,13 @@ fun SagaDetailView(
     }
 
     SagAITheme(genre = resume?.saga?.genre) {
+        LaunchedEffect(resume?.saga?.id, showReview) {
+            val id = resume?.saga?.id
+            if (id != null) {
+                overlayVisibilityTracker.setReviewVisible(id, showReview)
+            }
+        }
+
         var lastNavigationTime by remember { mutableStateOf(0L) }
         val onAction: (DetailAction) -> Unit =
             remember(onBack, onCharacterDetails, onLoreDebug, viewModel) {

@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
+import com.ilustris.sagai.core.globalshell.GlobalShellService
+import com.ilustris.sagai.core.globalshell.ImageGenerationWorkEffect
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.imagegeneration.model.IslandExpansion
@@ -33,6 +35,7 @@ class ImageGenerationService
     constructor(
         private val imagenClient: ImagenClient,
         private val debugImageFallbackService: DebugImageFallbackService,
+        private val globalShellService: GlobalShellService,
     ) {
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
@@ -51,8 +54,45 @@ class ImageGenerationService
         private var activeLabel: String? = null
         private var activeImageType: com.ilustris.sagai.core.ai.model.ImageType? = null
 
+        private var persistentWorkActive: Boolean = false
+        private var persistentWorkGenre: com.ilustris.sagai.features.newsaga.data.model.Genre? = null
+        private var persistentWorkMessage: String = ""
+
         private val queueMutex = Mutex()
         private val pendingCount = MutableStateFlow(0)
+
+        private fun setPersistentWorkActive(
+            active: Boolean,
+            request: ImageGenerationRequest? = null,
+        ) {
+            if (active) {
+                if (persistentWorkActive) return
+                persistentWorkActive = true
+
+                if (request != null) {
+                    persistentWorkGenre = request.genre
+                    persistentWorkMessage = request.label.orEmpty()
+                }
+
+                val genre = persistentWorkGenre ?: return
+                val message = persistentWorkMessage.ifBlank { "Image generation" }
+                globalShellService.post(
+                    ImageGenerationWorkEffect(
+                        sagaId = 0,
+                        sagaTitle = "",
+                        genre = genre,
+                        message = message,
+                        deepLink = "saga://home",
+                    ),
+                )
+            } else {
+                if (!persistentWorkActive) return
+                persistentWorkActive = false
+                persistentWorkGenre = null
+                persistentWorkMessage = ""
+                globalShellService.dismiss()
+            }
+        }
 
         private data class QueuedWork<T>(
             val request: ImageGenerationRequest,
@@ -65,6 +105,7 @@ class ImageGenerationService
         init {
             scope.launch {
                 for (work in workChannel) {
+                    Timber.d("ImageGenerationService: received work from channel: label=${work.request.label}")
                     @Suppress("UNCHECKED_CAST")
                     processWork(work as QueuedWork<Any?>)
                 }
@@ -77,8 +118,52 @@ class ImageGenerationService
         ): Result<T> {
             val deferred = CompletableDeferred<Result<T>>()
             pendingCount.update { it + 1 }
-            workChannel.send(QueuedWork(request, onBitmap, deferred))
+            Timber.d("ImageGenerationService: enqueue request label=${request.label} silent=${request.silent} showReveal=${request.showReveal} pending=${pendingCount.value}")
+            try {
+                if (workChannel.isClosedForSend) {
+                    val ex = IllegalStateException("ImageGenerationService: work channel is closed for send")
+                    Timber.e(ex)
+                    deferred.complete(Result.failure(ex))
+                    return deferred.await()
+                }
+                workChannel.send(QueuedWork(request, onBitmap, deferred))
+                Timber.d("ImageGenerationService: enqueued request label=${request.label}")
+            } catch (e: Exception) {
+                Timber.e(e, "ImageGenerationService: failed to send work to channel")
+                deferred.complete(Result.failure(e))
+            }
+
             return deferred.await()
+        }
+
+        /**
+         * Non-suspending variant of enqueue. Returns a CompletableDeferred that will be
+         * completed when work finishes (success/failure). Useful when callers want to
+         * fire-and-forget without blocking the calling coroutine while the queue processes.
+         */
+        fun <T> enqueueAsync(
+            request: ImageGenerationRequest,
+            onBitmap: suspend (Bitmap) -> T,
+        ): CompletableDeferred<Result<T>> {
+            val deferred = CompletableDeferred<Result<T>>()
+            pendingCount.update { it + 1 }
+            Timber.d("ImageGenerationService: enqueueAsync request label=${request.label} pending=${pendingCount.value}")
+            val queued = QueuedWork(request, onBitmap, deferred)
+            val result = try {
+                workChannel.trySend(queued)
+            } catch (e: Exception) {
+                Timber.e(e, "ImageGenerationService: enqueueAsync trySend failed")
+                null
+            }
+            if (result == null || result.isFailure) {
+                val ex = IllegalStateException("ImageGenerationService: failed to enqueue work (trySend)")
+                Timber.e(ex)
+                deferred.complete(Result.failure(ex))
+            } else {
+                Timber.d("ImageGenerationService: enqueueAsync queued label=${request.label}")
+            }
+
+            return deferred
         }
 
         suspend fun generateSimpleImage(prompt: String): Result<Bitmap> =
@@ -106,6 +191,7 @@ class ImageGenerationService
             revealDismissSignal?.complete(Unit)
             revealDismissSignal = null
             _uiState.value = ImageGenerationUiState.Idle
+            setPersistentWorkActive(false)
         }
 
         fun cancelCurrent() {
@@ -155,6 +241,7 @@ class ImageGenerationService
                                                 prompt = prompt,
                                                 expansion = islandExpansion,
                                             )
+                                        setPersistentWorkActive(true, request)
                                     } else if (_uiState.value is ImageGenerationUiState.AwaitingManualFallback) {
                                         // Manual fallback resolved; collapse back automatically.
                                         islandExpansion = IslandExpansion.Compact
@@ -205,6 +292,8 @@ class ImageGenerationService
                                     imageType = request.imageType,
                                     label = request.label,
                                 )
+                                    // Reveal is handled via a separate overlay; we keep the sticky
+                                    // flag consistent with existing host gating.
                             val dismissSignal = CompletableDeferred<Unit>()
                             revealDismissSignal = dismissSignal
                             val dismissed =
@@ -220,12 +309,14 @@ class ImageGenerationService
                                 // Unblock the queue for the current request.
                                 dismissSignal.complete(Unit)
                                 _uiState.value = ImageGenerationUiState.Idle
+                                setPersistentWorkActive(false)
                             }
                             // Reveal finished (dismissed by user or timeout). Collapse for next work.
                             islandExpansion = IslandExpansion.Compact
                             revealDismissSignal = null
                         } else if (!request.silent) {
                             _uiState.value = ImageGenerationUiState.Idle
+                            setPersistentWorkActive(false)
                         }
 
                         work.result.complete(Result.success(persisted))
@@ -233,6 +324,7 @@ class ImageGenerationService
                         Timber.e(e, "ImageGenerationService: job failed")
                         if (!request.silent) {
                             _uiState.value = ImageGenerationUiState.Idle
+                            setPersistentWorkActive(false)
                         }
                         work.result.complete(Result.failure(e))
                     } finally {
@@ -259,5 +351,6 @@ class ImageGenerationService
                     queuePosition = pendingCount.value,
                     expansion = islandExpansion,
                 )
+            setPersistentWorkActive(true, request)
         }
     }

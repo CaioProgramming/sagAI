@@ -176,6 +176,7 @@ import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
 import com.ilustris.sagai.ui.theme.themeShimmer
+import com.ilustris.sagai.core.globalshell.rememberOverlayVisibilityTracker
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -200,6 +201,7 @@ fun ChatView(
     val activity = LocalActivity.current
     var requiredPermission by remember { mutableStateOf<String?>(null) }
     var showReview by remember { mutableStateOf(false) }
+    val overlayVisibilityTracker = rememberOverlayVisibilityTracker()
     val requestPermissionLauncher = PermissionService.rememberPermissionLauncher()
     val onAction: (ChatUiAction) -> Unit =
         remember(viewModel) {
@@ -291,6 +293,10 @@ fun ChatView(
                     if (displaySaga == null) {
                         return@AnimatedContent
                     } else {
+                        LaunchedEffect(displaySaga.data.id, showReview) {
+                            overlayVisibilityTracker.setReviewVisible(displaySaga.data.id, showReview)
+                        }
+
                         Box(Modifier.fillMaxSize()) {
                             ModalNavigationDrawer(
                                 drawerState = drawerState,

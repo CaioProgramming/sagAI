@@ -69,8 +69,11 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import com.ilustris.sagai.ui.components.NotificationStyle
-import com.ilustris.sagai.ui.components.SagaNotificationEvent
+import com.ilustris.sagai.core.globalshell.BookReadyEffect
+import com.ilustris.sagai.core.globalshell.GlobalShellEffect
+import com.ilustris.sagai.core.globalshell.GlobalShellService
+import com.ilustris.sagai.core.globalshell.NewCharacterEffect
+import com.ilustris.sagai.core.globalshell.NewChapterEffect
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -113,6 +116,7 @@ class SagaContentManagerImpl
         private val narrativeActionExecutor: NarrativeActionExecutor,
         private val narrativeProcessingGate: NarrativeProcessingGate,
         private val stringResourceHelper: StringResourceHelper,
+        private val globalShellService: GlobalShellService,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -143,9 +147,6 @@ class SagaContentManagerImpl
         private var loadingObserverJob: kotlinx.coroutines.Job? = null
         private var milestoneObserverJob: kotlinx.coroutines.Job? = null
         private var reasoningObserverJob: kotlinx.coroutines.Job? = null
-
-        override var notificationUpdate: MutableStateFlow<SagaNotificationEvent?> =
-            MutableStateFlow(null)
 
         private var isDebugModeEnabled: Boolean = false
         private val isProcessing = AtomicBoolean(false)
@@ -326,7 +327,6 @@ class SagaContentManagerImpl
             isMilestoneActive.value = false
             milestoneUpdate.value = null
             _showObjectiveOverlay.value = false
-            notificationUpdate.value = null
             isOnboardingVisible.value = false
             content.value = null
             lastObservedMessageCount = -1
@@ -433,13 +433,6 @@ class SagaContentManagerImpl
                                     return@collectLatest
                                 }
 
-                                checkMessageNotifications(
-                                    previousSaga,
-                                    saga,
-                                    previousMessageCount,
-                                    currentMessageCount,
-                                )
-
                                 if (previousMessageCount != currentMessageCount || previousTimelineId != currentTimelineId ||
                                     previousSaga == null
                                 ) {
@@ -481,31 +474,6 @@ class SagaContentManagerImpl
                         emitMilestone(null)
                     }
                 }
-        }
-
-        private suspend fun checkMessageNotifications(
-            previousSaga: SagaMetadata?,
-            saga: SagaMetadata,
-            previousMessageCount: Int,
-            currentMessageCount: Int,
-        ) {
-            if (previousSaga != null &&
-                currentMessageCount > previousMessageCount
-            ) {
-                val lastMessage = messageDao.getLastMessageWithContent(saga.data.id) ?: return
-                val charIcon =
-                    imageHelper
-                        .getImageBitmap(lastMessage.character?.image, true)
-                        .getSuccess()
-                if (lastMessage.message.senderType == SenderType.CHARACTER) {
-                    notificationEvent(
-                        message =
-                            "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
-                        icon = charIcon,
-                        style = NotificationStyle.CHAT,
-                    )?.let { emitNotification(it) }
-                }
-            }
         }
 
         private suspend fun sendDebugMessage(message: String) {
@@ -684,28 +652,6 @@ class SagaContentManagerImpl
             }
         }
 
-        private fun notificationEvent(
-            message: String,
-            style: NotificationStyle,
-            icon: android.graphics.Bitmap? = null,
-        ): SagaNotificationEvent? {
-            val saga = content.value ?: return null
-            return SagaNotificationEvent(
-                sagaId = saga.data.id,
-                sagaTitle = saga.data.title,
-                genre = saga.data.genre,
-                message = message,
-                icon = icon,
-                style = style,
-            )
-        }
-
-        private fun emitNotification(event: SagaNotificationEvent) {
-            managerScope.launch {
-                notificationUpdate.emit(event)
-            }
-        }
-
         override suspend fun regenerateTimeline(
             saga: SagaMetadata,
             timelineContent: TimelineMetadata,
@@ -790,48 +736,86 @@ class SagaContentManagerImpl
                     if (milestone.shouldPlaySoundFx && !milestone.playsRevealSfx) {
                         sagaThemeManager.playVfx()
                     }
-                    milestoneBackgroundNotification(milestone)?.let { emitNotification(it) }
+                    postMilestoneEffect(milestone)
                 }
                 milestoneUpdate.emit(milestone)
             }
         }
 
-        private fun milestoneBackgroundNotification(milestone: SagaMilestone): SagaNotificationEvent? {
-            val message =
-                when (milestone) {
-                    is SagaMilestone.ChapterFinished -> {
-                        context.getString(
-                            R.string.notification_new_chapter_content,
-                            milestone.chapter.title,
-                        )
-                    }
+        private suspend fun postMilestoneEffect(milestone: SagaMilestone) {
+            milestoneToGlobalShellEffect(milestone)?.let { effect ->
+                globalShellService.post(effect)
+            }
+        }
 
-                    is SagaMilestone.ActFinished -> {
-                        context.getString(
-                            R.string.notification_new_act_content,
-                            milestone.act.title,
-                            milestone.act.title,
-                        )
-                    }
+        private suspend fun milestoneToGlobalShellEffect(milestone: SagaMilestone): GlobalShellEffect? {
+            val saga = content.value?.data ?: return null
+            val sagaId = saga.id
+            val sagaTitle = saga.title
+            val genre = saga.genre
 
-                    is SagaMilestone.NewEvent -> {
-                        context.getString(
-                            R.string.notification_timeline_event_content,
-                            milestone.timeline.title,
-                        )
-                    }
+            val chatDeepLink = "saga://chat/$sagaId/false"
+            val characterDeepLink: (Int) -> String = { characterId ->
+                "saga://character_detail/$characterId"
+            }
+            val bookDeepLink: (Int) -> String = { actId ->
+                "saga://book_reader/$sagaId/$actId"
+            }
 
-                    is SagaMilestone.NewCharacter -> {
-                        val name =
-                            "${milestone.character.name} ${milestone.character.lastName ?: emptyString()}".trim()
-                        context.getString(R.string.notification_new_character_content, name)
-                    }
+            return when (milestone) {
+                is SagaMilestone.ChapterFinished ->
+                    NewChapterEffect(
+                        chapterId = milestone.chapter.id,
+                        sagaId = sagaId,
+                        sagaTitle = sagaTitle,
+                        genre = genre,
+                        chapterTitle = milestone.chapter.title,
+                        deepLink = chatDeepLink,
+                    )
 
-                    else -> {
-                        return null
-                    }
+                is SagaMilestone.ActFinished ->
+                    BookReadyEffect(
+                        actId = milestone.act.id,
+                        sagaId = sagaId,
+                        sagaTitle = sagaTitle,
+                        genre = genre,
+                        actTitle = milestone.act.title,
+                        deepLink = bookDeepLink(milestone.act.id),
+                    )
+
+                is SagaMilestone.NewEvent ->
+                    NewChapterEffect(
+                        chapterId = milestone.timeline.id,
+                        sagaId = sagaId,
+                        sagaTitle = sagaTitle,
+                        genre = genre,
+                        chapterTitle = milestone.timeline.title,
+                        deepLink = chatDeepLink,
+                    )
+
+                is SagaMilestone.NewCharacter -> {
+                    val icon =
+                        withContext(Dispatchers.IO) {
+                            imageHelper.getImageBitmap(
+                                milestone.character.image,
+                                cropToCircle = true,
+                            ).getSuccess()
+                        }
+                    val name =
+                        "${milestone.character.name} ${milestone.character.lastName ?: emptyString()}".trim()
+                    NewCharacterEffect(
+                        characterId = milestone.character.id,
+                        sagaId = sagaId,
+                        sagaTitle = sagaTitle,
+                        genre = genre,
+                        characterName = name,
+                        icon = icon,
+                        deepLink = characterDeepLink(milestone.character.id),
+                    )
                 }
-            return notificationEvent(message, NotificationStyle.DEFAULT)
+
+                else -> null
+            }
         }
 
         private suspend fun startProcessing(block: suspend () -> Unit) {

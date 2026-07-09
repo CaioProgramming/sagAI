@@ -2,6 +2,8 @@ package com.ilustris.sagai.features.saga.detail.review.domain
 
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeProcessingGate
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import com.ilustris.sagai.core.globalshell.GlobalShellService
+import com.ilustris.sagai.core.globalshell.ReviewReadyEffect
 import com.ilustris.sagai.features.saga.detail.data.model.completedStepCount
 import com.ilustris.sagai.features.saga.detail.data.model.isComplete
 import com.ilustris.sagai.features.saga.detail.data.usecase.ReviewState
@@ -33,6 +35,7 @@ class ReviewGenerationCoordinator
         private val reviewUseCase: SagaReviewUseCase,
         private val sagaRepository: SagaRepository,
         private val narrativeProcessingGate: NarrativeProcessingGate,
+        private val globalShellService: GlobalShellService,
     ) {
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         private val jobs = ConcurrentHashMap<Int, Job>()
@@ -66,6 +69,14 @@ class ReviewGenerationCoordinator
 
             if (existingReview.isComplete()) {
                 stateFlow.value = ReviewGenerationState.Complete
+                globalShellService.post(
+                    ReviewReadyEffect(
+                        sagaId = sagaId,
+                        sagaTitle = content.data.title,
+                        genre = content.data.genre,
+                        deepLink = "saga://saga_detail/$sagaId",
+                    ),
+                )
                 return
             }
 
@@ -139,6 +150,17 @@ class ReviewGenerationCoordinator
                         ReviewGenerationState.Complete
                     } else {
                         ReviewGenerationState.Idle
+                    }
+
+                    if (stateFlow.value == ReviewGenerationState.Complete) {
+                        globalShellService.post(
+                            ReviewReadyEffect(
+                                sagaId = sagaId,
+                                sagaTitle = content.data.title,
+                                genre = content.data.genre,
+                                deepLink = "saga://saga_detail/$sagaId",
+                            ),
+                        )
                     }
             } catch (e: Exception) {
                 Timber.e(e, "Review generation failed for saga $sagaId")
