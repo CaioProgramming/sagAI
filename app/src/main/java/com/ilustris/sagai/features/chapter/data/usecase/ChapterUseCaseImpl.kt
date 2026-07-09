@@ -2,8 +2,6 @@ package com.ilustris.sagai.features.chapter.data.usecase
 
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
-import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
@@ -34,6 +32,8 @@ import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getDirectiveKey
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -120,6 +120,7 @@ class ChapterUseCaseImpl
                             introduction = chapterContent.data.introduction, // Keep existing introduction
                             featuredCharacters = genChapter.featuredCharacters.take(2),
                             emotionalReview = genChapter.emotionalReview,
+                            artwork = genChapter.artwork,
                             currentEventId = null,
                         ),
                     )
@@ -226,6 +227,7 @@ class ChapterUseCaseImpl
                 val context =
                     buildCoverPromptContext(
                         chapter.data.narrativeGuide,
+                        chapter.data.artwork,
                         characters,
                         saga,
                     )
@@ -264,6 +266,7 @@ class ChapterUseCaseImpl
                     val context =
                         buildCoverPromptContext(
                             chapter.data.narrativeGuide,
+                            chapter.data.artwork,
                             characters,
                             saga,
                         )
@@ -316,10 +319,20 @@ class ChapterUseCaseImpl
 
         private fun buildCoverPromptContext(
             narrativeContext: String?,
+            artwork: String?,
             characters: List<CharacterContent?>,
             saga: SagaContent,
         ): String =
             buildString {
+                artwork?.takeIf { it.isNotBlank() }?.let {
+                    appendLine("### CONCEPT ART DIRECTION")
+                    appendLine(
+                        "This is the scene-specific concept for this chapter's cover. Ground the composition in this:",
+                    )
+                    appendLine(it)
+                    appendLine()
+                }
+
                 val duo = characters.filterNotNull().take(2)
                 appendLine("### THE ARTBOOK DUO")
                 appendLine("This is a focused character study. Capture the intimate tension and presence of exactly these two individuals.")

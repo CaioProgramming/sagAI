@@ -13,8 +13,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.GuardrailsException
-import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.narrative.NarrativeRules
@@ -37,11 +35,13 @@ import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.mapper.SagaMetadataUIMapper
+import com.ilustris.sagai.features.saga.chat.data.model.ChatGenerationOutcome
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
+import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
@@ -86,6 +86,7 @@ class ChatViewModel
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
+        private val chatGenerationService: ChatGenerationService,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -134,6 +135,60 @@ class ChatViewModel
                     _genreVfxPulse.value = true
                     delay(2.seconds)
                     _genreVfxPulse.value = false
+                }
+            }
+
+            // Mirrors ChatGenerationService's per-saga state so the reply survives
+            // navigation while this screen still reflects it live when it's the one open.
+            viewModelScope.launch {
+                chatGenerationService.activeGenerations.collectLatest { generations ->
+                    val sagaId =
+                        uiState.value.sagaContent
+                            ?.data
+                            ?.id
+                    val active = sagaId?.let { generations[it] }
+                    stateManager.updateGenerating(active != null)
+                    stateManager.updateLoading(active != null)
+                    stateManager.updateState { it.copy(reasoningChunk = active?.reasoning) }
+                }
+            }
+
+            viewModelScope.launch {
+                chatGenerationService.outcomes.collect { outcome ->
+                    val sagaId =
+                        uiState.value.sagaContent
+                            ?.data
+                            ?.id
+                    when (outcome) {
+                        is ChatGenerationOutcome.Success -> {
+                            if (outcome.sagaId != sagaId) return@collect
+                            sagaThemeManager.playHaptics()
+                            outcome.reply.sceneSummary?.let { generateSuggestions(it) }
+                        }
+
+                        is ChatGenerationOutcome.GuardrailBlocked -> {
+                            if (outcome.sagaId != sagaId) return@collect
+                            sagaContentManager.setProcessing(false)
+                            stateManager.updateInput(
+                                TextFieldValue(
+                                    text = outcome.originalMessage.text,
+                                    selection = TextRange(outcome.originalMessage.text.length),
+                                ),
+                            )
+                        }
+
+                        is ChatGenerationOutcome.Error -> {
+                            if (outcome.sagaId != sagaId) return@collect
+                            sagaContentManager.setProcessing(false)
+                            sagaThemeManager.showSnackBar(
+                                message = context.getString(R.string.message_reply_error),
+                                action =
+                                    context.getString(R.string.try_again) to {
+                                        retryAiResponse(outcome.originalMessage)
+                                    },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -297,6 +352,7 @@ class ChatViewModel
             generationJob = null
             sendJob?.cancel()
             sendJob = null
+            uiState.value.sagaContent?.data?.id?.let { chatGenerationService.cancel(it) }
             sagaContentManager.stopProcessing()
             updateLoading(false)
             stateManager.updateGenerating(false)
@@ -576,21 +632,19 @@ class ChatViewModel
 
         fun retryAiResponse(message: Message?) {
             val currentSaga = uiState.value.sagaContent ?: return
-            generationJob =
-                viewModelScope.launch(Dispatchers.IO) {
-                    updateLoading(true)
-                    message?.let {
-                        messageUseCase.updateMessage(message.copy(status = MessageStatus.LOADING))
-
-                        replyMessage(
-                            message,
-                            currentSaga.getCurrentTimeLine()?.data?.sceneSummary,
-                            false,
-                        )
-                    } ?: run {
-                        updateLoading(false)
-                    }
+            viewModelScope.launch(Dispatchers.IO) {
+                updateLoading(true)
+                message?.let {
+                    messageUseCase.updateMessage(message.copy(status = MessageStatus.LOADING))
+                    triggerGeneration(
+                        currentSaga,
+                        message,
+                        currentSaga.getCurrentTimeLine()?.data?.sceneSummary
+                    )
+                } ?: run {
+                    updateLoading(false)
                 }
+            }
         }
 
         fun requestNewCharacter(
@@ -1163,10 +1217,7 @@ class ChatViewModel
                                     .getSuccess()
 
                             if (isFromUser) {
-                                generationJob =
-                                    viewModelScope.launch(Dispatchers.IO) {
-                                        replyMessage(savedMessage, sceneSummaryData, isAudio)
-                                    }
+                                triggerGeneration(saga, savedMessage, sceneSummaryData)
                             }
                         }.onFailureAsync {
                             sagaThemeManager.showSnackBar(
@@ -1222,14 +1273,17 @@ class ChatViewModel
             }
         }
 
-        private suspend fun replyMessage(
+        /**
+         * Triggers a reply in [ChatGenerationService] (survives navigation away from this
+         * screen). If the saga has no current timeline yet, defers to narrative progression
+     * instead of generating a reply — mirrors the pre-migration `replyMessage` behavior.
+         */
+        private fun triggerGeneration(
+        saga: SagaMetadata,
             message: Message,
             sceneSummary: SceneSummary?,
-            isAudio: Boolean,
         ) {
-            val saga = uiState.value.sagaContent ?: return
-            val timeline = saga.getCurrentTimeLine()
-            if (timeline == null) {
+        if (saga.getCurrentTimeLine() == null) {
                 sagaContentManager.checkNarrativeProgression(saga)
                 return
             }
@@ -1240,67 +1294,7 @@ class ChatViewModel
                     character = saga.findCharacter(message.characterId),
                     reactions = emptyList(),
                 )
-
-            updateLoading(true)
-            var streamTerminal = false
-            messageUseCase
-                .generateMessage(
-                    saga = saga,
-                    message = newMessage,
-                ).collect { streamingState ->
-                    when (streamingState) {
-                        is StreamingState.Reasoning -> {
-                            if (!streamTerminal) {
-                                stateManager.updateState { it.copy(reasoningChunk = streamingState.chunk) }
-                            }
-                        }
-
-                        is StreamingState.Success -> {
-                            streamTerminal = true
-                            stateManager.updateState { it.copy(reasoningChunk = null) }
-                            val reply = streamingState.data
-                            updateLoading(false)
-                            sagaThemeManager.playHaptics()
-                            (reply?.sceneSummary ?: sceneSummary)?.let { summaryForSuggestions ->
-                                generateSuggestions(summaryForSuggestions)
-                            }
-                        }
-
-                        is StreamingState.Error -> {
-                            streamTerminal = true
-                            stateManager.updateState { it.copy(reasoningChunk = null) }
-
-                            updateLoading(false)
-                            sagaContentManager.setProcessing(false)
-                            if (streamingState.throwable is GuardrailsException) {
-                                Timber
-                                    .tag("ChatViewModel")
-                                    .w("Guardrail block detected. Deleting message and restoring input.")
-                                messageUseCase.deleteMessage(message.id.toLong())
-                                stateManager.updateInput(
-                                    TextFieldValue(
-                                        text = message.text,
-                                        selection = TextRange(message.text.length),
-                                    ),
-                                )
-                            } else {
-                                sagaThemeManager.showSnackBar(
-                                    message = context.getString(R.string.message_reply_error),
-                                    action =
-                                        context.getString(R.string.try_again) to {
-                                            retryAiResponse(message)
-                                        },
-                                )
-                                messageUseCase.updateMessage(
-                                    message.copy(
-                                        status = MessageStatus.ERROR,
-                                    ),
-                                )
-                            }
-                            stateManager.updateLoading(false)
-                        }
-                    }
-                }
+        chatGenerationService.generate(saga, newMessage, sceneSummary)
         }
 
         fun createCharacter(

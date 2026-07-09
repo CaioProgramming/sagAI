@@ -667,6 +667,8 @@
     <string name="image_generation_panel_expand">Expandir painel de geração de imagem</string>
     <string name="image_generation_panel_collapse">Recolher painel de geração de imagem</string>
     <string name="image_generation_reasoning_placeholder">Preparando visual…</string>
+    <string name="book_generation_reasoning_placeholder">Escrevendo a crônica…</string>
+    <string name="chat_generation_reasoning_placeholder">Pensando em uma resposta…</string>
     <string name="image_generation_reveal_icon">Ícone do personagem pronto</string>
     <string name="image_generation_reveal_cover">Capa pronta</string>
     <string name="image_generation_reveal_dismiss">Continuar</string>

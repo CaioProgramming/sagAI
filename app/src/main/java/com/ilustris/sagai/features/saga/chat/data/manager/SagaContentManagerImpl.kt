@@ -12,6 +12,11 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.data.isFlowCancellation
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.ImageHelper
+import com.ilustris.sagai.core.globalshell.BookReadyEffect
+import com.ilustris.sagai.core.globalshell.GlobalShellEffect
+import com.ilustris.sagai.core.globalshell.GlobalShellService
+import com.ilustris.sagai.core.globalshell.NewChapterEffect
+import com.ilustris.sagai.core.globalshell.NewCharacterEffect
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
@@ -69,11 +74,6 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import com.ilustris.sagai.core.globalshell.BookReadyEffect
-import com.ilustris.sagai.core.globalshell.GlobalShellEffect
-import com.ilustris.sagai.core.globalshell.GlobalShellService
-import com.ilustris.sagai.core.globalshell.NewCharacterEffect
-import com.ilustris.sagai.core.globalshell.NewChapterEffect
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -763,7 +763,7 @@ class SagaContentManagerImpl
             }
 
             return when (milestone) {
-                is SagaMilestone.ChapterFinished ->
+                is SagaMilestone.ChapterFinished -> {
                     NewChapterEffect(
                         chapterId = milestone.chapter.id,
                         sagaId = sagaId,
@@ -772,8 +772,9 @@ class SagaContentManagerImpl
                         chapterTitle = milestone.chapter.title,
                         deepLink = chatDeepLink,
                     )
+                }
 
-                is SagaMilestone.ActFinished ->
+                is SagaMilestone.ActFinished -> {
                     BookReadyEffect(
                         actId = milestone.act.id,
                         sagaId = sagaId,
@@ -782,8 +783,9 @@ class SagaContentManagerImpl
                         actTitle = milestone.act.title,
                         deepLink = bookDeepLink(milestone.act.id),
                     )
+                }
 
-                is SagaMilestone.NewEvent ->
+                is SagaMilestone.NewEvent -> {
                     NewChapterEffect(
                         chapterId = milestone.timeline.id,
                         sagaId = sagaId,
@@ -792,14 +794,16 @@ class SagaContentManagerImpl
                         chapterTitle = milestone.timeline.title,
                         deepLink = chatDeepLink,
                     )
+                }
 
                 is SagaMilestone.NewCharacter -> {
                     val icon =
                         withContext(Dispatchers.IO) {
-                            imageHelper.getImageBitmap(
-                                milestone.character.image,
-                                cropToCircle = true,
-                            ).getSuccess()
+                            imageHelper
+                                .getImageBitmap(
+                                    milestone.character.image,
+                                    cropToCircle = true,
+                                ).getSuccess()
                         }
                     val name =
                         "${milestone.character.name} ${milestone.character.lastName ?: emptyString()}".trim()
@@ -809,12 +813,15 @@ class SagaContentManagerImpl
                         sagaTitle = sagaTitle,
                         genre = genre,
                         characterName = name,
+                        character = milestone.character,
                         icon = icon,
                         deepLink = characterDeepLink(milestone.character.id),
                     )
                 }
 
-                else -> null
+                else -> {
+                    null
+                }
             }
         }
 
@@ -1142,7 +1149,7 @@ class SagaContentManagerImpl
 
         override suspend fun getSagaContent(): SagaContent? = sagaHistoryUseCase.getSagaById(content.value?.data?.id).first()
 
-    override fun linkUnlinkedCharacterMessages(saga: SagaMetadata) {
+        override fun linkUnlinkedCharacterMessages(saga: SagaMetadata) {
             managerScope.launch {
                 linkUnlinkedCharacterMessagesInternal(saga)
             }
@@ -1258,16 +1265,16 @@ class SagaContentManagerImpl
                 saga.findCharacterStrict(candidateName)
                     ?: saga.findCharacter(candidateName)
                     ?: return false
-        if (message.characterId == character.id) return true
-        messageDao.updateMessage(
-            message.copy(
-                characterId = character.id,
-                speakerName = character.fullName(),
-            ),
-        )
-        sagaHistoryUseCase.getSagaMetadata(message.sagaId).first()?.let { content.value = it }
-        return true
-    }
+            if (message.characterId == character.id) return true
+            messageDao.updateMessage(
+                message.copy(
+                    characterId = character.id,
+                    speakerName = character.fullName(),
+                ),
+            )
+            sagaHistoryUseCase.getSagaMetadata(message.sagaId).first()?.let { content.value = it }
+            return true
+        }
 
         override suspend fun updateSummary(sceneSummary: SceneSummary) {
             val currentTimeline = content.value?.getCurrentTimeLine() ?: return

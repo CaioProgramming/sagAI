@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -118,21 +119,27 @@ fun ChatTaskShellHost(
             null
         }
 
-    val backgroundColor by animateColorAsState(
-        when {
-            topSlot?.expansion == TaskShellExpansion.Expanded -> MaterialTheme.colorScheme.primary
-            else -> MaterialTheme.colorScheme.background
-        },
-    )
     TaskShellLayout(
         modifier =
             modifier
-                .background(backgroundColor)
                 .navigationBarsPadding()
                 .statusBarsPadding()
                 .imePadding(),
         topSlot = topSlot,
         bottomSlot = bottomSlot,
+        background = { top, bottom ->
+            val isActive =
+                (top != null && top.expansion != TaskShellExpansion.Collapsed) ||
+                    (bottom != null && bottom.expansion != TaskShellExpansion.Collapsed)
+            val backgroundColor by animateColorAsState(
+                if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.background,
+            )
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(backgroundColor),
+                    )
+        },
         content = content,
     )
 }

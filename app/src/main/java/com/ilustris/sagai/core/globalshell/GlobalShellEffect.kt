@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.globalshell
 
 import android.graphics.Bitmap
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.components.NotificationStyle
 
@@ -9,6 +10,7 @@ sealed class GlobalShellEffect(
     open val sagaTitle: String,
     open val genre: Genre,
     open val message: String,
+    open val character: Character? = null,
     open val icon: Bitmap? = null,
     open val largeIcon: Bitmap? = null,
     open val deepLink: String,
@@ -33,6 +35,7 @@ data class NewMessageEffect(
     override val genre: Genre,
     val speakerName: String,
     val rawText: String,
+    override val character: Character? = null,
     override val icon: Bitmap? = null,
     override val largeIcon: Bitmap? = null,
     override val deepLink: String,
@@ -41,7 +44,8 @@ data class NewMessageEffect(
     sagaTitle = sagaTitle,
     genre = genre,
     message = "$speakerName: $rawText",
-    deepLink = deepLink,
+        character = character,
+        deepLink = deepLink,
     notificationStyle = NotificationStyle.CHAT,
     priority = GlobalShellPriority.Transient,
     defaultExpansion = GlobalShellExpansion.Collapsed,
@@ -84,6 +88,7 @@ data class NewCharacterEffect(
     override val sagaTitle: String,
     override val genre: Genre,
     val characterName: String,
+    override val character: Character? = null,
     override val icon: Bitmap? = null,
     override val largeIcon: Bitmap? = null,
     override val deepLink: String,
@@ -92,6 +97,7 @@ data class NewCharacterEffect(
     sagaTitle = sagaTitle,
     genre = genre,
     message = characterName,
+        character = character,
     deepLink = deepLink,
     notificationStyle = NotificationStyle.DEFAULT,
     priority = GlobalShellPriority.Transient,
@@ -149,6 +155,61 @@ data class BookReadyEffect(
 
     override fun shouldSuppress(ctx: GlobalShellVisibilityContext): Boolean =
         ctx.isOnBookReader(sagaId, actId) || ctx.isOnChronicle(sagaId)
+}
+
+/**
+ * Marks book (Act prose) generation as sticky "persistent work" so transient effects
+ * queue behind it instead of stealing the shell. Rendering itself is driven directly
+ * from [com.ilustris.sagai.features.act.BookGenerationService]'s own state, not from
+ * this effect's content.
+ */
+data class BookGenerationWorkEffect(
+    val actId: Int,
+    override val sagaId: Int,
+    override val sagaTitle: String,
+    override val genre: Genre,
+    override val message: String,
+    override val deepLink: String,
+) : GlobalShellEffect(
+        sagaId = sagaId,
+        sagaTitle = sagaTitle,
+        genre = genre,
+        message = message,
+        deepLink = deepLink,
+        notificationStyle = NotificationStyle.DEFAULT,
+        priority = GlobalShellPriority.PersistentWork,
+        defaultExpansion = GlobalShellExpansion.Collapsed,
+    ) {
+    override val id: String = "bookgen_${sagaId}_$actId"
+
+    override fun shouldSuppress(ctx: GlobalShellVisibilityContext): Boolean = ctx.isOnChronicle(sagaId)
+}
+
+/**
+ * Marks a chat reply generation as sticky "persistent work" so transient effects queue
+ * behind it instead of stealing the shell. Rendering itself is driven directly from
+ * [com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService]'s own
+ * per-saga state, not from this effect's content.
+ */
+data class ChatGenerationWorkEffect(
+    override val sagaId: Int,
+    override val sagaTitle: String,
+    override val genre: Genre,
+    override val message: String,
+    override val deepLink: String,
+) : GlobalShellEffect(
+        sagaId = sagaId,
+        sagaTitle = sagaTitle,
+        genre = genre,
+        message = message,
+        deepLink = deepLink,
+        notificationStyle = NotificationStyle.DEFAULT,
+        priority = GlobalShellPriority.PersistentWork,
+        defaultExpansion = GlobalShellExpansion.Collapsed,
+    ) {
+    override val id: String = "chatgen_$sagaId"
+
+    override fun shouldSuppress(ctx: GlobalShellVisibilityContext): Boolean = ctx.isOnChatForSaga(sagaId)
 }
 
 /**

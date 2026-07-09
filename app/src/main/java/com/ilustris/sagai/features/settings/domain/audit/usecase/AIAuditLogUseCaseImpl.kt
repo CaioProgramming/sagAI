@@ -51,8 +51,8 @@ class AIAuditLogUseCaseImpl
 
         override suspend fun getRecentLogsForInsight(limit: Int): RequestResult<List<AIAuditLog>> =
             executeRequest {
-            repository.getRecentLogsForInsight(limit)
-        }
+                repository.getRecentLogsForInsight(limit)
+            }
 
         override suspend fun generateSuggestion(log: AIAuditLog): RequestResult<Unit> =
             executeRequest {
@@ -89,6 +89,8 @@ class AIAuditLogUseCaseImpl
 
         override suspend fun generateGlobalInsight(logs: List<AIAuditLog>) =
             executeRequest {
+                throw IllegalStateException("deactivated at the moment.")
+
                 val successfulLogs =
                     logs
                         .filter { it.status != "ERROR" }

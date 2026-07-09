@@ -79,6 +79,7 @@ fun TaskShellBar(
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     leadingPainter: Painter = themePainter(),
+    titleBrush: Brush? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     expandContentDescription: Pair<Int, Int> =
         R.string.image_generation_panel_expand to R.string.image_generation_panel_collapse,
@@ -90,7 +91,8 @@ fun TaskShellBar(
                 .combinedClickable(
                     onClick = onToggleExpand,
                     onLongClick = onLongClick,
-                ).padding(16.dp),
+                )
+                .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -123,6 +125,7 @@ fun TaskShellBar(
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
+                        brush = titleBrush,
                     ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

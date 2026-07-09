@@ -489,6 +489,8 @@
     <string name="image_generation_panel_expand">Expand image generation panel</string>
     <string name="image_generation_panel_collapse">Collapse image generation panel</string>
     <string name="image_generation_reasoning_placeholder">Preparing visual…</string>
+    <string name="book_generation_reasoning_placeholder">Writing the chronicle…</string>
+    <string name="chat_generation_reasoning_placeholder">Thinking of a reply…</string>
     <string name="image_generation_reveal_icon">Character icon ready</string>
     <string name="image_generation_reveal_cover">Cover image ready</string>
     <string name="image_generation_reveal_dismiss">Continue</string>

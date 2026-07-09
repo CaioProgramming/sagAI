@@ -17,12 +17,13 @@ import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.file.ImageHelper
+import com.ilustris.sagai.core.globalshell.GlobalShellService
+import com.ilustris.sagai.core.globalshell.NewMessageEffect
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.globalshell.GlobalShellService
-import com.ilustris.sagai.core.globalshell.NewMessageEffect
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -70,6 +71,7 @@ class MessageUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val audioGenClient: AudioGenClient,
         private val fileHelper: FileHelper,
+        private val imageHelper: ImageHelper,
         private val genreConfigService: GenreConfigService,
         private val promptService: PromptService,
         private val remoteConfigService: RemoteConfigService,
@@ -144,12 +146,29 @@ class MessageUseCaseImpl
         ) = executeRequest {
             val saved =
                 messageRepository.saveMessage(
-                message.copy(
-                    status = MessageStatus.OK,
-                    timestamp = System.currentTimeMillis(),
-                ),
-            )
+                    message.copy(
+                        status = MessageStatus.OK,
+                        timestamp = System.currentTimeMillis(),
+                    ),
+                )
             if (saved.senderType == SenderType.CHARACTER) {
+                val character =
+                    saved.characterId?.let { characterId ->
+                        withContext(Dispatchers.IO) {
+                            characterRepository.getCharacterById(
+                                characterId,
+                            )
+                        }
+                    }
+                val icon =
+                    character
+                        ?.image
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { image ->
+                            withContext(Dispatchers.IO) {
+                                imageHelper.getImageBitmap(image, cropToCircle = true).getSuccess()
+                            }
+                        }
                 globalShellService.post(
                     NewMessageEffect(
                         messageId = saved.id,
@@ -158,6 +177,8 @@ class MessageUseCaseImpl
                         genre = saga.data.genre,
                         speakerName = saved.speakerName ?: emptyString(),
                         rawText = saved.text,
+                        character = character,
+                        icon = icon,
                         deepLink = "saga://chat/${saga.data.id}/false",
                     ),
                 )
@@ -352,18 +373,27 @@ class MessageUseCaseImpl
                     ?: reply.newCharacter?.name
             val savedMessage =
                 messageRepository.saveMessage(
-                Message(
-                    id = 0,
-                    sagaId = saga.data.id,
-                    text = reply.message.text,
-                    senderType = reply.message.senderType,
-                    timelineId = saga.getCurrentTimeLine()!!.data.id,
-                    status = MessageStatus.OK,
-                    speakerName = speakerName,
-                    characterId = character?.id,
-                ),
-            )
+                    Message(
+                        id = 0,
+                        sagaId = saga.data.id,
+                        text = reply.message.text,
+                        senderType = reply.message.senderType,
+                        timelineId = saga.getCurrentTimeLine()!!.data.id,
+                        status = MessageStatus.OK,
+                        speakerName = speakerName,
+                        characterId = character?.id,
+                    ),
+                )
             if (savedMessage.senderType == SenderType.CHARACTER) {
+                val icon =
+                    character
+                        ?.image
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { image ->
+                            withContext(Dispatchers.IO) {
+                                imageHelper.getImageBitmap(image, cropToCircle = true).getSuccess()
+                            }
+                        }
                 globalShellService.post(
                     NewMessageEffect(
                         messageId = savedMessage.id,
@@ -372,6 +402,8 @@ class MessageUseCaseImpl
                         genre = saga.data.genre,
                         speakerName = savedMessage.speakerName ?: emptyString(),
                         rawText = savedMessage.text,
+                        character = character,
+                        icon = icon,
                         deepLink = "saga://chat/${saga.data.id}/false",
                     ),
                 )
