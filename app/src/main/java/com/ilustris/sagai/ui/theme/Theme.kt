@@ -274,27 +274,29 @@ fun SagAITheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
+    // Null in Compose Preview (see rememberGenreThemeServices) — every lookup below already
+    // treats "not loaded yet" as a valid state, so a null service just means we stay there.
     val themeServices = rememberGenreThemeServices()
     val activeGenre = genre
 
     var activeVisualConfig by remember(activeGenre) {
-        mutableStateOf(activeGenre?.let { themeServices.visualConfigService.peekVisualConfig(it) })
+        mutableStateOf(activeGenre?.let { themeServices?.visualConfigService?.peekVisualConfig(it) })
     }
 
     LaunchedEffect(activeGenre) {
         activeVisualConfig =
-            activeGenre?.let { themeServices.visualConfigService.getVisualConfig(it) }
+            activeGenre?.let { themeServices?.visualConfigService?.getVisualConfig(it) }
     }
 
     LaunchedEffect(activeGenre, activeVisualConfig) {
         val g = activeGenre ?: return@LaunchedEffect
         val config = activeVisualConfig ?: return@LaunchedEffect
-        themeServices.fontService.ensureLoaded(g, config)
+        themeServices?.fontService?.ensureLoaded(g, config)
     }
 
     val genreForFonts = activeGenre
     val resolvedFonts by
-        if (genreForFonts != null) {
+        if (genreForFonts != null && themeServices != null) {
             themeServices.fontService.fontsFor(genreForFonts).collectAsState()
         } else {
             remember { mutableStateOf<ResolvedGenreFonts?>(null) }
@@ -513,9 +515,10 @@ fun sagaBrush(
 fun SagAIScaffold(
     title: String? = null,
     showTopBar: Boolean = false,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    SagAITheme {
+    SagAITheme(darkTheme = darkTheme) {
         Scaffold(topBar = {
             AnimatedVisibility(showTopBar) {
                 TopAppBar(

@@ -241,8 +241,7 @@ class ChapterUseCaseImpl
                             imageType = ImageType.COVER,
                             variationId = saga.data.variationId,
                             label = chapter.data.title,
-                            silent = true,
-                            showReveal = false,
+                            showReveal = true,
                         ),
                     ) { bitmap ->
                         val coverFile =
@@ -280,7 +279,6 @@ class ChapterUseCaseImpl
                                 imageType = ImageType.COVER,
                                 variationId = saga.data.variationId,
                                 label = chapter.data.title,
-                                silent = false,
                                 showReveal = true,
                             ),
                         ) { bitmap ->

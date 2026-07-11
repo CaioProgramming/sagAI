@@ -118,7 +118,7 @@ class ImageGenerationService
         ): Result<T> {
             val deferred = CompletableDeferred<Result<T>>()
             pendingCount.update { it + 1 }
-            Timber.d("ImageGenerationService: enqueue request label=${request.label} silent=${request.silent} showReveal=${request.showReveal} pending=${pendingCount.value}")
+            Timber.d("ImageGenerationService: enqueue request label=${request.label} showReveal=${request.showReveal} pending=${pendingCount.value}")
             try {
                 if (workChannel.isClosedForSend) {
                     val ex = IllegalStateException("ImageGenerationService: work channel is closed for send")
@@ -214,13 +214,11 @@ class ImageGenerationService
             activeImageType = request.imageType
 
             // Auto-expand the island when the request will show the reveal overlay.
-            if (request.showReveal && !request.silent) {
+            if (request.showReveal) {
                 islandExpansion = IslandExpansion.Expanded
             }
 
-            if (!request.silent) {
-                emitGenerating(request, reasoning = null)
-            }
+            emitGenerating(request, reasoning = null)
 
             val job =
                 scope.launch {
@@ -230,7 +228,6 @@ class ImageGenerationService
 
                         val fallbackObserver =
                             launch {
-                                if (request.silent) return@launch
                                 debugImageFallbackService.isAwaitingUser.collectLatest { awaiting ->
                                     if (awaiting) {
                                         val prompt = debugImageFallbackService.pendingPrompt.value.orEmpty()
@@ -260,9 +257,7 @@ class ImageGenerationService
                             ).collect { state ->
                                 when (state) {
                                     is StreamingState.Reasoning -> {
-                                        if (!request.silent) {
-                                            emitGenerating(request, reasoning = state.chunk)
-                                        }
+                                        emitGenerating(request, reasoning = state.chunk)
                                     }
 
                                     is StreamingState.Success -> {
@@ -283,8 +278,9 @@ class ImageGenerationService
 
                         val persisted = work.onBitmap(bitmap)
 
-                        if (request.showReveal && !request.silent) {
-                            // Keep panel expanded while the reveal overlay is visible.
+                        if (request.showReveal) {
+                            // Keep panel expanded while the reveal is visible (GlobalShellHost
+                            // renders it inline, Full-expanded, in the top shell).
                             islandExpansion = IslandExpansion.Expanded
                             _uiState.value =
                                 ImageGenerationUiState.Reveal(
@@ -292,8 +288,6 @@ class ImageGenerationService
                                     imageType = request.imageType,
                                     label = request.label,
                                 )
-                                    // Reveal is handled via a separate overlay; we keep the sticky
-                                    // flag consistent with existing host gating.
                             val dismissSignal = CompletableDeferred<Unit>()
                             revealDismissSignal = dismissSignal
                             val dismissed =
@@ -314,7 +308,7 @@ class ImageGenerationService
                             // Reveal finished (dismissed by user or timeout). Collapse for next work.
                             islandExpansion = IslandExpansion.Compact
                             revealDismissSignal = null
-                        } else if (!request.silent) {
+                        } else {
                             _uiState.value = ImageGenerationUiState.Idle
                             setPersistentWorkActive(false)
                         }
@@ -322,10 +316,8 @@ class ImageGenerationService
                         work.result.complete(Result.success(persisted))
                     } catch (e: Exception) {
                         Timber.e(e, "ImageGenerationService: job failed")
-                        if (!request.silent) {
-                            _uiState.value = ImageGenerationUiState.Idle
-                            setPersistentWorkActive(false)
-                        }
+                        _uiState.value = ImageGenerationUiState.Idle
+                        setPersistentWorkActive(false)
                         work.result.complete(Result.failure(e))
                     } finally {
                         activeRequest = null

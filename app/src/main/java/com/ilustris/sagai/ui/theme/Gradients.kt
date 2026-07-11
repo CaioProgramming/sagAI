@@ -464,12 +464,15 @@ fun progressiveBrush(
 fun morphingGradient(
     colors: List<Color> = themeBrushColors(),
     duration: Duration = 2.seconds,
+    // Whether the crossfade should keep running. When false, holds at the last color reached
+    // instead of animating further — callers feeding this into `dropShadow` (which reallocates
+    // its shadow bitmap on every re-record) should tie this to a short, deliberate window (e.g.
+    // "panel is expanded") rather than leaving it on for as long as the composable is mounted.
     isAnimating: Boolean = true,
 ): List<Color> {
     // Use a mutable state so updates trigger recomposition and the animated targets change.
-    if (isAnimating.not()) return listOf(Color.Transparent, Color.Transparent)
     var brushColors by remember { mutableStateOf(colors) }
-    val animationsActive = rememberLifecycleAnimationsActive()
+    val animationsActive = rememberLifecycleAnimationsActive() && isAnimating
 
     LaunchedEffect(animationsActive) {
         if (!animationsActive) return@LaunchedEffect

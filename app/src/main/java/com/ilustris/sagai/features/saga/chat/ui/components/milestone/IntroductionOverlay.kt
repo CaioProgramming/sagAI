@@ -1,7 +1,5 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,13 +31,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun IntroductionOverlay(
     introduction: SagaMilestone.Introduction,
     saga: Saga,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     onComplete: () -> Unit,
 ) {
     val message = introduction.introduction
@@ -84,15 +79,13 @@ fun IntroductionOverlay(
                 visible = phaseController.isAtLeast(MilestonePhase.Spark),
                 enter = MilestoneTransitions.fadeEnter,
             ) {
-                with(sharedTransitionScope) {
-                    genre.stylisedText(
-                        text = saga.title,
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth(),
-                    )
-                }
+                genre.stylisedText(
+                    text = saga.title,
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                )
             }
 
             if (message.isNotBlank()) {

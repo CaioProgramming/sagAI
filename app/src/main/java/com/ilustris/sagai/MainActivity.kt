@@ -72,8 +72,6 @@ import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
-import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
-import com.ilustris.sagai.features.imagegeneration.ui.ImageGenerationRevealOverlay
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
@@ -339,6 +337,7 @@ class MainActivity : ComponentActivity() {
                                                 imageGenerationService.setIslandExpansion(expansion)
                                             },
                                             onImageCancel = imageGenerationService::cancelCurrent,
+                                            onImageDismissReveal = imageGenerationService::dismissReveal,
                                             onNavigate = { deepLink ->
                                                 navigateDeepLink(deepLink)
                                             },
@@ -526,13 +525,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    val revealState = imageGenState as? ImageGenerationUiState.Reveal
-                    if (revealState != null) {
-                        ImageGenerationRevealOverlay(
-                            state = revealState,
-                            onDismiss = imageGenerationService::dismissReveal,
-                        )
-                    }
                 }
             }
         }

@@ -91,17 +91,20 @@ fun TaskShellBar(
                 .combinedClickable(
                     onClick = onToggleExpand,
                     onLongClick = onLongClick,
-                )
-                .padding(16.dp),
+                ).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         val shape = rememberVectorShape(themeIconVector())
-        val brush = Brush.horizontalGradient(morphingGradient())
+        // The bar stays mounted for as long as a background task runs (can be minutes), but the
+        // glow only needs to feel alive while the user is actually looking at it expanded — while
+        // collapsed it just holds its last color instead of continuing to animate.
+        val brush =
+            Brush.horizontalGradient(morphingGradient(isAnimating = isExpanded))
         Icon(
             leadingPainter,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.surfaceContainer,
+            tint = MaterialTheme.colorScheme.onPrimary,
             modifier =
                 Modifier
                     .size(24.dp)
@@ -121,7 +124,7 @@ fun TaskShellBar(
             Text(
                 text = animatedTitle,
                 style =
-                    MaterialTheme.typography.titleSmall.copy(
+                    MaterialTheme.typography.labelLarge.copy(
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
@@ -154,9 +157,7 @@ fun TaskShellChevron(
         onClick = onClick,
         modifier =
             modifier
-                .size(12.dp)
-                .padding(4.dp)
-                .alpha(0.5f),
+                .size(12.dp),
     ) {
         val chevronRotation by animateFloatAsState(
             targetValue = if (isExpanded) 90f else -90f,
@@ -168,7 +169,7 @@ fun TaskShellChevron(
                 stringResource(
                     if (isExpanded) expandContentDescription.second else expandContentDescription.first,
                 ),
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = MaterialTheme.colorScheme.onPrimary,
             modifier =
                 Modifier
                     .fillMaxSize()

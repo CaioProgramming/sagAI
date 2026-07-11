@@ -17,6 +17,7 @@ import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.file.AVATAR_ICON_TARGET_PX
 import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.globalshell.NewMessageEffect
@@ -166,7 +167,7 @@ class MessageUseCaseImpl
                         ?.takeIf { it.isNotBlank() }
                         ?.let { image ->
                             withContext(Dispatchers.IO) {
-                                imageHelper.getImageBitmap(image, cropToCircle = true).getSuccess()
+                                imageHelper.getImageBitmap(image, cropToCircle = true, targetSizePx = AVATAR_ICON_TARGET_PX).getSuccess()
                             }
                         }
                 globalShellService.post(
@@ -391,7 +392,7 @@ class MessageUseCaseImpl
                         ?.takeIf { it.isNotBlank() }
                         ?.let { image ->
                             withContext(Dispatchers.IO) {
-                                imageHelper.getImageBitmap(image, cropToCircle = true).getSuccess()
+                                imageHelper.getImageBitmap(image, cropToCircle = true, targetSizePx = AVATAR_ICON_TARGET_PX).getSuccess()
                             }
                         }
                 globalShellService.post(

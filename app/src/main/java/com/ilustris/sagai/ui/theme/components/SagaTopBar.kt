@@ -45,7 +45,7 @@ fun SagaTopBar(
     Row(
         modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         onBackClick?.let {

@@ -27,6 +27,7 @@ import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.ai.model.ShaderParamsConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.colorTemperature
 import com.ilustris.sagai.ui.theme.contrast
@@ -286,14 +287,16 @@ fun Modifier.effectForGenre(
 
     var iTime by remember { mutableFloatStateOf(0f) }
 
-    LaunchedEffect(Unit) {
-        var lastNanos = 0L
-        while (true) {
-            withFrameNanos { nanos ->
-                if (lastNanos != 0L) {
-                    iTime += (nanos - lastNanos) / 1_000_000_000f
+    if (rememberLifecycleAnimationsActive()) {
+        LaunchedEffect(Unit) {
+            var lastNanos = 0L
+            while (true) {
+                withFrameNanos { nanos ->
+                    if (lastNanos != 0L) {
+                        iTime += (nanos - lastNanos) / 1_000_000_000f
+                    }
+                    lastNanos = nanos
                 }
-                lastNanos = nanos
             }
         }
     }

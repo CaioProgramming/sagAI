@@ -85,8 +85,7 @@ class SagaRepositoryImpl
                         imageType = ImageType.COVER,
                         variationId = saga.variationId,
                         label = saga.title,
-                        silent = true,
-                        showReveal = false,
+                        showReveal = true,
                     ),
                 ) { bitmap ->
                     val file =
@@ -115,7 +114,6 @@ class SagaRepositoryImpl
                                 imageType = ImageType.COVER,
                                 variationId = saga.variationId,
                                 label = saga.title,
-                                silent = false,
                                 showReveal = true,
                             ),
                         ) { bitmap ->

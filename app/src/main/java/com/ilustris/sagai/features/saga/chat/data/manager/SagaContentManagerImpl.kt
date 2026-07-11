@@ -10,6 +10,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.data.isFlowCancellation
+import com.ilustris.sagai.core.file.AVATAR_ICON_TARGET_PX
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.globalshell.BookReadyEffect
@@ -803,6 +804,7 @@ class SagaContentManagerImpl
                                 .getImageBitmap(
                                     milestone.character.image,
                                     cropToCircle = true,
+                                    targetSizePx = AVATAR_ICON_TARGET_PX,
                                 ).getSuccess()
                         }
                     val name =

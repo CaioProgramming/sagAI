@@ -11,6 +11,5 @@ data class ImageGenerationRequest(
     val variationId: String? = null,
     val imageReference: Pair<Bitmap, String>? = null,
     val label: String? = null,
-    val silent: Boolean = false,
     val showReveal: Boolean = true,
 )

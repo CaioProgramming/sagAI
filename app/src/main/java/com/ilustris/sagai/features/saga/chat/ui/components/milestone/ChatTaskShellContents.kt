@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,12 +28,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.presentation.model.toUi
 import com.ilustris.sagai.ui.components.taskshell.TaskShellCompactClick
 import com.ilustris.sagai.ui.components.taskshell.TaskShellContent
+import com.ilustris.sagai.ui.components.taskshell.TaskShellContentPreview
 import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
 import com.ilustris.sagai.ui.components.taskshell.TaskShellScope
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -54,7 +57,7 @@ class ObjectiveShellContent(
     private val isLoading: Boolean = false,
 ) : TaskShellContent {
     override val isExpandable: Boolean = true
-    override val isDraggable: Boolean = false
+    override val isDraggable: Boolean = true
     override val compactClick: TaskShellCompactClick = TaskShellCompactClick.Toggle
 
     @Composable
@@ -125,7 +128,7 @@ class NarrativeAdvanceShellContent(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(8.dp)
                     .gradientFill(Brush.verticalGradient(morphingGradient())),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -163,7 +166,16 @@ class NarrativeAdvanceShellContent(
         val actionUi = action.toUi()
         val titleRes = if (isProcessing) actionUi.holdingTextRes else (actionUi.titleRes ?: R.string.continue_text)
 
-        Box(Modifier.fillMaxWidth().fillMaxHeight(.5f), contentAlignment = Alignment.Center) {
+        Column(
+            Modifier.fillMaxSize().reactiveShimmer(
+                true,
+                repeatMode = RepeatMode.Restart,
+                shimmerColors = Color.White.shimmerize(),
+                duration = 10.seconds,
+            ),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             val morphingGradient = Brush.verticalGradient(morphingGradient())
             Icon(
                 themePainter(),
@@ -172,17 +184,57 @@ class NarrativeAdvanceShellContent(
                 modifier =
                     Modifier
                         .size(48.dp)
-                        .reactiveShimmer(
-                            true,
-                            repeatMode = RepeatMode.Restart,
-                            shimmerColors = Color.White.shimmerize(),
-                            duration = 10.seconds,
-                        ).dropShadow(rememberVectorShape(themeIconVector())) {
+                        .dropShadow(rememberVectorShape(themeIconVector())) {
                             brush = morphingGradient
                             radius = 10f
                             spread = 1f
                         },
             )
+
+            Text(
+                text = stringResource(titleRes),
+                style =
+                    MaterialTheme.typography.labelLarge.copy(
+                        brush = morphingGradient,
+                    ),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier,
+            )
         }
     }
+}
+
+/** Starts Collapsed — use Interactive Preview to tap/drag and see Expanded live. */
+@Preview(name = "Objective", showBackground = true)
+@Composable
+private fun ObjectiveShellContentPreview() {
+    TaskShellContentPreview(
+        content =
+            ObjectiveShellContent(
+                title = "Objetivo atual",
+                objective = "Encontrar a chave perdida antes que o sol se ponha.",
+                progress = 0.4f,
+            ),
+        initialExpansion = TaskShellExpansion.Collapsed,
+    )
+}
+
+/** Starts Collapsed — use Interactive Preview to tap/drag and see Full live. */
+@Preview(name = "Advance", showBackground = true)
+@Composable
+private fun NarrativeAdvanceShellContentPreview() {
+    TaskShellContentPreview(
+        content =
+            NarrativeAdvanceShellContent(
+                action = NarrativeAction.CreateAct,
+                reasoning = "O vento sopra forte enquanto as portas se abrem...",
+                isProcessing = false,
+                dragProgress = 0f,
+            ),
+        initialExpansion = TaskShellExpansion.Collapsed,
+        onTop = false,
+    )
 }

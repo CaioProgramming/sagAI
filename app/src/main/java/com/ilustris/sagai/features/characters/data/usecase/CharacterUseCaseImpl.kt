@@ -103,8 +103,7 @@ class CharacterUseCaseImpl
                             imageType = ImageType.ICON,
                             variationId = saga.variationId,
                             label = character.name,
-                            silent = true,
-                            showReveal = false,
+                            showReveal = true,
                         ),
                     ) { bitmap ->
                         val file =
@@ -137,7 +136,6 @@ class CharacterUseCaseImpl
                                 imageType = ImageType.ICON,
                                 variationId = saga.variationId,
                                 label = character.name,
-                                silent = false,
                                 showReveal = true,
                             ),
                         ) { bitmap ->

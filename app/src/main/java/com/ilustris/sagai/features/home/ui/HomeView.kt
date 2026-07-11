@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -96,6 +97,8 @@ import com.ilustris.sagai.ui.components.taskshell.TaskShellSlotState
 import com.ilustris.sagai.ui.theme.SAGA_THEME_TRANSITION_MS
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
+import com.ilustris.sagai.ui.theme.fadeGradientTop
+import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.iridescentGradient
 import com.ilustris.sagai.ui.theme.sagaBrush
@@ -211,19 +214,6 @@ private fun HomeContent(
         }
     }
 
-    val topSlot =
-        state.dynamicNewSagaTexts?.let { prompt ->
-            TaskShellSlotState(
-                content =
-                    DynamicPromptShellContent(
-                        prompt = prompt,
-                        onCreateNewSaga = { onAction(HomeUiAction.CreateNewSaga) },
-                    ),
-                expansion = topExpansion,
-                onExpansionChange = { topExpansion = it },
-            )
-        }
-
     val bottomSlot =
         if (!state.isPremium) {
             TaskShellSlotState(
@@ -255,10 +245,44 @@ private fun HomeContent(
             null
         }
 
+    val topSlot =
+        if (bottomSlot?.expansion == TaskShellExpansion.Collapsed) {
+            state.dynamicNewSagaTexts?.let { prompt ->
+                TaskShellSlotState(
+                    content =
+                        DynamicPromptShellContent(
+                            prompt = prompt,
+                            onCreateNewSaga = { onAction(HomeUiAction.CreateNewSaga) },
+                        ),
+                    expansion = topExpansion,
+                    onExpansionChange = { topExpansion = it },
+                )
+            }
+        } else {
+            null
+        }
+
     TaskShellLayout(
         modifier = modifier.background(MaterialTheme.colorScheme.background),
         topSlot = topSlot,
         bottomSlot = bottomSlot,
+        background = { top, bottom ->
+            SagAITheme(state.dynamicNewSagaTexts?.genre) {
+                val backgroundColor by animateColorAsState(
+                    if (top != null) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.background
+                    },
+                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(.25f)
+                        .background(fadeGradientTop(backgroundColor)),
+                )
+            }
+        },
     ) {
         ChatList(
             state = state,
@@ -477,12 +501,10 @@ private fun ChatList(
                                     Brush.horizontalGradient(iridescentGradient)
                                 radius = 20f
                                 spread = .4f
-                            }
-                            .background(
+                            }.background(
                                 MaterialTheme.colorScheme.onBackground,
                                 MaterialTheme.shapes.large,
-                            )
-                            .fillMaxWidth(),
+                            ).fillMaxWidth(),
                 ) {
                     Text(
                         stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -535,8 +557,7 @@ fun ChatCard(
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }
-                                .size(50.dp),
+                                }.size(50.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         AvatarTimelineIcon(

@@ -1,6 +1,5 @@
 package com.ilustris.sagai.ui.components.taskshell
 
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 
@@ -37,16 +36,6 @@ interface TaskShellContent {
     val isExpandable: Boolean get() = true
     val isDraggable: Boolean get() = true
     val compactClick: TaskShellCompactClick get() = TaskShellCompactClick.Toggle
-
-    /**
-     * Rendered once behind [Compact]/[Expanded] as the first child of the enclosing `Box` —
-     * declared as a [BoxScope] extension so implementations can size themselves with
-     * `Modifier.matchParentSize()`. Default is a no-op — content that doesn't need a custom
-     * background (e.g. no genre theming) simply doesn't override this.
-     */
-    @Composable
-    fun BoxScope.Background(scope: TaskShellScope) {
-    }
 
     @Composable
     fun Compact(scope: TaskShellScope)
