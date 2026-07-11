@@ -6,6 +6,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
+import com.ilustris.sagai.features.saga.detail.review.domain.model.ReviewSteps
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import kotlinx.coroutines.flow.Flow
@@ -13,6 +14,12 @@ import kotlinx.coroutines.flow.Flow
 sealed class ReviewState {
     data class Loading(
         val message: String,
+        val step: ReviewSteps? = null,
+    ) : ReviewState()
+
+    data class StepComplete(
+        val step: ReviewSteps,
+        val saga: Saga,
     ) : ReviewState()
 
     data class Success(
@@ -21,6 +28,7 @@ sealed class ReviewState {
 
     data class Error(
         val message: String,
+        val step: ReviewSteps? = null,
     ) : ReviewState()
 }
 

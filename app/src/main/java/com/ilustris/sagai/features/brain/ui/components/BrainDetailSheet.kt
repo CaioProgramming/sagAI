@@ -14,7 +14,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetState
@@ -35,7 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.brain.domain.model.BrainNode
 import com.ilustris.sagai.features.brain.domain.model.BrainNodeType
-import com.ilustris.sagai.ui.theme.themeIcon
+import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 
@@ -142,7 +141,8 @@ private fun BrainDetailSheetPage(
                     } else {
                         Modifier.wrapContentSize()
                     },
-                ).padding(8.dp),
+                )
+                .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -151,10 +151,7 @@ private fun BrainDetailSheetPage(
                 if (it) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         IconButton(onClick = onRecenter, enabled = isExpanded) {
-                            Icon(
-                                painter = themeIcon(),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                            MorphingThemeIcon(
                                 modifier =
                                     Modifier
                                         .size(24.dp)
@@ -162,6 +159,8 @@ private fun BrainDetailSheetPage(
                                             rememberSharedContentState(key = "brain_recenter"),
                                             animatedVisibilityScope = this@AnimatedContent,
                                         ),
+                                tint = MaterialTheme.colorScheme.primary,
+                                glowIntensity = 0.35f,
                             )
                         }
 
@@ -186,10 +185,7 @@ private fun BrainDetailSheetPage(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         IconButton(onClick = onRecenter, enabled = isExpanded) {
-                            Icon(
-                                painter = themeIcon(),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                            MorphingThemeIcon(
                                 modifier =
                                     Modifier
                                         .size(24.dp)
@@ -197,6 +193,8 @@ private fun BrainDetailSheetPage(
                                             rememberSharedContentState(key = "brain_recenter"),
                                             animatedVisibilityScope = this@AnimatedContent,
                                         ),
+                                tint = MaterialTheme.colorScheme.primary,
+                                glowIntensity = 0.35f,
                             )
                         }
 

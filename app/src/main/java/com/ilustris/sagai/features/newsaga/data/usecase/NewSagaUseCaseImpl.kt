@@ -87,9 +87,7 @@ class NewSagaUseCaseImpl
                                         .generateCharacterImageStream(savedCharacter, updatedSaga)
                                         .collect { charIconState ->
                                             when (charIconState) {
-                                                is StreamingState.Reasoning -> {
-                                                    emit(SagaCreationState.Loading(charIconState.chunk))
-                                                }
+                                                is StreamingState.Reasoning -> Unit
 
                                                 is StreamingState.Success -> {
                                                     val finalCharacter =
@@ -100,13 +98,7 @@ class NewSagaUseCaseImpl
                                                             listOf(finalCharacter),
                                                         ).collect { sagaIconState ->
                                                             when (sagaIconState) {
-                                                                is StreamingState.Reasoning -> {
-                                                                    emit(
-                                                                        SagaCreationState.Loading(
-                                                                            sagaIconState.chunk,
-                                                                        ),
-                                                                    )
-                                                                }
+                                                                is StreamingState.Reasoning -> Unit
 
                                                                 is StreamingState.Success -> {
                                                                     emit(
@@ -154,13 +146,7 @@ class NewSagaUseCaseImpl
                                                                     )
                                                                 }
 
-                                                                is StreamingState.Reasoning -> {
-                                                                    emit(
-                                                                        SagaCreationState.Loading(
-                                                                            sagaIconState.chunk,
-                                                                        ),
-                                                                    )
-                                                                }
+                                                                is StreamingState.Reasoning -> Unit
                                                             }
                                                         }
                                                 }

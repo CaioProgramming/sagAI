@@ -1,0 +1,275 @@
+{
+  "fantasy_visual_config": {
+    "primaryColor": "#8B2635",
+    "iconColor": "#FFFFFF",
+    "colorPalette": ["#8B2635", "#5E1A24", "#B33144"],
+    "shaderParams": {
+      "grainIntensity": 0.03,
+      "bloomThreshold": 0.75,
+      "bloomIntensity": 0.18,
+      "bloomRadius": 3.5,
+      "softFocusRadius": 0,
+      "saturation": 1.05,
+      "contrast": 1.08,
+      "brightness": 0.02,
+      "highlightTint": [1.0, 0.92, 0.8],
+      "shadowTint": [0.85, 0.9, 1.0],
+      "tintStrength": 0.25,
+      "vignetteStrength": 0.12,
+      "vignetteSoftness": 0.5,
+      "colorTemperature": 0.08
+    },
+    "selectiveHighlight": {
+      "hueTolerance": 0.2,
+      "saturationThreshold": 0.02,
+      "lightnessThreshold": 0.05,
+      "highlightSaturationBoost": 1.3,
+      "highlightLightnessBoost": 0.08,
+      "desaturationFactorNonTarget": 0.7
+    }
+  },
+  "cyberpunk_visual_config": {
+    "primaryColor": "#8B00FF",
+    "iconColor": "#FFFFFF",
+    "colorPalette": ["#8B00FF", "#00FFFF", "#FF00FF", "#2D0066"],
+    "shaderParams": {
+      "grainIntensity": 0.025,
+      "bloomThreshold": 0.7,
+      "bloomIntensity": 0.15,
+      "bloomRadius": 3.0,
+      "softFocusRadius": 0,
+      "saturation": 1.1,
+      "contrast": 1.15,
+      "brightness": 0.0,
+      "highlightTint": [0.85, 0.9, 1.0],
+      "shadowTint": [0.2, 0.25, 0.4],
+      "tintStrength": 0.4,
+      "vignetteStrength": 0.1,
+      "vignetteSoftness": 0.45,
+      "chromaticAberration": 0.05,
+      "scanlineIntensity": 0.08,
+      "scanlineDensity": 2.5
+    },
+    "selectiveHighlight": {
+      "hueTolerance": 0.22,
+      "saturationThreshold": 0.02,
+      "lightnessThreshold": 0.05,
+      "highlightSaturationBoost": 1.4,
+      "highlightLightnessBoost": 0.1,
+      "desaturationFactorNonTarget": 0.75
+    }
+  },
+  "horror_visual_config": {
+    "primaryColor": "#515E8C",
+    "iconColor": "#FFFFFF",
+    "colorPalette": ["#1C2541", "#0B132B", "#3A506B", "#6FFFE9"],
+    "shaderParams": {
+      "grainIntensity": 0.06,
+      "bloomThreshold": 0.85,
+      "bloomIntensity": 0.05,
+      "bloomRadius": 2.5,
+      "softFocusRadius": 0,
+      "saturation": 0.7,
+      "contrast": 1.12,
+      "brightness": -0.03,
+      "highlightTint": [0.85, 0.92, 1.0],
+      "shadowTint": [0.05, 0.08, 0.15],
+      "tintStrength": 0.4,
+      "vignetteStrength": 0.35,
+      "vignetteSoftness": 0.45,
+      "blackPoint": 0.08,
+      "colorTemperature": -0.06
+    },
+    "selectiveHighlight": {
+      "hueTolerance": 0.18,
+      "saturationThreshold": 0.02,
+      "lightnessThreshold": 0.05,
+      "highlightSaturationBoost": 1.15,
+      "highlightLightnessBoost": 0.05,
+      "desaturationFactorNonTarget": 0.8
+    }
+  },
+  "heroes_visual_config": {
+    "primaryColor": "#0057BD",
+    "iconColor": "#FFFFFF",
+    "colorPalette": ["#003F88", "#002952", "#00509D", "#FDC500"],
+    "shaderParams": {
+      "grainIntensity": 0.02,
+      "bloomThreshold": 0.78,
+      "bloomIntensity": 0.18,
+      "bloomRadius": 3.0,
+      "softFocusRadius": 0,
+      "saturation": 1.15,
+      "contrast": 1.25,
+      "brightness": 0.02,
+      "highlightTint": [1.0, 0.92, 0.85],
+      "shadowTint": [0.02, 0.05, 0.15],
+      "tintStrength": 0.35,
+      "vignetteStrength": 0.08,
+      "vignetteSoftness": 0.5,
+      "halftoneScale": 0,
+      "rimEnergyIntensity": 0.95,
+      "rimEnergyColor": [0.55, 0.92, 1.0],
+      "rimEnergyOuterColor": [0.12, 0.42, 1.0],
+      "rimEnergyWidth": 10,
+      "wispIntensity": 0.8,
+      "wispSpeed": 3.2
+    },
+    "selectiveHighlight": {
+      "hueTolerance": 0.2,
+      "saturationThreshold": 0.02,
+      "lightnessThreshold": 0.05,
+      "highlightSaturationBoost": 1.35,
+      "highlightLightnessBoost": 0.1,
+      "desaturationFactorNonTarget": 0.72
+    }
+  },
+  "crime_visual_config": {
+    "primaryColor": "#E91E63",
+    "iconColor": "#FFFFFF",
+    "colorPalette": ["#E91E63", "#AD1457", "#FF4081", "#000000"],
+    "shaderParams": {
+      "grainIntensity": 0.04,
+      "bloomThreshold": 0.82,
+      "bloomIntensity": 0.08,
+      "bloomRadius": 2.5,
+      "softFocusRadius": 0,
+      "saturation": 0.85,
+      "contrast": 1.18,
+      "brightness": -0.02,
+      "highlightTint": [1.0, 0.85, 0.95],
+      "shadowTint": [0.1, 0.05, 0.15],
+      "tintStrength": 0.25,
+      "vignetteStrength": 0.2,
+      "vignetteSoftness": 0.5,
+      "blackPoint": 0.06
+    },
+    "selectiveHighlight": {
+      "hueTolerance": 0.2,
+      "saturationThreshold": 0.02,
+      "lightnessThreshold": 0.05,
+      "highlightSaturationBoost": 1.25,
+      "highlightLightnessBoost": 0.07,
+      "desaturationFactorNonTarget": 0.78
+    }
+  },
+  "shinobi_visual_config": {
+    "primaryColor": "#5C2751",
+    "iconColor": "#FFFFFF",
+    "colorPalette": ["#5C2751", "#431C3A", "#7A336B", "#F39237"],
+    "shaderParams": {
+      "grainIntensity": 0.035,
+      "bloomThreshold": 0.8,
+      "bloomIntensity": 0.06,
+      "bloomRadius": 2.5,
+      "softFocusRadius": 0,
+      "saturation": 0.95,
+      "contrast": 1.3,
+      "brightness": -0.01,
+      "highlightTint": [0.95, 0.92, 0.9],
+      "shadowTint": [0.1, 0.0, 0.05],
+      "tintStrength": 0.35,
+      "vignetteStrength": 0.22,
+      "vignetteSoftness": 0.48,
+      "blackPoint": 0.04
+    },
+    "selectiveHighlight": {
+      "hueTolerance": 0.18,
+      "saturationThreshold": 0.02,
+      "lightnessThreshold": 0.05,
+      "highlightSaturationBoost": 1.2,
+      "highlightLightnessBoost": 0.06,
+      "desaturationFactorNonTarget": 0.82
+    }
+  },
+  "space_opera_visual_config": {
+    "primaryColor": "#0081A7",
+    "iconColor": "#FFFFFF",
+    "colorPalette": ["#0081A7", "#005F73", "#00AFB9", "#FED9B7"],
+    "shaderParams": {
+      "grainIntensity": 0.025,
+      "bloomThreshold": 0.72,
+      "bloomIntensity": 0.12,
+      "bloomRadius": 3.5,
+      "softFocusRadius": 0,
+      "saturation": 1.08,
+      "contrast": 1.1,
+      "brightness": 0.01,
+      "highlightTint": [0.9, 0.85, 1.0],
+      "shadowTint": [0.1, 0.12, 0.2],
+      "tintStrength": 0.3,
+      "vignetteStrength": 0.14,
+      "vignetteSoftness": 0.5,
+      "colorTemperature": -0.04
+    },
+    "selectiveHighlight": {
+      "hueTolerance": 0.2,
+      "saturationThreshold": 0.02,
+      "lightnessThreshold": 0.05,
+      "highlightSaturationBoost": 1.3,
+      "highlightLightnessBoost": 0.08,
+      "desaturationFactorNonTarget": 0.7
+    }
+  },
+  "cowboy_visual_config": {
+    "primaryColor": "#8B4513",
+    "iconColor": "#FFFFFF",
+    "colorPalette": ["#8B4513", "#5D2E0A", "#A0522D", "#DEB887"],
+    "shaderParams": {
+      "grainIntensity": 0.035,
+      "bloomThreshold": 0.8,
+      "bloomIntensity": 0.08,
+      "bloomRadius": 2.5,
+      "softFocusRadius": 0,
+      "saturation": 1.05,
+      "contrast": 1.12,
+      "brightness": 0.01,
+      "highlightTint": [1.0, 0.8, 0.6],
+      "shadowTint": [0.2, 0.1, 0.05],
+      "tintStrength": 0.4,
+      "vignetteStrength": 0.18,
+      "vignetteSoftness": 0.52,
+      "colorTemperature": 0.12
+    },
+    "selectiveHighlight": {
+      "hueTolerance": 0.2,
+      "saturationThreshold": 0.02,
+      "lightnessThreshold": 0.05,
+      "highlightSaturationBoost": 1.25,
+      "highlightLightnessBoost": 0.07,
+      "desaturationFactorNonTarget": 0.74
+    }
+  },
+  "punk_rock_visual_config": {
+    "primaryColor": "#00B050",
+    "iconColor": "#FFFFFF",
+    "colorPalette": ["#00B050", "#008037", "#00E676", "#000000"],
+    "shaderParams": {
+      "grainIntensity": 0.04,
+      "bloomThreshold": 0.85,
+      "bloomIntensity": 0.05,
+      "bloomRadius": 2.0,
+      "softFocusRadius": 0,
+      "saturation": 1.1,
+      "contrast": 1.2,
+      "brightness": 0.0,
+      "highlightTint": [0.9, 1.0, 0.85],
+      "shadowTint": [0.05, 0.1, 0.05],
+      "tintStrength": 0.28,
+      "vignetteStrength": 0.1,
+      "vignetteSoftness": 0.45,
+      "chromaticAberration": 0.0375,
+      "scanlineIntensity": 0.05,
+      "scanlineDensity": 2.0,
+      "posterizeLevels": 6.0
+    },
+    "selectiveHighlight": {
+      "hueTolerance": 0.22,
+      "saturationThreshold": 0.02,
+      "lightnessThreshold": 0.05,
+      "highlightSaturationBoost": 1.4,
+      "highlightLightnessBoost": 0.1,
+      "desaturationFactorNonTarget": 0.76
+    }
+  }
+}

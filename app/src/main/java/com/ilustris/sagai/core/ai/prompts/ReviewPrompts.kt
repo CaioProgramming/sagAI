@@ -1,15 +1,15 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.model.GenreConfig
-import com.ilustris.sagai.core.ai.services.PromptService
-import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.emotionalSummary
-import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+import com.ilustris.sagai.features.characters.data.model.Character
 
 data class ReviewIntroArgs(
-    val characterName: String,
-    val conversationDirective: String,
+    val title: String,
+    val description: String,
+    val mainCharacter: Character,
+    val theme: String,
+    val emotionalReview: String,
+    val playTime: Long,
+    val endMessage: String,
 )
 
 data class ReviewPlaystyleArgs(
@@ -21,7 +21,7 @@ data class ReviewPlaystyleArgs(
 )
 
 data class ReviewExpressivenessArgs(
-    val characterName: String,
+    val character: Character,
     val emotionalRank: String,
     val emotionalSummary: String,
     val conversationDirective: String,

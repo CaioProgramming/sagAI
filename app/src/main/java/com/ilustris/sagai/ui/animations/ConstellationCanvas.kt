@@ -40,6 +40,29 @@ fun ConstellationCanvas(
     maxLineDistance: Float = 250f,
     chapterClusters: List<ChapterKnowledgeCluster> = emptyList(),
 ) {
+    if (rememberLifecycleAnimationsActive()) {
+        ConstellationCanvasAnimated(
+            modifier = modifier,
+            starColor = starColor,
+            lineColor = lineColor,
+            knowledgeColor = knowledgeColor,
+            starCount = starCount,
+            maxLineDistance = maxLineDistance,
+            chapterClusters = chapterClusters,
+        )
+    }
+}
+
+@Composable
+private fun ConstellationCanvasAnimated(
+    modifier: Modifier,
+    starColor: Color,
+    lineColor: Color,
+    knowledgeColor: Color,
+    starCount: Int,
+    maxLineDistance: Float,
+    chapterClusters: List<ChapterKnowledgeCluster>,
+) {
     val stars = remember { mutableStateListOf<ConstellationStar>() }
     val totalKnowledgeStars = chapterClusters.sumOf { it.satelliteCount }
     val ambientStarCount = starCount + (totalKnowledgeStars / 3).coerceAtMost(40)

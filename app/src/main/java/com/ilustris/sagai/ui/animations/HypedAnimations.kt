@@ -38,6 +38,7 @@ import androidx.compose.ui.text.drawText
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.ui.theme.filters.ultimateEnergyShader
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.lighter
 import kotlin.random.Random
@@ -48,7 +49,7 @@ fun Modifier.glitch(
     glitchFrequency: Float = 0.15f,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "glitch")
         val ticker by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -124,7 +125,7 @@ fun Modifier.chromaticAberration(
     blurRadius: Float = 4f,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "chromatic")
 
         val pulse by infiniteTransition.animateFloat(
@@ -204,7 +205,7 @@ fun Modifier.sparkle(
     color: Color = Color.White,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "sparkle")
         val ticker by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -261,7 +262,7 @@ fun Modifier.dreamySparkle(
     color: Color = Color.White,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "dreamySparkle")
         val ticker by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -368,7 +369,7 @@ fun Modifier.aura(
     color: Color = Color.White,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "aura")
         val pulse by infiniteTransition.animateFloat(
             initialValue = 0.8f,
@@ -402,7 +403,7 @@ fun Modifier.distort(
     intensity: Float = 5f,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "distort")
         val ticker by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -426,7 +427,7 @@ fun Modifier.distort(
 @Composable
 fun Modifier.vhs(isPlaying: Boolean = true): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "vhs")
         val ticker by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -502,7 +503,7 @@ fun Modifier.inkBleed(
     color: Color = Color.Unspecified,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "inkBleed")
 
         val ticker by infiniteTransition.animateFloat(
@@ -641,12 +642,13 @@ fun Modifier.livingTorch(
     fireColor: Color = Color(0xFFFF5722),
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
 
         // We chain the new chromatic aberration for that premium "Cosmic" feel
         this
             .chromaticAberration(isPlaying, intensity = 4f, blurRadius = 15f)
             .composed {
+                if (!rememberLifecycleAnimationsActive()) return@composed this
                 val infiniteTransition = rememberInfiniteTransition(label = "etherealTorch")
 
                 val ticker by infiniteTransition.animateFloat(
@@ -750,9 +752,9 @@ fun Modifier.livingTorch(
                             val y = baseY - (sparkProgress * 220f)
                             val xDrift =
                                 (
-                                        kotlin.math.sin(time * 2.5f + seed * 12f) * 35f +
-                                                kotlin.math.sin(time * 5f + seed * 8f) * 10f
-                                        ).toFloat() * sparkProgress
+                                    kotlin.math.sin(time * 2.5f + seed * 12f) * 35f +
+                                        kotlin.math.sin(time * 5f + seed * 8f) * 10f
+                                ).toFloat() * sparkProgress
 
                             val sparkWidth = (2.5f + seed * 3f) * invProgress
                             val sparkHeight = sparkWidth * (1.5f + sparkProgress * 2f)
@@ -856,7 +858,7 @@ fun Modifier.heatHaze(
     intensity: Float = 4f,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "heatHaze")
         val ticker by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -883,7 +885,7 @@ fun Modifier.heroChrome(
     color: Color = Color.White,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "heroChrome")
 
         val ticker by infiniteTransition.animateFloat(
@@ -945,7 +947,7 @@ fun Modifier.comicLines(
     color: Color = Color.White,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "comicLines")
         val ticker by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -994,7 +996,7 @@ fun Modifier.comicLines(
 @Composable
 fun Modifier.spaceVoyage(isPlaying: Boolean = true): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "spaceVoyage")
 
         val ticker by infiniteTransition.animateFloat(
@@ -1100,7 +1102,7 @@ fun Modifier.spaceVoyage(isPlaying: Boolean = true): Modifier =
 fun Modifier.cowboyBurn(isPlaying: Boolean = true): Modifier =
     composed {
         MaterialTheme.colorScheme.background
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "cowboyBurn")
 
         // 1. Desperado Ticker (15 FPS stop-motion feel)
@@ -1275,7 +1277,7 @@ fun Modifier.divineAura(
     auraColor: Color = Color(0xFFFFD700), // Gold
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "divineAura")
 
         val ticker by infiniteTransition.animateFloat(
@@ -1346,7 +1348,7 @@ fun Modifier.divineAura(
 @Composable
 fun Modifier.psychosis(isPlaying: Boolean = true): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "psychosis")
 
         // Psychosis Jitter (Violent twitching)
@@ -1459,7 +1461,7 @@ fun Modifier.katanaSlice(
     color: Color = Color.Red,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "katanaSlice")
 
         val ticker by infiniteTransition.animateFloat(
@@ -1644,7 +1646,7 @@ fun Modifier.sakuraWind(
     petalCount: Int = 12,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
         val infiniteTransition = rememberInfiniteTransition(label = "sakuraWind")
         val ticker by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -1761,7 +1763,7 @@ fun Modifier.lightningStorm(
     lightningColor: Color = Color.Cyan,
 ): Modifier =
     composed {
-        if (!isPlaying) return@composed this
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
 
         val infiniteTransition = rememberInfiniteTransition(label = "lightningStorm")
 
@@ -2313,8 +2315,10 @@ fun Modifier.genreVfx(
         Genre.HEROES -> {
             this
                 .levitate(yOffset = 10f)
-                .divineAura(auraColor = MaterialTheme.colorScheme.primary.lighter(.3f))
-                .lightningStorm(lightningColor = finalPrimary.lighter(0.6f))
+                .ultimateEnergyShader(
+                    energyColor = Color(0xFF8CE8FF),
+                    outerColor = finalPrimary.lighter(0.4f),
+                )
         }
 
         Genre.SPACE_OPERA -> {
@@ -2330,7 +2334,8 @@ fun Modifier.genreVfx(
 
         Genre.PUNK_ROCK -> {
             this
-                .glitch(true)
+                .chromaticAberration()
+                .glitch(glitchFrequency = .05f)
         }
     }
 }

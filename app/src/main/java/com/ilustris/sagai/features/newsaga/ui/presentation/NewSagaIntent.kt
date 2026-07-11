@@ -40,4 +40,6 @@ sealed interface NewSagaIntent {
     ) : NewSagaIntent
 
     data object LoadMore : NewSagaIntent
+
+    data object NavigateBack : NewSagaIntent
 }

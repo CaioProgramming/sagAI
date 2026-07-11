@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -23,6 +24,7 @@ fun CharacterStats(
     genre: Genre,
     contentColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
 ) {
+    val locale = LocalConfiguration.current.locales[0]
     val traits = character.details.physicalTraits
     val stats =
         buildList {
@@ -30,10 +32,16 @@ fun CharacterStats(
                 add(traits.gender to R.string.character_form_title_gender)
             }
             if (traits.height > 0) {
-                add("${traits.height.toInt()}cm" to R.string.character_stat_height)
+                val heightValue =
+                    if (traits.height < 3.0) {
+                        "${String.format(locale, "%.2f", traits.height)} m"
+                    } else {
+                        "${traits.height.toInt()} cm"
+                    }
+                add(heightValue to R.string.character_stat_height)
             }
             if (traits.weight > 0) {
-                add("${traits.weight.toInt()}kg" to R.string.character_stat_weight)
+                add("${traits.weight.toInt()} kg" to R.string.character_stat_weight)
             }
             if (traits.race.isNotBlank()) {
                 add(traits.race to R.string.character_form_label_race)

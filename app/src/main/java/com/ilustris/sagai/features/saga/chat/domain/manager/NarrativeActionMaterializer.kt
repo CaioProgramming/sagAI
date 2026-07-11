@@ -42,10 +42,6 @@ object NarrativeActionMaterializer {
                 saga.findChapter(intent.chapterId)?.let { NarrativeAction.CreateTimeline(it) }
             }
 
-            is NarrativeProgressIntent.EnsureTimelineSceneSummary -> {
-                saga.findTimeline(intent.timelineId)?.let { NarrativeAction.EnsureTimelineSceneSummary(it) }
-            }
-
             is NarrativeProgressIntent.CloseTimeline -> {
                 saga.findChapter(intent.chapterId)?.let { NarrativeAction.CloseTimeline(it) }
             }

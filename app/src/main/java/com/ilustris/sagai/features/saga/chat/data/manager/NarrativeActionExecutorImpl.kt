@@ -12,12 +12,14 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaEnding
+import com.ilustris.sagai.features.home.data.model.inheritSceneSummaryForChapter
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
 import com.ilustris.sagai.features.saga.datasource.MessageDao
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationCoordinator
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -37,6 +39,7 @@ class NarrativeActionExecutorImpl
         private val actUseCase: ActUseCase,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val messageDao: MessageDao,
+        private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
     ) : NarrativeActionExecutor {
         override suspend fun execute(
             action: NarrativeAction,
@@ -69,10 +72,6 @@ class NarrativeActionExecutorImpl
 
                     is NarrativeAction.CreateTimeline -> {
                         startTimeline(action.chapter, environment)
-                    }
-
-                    is NarrativeAction.EnsureTimelineSceneSummary -> {
-                        ensureTimelineSceneSummary(action.timeline, environment)
                     }
 
                     is NarrativeAction.EvolveTimeline -> {
@@ -278,17 +277,6 @@ class NarrativeActionExecutorImpl
             generated ?: error("Failed to generate chapter synthesis")
         }
 
-        private suspend fun ensureTimelineSceneSummary(
-            timeline: TimelineContent,
-            environment: NarrativeExecutionEnvironment,
-        ) = executeRequest {
-            val saga = environment.getSagaMetadata() ?: error("Saga not available")
-            when (val objectiveResult = timelineUseCase.getTimelineObjective(saga, timeline.data)) {
-                is RequestResult.Success -> objectiveResult.value
-                is RequestResult.Error -> throw objectiveResult.value
-            }
-        }
-
         private suspend fun startTimeline(
             currentChapter: ChapterContent,
             environment: NarrativeExecutionEnvironment,
@@ -304,21 +292,22 @@ class NarrativeActionExecutorImpl
                 throw IllegalArgumentException("Timeline already set at this chapter")
             }
 
+            val sagaContent = environment.getSagaContent() ?: error("Saga not available")
+            val inheritedSummary = sagaContent.inheritSceneSummaryForChapter(currentChapter)
+
             val savedTimeline =
                 timelineUseCase.saveTimeline(
                     Timeline(
                         chapterId = currentChapter.data.id,
+                        sceneSummary = inheritedSummary,
+                        currentObjective = inheritedSummary?.immediateObjective,
                     ),
                 )
             chapterUseCase.updateChapter(
                 currentChapter.data.copy(currentEventId = savedTimeline.id),
             )
 
-            val saga = environment.getSagaMetadata() ?: error("Saga not available")
-            when (val objectiveResult = timelineUseCase.getTimelineObjective(saga, savedTimeline)) {
-                is RequestResult.Success -> objectiveResult.value
-                is RequestResult.Error -> throw objectiveResult.value
-            }
+            savedTimeline
         }
 
         private suspend fun updateTimeline(
@@ -423,6 +412,7 @@ class NarrativeActionExecutorImpl
                         endedAt = System.currentTimeMillis(),
                     ),
                 )
+                reviewGenerationCoordinator.enqueue(sagaId)
             } else {
                 val fullSaga =
                     sagaHistoryUseCase.getSagaById(sagaId).first()
@@ -453,6 +443,7 @@ class NarrativeActionExecutorImpl
                             delay(1.seconds)
                             environment.onReasoningChunk(null)
                             environment.dismissMilestone()
+                            reviewGenerationCoordinator.enqueue(sagaId)
                         }
 
                         is StreamingState.Error -> {

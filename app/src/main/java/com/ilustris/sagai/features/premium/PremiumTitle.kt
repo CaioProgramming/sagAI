@@ -24,13 +24,14 @@ fun PremiumTitle(
     brush: Brush = Brush.horizontalGradient(holographicGradient),
     modifier: Modifier = Modifier.Companion,
     iconModifier: Modifier = Modifier.Companion,
+    isAnimated: Boolean = false,
 ) {
     Row(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         modifier =
             modifier
-                .reactiveShimmer(true)
+                .reactiveShimmer(isAnimated)
                 .gradientFill(brush),
     ) {
         SagaTitle(

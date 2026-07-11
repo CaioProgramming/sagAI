@@ -28,7 +28,6 @@ import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 
 @Composable
 fun TimelineThreadCard(
@@ -65,8 +64,7 @@ fun TimelineThreadCard(
                     modifier =
                         Modifier
                             .size(48.dp)
-                            .effectForGenre(genre)
-                            .selectiveColorHighlight(genre),
+                            .effectForGenre(genre, enableSelectiveHighlight = true),
                 )
 
                 // Thread Line

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -21,12 +20,11 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.RoundedPolygonShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.holographicGradient
-import kotlin.collections.plusAssign
-import kotlin.compareTo
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -40,19 +38,14 @@ fun SparkIcon(
     blurRadius: Dp = 10.dp,
     targetRadius: Float = 1f / 3f,
     duration: Duration = 5.seconds,
-    rotationTarget : Float = 30f
+    rotationTarget: Float = 30f,
 ) {
-    val infiniteTranition = rememberInfiniteTransition()
     val starInnerRadius =
-        infiniteTranition.animateFloat(
-            initialValue = 1f / 2f,
-            targetValue = targetRadius,
-            animationSpec =
-                infiniteRepeatable(
-                    tween(duration.toInt(DurationUnit.MILLISECONDS), easing = EaseInElastic),
-                    Reverse,
-                ),
-        )
+        if (rememberLifecycleAnimationsActive()) {
+            rememberSparkIconInnerRadius(targetRadius, duration)
+        } else {
+            targetRadius
+        }
 
     SagaLoader(
         modifier = modifier,
@@ -66,12 +59,30 @@ fun SparkIcon(
             RoundedPolygonShape(
                 RoundedPolygon.star(
                     numVerticesPerRadius = 4,
-                    innerRadius = starInnerRadius.value,
+                    innerRadius = starInnerRadius,
                     radius = 1f,
                     rounding = CornerRounding(0f),
                 ),
             ),
     )
+}
+
+@Composable
+private fun rememberSparkIconInnerRadius(
+    targetRadius: Float,
+    duration: Duration,
+): Float {
+    val infiniteTransition = rememberInfiniteTransition()
+    val starInnerRadius by infiniteTransition.animateFloat(
+        initialValue = 1f / 2f,
+        targetValue = targetRadius,
+        animationSpec =
+            infiniteRepeatable(
+                tween(duration.toInt(DurationUnit.MILLISECONDS), easing = EaseInElastic),
+                Reverse,
+            ),
+    )
+    return starInnerRadius
 }
 
 @Preview

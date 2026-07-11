@@ -4,7 +4,6 @@ import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,8 +14,9 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import timber.log.Timber
 
 private const val DEFAULT_TOLERANCE = 0.20f
@@ -28,23 +28,6 @@ private const val DEFAULT_DESATURATION_FACTOR_NON_TARGET = 0f
 
 /**
  * Data class holding parameters for the selective color highlight effect.
- * This effect highlights a specific target color and desaturates other colors.
- *
- * @param targetColor The primary color to be highlighted. Pixels matching this color (within tolerances) will be boosted.
- * @param hueTolerance Defines the allowable difference in hue from the [targetColor] for a pixel to still be considered a match.
- *                     A larger value means a wider range of similar hues will be highlighted. Range typically 0.0 to 1.0.
- * @param saturationThreshold The minimum saturation a pixel must have to be considered for highlighting, even if its hue matches.
- *                            Helps to avoid highlighting grayish pixels that happen to match the target hue. Range 0.0 to 1.0.
- * @param lightnessThreshold The minimum lightness (brightness) a pixel must have to be considered for highlighting.
- *                           Helps to avoid highlighting very dark pixels. Range 0.0 to 1.0.
- * @param highlightSaturationBoost Factor by which the saturation of the highlighted [targetColor] pixels is multiplied.
- *                                 Values greater than 1.0 increase saturation; less than 1.0 decrease it.
- * @param highlightLightnessBoost Factor by which the lightness (brightness) of the highlighted [targetColor] pixels is adjusted.
- *                                Can be positive (to brighten) or negative (to darken). Often a small value.
- * @param desaturationFactorNonTarget Factor controlling how much non-target colors are desaturated.
- *                                    A value of 0.0 would make non-target areas grayscale.
- *                                    A value of 1.0 would leave non-target areas unchanged.
- *                                    Typically a small value like 0.05f to heavily desaturate. Range 0.0 to 1.0.
  */
 data class SelectiveColorParams(
     val targetColor: Color,
@@ -66,18 +49,31 @@ data class SelectiveColorParams(
     )
 }
 
+/**
+ * Applies genre shader + selective highlight in a single GPU pass.
+ */
+@Composable
+fun Modifier.selectiveColorHighlight(
+    genre: Genre?,
+    visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
+): Modifier = effectForGenre(genre, visualConfig, enableSelectiveHighlight = true)
+
+@Composable
+fun Modifier.selectiveColorHighlight(genre: Genre?): Modifier =
+    selectiveColorHighlight(genre, LocalGenreVisualConfig.current)
+
+/**
+ * Legacy entry point when only [SelectiveColorParams] are available without a [Genre].
+ */
 @Composable
 fun Modifier.selectiveColorHighlight(
     params: SelectiveColorParams?,
     shaderAssetFileName: String = "selective_color_highlight.agsl",
 ): Modifier {
-    LaunchedEffect(Unit) {
-        Timber.tag("SelectiveColor").d("selectiveColorHighlight modifier called with params present: ${params != null}")
-    }
     if (params == null) return this
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         Timber.w("Shader effects not supported on this API level.")
-        return this // Or a fallback using ColorMatrix if desired
+        return this
     }
 
     val agslShaderSource = loadShaderFromAssetsOnce(shaderAssetFileName) ?: return this
@@ -99,11 +95,7 @@ fun Modifier.selectiveColorHighlight(
                     composableSize.width.toFloat(),
                     composableSize.height.toFloat(),
                 )
-                // if (agslShaderSource.contains("iTime")) {
-                //     runtimeShader.setFloatUniform("iTime", timeState)
-                // }
 
-                // Convert Compose Color to normalized RGB for the shader
                 val targetColorRgb =
                     floatArrayOf(
                         params.targetColor.red,
@@ -137,6 +129,3 @@ fun Modifier.selectiveColorHighlight(
             }
         }
 }
-
-@Composable
-fun Modifier.selectiveColorHighlight(genre: Genre?): Modifier = selectiveColorHighlight(genre?.selectiveHighlight())

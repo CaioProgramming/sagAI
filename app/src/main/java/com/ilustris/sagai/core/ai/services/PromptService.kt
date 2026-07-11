@@ -159,7 +159,7 @@ class PromptServiceImpl
             if (logEnabled) {
                 Timber.tag("PromptService").d("buildRemotePrompt: Found Blueprint for '$remoteConfigKey'")
             }
-            if (blueprint.template.isBlank()) {
+            if (blueprint.template.isNullOrBlank()) {
                 throw IllegalStateException(
                     "Prompt template not found for Remote Config key: $remoteConfigKey",
                 )
@@ -296,10 +296,10 @@ class PromptServiceImpl
                 buckets.putAll(it)
             }
 
-            // --- Build processed template (dynamic — placeholder substitution applied) ---
+            // --- Build processed template (dynamic — placeholder substitution applied or automatic context) ---
             val processedTemplate =
                 buildString {
-                    if (blueprint.template.isNotBlank()) {
+                    if (!blueprint.template.isNullOrBlank()) {
                         appendLine(
                             buildPrompt(
                                 blueprint.template,
@@ -308,11 +308,17 @@ class PromptServiceImpl
                                 remoteConfigKey,
                             ),
                         )
+                    } else if (variables.isNotEmpty()) {
+                        appendLine("# TASK CONTEXT")
+                        appendLine(variables.toAINormalize())
                     }
                 }.trimIndent()
 
             val placeholders =
-                Regex("\\{(\\w+)\\}").findAll(blueprint.template).map { it.groupValues[1] }.toList()
+                Regex("\\{(\\w+)\\}")
+                    .findAll(blueprint.template ?: "")
+                    .map { it.groupValues[1] }
+                    .toList()
             val missingVariables = placeholders.filter { it !in variables }
 
             return SplitPrompt(
@@ -358,7 +364,7 @@ class PromptServiceImpl
                 buckets.putAll(it)
             }
 
-            // --- Build processed template (dynamic — placeholder substitution applied) ---
+            // --- Build processed template (dynamic — placeholder substitution applied or automatic context) ---
             val processedTemplate =
                 buildString {
                     if (blueprint.examples.isNotEmpty()) {
@@ -370,7 +376,7 @@ class PromptServiceImpl
                         appendLine()
                     }
 
-                    if (blueprint.template.isNotBlank()) {
+                    if (!blueprint.template.isNullOrBlank()) {
                         appendLine("# TASK DEFINITION")
                         appendLine(
                             buildPrompt(
@@ -380,11 +386,17 @@ class PromptServiceImpl
                                 remoteConfigKey,
                             ),
                         )
+                    } else {
+                        appendLine("# TASK CONTEXT")
+                        appendLine(variables.toAINormalize())
                     }
                 }.trimIndent()
 
             val placeholders =
-                Regex("\\{(\\w+)\\}").findAll(blueprint.template).map { it.groupValues[1] }.toList()
+                Regex("\\{(\\w+)\\}")
+                    .findAll(blueprint.template ?: "")
+                    .map { it.groupValues[1] }
+                    .toList()
             val missingVariables = placeholders.filter { it !in variables.asMap() }
 
             return SplitPrompt(

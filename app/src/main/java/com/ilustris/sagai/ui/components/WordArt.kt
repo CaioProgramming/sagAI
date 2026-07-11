@@ -48,13 +48,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.animations.genreVfx
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.lighter
@@ -122,8 +120,7 @@ fun WordArtText(
             modifier
                 .graphicsLayer {
                     this.rotationX = rotationX
-                }
-                .drawBehind {
+                }.drawBehind {
                     // Optional outer glow around the text outline to emulate neon/cyberpunk
 
                     // 1. Extrusion Layers
@@ -175,6 +172,54 @@ fun RansomNoteText(
     fontFamily: FontFamily? = null,
     primaryColor: Color = Color.White,
     secondaryColor: Color = Color.Black,
+) {
+    if (rememberLifecycleAnimationsActive()) {
+        RansomNoteTextAnimated(
+            text = text,
+            genre = genre,
+            modifier = modifier,
+            fontSize = fontSize,
+            fontFamily = fontFamily,
+            primaryColor = primaryColor,
+            secondaryColor = secondaryColor,
+        )
+    } else {
+        FlowRow(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Center,
+            maxItemsInEachRow = 12,
+        ) {
+            text.forEachIndexed { index, char ->
+                if (char.isWhitespace()) {
+                    Spacer(modifier = Modifier.width(fontSize.value.dp / 3))
+                } else {
+                    RansomLetter(
+                        char = char,
+                        index = index,
+                        colorFrame = 0,
+                        jitterFrame = 0,
+                        genre = genre,
+                        fontSize = fontSize,
+                        fontFamily = fontFamily,
+                        primaryColor = primaryColor,
+                        secondaryColor = secondaryColor,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RansomNoteTextAnimated(
+    text: String,
+    genre: Genre,
+    modifier: Modifier,
+    fontSize: TextUnit,
+    fontFamily: FontFamily?,
+    primaryColor: Color,
+    secondaryColor: Color,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "punkPulse")
     val ticker by
@@ -285,7 +330,6 @@ fun Genre.stylisedText(
     text: String,
     modifier: Modifier = Modifier,
     fontSize: TextUnit = MaterialTheme.typography.displaySmall.fontSize,
-    visualConfig: GenreVisualConfig? = null,
 ) {
     val resolvedColor = MaterialTheme.colorScheme.primary
     val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
@@ -392,24 +436,12 @@ fun Genre.stylisedText(
         }
 
         Genre.HEROES -> {
-            val infiniteTransition = rememberInfiniteTransition(label = "heroShadow")
-            val glowRadius by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 0f,
-                animationSpec =
-                    infiniteRepeatable(
-                        animation =
-                            keyframes {
-                                durationMillis = 2500
-                                0f at 0 // Start
-                                30f at 200 using FastOutSlowInEasing // Strike Peak
-                                20f at 1250 // Hold End
-                                5f at 2500 // Discharge End
-                            },
-                        repeatMode = RepeatMode.Restart,
-                    ),
-                label = "shadowPulse",
-            )
+            val glowRadius =
+                if (rememberLifecycleAnimationsActive()) {
+                    rememberHeroShadowGlowRadius()
+                } else {
+                    5f
+                }
 
             Text(
                 text = text,
@@ -468,17 +500,17 @@ fun Genre.stylisedText(
         }
 
         Genre.PUNK_ROCK -> {
-            RansomNoteText(
+            AutoResizeText(
                 text = text,
-                genre = this,
                 modifier =
                     modifier
                         .genreVfx(this)
                         .padding(8.dp),
-                fontSize = (fontSize.value * 0.8f).sp,
-                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                primaryColor = resolvedColor,
-                secondaryColor = resolvedIconColor,
+                style =
+                    style.copy(
+                        brush = Brush.verticalGradient(palette),
+                        shadow = Shadow(resolvedColor.darker(), blurRadius = 15f),
+                    ),
             )
         }
 
@@ -514,4 +546,27 @@ fun WordArtTextPreview() {
             }
         }
     }
+}
+
+@Composable
+private fun rememberHeroShadowGlowRadius(): Float {
+    val infiniteTransition = rememberInfiniteTransition(label = "heroShadow")
+    val glowRadius by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 0f,
+        animationSpec =
+            infiniteRepeatable(
+                animation =
+                    keyframes {
+                        durationMillis = 2500
+                        0f at 0
+                        30f at 200 using FastOutSlowInEasing
+                        20f at 1250
+                        5f at 2500
+                    },
+                repeatMode = RepeatMode.Restart,
+            ),
+        label = "shadowPulse",
+    )
+    return glowRadius
 }

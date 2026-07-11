@@ -30,6 +30,7 @@ interface ChatNotificationManager {
         character: Character?,
         message: String,
         largeIcon: Bitmap?,
+        deepLink: String? = null,
     )
 
     fun deliverSystemNotification(

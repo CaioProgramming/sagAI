@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
@@ -56,7 +57,6 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -78,10 +78,16 @@ import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.solidGradient
+import com.ilustris.sagai.ui.theme.themeIcon
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -517,15 +523,14 @@ fun HeroSummaryCard(
         }
 
         Image(
-            painterResource(R.drawable.ic_spark),
+            themeIcon(),
             null,
             colorFilter =
                 androidx.compose.ui.graphics.ColorFilter
                     .tint(MaterialTheme.colorScheme.primary),
             modifier =
                 Modifier
-                    .size(32.dp)
-                    .reactiveShimmer(true),
+                    .size(24.dp),
         )
     }
 }
@@ -933,7 +938,8 @@ fun ReviewTopCharacterContent(
                         2.dp,
                         MaterialTheme.colorScheme.primary,
                         genre.bubble(isNarrator = true),
-                    ).effectForGenre(genre),
+                    )
+                    .effectForGenre(genre),
         )
 
         subtitle?.let {
@@ -1071,6 +1077,51 @@ fun ReviewLoadingPage(
                 modifier = Modifier.fillMaxWidth(0.6f),
                 color = MaterialTheme.colorScheme.primary,
             )
+        }
+    }
+}
+
+@Composable
+fun ReviewStepLoadingPage(
+    reasoningMessage: String?,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .gradientFill(Brush.verticalGradient(morphingGradient()))
+                .reactiveShimmer(true),
+        contentAlignment = Alignment.Center,
+    ) {
+        StarryTextPlaceholder(
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(32.dp),
+        ) {
+            MorphingThemeIcon(
+                modifier = Modifier.size(64.dp),
+                glowIntensity = 2.5f,
+                brush = MaterialTheme.colorScheme.onBackground.solidGradient(),
+            )
+
+            reasoningMessage?.let {
+                Text(
+                    text = it,
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                            shadow = Shadow(MaterialTheme.colorScheme.primary, blurRadius = 10f),
+                        ),
+                    textAlign = TextAlign.Center,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }

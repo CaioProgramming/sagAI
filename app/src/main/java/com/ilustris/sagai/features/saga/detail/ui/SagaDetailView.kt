@@ -63,12 +63,14 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.sagaShape
+import com.ilustris.sagai.core.globalshell.rememberOverlayVisibilityTracker
 
 @Composable
 fun SagaDetailView(
@@ -96,12 +98,12 @@ fun SagaDetailView(
     var sagaToDelete by remember { mutableStateOf<Saga?>(null) }
     val initialSection by viewModel.initialSection.collectAsStateWithLifecycle()
 
-    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
-    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     var showReview by remember { mutableStateOf(false) }
+    val overlayVisibilityTracker = rememberOverlayVisibilityTracker()
     var showEmotionalReview by remember { mutableStateOf(false) }
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     val drawer by viewModel.detailDrawer.collectAsStateWithLifecycle()
+    val reviewGenerationState by viewModel.reviewGenerationState.collectAsStateWithLifecycle()
     val gridState = rememberLazyGridState()
 
     BackHandler(enabled = true) {
@@ -119,6 +121,13 @@ fun SagaDetailView(
     }
 
     SagAITheme(genre = resume?.saga?.genre) {
+        LaunchedEffect(resume?.saga?.id, showReview) {
+            val id = resume?.saga?.id
+            if (id != null) {
+                overlayVisibilityTracker.setReviewVisible(id, showReview)
+            }
+        }
+
         var lastNavigationTime by remember { mutableStateOf(0L) }
         val onAction: (DetailAction) -> Unit =
             remember(onBack, onCharacterDetails, onLoreDebug, viewModel) {
@@ -189,23 +198,13 @@ fun SagaDetailView(
             initialSection = initialSection,
             resume = resume,
             drawer = drawer,
+            reviewGenerationState = reviewGenerationState,
             gridState = gridState,
             onAction = onAction,
             modifier = Modifier.fillMaxSize(),
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
         )
-
-        AnimatedVisibility(isGenerating) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                StarryLoader(
-                    isLoading = true,
-                    loadingMessage = loadingMessage ?: emptyString(),
-                    textStyle = MaterialTheme.typography.labelMedium,
-                    brushColors = resume?.saga?.genre?.colorPalette() ?: holographicGradient,
-                )
-            }
-        }
 
         if (showPremiumSheet) {
             OnboardingDialog(
@@ -294,6 +293,7 @@ fun SagaDetailContentView(
     initialSection: DetailSectionView.InitialSection?,
     resume: SagaDetailResume?,
     drawer: TimelineDrawer?,
+    reviewGenerationState: ReviewGenerationState,
     gridState: LazyGridState,
     onAction: (DetailAction) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -356,6 +356,7 @@ fun SagaDetailContentView(
                                     saga = baseSaga,
                                     section = initialSection!!,
                                     resume = sagaResume,
+                                    reviewGenerationState = reviewGenerationState,
                                     gridState = gridState,
                                     onAction = onAction,
                                     sharedTransitionScope = sharedTransitionScope,

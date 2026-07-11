@@ -37,8 +37,6 @@ object ImagePrompts {
                 "context" to context,
                 "aesthetic" to config.aesthetic,
                 "genre" to genre.name,
-                "imageType" to imageType.name.replace("_", " "),
-                "aspectRatio" to aspectRatio,
             ),
         )
     }

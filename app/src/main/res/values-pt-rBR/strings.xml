@@ -8,7 +8,7 @@
     <string name="saga_description">Por onde começamos?</string>
     <string name="saga_character_description">Quem você vai ser?</string>
     <string name="saga_character_description_subtitle">Descreva seu personagem, aparência, personalidade, estilo…</string>
-    <string name="saga_description_subtitle">Vamos definir o início dessa aventura; não se preocupe com os detalhes, vamos melhorando juntos.</string>
+    <string name="saga_description_subtitle">Vamos definir o início dessa aventura.\nnão se preocupe com os detalhes, vamos melhorando juntos.</string>
     <string name="saga_description_hint">Descreva sua história…</string>
     <string name="saga_saving">Hora de construir esse mundo!</string>
     <string name="saga_saving_subtitle">Deixa comigo; vou construir seu mundo em alguns instantes,</string>
@@ -337,6 +337,17 @@
     <string name="saga_not_found">Saga não encontrada.</string>
     <string name="messages_count_label">%s mensagens</string>
     <string name="debug_controls">Controles de depuração</string>
+    <string name="debug_image_fallback_title">Ambiente de teste</string>
+    <string name="debug_image_fallback_subtitle">Para gerar a imagem, copie o prompt abaixo, abra o Gemini para criar e validar, e depois escolha a imagem aqui no app.</string>
+    <string name="debug_image_fallback_prompt_card_title">Prompt da imagem</string>
+    <string name="debug_image_fallback_copy_prompt">Copiar prompt</string>
+    <string name="debug_image_fallback_expand_prompt">Ver prompt completo</string>
+    <string name="debug_image_fallback_collapse_prompt">Ver menos</string>
+    <string name="debug_image_fallback_open_gemini">Abrir Gemini</string>
+    <string name="debug_image_fallback_open_gemini_error">Não foi possível abrir o Gemini</string>
+    <string name="debug_image_fallback_pick_image">Escolher imagem</string>
+    <string name="debug_image_fallback_prompt_copied">Prompt copiado!</string>
+    <string name="debug_image_fallback_pick_error">Não foi possível carregar essa imagem. Tente outra.</string>
     <string name="fake_messages_placeholder">Número de mensagens falsas</string>
     <string name="current_objective">Objetivo atual</string>
     <string name="start_writing_saga">Comece a escrever sua saga!</string>
@@ -361,6 +372,9 @@
     <string name="recap_chapters_lived">%d capítulos vividos</string>
     <string name="recap_revisit_now">Revisite sua saga agora</string>
     <string name="recap_your_journey">Sua Jornada</string>
+    <string name="recap_preparing">Preparando seu recap…</string>
+    <string name="recap_almost_ready">Seu recap está quase pronto (%1$d/%2$d)</string>
+    <string name="review_step_loading_default">Criando o próximo capítulo do seu recap…</string>
     <string name="character_details_aka">vulgo: %s</string>
     <string name="character_details_arcs_title">Arco narrativo</string>
     <string name="character_details_knowledge_title">O que sabe</string>
@@ -479,6 +493,10 @@
     <string name="advance_saga_ending">Escrever o desfecho</string>
     <string name="releasing_ending">Escrevendo o desfecho...</string>
     <string name="advance_pull_hint">Deslize para cima para continuar</string>
+    <string name="narrative_advance_shell_expand">Expandir</string>
+    <string name="narrative_advance_shell_collapse">Recolher</string>
+    <string name="narrative_advance_shell_release">Solte para continuar</string>
+    <string name="task_shell_minimize">Minimizar</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Parabéns! Continue assim!</string>
@@ -577,6 +595,7 @@
     <!-- Extracted Strings -->
     <string name="milestone_overlay_important_characters_title">Personagens mais importantes</string>
     <string name="review_restart_button">Recomeçar</string>
+    <string name="review_regenerate_button">Regerar review</string>
 
     <!-- Review Summary Page -->
     <string name="review_summary_title">Nossa História, Recontada</string>
@@ -597,6 +616,7 @@
     <string name="audit_logs_success">Sucesso</string>
     <string name="audit_logs_error">Erro</string>
     <string name="audit_logs_empty">Nenhum log registrado ainda.</string>
+    <string name="audit_logs_loading_more">Carregando mais logs…</string>
     <string name="audit_logs_clear_dialog_title">Limpar Logs de Auditoria</string>
     <string name="audit_logs_clear_dialog_message">Tem certeza que deseja apagar todos os logs de auditoria de IA? Esta ação não pode ser desfeita.</string>
     <string name="audit_logs_clear_button">Limpar</string>
@@ -641,6 +661,21 @@
     <string name="character_stat_height">Altura</string>
     <string name="character_stat_weight">Peso</string>
     <string name="character_generating">Gerando %1$s…</string>
+    <string name="image_generation_default_label">Gerando imagem…</string>
+    <string name="image_generation_awaiting_manual">Aguardando imagem manual</string>
+    <string name="image_generation_queue_badge">+%1$d na fila</string>
+    <string name="image_generation_panel_expand">Expandir painel de geração de imagem</string>
+    <string name="image_generation_panel_collapse">Recolher painel de geração de imagem</string>
+    <string name="image_generation_reasoning_placeholder">Preparando visual…</string>
+    <string name="book_generation_reasoning_placeholder">Escrevendo a crônica…</string>
+    <string name="chat_generation_reasoning_placeholder">Pensando em uma resposta…</string>
+    <string name="image_generation_reveal_icon">Ícone do personagem pronto</string>
+    <string name="image_generation_reveal_cover">Capa pronta</string>
+    <string name="image_generation_reveal_dismiss">Continuar</string>
+    <string name="image_generation_fallback_cancel">Cancelar</string>
+    <string name="image_generation_character_icon">Gerando ícone de %1$s…</string>
+    <string name="image_generation_chapter_cover">Gerando capa do capítulo…</string>
+    <string name="image_generation_saga_icon">Gerando ícone da saga…</string>
 
     <!-- Chat -->
     <string name="regenerate_audio">Regenerar áudio…</string>
@@ -785,4 +820,37 @@
     <string name="saga_brain_stage_in_progress_body">Continue jogando para saber mais sobre essa etapa da história.</string>
     <string name="see_your_universe">Veja seu universo</string>
     <string name="mascot_insight_label">Percepção emocional do mascote</string>
+
+    <!-- Milestone Dashboard -->
+    <string name="milestone_label_narrative">Narrativa</string>
+    <string name="milestone_label_objective">Objetivo</string>
+    <string name="milestone_label_vibe">Vibe</string>
+    <string name="milestone_label_impact">Impacto</string>
+    <string name="milestone_label_chapter_summary">Resumo do Capítulo</string>
+    <string name="milestone_label_emotional_review">Revisão Emocional</string>
+    <string name="milestone_chapter_review_title">Resumo do Capítulo</string>
+    <string name="milestone_label_act_summary">Resumo do Volume</string>
+    <string name="milestone_act_review_title">Resumo do Volume</string>
+    <string name="milestone_label_backstory">História de Origem</string>
+    <string name="milestone_label_occupation">Ocupação</string>
+    <string name="milestone_label_personality">Personalidade</string>
+    <string name="milestone_label_timeline_update">Atualização da linha do tempo</string>
+    <string name="milestone_label_knowledge">Conhecimento</string>
+    <string name="milestone_label_continuity">Continuidade da história</string>
+    <string name="milestone_label_established_facts">Fatos estabelecidos</string>
+    <string name="milestone_label_open_threads">Fios em aberto</string>
+    <string name="milestone_label_consequences">Consequências</string>
+    <string name="milestone_label_character_states">Estados dos personagens</string>
+    <string name="milestone_label_persistent_setups">Ganchos narrativos</string>
+    <string name="milestone_label_introduction">Introdução</string>
+    <string name="milestone_label_narrative_guide">Guia narrativo</string>
+    <string name="milestone_label_featured_characters">Personagens em destaque</string>
+    <string name="milestone_label_events_completed">Eventos concluídos</string>
+    <string name="milestone_hint_open_chronicle">Abra a crônica do volume nos detalhes da saga.</string>
+    <string name="milestone_action_open_chronicle">Ler crônica</string>
+    <string name="milestone_action_open_wiki">Ver wiki</string>
+    <string name="milestone_action_open_character">Ver personagem</string>
+    <string name="milestone_action_open_events">Ver eventos</string>
+    <string name="milestone_action_open_characters">Ver personagens</string>
+    <string name="world_state">Status do mundo</string>
 </resources>

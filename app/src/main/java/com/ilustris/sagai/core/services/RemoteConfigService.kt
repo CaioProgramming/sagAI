@@ -35,7 +35,13 @@ class RemoteConfigService {
     suspend inline fun <reified T : Any> getJson(
         key: String?,
         logEnabled: Boolean = true,
-    ): T? = getJsonWithType(key, com.ilustris.sagai.core.ai.getJavaType<T>(), logEnabled)
+    ): T? =
+        getJsonWithType(
+            key,
+            com.ilustris.sagai.core.ai
+                .getJavaType<T>(),
+            logEnabled,
+        )
 
     suspend fun getJsonMapStringAny(
         key: String?,
@@ -67,6 +73,9 @@ class RemoteConfigService {
         val jsonString = getString(key, logEnabled)
         return if (jsonString?.isNotEmpty() == true) {
             try {
+                if (logEnabled) {
+                    Timber.tag("RemoteConfigService").d("\ngetJson($key) -> $jsonString")
+                }
                 Gson().fromJson(jsonString, type)
             } catch (e: Exception) {
                 Timber.tag("RemoteConfigService").e("Error parsing json for $key: ${e.message}")

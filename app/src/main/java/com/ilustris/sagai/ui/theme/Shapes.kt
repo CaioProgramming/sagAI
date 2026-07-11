@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -35,10 +36,10 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.DurationUnit
 
 class CustomRotatingMorphShape(
     private val morph: Morph,
@@ -120,25 +121,17 @@ fun DrawShape(
     brush: Brush,
     duration: Duration = 5.seconds,
 ) {
+    val progressValue =
+        if (rememberLifecycleAnimationsActive()) {
+            rememberDrawShapeProgress(duration)
+        } else {
+            0.5f
+        }
+
     val pathMeasurer =
         remember {
             PathMeasure() // Used to measure and get segments of a path
         }
-    val infiniteTransition = rememberInfiniteTransition(label = "infinite")
-    val progress = // This progress value will go from 0f to 1f and back
-        infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec =
-                infiniteRepeatable(
-                    tween(
-                        duration.toInt(DurationUnit.MILLISECONDS),
-                        easing = EaseIn,
-                    ),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-            label = "progress",
-        )
 
     var morphPath =
         remember {
@@ -167,7 +160,7 @@ fun DrawShape(
                     // For a simple stroke animation of a static path, this would just be setting a fixed path.
                     androidPath =
                         morph.toPath(
-                            progress.value,
+                            progressValue,
                             androidPath,
                         ) // Assuming morph.toPath can take progress for morphing
                     morphPath = androidPath.asComposePath()
@@ -185,7 +178,7 @@ fun DrawShape(
                     destinationPath.reset() // Clear previous segment
                     pathMeasurer.getSegment(
                         startDistance = 0f,
-                        stopDistance = totalLength * progress.value, // Animate up to this point
+                        stopDistance = totalLength * progressValue, // Animate up to this point
                         destination = destinationPath,
                         startWithMoveTo = true, // Important to start drawing correctly
                     )
@@ -207,6 +200,25 @@ fun DrawShape(
                     }
                 },
     )
+}
+
+@Composable
+private fun rememberDrawShapeProgress(duration: Duration): Float {
+    val infiniteTransition = rememberInfiniteTransition(label = "infinite")
+    val progress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec =
+            infiniteRepeatable(
+                tween(
+                    duration.toInt(kotlin.time.DurationUnit.MILLISECONDS),
+                    easing = EaseIn,
+                ),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "progress",
+    )
+    return progress
 }
 
 @Composable

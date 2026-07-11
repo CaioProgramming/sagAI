@@ -23,7 +23,9 @@ class GenreVisualConfigService(
         if (genre == null) return null
         Timber.tag("GenreVisualConfigService").d("Requesting config for $genre")
         if (cache.containsKey(genre) && cache[genre] != null) {
-            Timber.tag("GenreVisualConfigService").d("Returning cached config for $genre")
+            Timber
+                .tag("GenreVisualConfigService")
+                .d("Returning cached config for $genre\n${cache[genre]}")
             return cache[genre]
         }
 

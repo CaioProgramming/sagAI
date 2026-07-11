@@ -18,13 +18,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -35,6 +35,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,8 +44,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -67,18 +68,20 @@ import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaHighlight
 import com.ilustris.sagai.ui.theme.sagaShader
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.themeIcon
+import com.ilustris.sagai.ui.theme.themePainter
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -86,6 +89,7 @@ fun SagaDetailInitialContent(
     saga: Saga,
     section: DetailSectionView.InitialSection,
     resume: SagaDetailResume,
+    reviewGenerationState: ReviewGenerationState,
     gridState: LazyGridState = rememberLazyGridState(),
     onAction: (DetailAction) -> Unit = {},
     showTitleOnly: Boolean = false,
@@ -137,7 +141,7 @@ fun SagaDetailInitialContent(
                         sagaHeaderComponent(
                             saga,
                             modifier =
-                                Modifier.clickable(enabled = saga.icon.isBlank()) {
+                                Modifier.clickable(enabled = BuildConfig.DEBUG || saga.icon.isBlank()) {
                                     onAction(DetailAction.RegenerateIcon)
                                 },
                         )
@@ -215,6 +219,7 @@ fun SagaDetailInitialContent(
                                 chaptersCount = resume.chaptersCount,
                                 charactersCount = resume.charactersCount,
                                 messagesCount = resume.messagesCount,
+                                reviewGenerationState = reviewGenerationState,
                                 modifier =
                                     Modifier
                                         .padding(16.dp)
@@ -398,10 +403,25 @@ fun SagaDetailInitialContent(
                         item(span = {
                             GridItemSpan(columnCount)
                         }) {
+                            OutlinedButton(
+                                onClick = { onAction(DetailAction.RegenerateIcon) },
+                                modifier =
+                                    Modifier
+                                        .padding(horizontal = 16.dp)
+                                        .fillMaxWidth(),
+                            ) {
+                                Text(stringResource(R.string.debug_regenerate_image))
+                            }
+                        }
+
+                        item(span = {
+                            GridItemSpan(columnCount)
+                        }) {
                             Button(
                                 onClick = {
                                     onAction(DetailAction.OpenLoreDebug)
                                 },
+                                shape = MaterialTheme.shapes.medium,
                                 colors =
                                     ButtonDefaults.buttonColors().copy(
                                         containerColor = MaterialTheme.colorScheme.primary,
@@ -483,13 +503,22 @@ fun sagaHeaderComponent(
         contentAlignment = Alignment.BottomCenter,
     ) {
         if (saga.icon.isBlank()) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    themeIcon(),
-                    null,
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier =
                     Modifier
-                        .size(64.dp)
-                        .gradientFill(sagaBrush()),
+                        .fillMaxWidth()
+                        .padding(16.dp),
+            ) {
+                Icon(
+                    themePainter(),
+                    null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier =
+                        Modifier
+                            .statusBarsPadding()
+                            .size(100.dp)
+                            .gradientFill(Brush.verticalGradient(morphingGradient())),
                 )
                 saga.genre.stylisedText(
                     saga.title,
@@ -527,34 +556,6 @@ fun sagaHeaderComponent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                if (saga.isEnded) {
-                    Row(
-                        Modifier
-                            .background(
-                                MaterialTheme.colorScheme.secondary,
-                                MaterialTheme.shapes.large,
-                            ).padding(4.dp)
-                            .alpha(.6f),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            themeIcon(),
-                            null,
-                            Modifier.size(12.dp),
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                        )
-
-                        Text(
-                            stringResource(R.string.chat_card_saga_ended),
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                ),
-                        )
-                    }
-                }
-
                 saga.genre.stylisedText(
                     saga.title,
                     modifier =

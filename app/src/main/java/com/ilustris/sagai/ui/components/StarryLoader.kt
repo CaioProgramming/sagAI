@@ -53,6 +53,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -88,13 +89,13 @@ fun StarryLoader(
     val brush = themeBrushColors()
     val setBlur = LocalBlurState.current
     DisposableEffect(isLoading && useAsDialog) {
-        setBlur(isLoading)
+        setBlur(if (isLoading) BlurIntensity.Strong else BlurIntensity.None)
         onDispose {
-            setBlur(false)
+            setBlur(BlurIntensity.None)
         }
     }
 
-    if (isLoading) {
+    if (isLoading && rememberLifecycleAnimationsActive()) {
         val paint =
             remember {
                 Paint().apply {

@@ -13,6 +13,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaInfo
 import com.ilustris.sagai.features.home.data.model.TimelineMetadata
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
+import com.ilustris.sagai.features.saga.detail.data.model.isComplete
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineMapper
@@ -147,7 +148,7 @@ class SagaDetailUIMapper(
             chaptersCount = resume.chaptersCount,
             hasActs = resume.hasActs,
             endMessage = saga.endMessage,
-            readyToReview = false,
+            readyToReview = saga.review.isComplete(),
         )
     }
 }

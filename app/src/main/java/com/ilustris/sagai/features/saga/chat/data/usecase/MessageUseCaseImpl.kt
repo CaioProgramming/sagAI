@@ -17,6 +17,10 @@ import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.file.AVATAR_ICON_TARGET_PX
+import com.ilustris.sagai.core.file.ImageHelper
+import com.ilustris.sagai.core.globalshell.GlobalShellService
+import com.ilustris.sagai.core.globalshell.NewMessageEffect
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
@@ -30,8 +34,10 @@ import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.findCharacterStrict
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirectiveKey
+import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.model.AIReaction
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
@@ -66,11 +72,14 @@ class MessageUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val audioGenClient: AudioGenClient,
         private val fileHelper: FileHelper,
+        private val imageHelper: ImageHelper,
         private val genreConfigService: GenreConfigService,
         private val promptService: PromptService,
         private val remoteConfigService: RemoteConfigService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val timelineUseCase: TimelineUseCase,
+        private val sagaContentManager: SagaContentManager,
+        private val globalShellService: GlobalShellService,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -136,12 +145,46 @@ class MessageUseCaseImpl
             message: Message,
             isFromUser: Boolean,
         ) = executeRequest {
-            messageRepository.saveMessage(
-                message.copy(
-                    status = MessageStatus.OK,
-                    timestamp = System.currentTimeMillis(),
-                ),
-            )
+            val saved =
+                messageRepository.saveMessage(
+                    message.copy(
+                        status = MessageStatus.OK,
+                        timestamp = System.currentTimeMillis(),
+                    ),
+                )
+            if (saved.senderType == SenderType.CHARACTER) {
+                val character =
+                    saved.characterId?.let { characterId ->
+                        withContext(Dispatchers.IO) {
+                            characterRepository.getCharacterById(
+                                characterId,
+                            )
+                        }
+                    }
+                val icon =
+                    character
+                        ?.image
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { image ->
+                            withContext(Dispatchers.IO) {
+                                imageHelper.getImageBitmap(image, cropToCircle = true, targetSizePx = AVATAR_ICON_TARGET_PX).getSuccess()
+                            }
+                        }
+                globalShellService.post(
+                    NewMessageEffect(
+                        messageId = saved.id,
+                        sagaId = saga.data.id,
+                        sagaTitle = saga.data.title,
+                        genre = saga.data.genre,
+                        speakerName = saved.speakerName ?: emptyString(),
+                        rawText = saved.text,
+                        character = character,
+                        icon = icon,
+                        deepLink = "saga://chat/${saga.data.id}/false",
+                    ),
+                )
+            }
+            saved
         }
 
         override suspend fun analyzeMessageTone(
@@ -208,7 +251,6 @@ class MessageUseCaseImpl
                             saga = sagaContent,
                             message = message.message,
                             sceneSummary = sceneSummary,
-                            conversationDirective = emptyString(),
                             updateLimit = narrativeRules.loreUpdateLimit,
                             narrativeRules = narrativeRules,
                             characterArcsById = characterArcsById,
@@ -255,35 +297,31 @@ class MessageUseCaseImpl
                                         )
                                     }
                                 }
-                                val deferSaveForNewCharacter =
-                                    reply.newCharacter != null &&
-                                        reply.message.senderType != SenderType.NARRATOR
                                 reply.sceneSummary?.let { summary ->
                                     saga.getCurrentTimeLine()?.let { timeline ->
-                                        timelineUseCase.updateTimeline(
-                                            timeline.data.copy(
-                                                sceneSummary = summary,
-                                            ),
-                                        )
+                                        if (timeline.data.sceneSummary != summary) {
+                                            timelineUseCase.updateTimeline(
+                                                timeline.data.copy(
+                                                    sceneSummary = summary,
+                                                    currentObjective = summary.immediateObjective,
+                                                ),
+                                            )
+                                        }
                                     }
                                 }
+                                val freshSaga =
+                                    sagaRepository.getSagaMetadata(saga.data.id).first()
+                                        ?: saga
+                                val existingCharacter =
+                                    resolveExistingCharacterForReply(freshSaga, reply)
                                 val savedMessage =
-                                    if (deferSaveForNewCharacter) {
-                                        reply.message.copy(
-                                            sagaId = saga.data.id,
-                                            timelineId = saga.getCurrentTimeLine()!!.data.id,
-                                            status = MessageStatus.OK,
-                                            speakerName =
-                                                reply.message.speakerName
-                                                    ?: reply.newCharacter?.name,
-                                        )
-                                    } else {
-                                        persistAiReplyMessage(saga, reply, character = null)
-                                    }
+                                    persistAiReplyMessage(
+                                        saga,
+                                        reply,
+                                        character = existingCharacter,
+                                    )
                                 withContext(Dispatchers.IO) {
-                                    if (!deferSaveForNewCharacter) {
-                                        handleAIReplyReactions(saga, savedMessage, reply.reactions)
-                                    }
+                                    handleAIReplyReactions(saga, savedMessage, reply.reactions)
                                     reply.userTone?.let { tone ->
                                         updateMessage(message.message.copy(emotionalTone = tone))
                                     }
@@ -291,6 +329,12 @@ class MessageUseCaseImpl
                                         handleAIReplyReactions(saga, message.message, reactions)
                                     }
                                 }
+                                sagaContentManager.resolveReplyCharacterLinks(
+                                    saga = saga,
+                                    reply = reply,
+                                    savedMessage = savedMessage,
+                                    sceneSummary = reply.sceneSummary ?: sceneSummary,
+                                )
                                 emit(StreamingState.Success(reply.copy(message = savedMessage)))
                             } else {
                                 emit(state)
@@ -307,7 +351,7 @@ class MessageUseCaseImpl
                 }
             }
 
-    override suspend fun saveGeneratedReply(
+        override suspend fun saveGeneratedReply(
             saga: SagaMetadata,
             reply: AIReply,
             userMessage: Message,
@@ -328,19 +372,64 @@ class MessageUseCaseImpl
                 character?.fullName()
                     ?: reply.message.speakerName
                     ?: reply.newCharacter?.name
-            return messageRepository.saveMessage(
-                Message(
-                    id = 0,
-                    sagaId = saga.data.id,
-                    text = reply.message.text,
-                    senderType = reply.message.senderType,
-                    timelineId = saga.getCurrentTimeLine()!!.data.id,
-                    status = MessageStatus.OK,
-                    speakerName = speakerName,
-                characterId = character?.id,
-            ),
-        )
-    }
+            val savedMessage =
+                messageRepository.saveMessage(
+                    Message(
+                        id = 0,
+                        sagaId = saga.data.id,
+                        text = reply.message.text,
+                        senderType = reply.message.senderType,
+                        timelineId = saga.getCurrentTimeLine()!!.data.id,
+                        status = MessageStatus.OK,
+                        speakerName = speakerName,
+                        characterId = character?.id,
+                    ),
+                )
+            if (savedMessage.senderType == SenderType.CHARACTER) {
+                val icon =
+                    character
+                        ?.image
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { image ->
+                            withContext(Dispatchers.IO) {
+                                imageHelper.getImageBitmap(image, cropToCircle = true, targetSizePx = AVATAR_ICON_TARGET_PX).getSuccess()
+                            }
+                        }
+                globalShellService.post(
+                    NewMessageEffect(
+                        messageId = savedMessage.id,
+                        sagaId = saga.data.id,
+                        sagaTitle = saga.data.title,
+                        genre = saga.data.genre,
+                        speakerName = savedMessage.speakerName ?: emptyString(),
+                        rawText = savedMessage.text,
+                        character = character,
+                        icon = icon,
+                        deepLink = "saga://chat/${saga.data.id}/false",
+                    ),
+                )
+            }
+            return savedMessage
+        }
+
+        private fun resolveExistingCharacterForReply(
+            saga: SagaMetadata,
+            reply: AIReply,
+        ): Character? {
+            val candidateNames =
+                listOfNotNull(
+                    reply.message.speakerName,
+                    reply.newCharacter?.name,
+                ).distinctBy { it.trim().lowercase() }
+
+            if (candidateNames.isEmpty()) return null
+
+            for (name in candidateNames) {
+                saga.findCharacterStrict(name)?.let { return it }
+                saga.findCharacter(name)?.let { return it }
+            }
+            return null
+        }
 
         private suspend fun handleAIReplyReactions(
             saga: SagaMetadata,

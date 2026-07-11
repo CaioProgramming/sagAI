@@ -87,9 +87,9 @@ abstract class AIClient(
             remoteConfigKey = getCoreBlueprintKey(requirement),
             variables =
                 mapOf(
-                    "language" to getLanguage(requireTranslation),
                     "type" to dataTypeName,
                     "structure" to structure,
+                    "language" to getLanguage(requireTranslation),
                     "userAge" to userAge.name,
                 ),
             logEnabled = false,

@@ -51,7 +51,6 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -60,7 +59,6 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -140,12 +138,9 @@ fun PlayStyleShareView(
                             backgroundImageModifier =
                                 Modifier
                                     .blur(3.dp)
-                                    .effectForGenre(genre)
-                                    .selectiveColorHighlight(genre.selectiveHighlight()),
+                                    .effectForGenre(genre, enableSelectiveHighlight = true),
                             foregroundImageModifier =
-                                Modifier
-                                    .effectForGenre(genre)
-                                    .selectiveColorHighlight(genre.selectiveHighlight()),
+                                Modifier.effectForGenre(genre, enableSelectiveHighlight = true),
                         ) {
                             Column(
                                 Modifier
@@ -219,8 +214,7 @@ fun PlayStyleShareView(
                             modifier =
                                 Modifier
                                     .fillMaxSize()
-                                    .effectForGenre(genre)
-                                    .selectiveColorHighlight(genre.selectiveHighlight()),
+                                    .effectForGenre(genre, enableSelectiveHighlight = true),
                             contentScale = ContentScale.Crop,
                         )
                         Column(

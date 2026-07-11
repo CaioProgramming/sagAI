@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.findByDisplayName
@@ -15,6 +16,8 @@ import com.ilustris.sagai.features.characters.relations.data.model.CharacterRela
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.saga.chat.data.model.isActive
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
@@ -86,7 +89,7 @@ fun SagaContent.toSagaInfo() =
 
 fun SagaContent.historySummary() =
     acts.joinToString(";\n---\n") {
-        "${acts.indexOf(it) + 1} - ${it.actSummary(it == acts.last())}"
+        "${acts.indexOf(it) + 1} - ${it.actSummary(false)}"
     }
 
 fun SagaContent.getCharacters(filterMainCharacter: Boolean = false) =
@@ -156,6 +159,32 @@ fun SagaContent.flatMessages() = acts.flatMap { it.chapters.flatMap { it.events.
 fun SagaContent.flatEvents() = acts.flatMap { it.chapters.flatMap { it.events } }
 
 fun SagaContent.flatChapters() = acts.flatMap { it.chapters }
+
+/**
+ * Carries scene state into a new timeline from the latest known event in the current chapter,
+ * or from the previous chapter when starting the first event of a new chapter.
+ */
+fun SagaContent.inheritSceneSummaryForChapter(chapter: ChapterContent): SceneSummary? {
+    chapter.events
+        .lastOrNull()
+        ?.data
+        ?.sceneSummary
+        ?.takeIf { it.isActive() }
+        ?.let { return it }
+
+    val chapters = flatChapters()
+    val chapterIndex = chapters.indexOfFirst { it.data.id == chapter.data.id }
+    if (chapterIndex > 0) {
+        chapters[chapterIndex - 1]
+            .events
+            .lastOrNull()
+            ?.data
+            ?.sceneSummary
+            ?.takeIf { it.isActive() }
+            ?.let { return it }
+    }
+    return null
+}
 
 fun SagaContent.getCurrentTimeLine() = currentActInfo?.currentChapterInfo?.currentEventInfo
 

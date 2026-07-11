@@ -22,5 +22,24 @@ class AIAuditLogRepositoryImpl
             aiAuditLogDao.clearLogs()
         }
 
-        override fun getRecentLogs(): Flow<List<AIAuditLog>> = aiAuditLogDao.getRecentLogs()
+        override suspend fun getLogsPage(
+            filters: AIAuditLogFilters,
+            limit: Int,
+            offset: Int,
+        ): List<AIAuditLog> =
+            aiAuditLogDao.getLogsPage(
+                status = filters.status,
+                dataType = filters.dataType,
+                model = filters.model,
+                limit = limit,
+                offset = offset,
+            )
+
+        override fun observeLogCount(): Flow<Int> = aiAuditLogDao.observeLogCount()
+
+        override suspend fun getDistinctDataTypes(): List<String> = aiAuditLogDao.getDistinctDataTypes()
+
+        override suspend fun getDistinctModels(): List<String> = aiAuditLogDao.getDistinctModels()
+
+        override suspend fun getRecentLogsForInsight(limit: Int): List<AIAuditLog> = aiAuditLogDao.getRecentLogsForInsight(limit)
     }

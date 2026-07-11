@@ -96,6 +96,18 @@ sealed class SagaMilestone(
 
                 else -> isIntrusive
             }
+
+    /** Whether SFX should fire on dashboard reveal instead of at emit time. */
+    val playsRevealSfx: Boolean
+        get() =
+            when (this) {
+                is ChapterFinished,
+                is ActFinished,
+                is NewCharacter,
+                -> true
+
+                else -> false
+            }
 }
 
 enum class LoadingType {

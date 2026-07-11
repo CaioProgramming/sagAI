@@ -33,7 +33,6 @@ fun ChapterView(
     val saga by viewModel.saga.collectAsStateWithLifecycle()
     val chaptersInfo by viewModel.chaptersInfo.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
-    val reasoningMessage by viewModel.reasoningMessage.collectAsStateWithLifecycle()
 
     BackHandler {
         onBack()
@@ -60,7 +59,6 @@ fun ChapterView(
                     saga = sagaContent,
                     chapters = chaptersInfo,
                     isGenerating = isGenerating,
-                    loadingMessage = reasoningMessage,
                     onGenerateIcon = {
                         viewModel.generateIcon(it.id)
                     },

@@ -160,7 +160,6 @@ dependencies {
     implementation(libs.hypnoticcanvas)
     implementation(libs.hypnoticcanvas.shaders)
     implementation(libs.google.generativeai)
-    implementation(libs.face.detection)
     implementation(libs.billing.ktx)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.play.services)
@@ -180,7 +179,5 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.kotlinx.serialization.json)
 
-    implementation(libs.androidx.paging.runtime)
-    implementation(libs.androidx.paging.compose)
-    implementation(libs.androidx.room.paging)
+    testImplementation(libs.mockk)
 }

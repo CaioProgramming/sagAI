@@ -2,10 +2,10 @@ package com.ilustris.sagai.features.act.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.ActContent
-import com.ilustris.sagai.features.act.data.usecase.BookUseCase
+import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
@@ -36,6 +36,9 @@ sealed class ChronicleState {
 
 /**
  * Manages the Chronicle shelf (act selection + on-demand book generation).
+ * Generation itself runs in [BookGenerationService] so it survives navigation away
+ * from this screen; this ViewModel mirrors its live state for inline display and
+ * auto-navigates to the reader when a book it triggered finishes while still on screen.
  * When a book is ready to read it emits a [BookReaderKey] via [navigationEvent];
  * the hosting screen handles the actual navigation push.
  */
@@ -43,7 +46,7 @@ sealed class ChronicleState {
 class ChronicleViewModel
     @Inject
     constructor(
-        private val bookUseCase: BookUseCase,
+        private val bookGenerationService: BookGenerationService,
         private val visualConfigService: GenreVisualConfigService,
         private val sagaRepository: SagaRepository,
     ) : ViewModel() {
@@ -62,6 +65,36 @@ class ChronicleViewModel
         val visualConfig = _visualConfig.asStateFlow()
 
         var currentSagaContent: SagaContent? = null
+
+        init {
+            viewModelScope.launch {
+                bookGenerationService.uiState.collectLatest { genState ->
+                    val sagaId = currentSagaContent?.data?.id
+                    _state.value =
+                        when {
+                            genState is BookGenerationUiState.Generating && genState.sagaId == sagaId -> {
+                                ChronicleState.Generating(genState.actTitle, genState.reasoning)
+                            }
+
+                            genState is BookGenerationUiState.Error && genState.sagaId == sagaId -> {
+                                ChronicleState.Error(genState.message)
+                            }
+
+                            else -> {
+                                ChronicleState.Idle
+                            }
+                        }
+                }
+            }
+
+            viewModelScope.launch {
+                bookGenerationService.completed.collect { key ->
+                    if (key.sagaId == currentSagaContent?.data?.id) {
+                        _navigationEvent.tryEmit(key)
+                    }
+                }
+            }
+        }
 
         fun loadSaga(sagaId: Int) {
             viewModelScope.launch {
@@ -85,7 +118,7 @@ class ChronicleViewModel
          * Called when the user taps a book on the shelf.
          * If the book already exists the reader is opened immediately.
          * If it's missing, generation is triggered first.
-     */
+         */
         fun selectBook(act: ActContent?) {
             viewModelScope.launch {
                 act ?: return@launch
@@ -105,43 +138,18 @@ class ChronicleViewModel
         ) {
             currentSagaContent = saga
             if (actId == null) return
-        val act = saga.findAct(actId) ?: return
-        selectBook(act)
+            val act = saga.findAct(actId) ?: return
+            selectBook(act)
         }
 
         fun generateNextVolume(actContent: ActContent) {
-            viewModelScope.launch {
-                val saga = currentSagaContent ?: return@launch
+            val saga = currentSagaContent ?: return
 
-                if (actContent.book != null) {
-                    _navigationEvent.tryEmit(BookReaderKey(saga.data.id, actContent.data.id))
-                    return@launch
-                }
-
-                _state.emit(ChronicleState.Generating(actContent.data.title, null))
-                bookUseCase.generateBookStream(saga, actContent).collect { streamState ->
-                    when (streamState) {
-                        is StreamingState.Success -> {
-                            _state.value = ChronicleState.Idle
-                            // Emit nav event after successful generation
-                            _navigationEvent.tryEmit(
-                                BookReaderKey(
-                                    saga.data.id,
-                                    actContent.data.id,
-                                )
-                            )
-                        }
-
-                        is StreamingState.Error -> {
-                            _state.value = ChronicleState.Error(streamState.message)
-                        }
-
-                        is StreamingState.Reasoning -> {
-                            _state.value =
-                                ChronicleState.Generating(actContent.data.title, streamState.chunk)
-                        }
-                    }
-                }
+            if (actContent.book != null) {
+                _navigationEvent.tryEmit(BookReaderKey(saga.data.id, actContent.data.id))
+                return
             }
+
+            bookGenerationService.generate(saga, actContent)
         }
     }

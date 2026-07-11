@@ -33,13 +33,10 @@ fun MilestoneContinueButton(
         exit = MilestoneTransitions.fadeExit,
         modifier = modifier,
     ) {
-        val themeBrush = Brush.horizontalGradient(morphingGradient())
         ElevatedButton(
             onClick = onDismiss,
-            shape = MaterialTheme.shapes.medium,
             colors =
                 ButtonDefaults.buttonColors(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onPrimary.gradientFade()),
             modifier =
                 Modifier
                     .padding(32.dp)

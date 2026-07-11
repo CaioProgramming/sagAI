@@ -1,13 +1,15 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.CHAT_REACTION_BLUEPRINT
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.REPLY_GENERATION_BLUEPRINT
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.SCENE_SUMMARIZATION_BLUEPRINT
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
@@ -16,7 +18,6 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.narrative.domain.buildChatContinuityContext
-import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
@@ -62,19 +63,7 @@ data class SceneSummaryArgs(
     val latestMessage: String,
 )
 
-data class NotificationArgs(
-    val sagaMainContext: String,
-    val sceneSummaryContent: String,
-    val characterContext: String,
-    val relationshipBlock: String,
-    val conversationHistory: String,
-    val characterName: String,
-    val sagaMainCharName: String,
-    val conversationDirective: String,
-)
-
 object ChatPrompts {
-    const val CHAT_NOTIFICATION_BLUEPRINT = "chat_notification_blueprint"
     const val CHAT_REACTION_BLUEPRINT = "chat_reaction_blueprint"
     const val CHAT_WRITING_PAL_BLUEPRINT = "chat_writing_pal_blueprint"
     const val REPLY_GENERATION_BLUEPRINT = "reply_generation_blueprint"
@@ -86,6 +75,13 @@ object ChatPrompts {
      * - [REPLY_GENERATION_BLUEPRINT]: `worldContext.narrativeContinuity` carries layered canon
      *   (currentChapterRollup, recentChapterCanon, distantCanon, actContinuity, globalWorldState).
      *   Never contradict `establishedFacts`; weave `openThreads` and `persistentSetups` subtly.
+     *   Must also fill `sceneSummary.notificationHook`: a short, character-voiced line teasing
+     *   what happens next, written as if the character is reaching out after the player stepped
+     *   away (not mid-scene dialogue). Used verbatim as a push notification, so it must stand
+     *   alone without any other scene context. Pair it with `sceneSummary.notificationCharacterName`
+     *   (must match a name in `charactersPresent`, or be omitted for a narrator-voiced hook) so the
+     *   app can attribute the correct avatar/name — never leave the hook set without it when a
+     *   specific character is speaking.
      *
      * - [SCENE_SUMMARIZATION_BLUEPRINT]: `sagaContext.narrativeContinuity` must inform scene facts
      *   without overwriting long-range canon.
@@ -144,7 +140,6 @@ object ChatPrompts {
         saga: SagaContent,
         message: Message,
         sceneSummary: SceneSummary?,
-        conversationDirective: String,
         updateLimit: Int,
         narrativeRules: NarrativeRules,
         characterArcsById: Map<Int, List<CharacterArc>> = emptyMap(),
@@ -172,10 +167,10 @@ object ChatPrompts {
             buildMap {
                 put(
                     "sagaContext",
-                    saga.data.asMap(),
+                    saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
                 )
                 sceneSummary?.let {
-                    put("currentStoryContext", sceneSummary.asMap())
+                    put("currentStoryContext", sceneSummary.toAINormalize())
                 }
                 if (narrativeContinuity.isNotEmpty()) {
                     put("narrativeContinuity", narrativeContinuity)
@@ -207,7 +202,7 @@ object ChatPrompts {
                                     .map {
                                         "${it.character.name} - ${it.event.title}\n${it.event.summary}"
                                     }.takeLast(3)
-                                    .normalizetoAIItems(),
+                                    .normalizetoAIItems(CHARACTER_EXCLUSIONS),
                             )
                             put(
                                 "relationshipsWithPresentCharacters",
@@ -225,32 +220,13 @@ object ChatPrompts {
                 if (mentionedWikis.isNotEmpty()) {
                     put("mentionedWikis", mentionedWikis.normalizetoAIItems())
                 }
-            }.toAINormalize(
-                buildList {
-                    addAll(SagaPrompts.SAGA_EXCLUDED_FIELDS)
-                    addAll(CHARACTER_EXCLUSIONS)
-                },
-            )
+            }
 
         val argsMap =
             mutableMapOf(
                 "worldContext" to worldContext,
-                "externalCharacters" to CharacterPrompts.offSceneCharacterNames(externalCharacters),
                 "conversationHistory" to conversationHistory(updateLimit, saga),
                 "latestMessage" to message.toAINormalize(messageExclusions),
-                "userToneProtocol" to
-                    """
-                    Analyze the 'latestMessage' from the user and extract its EmotionalTone.
-                    Valid tones: ${EmotionalTone.entries.joinToString { it.name }}.
-                    Return the tone in the 'userTone' field.
-                    """.trimIndent(),
-                "userReactionProtocol" to
-                    """
-                    Based on the 'latestMessage' from the user and the 'sceneSummary', generate reactions from characters present in the scene.
-                    Characters should react to what the user just said/did.
-                    Return these in the 'userReactions' field as a list of AIReaction objects { "character": "Name", "reaction": "Emoji", "thought": "Brief thought" }.
-                    Exclude the message sender from reacting to their own message.
-                    """.trimIndent(),
             )
 
         return promptService
@@ -417,31 +393,6 @@ object ChatPrompts {
                 "sagaContext" to storyContext,
             ),
         )
-    }
-
-    suspend fun scheduledNotificationPrompt(
-        promptService: PromptService,
-        saga: SagaContent,
-        selectedCharacter: CharacterContent,
-        sceneSummary: SceneSummary,
-        conversationDirective: String,
-    ): SplitPrompt {
-        val relationWithCharacter = selectedCharacter.findRelationship(saga.mainCharacter!!.data.id)
-        val relationshipBlock = relationWithCharacter?.summarizeRelation(1) ?: ""
-
-        val args =
-            NotificationArgs(
-                sagaMainContext = SagaPrompts.mainContext(saga),
-                sceneSummaryContent = sceneSummary.toAINormalize(),
-                characterContext = selectedCharacter.data.toAINormalize(CHARACTER_EXCLUSIONS),
-                relationshipBlock = relationshipBlock,
-                conversationHistory = conversationHistory(10, saga),
-                characterName = selectedCharacter.data.name,
-                sagaMainCharName = saga.mainCharacter.data.name,
-                conversationDirective = conversationDirective,
-            )
-
-        return promptService.buildSplitBlueprint(CHAT_NOTIFICATION_BLUEPRINT, args)
     }
 
     fun conversationHistory(

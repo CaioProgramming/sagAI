@@ -99,28 +99,28 @@ import com.ilustris.sagai.features.saga.chat.data.model.senderForTag
 import com.ilustris.sagai.features.saga.chat.data.model.title
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeBrushColors
+import com.ilustris.sagai.ui.theme.themePainter
 
 private val ChatInputTextMaxHeight = 160.dp
 
 @Composable
 private fun generatingBorderRotation(isGenerating: Boolean): Float {
-    if (isGenerating) {
-        val infiniteTransition = rememberInfiniteTransition(label = "border")
-        val rotation by infiniteTransition.animateFloat(
-            0f,
-            360f,
-            infiniteRepeatable(tween(3000, easing = LinearEasing)),
-            label = "rotation",
-        )
-        return rotation
-    }
-    return 0f
+    if (!isGenerating || !rememberLifecycleAnimationsActive()) return 0f
+    val infiniteTransition = rememberInfiniteTransition(label = "border")
+    val rotation by infiniteTransition.animateFloat(
+        0f,
+        360f,
+        infiniteRepeatable(tween(3000, easing = LinearEasing)),
+        label = "rotation",
+    )
+    return rotation
 }
 
 private fun isIndexInsideTagMarkup(
@@ -370,7 +370,7 @@ fun ChatInputView(
                             ),
                     ) {
                         Icon(
-                            painterResource(genre.icon),
+                            themePainter(),
                             null,
                             modifier =
                                 Modifier
@@ -727,7 +727,8 @@ fun ChatInputView(
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -759,17 +760,20 @@ fun ChatInputView(
                                                 1.dp,
                                                 resolvedColor.copy(alpha = .3f),
                                                 CircleShape,
-                                            ).background(
+                                            )
+                                            .background(
                                                 resolvedColor.copy(alpha = .1f),
                                                 CircleShape,
-                                            ).clip(CircleShape)
+                                            )
+                                            .clip(CircleShape)
                                             .clickable {
                                                 handleWikiSelection(
                                                     wiki,
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {

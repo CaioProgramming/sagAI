@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
-import android.graphics.Bitmap
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.input.TextFieldValue
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
@@ -58,8 +57,6 @@ data class ChatUiState(
     val senderType: SenderType = SenderType.CHARACTER,
     val typoFixMessage: TypoFix? = null,
     val messageEffectsEnabled: Boolean = true,
-    val originalBitmap: Bitmap? = null,
-    val segmentedBitmap: Bitmap? = null,
     val newCharacterReveal: Int? = null,
     val selectionState: MessageSelectionState = MessageSelectionState(),
     val notificationsEnabled: Boolean = true,

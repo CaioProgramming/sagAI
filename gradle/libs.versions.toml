@@ -46,6 +46,7 @@ ageSignals = "0.0.3"
 nav3Core = "1.0.0"
 lifecycleViewmodelNav3 = "2.10.0-rc01"
 paging = "3.3.6"
+mockk = "1.14.11"
 
 [libraries]
 play-age-signals = { group = "com.google.android.play", name = "age-signals", version.ref = "ageSignals" }
@@ -126,6 +127,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
 androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging" }
 androidx-room-paging = { module = "androidx.room:room-paging", version = "2.7.1" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

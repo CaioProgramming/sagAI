@@ -16,6 +16,7 @@ import com.ilustris.sagai.core.ai.ImageGenerator
 import com.ilustris.sagai.core.ai.ImageGeneratorImpl
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
+import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.ai.local.LocalAiConfigLoader
 import com.ilustris.sagai.core.ai.local.LocalAiExecutor
 import com.ilustris.sagai.core.ai.local.MlKitLocalAiExecutor
@@ -425,10 +426,15 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideDebugImageFallbackService(): DebugImageFallbackService = DebugImageFallbackService()
+
+    @Provides
+    @Singleton
     fun provideImageGenerator(
         billingService: BillingService,
         remoteConfigService: RemoteConfigService,
-    ): ImageGenerator = ImageGeneratorImpl(billingService, remoteConfigService)
+        debugImageFallbackService: DebugImageFallbackService,
+    ): ImageGenerator = ImageGeneratorImpl(billingService, remoteConfigService, debugImageFallbackService)
 
     @Provides
     @Singleton
@@ -588,6 +594,7 @@ abstract class UseCaseModule {
     abstract fun providesWikiUseCase(wikiUseCaseImpl: WikiUseCaseImpl): WikiUseCase
 
     @Binds
+    @Singleton
     abstract fun providesSagaContentManager(sagaContentManagerImpl: SagaContentManagerImpl): SagaContentManager
 
     @Binds

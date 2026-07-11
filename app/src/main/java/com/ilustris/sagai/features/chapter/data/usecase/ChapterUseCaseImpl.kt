@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.chapter.data.usecase
 
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
@@ -33,6 +32,8 @@ import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getDirectiveKey
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -55,7 +56,7 @@ class ChapterUseCaseImpl
         private val characterUseCase: CharacterUseCase,
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
-        private val imagenClient: ImagenClient,
+        private val imageGenerationService: ImageGenerationService,
         private val fileHelper: FileHelper,
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
@@ -119,6 +120,7 @@ class ChapterUseCaseImpl
                             introduction = chapterContent.data.introduction, // Keep existing introduction
                             featuredCharacters = genChapter.featuredCharacters.take(2),
                             emotionalReview = genChapter.emotionalReview,
+                            artwork = genChapter.artwork,
                             currentEventId = null,
                         ),
                     )
@@ -222,38 +224,35 @@ class ChapterUseCaseImpl
                 val (saga, chapter) = fetchContext(chapterId)
                 val characters =
                     chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
-
-                val genCover =
-                    imagenClient
-                        .generateIntegratedImage(
-                            genre = saga.data.genre,
-                            imageReference = null,
-                            context =
-                                buildCoverPromptContext(
-                                    chapter.data.narrativeGuide,
-                                    characters,
-                                    saga,
-                                ),
-                            imageType = ImageType.COVER,
-                            variationId = saga.data.variationId,
-                        )
-
-                if (genCover.isFailure) {
-                    throw genCover.error.value
-                }
-
-                val coverFile =
-                    fileHelper.saveFile(
-                        chapter.data.title,
-                        genCover.getSuccess(),
-                        path = "${saga.data.id}/chapters/",
-                    )!!
-                val newChapter =
-                    chapter.data.copy(
-                        coverImage = coverFile.path,
+                val context =
+                    buildCoverPromptContext(
+                        chapter.data.narrativeGuide,
+                        chapter.data.artwork,
+                        characters,
+                        saga,
                     )
 
-                chapterRepository.updateChapter(newChapter)
+                imageGenerationService
+                    .enqueue(
+                        ImageGenerationRequest(
+                            genre = saga.data.genre,
+                            imageReference = null,
+                            context = context,
+                            imageType = ImageType.COVER,
+                            variationId = saga.data.variationId,
+                            label = chapter.data.title,
+                            showReveal = true,
+                        ),
+                    ) { bitmap ->
+                        val coverFile =
+                            fileHelper.saveFile(
+                                chapter.data.title,
+                                bitmap,
+                                path = "${saga.data.id}/chapters/",
+                            ) ?: error("Failed to save chapter cover")
+                        val newChapter = chapter.data.copy(coverImage = coverFile.path)
+                        chapterRepository.updateChapter(newChapter)
+                    }.getOrThrow()
             }
 
         @OptIn(PublicPreviewAPI::class)
@@ -263,43 +262,54 @@ class ChapterUseCaseImpl
                     val (saga, chapter) = fetchContext(chapterId)
                     val characters =
                         chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
+                    val context =
+                        buildCoverPromptContext(
+                            chapter.data.narrativeGuide,
+                            chapter.data.artwork,
+                            characters,
+                            saga,
+                        )
 
-                    imagenClient
-                        .generateIntegratedImageStream(
-                            genre = saga.data.genre,
-                            imageReference = null,
-                            context =
-                                buildCoverPromptContext(
-                                    chapter.data.narrativeGuide,
-                                    characters,
-                                    saga,
-                                ),
-                            imageType = ImageType.COVER,
-                            variationId = saga.data.variationId,
-                        ).collect { state ->
-                            if (state is StreamingState.Success) {
-                                val bitmap = state.data.data
-                                val coverFile =
-                                    fileHelper.saveFile(
-                                        chapter.data.title,
-                                        bitmap,
-                                        path = "${saga.data.id}/chapters/",
-                                    ) ?: error("Failed to save chapter cover")
-
-                                val newChapter = chapter.data.copy(coverImage = coverFile.path)
-                                val updated = chapterRepository.updateChapter(newChapter)
+                    imageGenerationService
+                        .enqueue(
+                            ImageGenerationRequest(
+                                genre = saga.data.genre,
+                                imageReference = null,
+                                context = context,
+                                imageType = ImageType.COVER,
+                                variationId = saga.data.variationId,
+                                label = chapter.data.title,
+                                showReveal = true,
+                            ),
+                        ) { bitmap ->
+                            val coverFile =
+                                fileHelper.saveFile(
+                                    chapter.data.title,
+                                    bitmap,
+                                    path = "${saga.data.id}/chapters/",
+                                ) ?: error("Failed to save chapter cover")
+                            val newChapter = chapter.data.copy(coverImage = coverFile.path)
+                            chapterRepository.updateChapter(newChapter)
+                        }.fold(
+                            onSuccess = { updated ->
                                 emit(
                                     StreamingState.Success(
                                         GeneratedContent(
                                             updated,
-                                            state.data.finalMessage,
+                                            "Image generation complete!",
                                         ),
                                     ),
                                 )
-                            } else {
-                                emit(state as StreamingState<GeneratedContent<Chapter>>)
-                            }
-                        }
+                            },
+                            onFailure = { error ->
+                                emit(
+                                    StreamingState.Error(
+                                        error.message ?: "Error generating chapter cover stream",
+                                        error,
+                                    ),
+                                )
+                            },
+                        )
                 } catch (e: Exception) {
                     emit(StreamingState.Error(e.message ?: "Error generating chapter cover stream"))
                 }
@@ -307,10 +317,20 @@ class ChapterUseCaseImpl
 
         private fun buildCoverPromptContext(
             narrativeContext: String?,
+            artwork: String?,
             characters: List<CharacterContent?>,
             saga: SagaContent,
         ): String =
             buildString {
+                artwork?.takeIf { it.isNotBlank() }?.let {
+                    appendLine("### CONCEPT ART DIRECTION")
+                    appendLine(
+                        "This is the scene-specific concept for this chapter's cover. Ground the composition in this:",
+                    )
+                    appendLine(it)
+                    appendLine()
+                }
+
                 val duo = characters.filterNotNull().take(2)
                 appendLine("### THE ARTBOOK DUO")
                 appendLine("This is a focused character study. Capture the intimate tension and presence of exactly these two individuals.")

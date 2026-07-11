@@ -11,6 +11,7 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterInfo
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.findByDisplayName
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
@@ -179,6 +180,19 @@ data class TimelineMetadata(
 
 fun SagaMetadata.flatMessages() = acts.flatMap { it.chapters.flatMap { it.events.flatMap { it.messages } } }
 
+/** Cheap fingerprint for chat list updates — avoids remapping when only scene metadata changes. */
+fun SagaMetadata.chatMessagesFingerprint(): Long {
+    val messages = flatMessages()
+    var fingerprint = messages.size.toLong()
+    messages.lastOrNull()?.let { last ->
+        fingerprint = fingerprint * 31 + last.message.id
+        fingerprint = fingerprint * 31 + (last.message.status?.ordinal ?: 0)
+        fingerprint = fingerprint * 31 + (last.message.characterId ?: 0)
+        fingerprint = fingerprint * 31 + last.reactions.size
+    }
+    return fingerprint
+}
+
 fun SagaMetadata.flatChapters() = acts.flatMap { it.chapters }
 
 fun SagaMetadata.flatEvents() = acts.flatMap { it.chapters.flatMap { it.events } }
@@ -277,6 +291,15 @@ fun SagaMetadata.chapterNumber(chapterId: Int?): Int =
     }
 
 fun SagaMetadata.findCharacter(characterId: Int?) = if (characterId == null) null else characters.find { it.id == characterId }
+
+fun SagaMetadata.findCharacterStrict(query: String?): Character? {
+    if (query.isNullOrBlank()) return null
+    val normalizedQuery = query.trim().lowercase()
+    return characters.find { character ->
+        character.fullName().lowercase() == normalizedQuery ||
+            character.nicknames.orEmpty().any { it.trim().lowercase() == normalizedQuery }
+    }
+}
 
 fun SagaMetadata.findCharacter(name: String?) = characters.findByDisplayName(name)
 

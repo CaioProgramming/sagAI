@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.emptyString
@@ -150,39 +152,16 @@ fun CharacterDetailsContent(
     openEvent: (Timeline?) -> Unit = {},
 ) {
     val viewModel: CharacterDetailsViewModel = hiltViewModel()
-    val genre = detailData.sagaInfo.genre
-    val resolvedColor = MaterialTheme.colorScheme.primary
-
-    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val imagePalette by viewModel.imagePalette.collectAsStateWithLifecycle()
 
-    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
-    val imageReasoning by viewModel.imageReasoning.collectAsStateWithLifecycle()
-
-    val blurEffect by animateDpAsState(if (isGenerating) 15.dp else 0.dp)
-
-    Box(modifier = Modifier.blur(blurEffect)) {
-        CharacterDetailsLoaded(
-            detailData = detailData,
-            openEvent = openEvent,
-            onOpenCharacterBrain = onOpenCharacterBrain,
-            viewModel = viewModel,
-            imagePalette = imagePalette,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope,
-        )
-    }
-
-    StarryLoader(
-        isLoading = isGenerating,
-        loadingMessage = loadingMessage,
-        subtitle = imageReasoning,
-        textStyle =
-            MaterialTheme.typography.labelLarge.copy(
-                resolvedColor,
-                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-            ),
-        brushColors = genre.colorPalette(),
+    CharacterDetailsLoaded(
+        detailData = detailData,
+        openEvent = openEvent,
+        onOpenCharacterBrain = onOpenCharacterBrain,
+        viewModel = viewModel,
+        imagePalette = imagePalette,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
     )
 
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
@@ -284,9 +263,15 @@ private fun CharacterDetailsLoaded(
                                                 rememberSharedContentState(key = "character_${character.id}_icon"),
                                                 animatedVisibilityScope,
                                                 renderInOverlayDuringTransition = false,
-                                            ).fillParentMaxHeight(.6f)
+                                            )
+                                            .fillParentMaxHeight(.6f)
                                             .fillMaxSize()
-                                            .clickable(enabled = characterData.emojified || characterData.image.isEmpty()) {
+                                            .clickable(
+                                                enabled =
+                                                    BuildConfig.DEBUG ||
+                                                        characterData.emojified ||
+                                                        characterData.image.isEmpty(),
+                                            ) {
                                                 viewModel.regenerate(
                                                     sagaInfo,
                                                     characterData,
@@ -298,7 +283,8 @@ private fun CharacterDetailsLoaded(
                                             .fillMaxSize()
                                             .effectForGenre(
                                                 genre,
-                                            ).graphicsLayer(
+                                            )
+                                            .graphicsLayer(
                                                 translationY = 100f,
                                             ),
                                 ) {
@@ -327,7 +313,8 @@ private fun CharacterDetailsLoaded(
                                                 Modifier
                                                     .background(
                                                         fadeGradientTop(adaptiveColor),
-                                                    ).fillMaxWidth()
+                                                    )
+                                                    .fillMaxWidth()
                                                     .statusBarsPadding()
                                                     .padding(horizontal = 16.dp, vertical = 4.dp)
                                                     .gradientFill(titleGradient)
@@ -409,7 +396,8 @@ private fun CharacterDetailsLoaded(
                                                 sagaInfo,
                                                 characterData,
                                             )
-                                        }.padding(16.dp)
+                                        }
+                                        .padding(16.dp)
                                         .size(100.dp)
                                         .gradientFill(characterColor.gradientFade()),
                                 )
@@ -421,7 +409,8 @@ private fun CharacterDetailsLoaded(
                                             .sharedElement(
                                                 rememberSharedContentState(key = "character_${character.id}_icon"),
                                                 animatedVisibilityScope,
-                                            ).fillMaxWidth()
+                                            )
+                                            .fillMaxWidth()
                                             .gradientFill(Brush.verticalGradient(characterColor.darkerPalette()))
                                             .reactiveShimmer(true),
                                 )
@@ -463,6 +452,25 @@ private fun CharacterDetailsLoaded(
                             genre = genre,
                             contentColor = adaptiveTextColor,
                         )
+                    }
+
+                    if (BuildConfig.DEBUG) {
+                        item {
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.regenerate(
+                                        sagaInfo,
+                                        characterData,
+                                    )
+                                },
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp),
+                            ) {
+                                Text(stringResource(R.string.debug_regenerate_image))
+                            }
+                        }
                     }
 
                     item {
@@ -551,7 +559,8 @@ private fun CharacterDetailsLoaded(
                                                 isSummarizing,
                                                 targetValue = 1000f,
                                                 repeatMode = RepeatMode.Restart,
-                                            ).padding(vertical = 16.dp),
+                                            )
+                                            .padding(vertical = 16.dp),
                                 )
                             }
                         }

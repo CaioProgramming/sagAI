@@ -3,7 +3,8 @@ package com.ilustris.sagai.features.newsaga.data.model
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 
 data class UniverseEcho(
-    val input: String,
+    val title: String,
+    val pitch: String,
     val genre: Genre,
 )
 

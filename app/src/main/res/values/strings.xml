@@ -375,6 +375,25 @@
     <string name="saga_not_found">Saga not found.</string>
     <string name="messages_count_label">%s messages</string>
     <string name="debug_controls">Debug controls</string>
+    <string name="debug_image_fallback_title">Test environment</string>
+    <string name="debug_image_fallback_subtitle">To generate this image, copy the prompt below, open Gemini to create and review it, then choose the image to use in the app.</string>
+    <string name="debug_image_fallback_prompt_card_title">Image prompt</string>
+    <string name="debug_image_fallback_copy_prompt">Copy prompt</string>
+    <string name="debug_image_fallback_expand_prompt">Show full prompt</string>
+    <string name="debug_image_fallback_collapse_prompt">Show less</string>
+    <string name="debug_image_fallback_open_gemini">Open Gemini</string>
+    <string name="debug_image_fallback_open_gemini_error">Could not open Gemini</string>
+    <string name="debug_image_fallback_pick_image">Choose image</string>
+    <string name="debug_image_fallback_prompt_copied">Prompt copied!</string>
+    <string name="debug_image_fallback_pick_error">Could not load this image. Try another one.</string>
+    <string name="debug_image_lab_title">Image lab</string>
+    <string name="debug_image_lab_missing">No image</string>
+    <string name="debug_image_lab_generate">Generate image</string>
+    <string name="debug_image_lab_saga_icon">Saga icon</string>
+    <string name="debug_image_lab_character">Character</string>
+    <string name="debug_image_lab_chapter_cover">Chapter cover</string>
+    <string name="debug_image_lab_empty">No image targets for this saga.</string>
+    <string name="debug_regenerate_image">Regenerate image</string>
     <string name="fake_messages_placeholder">Number of Fake Messages</string>
     <string name="current_objective">Current Objective</string>
     <string name="start_writing_saga">Start writing your saga!</string>
@@ -401,6 +420,9 @@
     <string name="recap_chapters_lived">%d chapters lived</string>
     <string name="recap_revisit_now">Revisit your saga now</string>
     <string name="recap_your_journey">Your Journey</string>
+    <string name="recap_preparing">Preparing your recap…</string>
+    <string name="recap_almost_ready">Your recap is almost ready (%1$d/%2$d)</string>
+    <string name="review_step_loading_default">Crafting the next chapter of your recap…</string>
     <string name="character_details_aka">aka: %s</string>
     <string name="character_details_arcs_title">Story Arc</string>
     <string name="character_details_knowledge_title">What they know</string>
@@ -461,6 +483,21 @@
     <string name="character_stat_height">Height</string>
     <string name="character_stat_weight">Weight</string>
     <string name="character_generating">Generating %1$s…</string>
+    <string name="image_generation_default_label">Generating image…</string>
+    <string name="image_generation_awaiting_manual">Awaiting manual image</string>
+    <string name="image_generation_queue_badge">+%1$d queued</string>
+    <string name="image_generation_panel_expand">Expand image generation panel</string>
+    <string name="image_generation_panel_collapse">Collapse image generation panel</string>
+    <string name="image_generation_reasoning_placeholder">Preparing visual…</string>
+    <string name="book_generation_reasoning_placeholder">Writing the chronicle…</string>
+    <string name="chat_generation_reasoning_placeholder">Thinking of a reply…</string>
+    <string name="image_generation_reveal_icon">Character icon ready</string>
+    <string name="image_generation_reveal_cover">Cover image ready</string>
+    <string name="image_generation_reveal_dismiss">Continue</string>
+    <string name="image_generation_fallback_cancel">Cancel</string>
+    <string name="image_generation_character_icon">Generating %1$s icon…</string>
+    <string name="image_generation_chapter_cover">Generating chapter cover…</string>
+    <string name="image_generation_saga_icon">Generating saga icon…</string>
 
     <!-- Chat -->
     <string name="regenerate_audio">Regenerate audio…</string>
@@ -570,6 +607,10 @@
     <string name="advance_saga_ending">Write the finale</string>
     <string name="releasing_ending">Writing the finale...</string>
     <string name="advance_pull_hint">Swipe up to continue</string>
+    <string name="narrative_advance_shell_expand">Expand</string>
+    <string name="narrative_advance_shell_collapse">Collapse</string>
+    <string name="narrative_advance_shell_release">Release to continue</string>
+    <string name="task_shell_minimize">Minimize</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Congratulations! Keep going!</string>
@@ -665,6 +706,7 @@
     <!-- Extracted Strings -->
     <string name="milestone_overlay_important_characters_title">Most Important Characters</string>
     <string name="review_restart_button">Restart</string>
+    <string name="review_regenerate_button">Regenerate review</string>
 
     <!-- Review Summary Page -->
     <string name="review_summary_title">Our Story, Retold</string>
@@ -700,6 +742,7 @@
     <string name="audit_logs_success">Success</string>
     <string name="audit_logs_error">Error</string>
     <string name="audit_logs_empty">No logs recorded yet.</string>
+    <string name="audit_logs_loading_more">Loading more logs…</string>
     <string name="audit_logs_clear_dialog_title">Clear Audit Logs</string>
     <string name="audit_logs_clear_dialog_message">Are you sure you want to delete all AI Audit Logs? This action cannot be undone.</string>
     <string name="audit_logs_clear_button">Clear</string>
@@ -781,4 +824,37 @@
     <string name="guardrail_continuity_message">Your input doesn\'t seem to fit the current story world. Please keep it consistent with the setting.</string>
     <string name="guardrail_dismiss">Got it</string>
     <string name="mascot_insight_label">Mascot\'s Emotional Insight</string>
+
+    <!-- Milestone Dashboard -->
+    <string name="milestone_label_narrative">Narrative</string>
+    <string name="milestone_label_objective">Objective</string>
+    <string name="milestone_label_vibe">Vibe</string>
+    <string name="milestone_label_impact">Impact</string>
+    <string name="milestone_label_chapter_summary">Chapter Summary</string>
+    <string name="milestone_label_emotional_review">Emotional Review</string>
+    <string name="milestone_chapter_review_title">Chapter Review</string>
+    <string name="milestone_label_act_summary">Volume Summary</string>
+    <string name="milestone_act_review_title">Volume Review</string>
+    <string name="milestone_label_backstory">Backstory</string>
+    <string name="milestone_label_occupation">Occupation</string>
+    <string name="milestone_label_personality">Personality</string>
+    <string name="milestone_label_timeline_update">Timeline update</string>
+    <string name="milestone_label_knowledge">Knowledge</string>
+    <string name="milestone_label_continuity">Story continuity</string>
+    <string name="milestone_label_established_facts">Established facts</string>
+    <string name="milestone_label_open_threads">Open threads</string>
+    <string name="milestone_label_consequences">Consequences</string>
+    <string name="milestone_label_character_states">Character states</string>
+    <string name="milestone_label_persistent_setups">Setups</string>
+    <string name="milestone_label_introduction">Introduction</string>
+    <string name="milestone_label_narrative_guide">Narrative guide</string>
+    <string name="milestone_label_featured_characters">Featured characters</string>
+    <string name="milestone_label_events_completed">Events completed</string>
+    <string name="milestone_hint_open_chronicle">Open the volume chronicle from saga details.</string>
+    <string name="milestone_action_open_chronicle">Read chronicle</string>
+    <string name="milestone_action_open_wiki">Browse wiki</string>
+    <string name="milestone_action_open_character">View character</string>
+    <string name="milestone_action_open_events">View events</string>
+    <string name="milestone_action_open_characters">View characters</string>
+    <string name="world_state">World State</string>
 </resources>
