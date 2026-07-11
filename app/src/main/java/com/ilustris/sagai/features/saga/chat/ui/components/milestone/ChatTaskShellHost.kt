@@ -33,7 +33,7 @@ import com.ilustris.sagai.ui.components.taskshell.TaskShellLayout
 import com.ilustris.sagai.ui.components.taskshell.TaskShellSlotState
 
 @Composable
-fun ChatTaskSheellHost(
+fun ChatTaskShellHost(
     uiState: ChatUiState,
     sagaContent: SagaMetadata,
     progress: Float,

@@ -194,7 +194,10 @@ class NarrativeMilestoneShellContent(
     @Composable
     override fun Compact(scope: TaskShellScope) {
         AnimatedVisibility(scope.expansion == TaskShellExpansion.Collapsed) {
-            MilestoneCompactHeader(title = stringResource(milestone.title))
+            // SagaMilestone.Loading.title is a literal 0, not a real resource id — never
+            // resolve it, regardless of whether this branch is expected to be reachable.
+            val title = if (milestone is SagaMilestone.Loading) emptyString() else stringResource(milestone.title)
+            MilestoneCompactHeader(title = title)
         }
     }
 

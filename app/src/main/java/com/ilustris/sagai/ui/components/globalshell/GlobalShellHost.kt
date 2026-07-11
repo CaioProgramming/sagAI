@@ -341,6 +341,20 @@ private class ImageGenerationShellContent(
             },
             onLongClick = onImageCancel,
             modifier = Modifier.statusBarsPadding(),
+            trailingContent = {
+                val queueBadge =
+                    when (state) {
+                        is Generating -> state.queuePosition.takeIf { it > 0 }
+                        else -> null
+                    }
+                queueBadge?.let { count ->
+                    Text(
+                        text = stringResource(R.string.image_generation_queue_badge, count),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
         )
     }
 
@@ -487,27 +501,31 @@ private class BookGenerationShellContent(
     override fun Compact(scope: TaskShellScope) {
         val isExpanded = scope.expansion != TaskShellExpansion.Collapsed
 
-        TaskShellBar(
-            title = state.actTitle,
-            isExpanded = isExpanded,
-            onToggleExpand = {
-                if (scope.expansion == TaskShellExpansion.Collapsed) scope.onToggle() else scope.onMinimize()
-            },
-            modifier = Modifier.statusBarsPadding(),
-        )
+        SagAITheme(state.genre) {
+            TaskShellBar(
+                title = state.actTitle,
+                isExpanded = isExpanded,
+                onToggleExpand = {
+                    if (scope.expansion == TaskShellExpansion.Collapsed) scope.onToggle() else scope.onMinimize()
+                },
+                modifier = Modifier.statusBarsPadding(),
+            )
+        }
     }
 
     @Composable
     override fun Expanded(scope: TaskShellScope) {
-        TaskShellExpandedBody {
-            Text(
-                text =
-                    state.reasoning
-                        ?: stringResource(R.string.book_generation_reasoning_placeholder),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
+        SagAITheme(state.genre) {
+            TaskShellExpandedBody {
+                Text(
+                    text =
+                        state.reasoning
+                            ?: stringResource(R.string.book_generation_reasoning_placeholder),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
@@ -522,30 +540,32 @@ private class ChatGenerationShellContent(
     override fun Compact(scope: TaskShellScope) {
         val isExpanded = scope.expansion != TaskShellExpansion.Collapsed
 
-        TaskShellBar(
-            title = state.reasoning ?: (state.speakerName ?: state.sagaTitle),
-            isExpanded = isExpanded,
-            titleBrush = Brush.horizontalGradient(morphingGradient()),
-            onToggleExpand = {
-                if (scope.expansion == TaskShellExpansion.Collapsed) scope.onToggle() else scope.onMinimize()
-            },
-            modifier = Modifier.statusBarsPadding(),
-        )
+        SagAITheme(state.genre) {
+            TaskShellBar(
+                title = state.reasoning ?: (state.speakerName ?: state.sagaTitle),
+                isExpanded = isExpanded,
+                titleBrush = Brush.horizontalGradient(morphingGradient()),
+                onToggleExpand = {
+                    if (scope.expansion == TaskShellExpansion.Collapsed) scope.onToggle() else scope.onMinimize()
+                },
+                modifier = Modifier.statusBarsPadding(),
+            )
+        }
     }
 
     @Composable
     override fun Expanded(scope: TaskShellScope) {
-        val isExpanded = scope.expansion != TaskShellExpansion.Collapsed
-
-        TaskShellExpandedBody {
-            Text(
-                text =
-                    state.reasoning
-                        ?: stringResource(R.string.chat_generation_reasoning_placeholder),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Start,
-            )
+        SagAITheme(state.genre) {
+            TaskShellExpandedBody {
+                Text(
+                    text =
+                        state.reasoning
+                            ?: stringResource(R.string.chat_generation_reasoning_placeholder),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Start,
+                )
+            }
         }
     }
 }
@@ -563,81 +583,83 @@ private class NewMessageShellContent(
     override fun Compact(scope: TaskShellScope) {
         val isExpanded = scope.expansion != TaskShellExpansion.Collapsed
 
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            ShellAvatar(character = effect.character, icon = effect.icon, genre = effect.genre)
+        SagAITheme(effect.genre) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                ShellAvatar(character = effect.character, icon = effect.icon, genre = effect.genre)
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.notification_new_message),
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
-                        ),
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = effect.speakerName,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.notification_new_message),
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
+                            ),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = effect.speakerName,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                }
+
+                TaskShellChevron(
+                    isExpanded = isExpanded,
+                    onClick = {
+                        if (scope.expansion == TaskShellExpansion.Collapsed) scope.onToggle() else scope.onMinimize()
+                    },
                 )
             }
-
-            TaskShellChevron(
-                isExpanded = isExpanded,
-                onClick = {
-                    if (scope.expansion == TaskShellExpansion.Collapsed) scope.onToggle() else scope.onMinimize()
-                },
-            )
         }
     }
 
     @Composable
     override fun Expanded(scope: TaskShellScope) {
-        val isExpanded = scope.expansion != TaskShellExpansion.Collapsed
-
-        TaskShellExpandedBody {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                // Render rich tags without showing the tag syntax.
-                ExpressiveText(
-                    text = effect.rawText,
-                    genre = effect.genre,
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Start,
-                        ),
-                    modifier = Modifier.fillMaxWidth(),
-                    shouldAnimate = false,
-                    characters = emptyList(),
-                    wiki = emptyList(),
-                    mainCharacter = null,
-                    onAnnotationClick = { _ -> },
-                )
-
-                Button(
-                    onClick = {
-                        onNavigate(effect.deepLink)
-                        onDismiss()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
+        SagAITheme(effect.genre) {
+            TaskShellExpandedBody {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(text = stringResource(R.string.notification_open_chat))
+                    // Render rich tags without showing the tag syntax.
+                    ExpressiveText(
+                        text = effect.rawText,
+                        genre = effect.genre,
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Start,
+                            ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shouldAnimate = false,
+                        characters = emptyList(),
+                        wiki = emptyList(),
+                        mainCharacter = null,
+                        onAnnotationClick = { _ -> },
+                    )
+
+                    Button(
+                        onClick = {
+                            onNavigate(effect.deepLink)
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(text = stringResource(R.string.notification_open_chat))
+                    }
                 }
             }
         }
@@ -655,70 +677,72 @@ private class GenericNotificationShellContent(
     override fun Compact(scope: TaskShellScope) {
         val isExpanded = scope.expansion != TaskShellExpansion.Collapsed
 
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            ShellAvatar(character = effect.character, icon = effect.icon, genre = effect.genre)
+        SagAITheme(effect.genre) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                ShellAvatar(character = effect.character, icon = effect.icon, genre = effect.genre)
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = genericLabelFor(effect),
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
-                        ),
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = effect.message,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = genericLabelFor(effect),
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
+                            ),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = effect.message,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                }
+
+                TaskShellChevron(
+                    isExpanded = isExpanded,
+                    onClick = {
+                        if (scope.expansion == TaskShellExpansion.Collapsed) scope.onToggle() else scope.onMinimize()
+                    },
                 )
             }
-
-            TaskShellChevron(
-                isExpanded = isExpanded,
-                onClick = {
-                    if (scope.expansion == TaskShellExpansion.Collapsed) scope.onToggle() else scope.onMinimize()
-                },
-            )
         }
     }
 
     @Composable
     override fun Expanded(scope: TaskShellScope) {
-        val isExpanded = scope.expansion != TaskShellExpansion.Collapsed
-
-        TaskShellExpandedBody {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = effect.message,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                if (effect !is ImageGenerationWorkEffect) {
-                    Button(
-                        onClick = {
-                            onNavigate(effect.deepLink)
-                            onDismiss()
-                        },
+        SagAITheme(effect.genre) {
+            TaskShellExpandedBody {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = effect.message,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium,
+                            ),
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                    ) {
-                        Text(text = stringResource(R.string.notification_open_chat))
+                    )
+
+                    if (effect !is ImageGenerationWorkEffect) {
+                        Button(
+                            onClick = {
+                                onNavigate(effect.deepLink)
+                                onDismiss()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                        ) {
+                            Text(text = stringResource(R.string.notification_open_chat))
+                        }
                     }
                 }
             }
