@@ -55,7 +55,7 @@ class HomeUseCaseImpl
                     val prompt =
                         HomePrompts.dynamicSagaCreationPrompt(
                             promptService,
-                            genreAesthetics = genreConfigService.formatGenreAesthetics(),
+                            selectedTheme = genreConfigService.getRandomGenreAesthetic(),
                         )
                     val result =
                         gemmaClient.generate<DynamicSagaPrompt>(
@@ -114,4 +114,30 @@ class HomeUseCaseImpl
                     backupService.backupDatabase()
                 }
             }
+
+        override fun canCreateNewSaga(activeSagaCount: Int): Boolean {
+            if (BuildConfig.DEBUG) return true
+            return activeSagaCount <= FREE_ACTIVE_SAGA_LIMIT || isPremium()
+        }
+
+        override fun filterVisibleSagas(
+            sagas: List<com.ilustris.sagai.features.home.data.model.SagaSummary>,
+            includeDebugSagas: Boolean,
+        ): List<com.ilustris.sagai.features.home.data.model.SagaSummary> =
+            if (includeDebugSagas) {
+                sagas
+            } else {
+                sagas.filter { !it.data.isDebug }
+            }
+
+        override fun canOpenSaga(
+            saga: Saga,
+            showDebugSagas: Boolean,
+        ): Boolean = !saga.isDebug || showDebugSagas
+
+        override fun isPremium(): Boolean = billingState.value is BillingService.BillingState.SignatureEnabled
+
+        companion object {
+            private const val FREE_ACTIVE_SAGA_LIMIT = 3
+        }
     }

@@ -8,12 +8,4 @@ sealed class SideEffect {
     data class GuardrailBlock(
         val status: SafeGuard,
     ) : SideEffect()
-
-    data class ShowImage(
-        val bitmap: android.graphics.Bitmap,
-    ) : SideEffect()
-
-    data class ShowAILoader(
-        val message: String,
-    ) : SideEffect()
 }

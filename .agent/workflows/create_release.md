@@ -78,7 +78,12 @@ the APK.
         ### 🐛 Bug Fixes
         - [Fix 1]
         ```
-    - **Execute**: Run `gh pr create --base main --head develop --title "[Title]" --body "[Body]"`
+    - **Push the release branch**: Run `git push origin release/[new_version]`.
+    - **Execute**: Run `gh pr create --base main --head release/[new_version] --title "[Title]" --body "[Body]"`.
+      *Note*: The PR must come **from the release branch**, not from `develop`. This keeps the
+      release scope frozen even if new commits land on `develop` while the PR is open. Merge
+      `release/[new_version]` back into `develop` separately (fast-forward) to keep it in sync —
+      that merge is not what gets PR'd to `main`.
     - **Open PR**: Run `gh pr view --web` to open the PR in the browser.
     - **Notify**: Confirm the PR has been created and provide the link.
 

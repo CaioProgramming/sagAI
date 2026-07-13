@@ -41,6 +41,7 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -207,7 +208,8 @@ fun Modifier.levitate(
     easing: Easing = LinearEasing,
     yOffset: Float = 20f,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "levitate")
     val translationY by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -229,7 +231,8 @@ fun Modifier.pulse(
     easing: Easing = LinearEasing,
     pulseScale: Float = 1.2f,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -251,7 +254,8 @@ fun Modifier.shake(
     easing: Easing = LinearEasing,
     xOffset: Float = 10f,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "shake")
     val translationX by infiniteTransition.animateFloat(
         initialValue = -xOffset,
@@ -273,7 +277,8 @@ fun Modifier.rotate(
     easing: Easing = LinearEasing,
     degrees: Float = 360f,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "rotate")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -295,7 +300,8 @@ fun Modifier.blink(
     easing: Easing = LinearEasing,
     minAlpha: Float = 0.3f,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "blink")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -317,7 +323,8 @@ fun Modifier.glow(
     duration: Duration = 2.seconds,
     maxAlpha: Float = 0.5f,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "glow")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -344,7 +351,8 @@ fun Modifier.jiggle(
     isPlaying: Boolean = true,
     duration: Duration = 0.4.seconds,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "jiggle")
     val rotation by infiniteTransition.animateFloat(
         initialValue = -3f,
@@ -375,7 +383,8 @@ fun Modifier.swing(
     duration: Duration = 2.seconds,
     degrees: Float = 10f,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "swing")
     val rotation by infiniteTransition.animateFloat(
         initialValue = -degrees,
@@ -396,7 +405,8 @@ fun Modifier.bounce(
     duration: Duration = 0.8.seconds,
     yOffset: Float = 30f,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "bounce")
     val translationY by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -417,7 +427,8 @@ fun Modifier.tilt(
     duration: Duration = 2.seconds,
     degrees: Float = 5f,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "tilt")
     val rotation by infiniteTransition.animateFloat(
         initialValue = -degrees,
@@ -434,6 +445,9 @@ fun Modifier.tilt(
 
 @Composable
 fun Modifier.zoomAnimation(): Modifier {
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!animationsActive) return this
+
     val infiniteTransition = rememberInfiniteTransition(label = "infinite zoom")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -461,7 +475,8 @@ fun Modifier.divineAura(
     color: Color = Color(0xFFFFD700),
     duration: Duration = 3.seconds,
 ): Modifier {
-    if (!isPlaying) return this
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
     val infiniteTransition = rememberInfiniteTransition(label = "divineAura")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,

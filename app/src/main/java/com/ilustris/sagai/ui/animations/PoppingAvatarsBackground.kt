@@ -50,6 +50,7 @@ fun PoppingAvatarsBackground(
 
     val density = LocalDensity.current
     val avatarSizePx = remember(avatarSize) { with(density) { avatarSize.toPx() } }
+    val animationsActive = rememberLifecycleAnimationsActive()
 
     var activeCharacterIndex by remember { mutableIntStateOf(-1) }
     val characterAnimTargets = remember { mutableStateMapOf<String, Triple<Offset, Float, Float>>() }
@@ -146,51 +147,17 @@ fun PoppingAvatarsBackground(
                 label = "alpha_${character.id}",
             )
 
-            val infiniteTransition = rememberInfiniteTransition(label = "infinite_anim_${character.id}")
+            val idleMotion =
+                if (animationsActive) {
+                    rememberAvatarIdleMotion(character.id.toString())
+                } else {
+                    AvatarIdleMotion()
+                }
 
-            val breathingScaleMultiplier by infiniteTransition.animateFloat(
-                initialValue = 1f,
-                targetValue = 1.08f,
-                animationSpec =
-                    infiniteRepeatable(
-                        animation = tween(durationMillis = 1500, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse,
-                    ),
-                label = "breathing_scale_${character.id}",
-            )
-
-            val dynamicRotationAngle by infiniteTransition.animateFloat( // Renamed from rotationAngle
-                initialValue = -8f,
-                targetValue = 8f,
-                animationSpec =
-                    infiniteRepeatable(
-                        animation = tween(durationMillis = 2200, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse,
-                    ),
-                label = "dynamic_rotation_angle_${character.id}",
-            )
-
-            val idleOffsetX by infiniteTransition.animateFloat(
-                initialValue = -5f,
-                targetValue = 5f,
-                animationSpec =
-                    infiniteRepeatable(
-                        animation = tween(durationMillis = Random.nextInt(2500, 3500), easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse,
-                    ),
-                label = "idle_offset_x_${character.id}",
-            )
-
-            val idleOffsetY by infiniteTransition.animateFloat(
-                initialValue = -5f,
-                targetValue = 5f,
-                animationSpec =
-                    infiniteRepeatable(
-                        animation = tween(durationMillis = Random.nextInt(2500, 3500), easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse,
-                    ),
-                label = "idle_offset_y_${character.id}",
-            )
+            val breathingScaleMultiplier = idleMotion.breathingScale
+            val dynamicRotationAngle = idleMotion.rotation
+            val idleOffsetX = idleMotion.offsetX
+            val idleOffsetY = idleMotion.offsetY
 
             // Static base rotation unique to each character
             val baseRandomRotation = remember(character.id) {
@@ -212,7 +179,8 @@ fun PoppingAvatarsBackground(
                             if (isIdlePushedOut) {
                                 scaleX = animatedScaleMain * breathingScaleMultiplier
                                 scaleY = animatedScaleMain * breathingScaleMultiplier
-                                rotationZ = baseRandomRotation + dynamicRotationAngle // Combined rotation
+                                rotationZ =
+                                    baseRandomRotation + dynamicRotationAngle // Combined rotation
                                 finalTranslationX += idleOffsetX
                                 finalTranslationY += idleOffsetY
                             } else {
@@ -227,4 +195,70 @@ fun PoppingAvatarsBackground(
             )
         }
     }
+}
+
+private data class AvatarIdleMotion(
+    val breathingScale: Float = 1f,
+    val rotation: Float = 0f,
+    val offsetX: Float = 0f,
+    val offsetY: Float = 0f,
+)
+
+@Composable
+private fun rememberAvatarIdleMotion(characterId: String): AvatarIdleMotion {
+    val infiniteTransition = rememberInfiniteTransition(label = "infinite_anim_$characterId")
+    val breathingScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.08f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(durationMillis = 1500, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "breathing_scale_$characterId",
+    )
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = -8f,
+        targetValue = 8f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(durationMillis = 2200, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "dynamic_rotation_angle_$characterId",
+    )
+    val offsetX by infiniteTransition.animateFloat(
+        initialValue = -5f,
+        targetValue = 5f,
+        animationSpec =
+            infiniteRepeatable(
+                animation =
+                    tween(
+                        durationMillis = Random.nextInt(2500, 3500),
+                        easing = LinearEasing,
+                    ),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "idle_offset_x_$characterId",
+    )
+    val offsetY by infiniteTransition.animateFloat(
+        initialValue = -5f,
+        targetValue = 5f,
+        animationSpec =
+            infiniteRepeatable(
+                animation =
+                    tween(
+                        durationMillis = Random.nextInt(2500, 3500),
+                        easing = LinearEasing,
+                    ),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "idle_offset_y_$characterId",
+    )
+    return AvatarIdleMotion(
+        breathingScale = breathingScale,
+        rotation = rotation,
+        offsetX = offsetX,
+        offsetY = offsetY,
+    )
 }

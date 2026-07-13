@@ -24,6 +24,8 @@ data class Chapter(
     val featuredCharacters: List<Int> = emptyList(),
     @ColumnInfo(defaultValue = "")
     val narrativeGuide: String? = null,
+    @ColumnInfo(defaultValue = "")
+    val artwork: String? = null,
     @Embedded(prefix = "continuity_")
     val continuitySummary: ContinuitySummary? = null,
 ) {

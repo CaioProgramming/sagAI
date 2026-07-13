@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data object HomeKey : NavKey
 
 @Serializable
-data object ProfileKey : NavKey
+data object SettingsKey : NavKey
 
 @Serializable
 data object FAQKey : NavKey
@@ -128,8 +128,11 @@ fun String.findNavKey(): NavKey? {
             HomeKey
         }
 
-        this.equals("PROFILE", ignoreCase = true) || sanitized == "saga://profile" -> {
-            ProfileKey
+        this.equals("SETTINGS", ignoreCase = true) ||
+            sanitized == "saga://settings" ||
+            this.equals("PROFILE", ignoreCase = true) ||
+            sanitized == "saga://profile" -> {
+            SettingsKey
         }
 
         this.equals("FAQ", ignoreCase = true) || sanitized == "saga://faq" -> {

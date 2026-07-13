@@ -16,45 +16,58 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 
 @Composable
 fun StoryLoadingIndicator(
     modifier: Modifier = Modifier,
     brush: Brush,
-    strokeWidth: Dp = 2.dp
+    strokeWidth: Dp = 2.dp,
 ) {
+    val rotation =
+        if (rememberLifecycleAnimationsActive()) {
+            rememberStoryLoadingRotation()
+        } else {
+            0f
+        }
+
+    Canvas(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(4.dp),
+    ) {
+        val arcStroke = strokeWidth.toPx()
+        drawArc(
+            brush = brush,
+            startAngle = rotation,
+            sweepAngle = 180f,
+            useCenter = false,
+            style = Stroke(width = arcStroke * 2.5f),
+            alpha = 0.45f,
+        )
+        drawArc(
+            brush = brush,
+            startAngle = rotation,
+            sweepAngle = 180f,
+            useCenter = false,
+            style = Stroke(width = arcStroke),
+        )
+    }
+}
+
+@Composable
+private fun rememberStoryLoadingRotation(): Float {
     val infiniteTransition = rememberInfiniteTransition(label = "story_loading_transition")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = EaseIn),
-            repeatMode = RepeatMode.Restart,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1500, easing = EaseIn),
+                repeatMode = RepeatMode.Restart,
+            ),
         label = "story_loading_rotation",
     )
-
-
-    Canvas(modifier = modifier
-        .fillMaxSize()
-        .padding(4.dp)) {
-        val arcStroke = strokeWidth.toPx()
-        // Draw blurred glow arc first
-        drawArc(
-            brush = brush,
-            startAngle = rotation,
-            sweepAngle = 180f,
-            useCenter = false,
-            style = Stroke(width = arcStroke * 2.5f), // Thicker for glow
-            alpha = 0.45f
-        )
-        // Draw solid arc on top
-        drawArc(
-            brush = brush,
-            startAngle = rotation,
-            sweepAngle = 180f,
-            useCenter = false,
-            style = Stroke(width = arcStroke)
-        )
-    }
+    return rotation
 }

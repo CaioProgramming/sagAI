@@ -17,6 +17,10 @@ data class SceneSummary(
     val establishedFacts: List<String>? = emptyList(),
     val possibleOutcomes: List<String>? = emptyList(),
     val quote: String? = null,
+    /** Character-voiced teaser to send as a push notification if the player doesn't return; regenerated on every reply. */
+    val notificationHook: String? = null,
+    /** Display name (same format as [charactersPresent]) of who "says" [notificationHook]; null means a narrator-voiced hook with no specific character. */
+    val notificationCharacterName: String? = null,
 )
 
 /** True when the summary can drive chat objectives and suggestions. */

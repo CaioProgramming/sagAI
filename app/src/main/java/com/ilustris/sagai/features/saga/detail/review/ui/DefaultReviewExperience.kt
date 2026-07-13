@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.ui
 
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.detail.data.model.isComplete
 
 class DefaultReviewExperience(
     private val content: SagaContent,
@@ -70,8 +71,10 @@ class DefaultReviewExperience(
                     add(ReviewConclusionPage(content))
                 }
 
-                // Summary
-                add(ReviewSummaryPage(content))
+                // Summary — only when every step is ready
+                if (review.isComplete()) {
+                    add(ReviewSummaryPage(content))
+                }
             }
         }
 }

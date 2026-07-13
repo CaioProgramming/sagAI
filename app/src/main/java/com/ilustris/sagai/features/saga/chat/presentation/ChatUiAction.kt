@@ -86,6 +86,8 @@ sealed class ChatUiAction {
 
     data object OpenSagaDetails : ChatUiAction()
 
+    data object OpenReview : ChatUiAction()
+
     data class InjectFakeMessages(
         val count: Int,
     ) : ChatUiAction()

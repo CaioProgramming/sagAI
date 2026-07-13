@@ -1,7 +1,5 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,33 +31,30 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun IntroductionOverlay(
     introduction: SagaMilestone.Introduction,
     saga: Saga,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     onComplete: () -> Unit,
 ) {
     val message = introduction.introduction
     val genre = saga.genre
-    val phaseController = rememberMilestonePhaseController(MilestonePhase.Hero)
+    val phaseController = rememberMilestonePhaseController(MilestonePhase.Spark)
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        phaseController.advance(MilestonePhase.Hero)
+        phaseController.advance(MilestonePhase.Spark)
         if (message.isNotBlank()) {
             phaseController.advanceAfter(
                 coroutineScope,
                 hold = 1.2.seconds,
-                to = MilestonePhase.Body,
+                to = MilestonePhase.Reveal,
             )
         }
     }
 
     LaunchedEffect(phaseController.currentPhase) {
-        if (phaseController.currentPhase == MilestonePhase.Hero && message.isBlank()) {
+        if (phaseController.currentPhase == MilestonePhase.Spark && message.isBlank()) {
             delay(1.5.seconds)
             onComplete()
         }
@@ -81,23 +76,21 @@ fun IntroductionOverlay(
                     .padding(horizontal = 16.dp),
         ) {
             MilestonePhaseVisibility(
-                visible = phaseController.isAtLeast(MilestonePhase.Hero),
+                visible = phaseController.isAtLeast(MilestonePhase.Spark),
                 enter = MilestoneTransitions.fadeEnter,
             ) {
-                with(sharedTransitionScope) {
-                    genre.stylisedText(
-                        text = saga.title,
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth(),
-                    )
-                }
+                genre.stylisedText(
+                    text = saga.title,
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                )
             }
 
             if (message.isNotBlank()) {
                 MilestonePhaseVisibility(
-                    visible = phaseController.isAtLeast(MilestonePhase.Body),
+                    visible = phaseController.isAtLeast(MilestonePhase.Reveal),
                     enter = MilestoneTransitions.fadeEnter,
                 ) {
                     SimpleTypewriterText(

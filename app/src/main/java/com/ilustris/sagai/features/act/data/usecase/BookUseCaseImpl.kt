@@ -76,7 +76,11 @@ class BookUseCaseImpl
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val book =
-                                    state.data!!.data.copy(id = 0, actId = actContent.data.id)
+                                    state.data!!.data.copy(
+                                        id = 0,
+                                        actId = actContent.data.id,
+                                        sagaTitle = saga.data.title,
+                                    )
                                 bookDao.saveBook(book)
                             }
                             emit(state)

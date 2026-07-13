@@ -37,6 +37,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.circle
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.DrawShape
 import com.ilustris.sagai.ui.theme.RoundedPolygonShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -58,20 +59,22 @@ fun SagaLoader(
     rotationTarget: Float = 180f,
     scaleDistortion: Pair<Float, Float> = Pair(0.9f, 1.2f),
 ) {
-    val infiniteTransition = rememberInfiniteTransition()
+    if (rememberLifecycleAnimationsActive()) {
+        val infiniteTransition = rememberInfiniteTransition()
 
-    infiniteTransition.animateFloat(
-        initialValue = 0.5f,
-        targetValue = 1.2f,
-        animationSpec =
-            infiniteRepeatable(
-                tween(
-                    durationMillis = animationDuration.toInt(DurationUnit.MILLISECONDS),
-                    easing = EaseIn,
+        infiniteTransition.animateFloat(
+            initialValue = 0.5f,
+            targetValue = 1.2f,
+            animationSpec =
+                infiniteRepeatable(
+                    tween(
+                        durationMillis = animationDuration.toInt(DurationUnit.MILLISECONDS),
+                        easing = EaseIn,
+                    ),
+                    repeatMode = Reverse,
                 ),
-                repeatMode = Reverse,
-            ),
-    )
+        )
+    }
 
     remember {
         RoundedPolygon.star(
@@ -100,7 +103,6 @@ fun SagaLoader(
     )
 }
 
-
 @Composable
 fun DistortingBubble(
     modifier: Modifier = Modifier,
@@ -113,6 +115,17 @@ fun DistortingBubble(
     verticalDistortion: Float = 1.2f,
     rotationTarget: Float = 180f,
 ) {
+    if (!rememberLifecycleAnimationsActive()) {
+        StaticDistortingBubble(
+            modifier = modifier,
+            brush = brush,
+            tint = tint,
+            blurRadius = blurRadius,
+            shape = shape,
+        )
+        return
+    }
+
     val infiniteTransition = rememberInfiniteTransition()
     val duration = animationDduration.toInt(DurationUnit.MILLISECONDS)
     val horizontalDistortion =
@@ -172,6 +185,8 @@ fun DistortingBubble(
     }
 }
 
+fun sparkShape() = RoundedPolygon.star(4, rounding = CornerRounding(0f))
+
 @Composable
 fun SparkLoader(
     brush: Brush,
@@ -179,6 +194,37 @@ fun SparkLoader(
     duration: Duration = 5.seconds,
     modifier: Modifier = Modifier,
 ) {
+    if (!rememberLifecycleAnimationsActive()) {
+        Box(modifier = modifier.padding(4.dp)) {
+            val shapeA =
+                remember {
+                    RoundedPolygon.star(
+                        4,
+                        rounding = CornerRounding(5f),
+                    )
+                }
+            val shapeB =
+                remember {
+                    RoundedPolygon.star(
+                        4,
+                        rounding = CornerRounding(0f),
+                    )
+                }
+            val morph =
+                remember {
+                    Morph(shapeA, shapeB)
+                }
+            DrawShape(
+                modifier = Modifier.fillMaxSize(),
+                strokeSize = strokeSize,
+                morph = morph,
+                brush = brush,
+                duration = duration - 1.seconds,
+            )
+        }
+        return
+    }
+
     val infiniteTransition = rememberInfiniteTransition()
 
     infiniteTransition.animateFloat(
@@ -244,6 +290,30 @@ fun SparkLoader(
             morph = morph,
             brush = brush,
             duration = drawDuration,
+        )
+    }
+}
+
+@Composable
+private fun StaticDistortingBubble(
+    modifier: Modifier,
+    brush: Brush,
+    tint: Color,
+    blurRadius: Dp,
+    shape: Shape,
+) {
+    Box(modifier.padding(16.dp)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                .background(brush, shape),
+        )
+        Box(
+            Modifier
+                .fillMaxSize()
+                .blur(2.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                .background(tint, shape),
         )
     }
 }

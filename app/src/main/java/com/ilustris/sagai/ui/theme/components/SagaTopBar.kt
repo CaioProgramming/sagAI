@@ -45,7 +45,7 @@ fun SagaTopBar(
     Row(
         modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         onBackClick?.let {
@@ -92,7 +92,7 @@ fun SagaTopBar(
                 Text(
                     subtitle,
                     style =
-                        MaterialTheme.typography.labelMedium.copy(
+                        MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Light,
                             textAlign = TextAlign.Center,
                         ),

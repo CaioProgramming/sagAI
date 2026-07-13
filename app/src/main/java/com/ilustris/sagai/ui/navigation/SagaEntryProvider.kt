@@ -33,21 +33,17 @@ fun createSagaEntryProvider(
 ) = entryProvider {
     entry<HomeKey> {
         HomeView(
-            navToProfile = { navigator.navigate(ProfileKey) },
+            navToSettings = { navigator.navigate(SettingsKey) },
             navToNewSaga = { navigator.navigate(NewSagaKey) },
             navToSaga = { sagaId, isDebug -> navigator.navigate(ChatKey(sagaId, isDebug)) },
-            navToFAQ = { navigator.navigate(FAQKey) },
-            navToAuditLogs = { navigator.navigate(AuditLogsKey) },
-            navToPlaythrough = { navigator.navigate(PlaythroughKey) },
             padding = padding,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )
     }
 
-    entry<ProfileKey> {
+    entry<SettingsKey> {
         SettingsView(
-            onOpenPremiumOnboarding = { },
             onBack = { navigator.goBack() },
             navToFAQ = { navigator.navigate(FAQKey) },
             navToAuditLogs = { navigator.navigate(AuditLogsKey) },
@@ -102,6 +98,7 @@ fun createSagaEntryProvider(
             onSagaDetails = {
                 navigator.navigate(SagaDetailKey(key.sagaId))
             },
+            onNavigate = { navigator.navigate(it) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )

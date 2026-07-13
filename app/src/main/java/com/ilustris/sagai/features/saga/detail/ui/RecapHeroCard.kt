@@ -17,9 +17,13 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.features.saga.detail.data.model.completedStepCount
+import com.ilustris.sagai.features.saga.detail.data.model.isComplete
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.review.ui.DynamicCard
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
 
 @Composable
@@ -28,6 +32,7 @@ fun RecapHeroCard(
     chaptersCount: Int,
     charactersCount: Int,
     messagesCount: Int,
+    reviewGenerationState: ReviewGenerationState,
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
@@ -40,12 +45,49 @@ fun RecapHeroCard(
         )
     var currentIndex by remember { mutableStateOf(0) }
 
-    LaunchedEffect(Unit) {
+    val isReviewComplete = saga.review.isComplete()
+    val isGenerating = reviewGenerationState is ReviewGenerationState.Generating
+    val showRotatingStats = isReviewComplete && !isGenerating
+
+    LaunchedEffect(showRotatingStats) {
+        if (!showRotatingStats) return@LaunchedEffect
         while (true) {
             delay(2500)
             currentIndex = (currentIndex + 1) % stats.size
         }
     }
+
+    val subtitle =
+        when {
+            isReviewComplete -> {
+                stats[currentIndex.coerceIn(stats.indices)]
+            }
+
+            reviewGenerationState is ReviewGenerationState.Generating -> {
+                val state = reviewGenerationState
+                if (state.completedCount > 0) {
+                    stringResource(
+                        R.string.recap_almost_ready,
+                        state.completedCount,
+                        state.totalSteps,
+                    )
+                } else {
+                    stringResource(R.string.recap_preparing)
+                }
+            }
+
+            saga.review != null -> {
+                stringResource(
+                    R.string.recap_almost_ready,
+                    saga.review?.completedStepCount() ?: 0,
+                    6,
+                )
+            }
+
+            else -> {
+                stringResource(R.string.recap_preparing)
+            }
+        }
 
     val shape =
         saga.genre.bubble(
@@ -54,11 +96,9 @@ fun RecapHeroCard(
             tailHeight = 0.dp,
         )
 
-    saga.genre
-
     DynamicCard(
         stringResource(R.string.recap_your_journey),
-        stats.last(),
+        subtitle,
         titleStyle =
             MaterialTheme.typography.headlineSmall.copy(
                 color = MaterialTheme.colorScheme.onPrimary,
@@ -74,6 +114,7 @@ fun RecapHeroCard(
                     Brush.verticalGradient(MaterialTheme.colorScheme.primary.darkerPalette(factor = .3f)),
                     shape,
                 ).clip(shape)
+                .then(if (isGenerating) Modifier.reactiveShimmer(true) else Modifier)
                 .clickable {
                     onClick()
                 },

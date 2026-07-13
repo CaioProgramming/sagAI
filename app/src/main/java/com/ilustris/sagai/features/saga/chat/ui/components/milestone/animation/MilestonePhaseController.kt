@@ -3,7 +3,8 @@ package com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.EaseInBounce
+import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -23,12 +24,15 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Three-step reveal: spark icon → scrollable content → continue action.
+ *
+ * Replaces the older Hero / Headline / Body / Stats / Dashboard chain.
+ */
 enum class MilestonePhase {
-    Hero,
-    Headline,
-    Body,
-    Stats,
-    Action,
+    Spark,
+    Reveal,
+    Ready,
 }
 
 @Stable
@@ -42,28 +46,24 @@ class MilestonePhaseController(
         currentPhase =
             to
                 ?: when (currentPhase) {
-                    MilestonePhase.Hero -> MilestonePhase.Headline
-                    MilestonePhase.Headline -> MilestonePhase.Body
-                    MilestonePhase.Body -> MilestonePhase.Stats
-                    MilestonePhase.Stats -> MilestonePhase.Action
-                    MilestonePhase.Action -> MilestonePhase.Action
+                    MilestonePhase.Spark -> MilestonePhase.Reveal
+                    MilestonePhase.Reveal -> MilestonePhase.Ready
+                    MilestonePhase.Ready -> MilestonePhase.Ready
                 }
     }
 
     fun isAtLeast(phase: MilestonePhase): Boolean = currentPhase.ordinal >= phase.ordinal
-
-    fun isVisible(phase: MilestonePhase): Boolean = currentPhase == phase
 }
 
 @Composable
-fun rememberMilestonePhaseController(initialPhase: MilestonePhase = MilestonePhase.Hero): MilestonePhaseController =
+fun rememberMilestonePhaseController(initialPhase: MilestonePhase = MilestonePhase.Spark): MilestonePhaseController =
     remember {
         MilestonePhaseController(initialPhase)
     }
 
 fun MilestonePhaseController.advanceAfter(
     scope: CoroutineScope,
-    hold: Duration = 900.milliseconds,
+    hold: Duration,
     to: MilestonePhase? = null,
 ) {
     scope.launch {
@@ -78,19 +78,31 @@ fun milestoneTypewriterDuration(text: String): Duration {
 }
 
 object MilestoneTransitions {
-    val fadeEnter: EnterTransition = fadeIn(tween(450))
-    val fadeExit: ExitTransition = fadeOut(tween(300))
-    val labelEnter: EnterTransition = fadeIn(tween(400)) + slideInVertically { it / 4 }
-    val heroEnter: EnterTransition =
+    val fadeEnter: EnterTransition = fadeIn(tween(700, easing = EaseOutCubic))
+    val fadeExit: ExitTransition = fadeOut(tween(450))
+    val labelEnter: EnterTransition =
+        fadeIn(tween(600, easing = EaseOutCubic)) + slideInVertically { it / 4 }
+    val revealEnter: EnterTransition =
+        fadeIn(tween(800, easing = EaseOutCubic)) +
+            slideInVertically(
+                animationSpec = tween(900, easing = EaseOutCubic),
+            ) { it / 5 }
+    val sparkEnter: EnterTransition =
         scaleIn(
-            initialScale = 0.6f,
-            animationSpec = tween(550, easing = EaseInBounce),
-        ) + fadeIn(tween(400))
-    val slamEnter: EnterTransition =
-        scaleIn(
-            initialScale = 2f,
-            animationSpec = tween(450, easing = EaseInBounce),
-        ) + fadeIn(tween(350))
+            initialScale = 0.72f,
+            animationSpec = tween(900, easing = EaseOutBack),
+        ) + fadeIn(tween(650, easing = EaseOutCubic))
+    val heroEnter: EnterTransition = sparkEnter
+    val cardEnter: (delayMillis: Int) -> EnterTransition = { delayMillis ->
+        fadeIn(tween(650, delayMillis = delayMillis, easing = EaseOutCubic)) +
+            slideInVertically(
+                animationSpec = tween(750, delayMillis = delayMillis, easing = EaseOutCubic),
+            ) { it / 5 } +
+            scaleIn(
+                initialScale = 0.94f,
+                animationSpec = tween(750, delayMillis = delayMillis, easing = EaseOutCubic),
+            )
+    }
 }
 
 @Composable

@@ -53,7 +53,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeShimmer
@@ -87,13 +89,13 @@ fun StarryLoader(
     val brush = themeBrushColors()
     val setBlur = LocalBlurState.current
     DisposableEffect(isLoading && useAsDialog) {
-        setBlur(isLoading)
+        setBlur(if (isLoading) BlurIntensity.Strong else BlurIntensity.None)
         onDispose {
-            setBlur(false)
+            setBlur(BlurIntensity.None)
         }
     }
 
-    if (isLoading) {
+    if (isLoading && rememberLifecycleAnimationsActive()) {
         val paint =
             remember {
                 Paint().apply {
@@ -181,7 +183,8 @@ fun StarryLoader(
                         modifier =
                             Modifier
                                 .align(Alignment.Center)
-                                .padding(32.dp),
+                                .padding(32.dp)
+                                .gradientFill(Brush.verticalGradient(morphingGradient())),
                     ) {
                         AnimatedContent(
                             loadingMessage,
@@ -228,7 +231,7 @@ fun StarryLoader(
                                                     MaterialTheme.colorScheme.primary,
                                                     blurRadius = 5f,
                                                 ),
-                                                ),
+                                        ),
                                     modifier = Modifier.padding(top = 8.dp),
                                 )
                             }
@@ -259,7 +262,10 @@ fun StarryLoader(
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.align(Alignment.Center),
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center)
+                            .gradientFill(Brush.verticalGradient(morphingGradient())),
                 ) {
                     AnimatedContent(
                         loadingMessage,
@@ -279,9 +285,9 @@ fun StarryLoader(
                                         shadow =
                                             Shadow(
                                                 MaterialTheme.colorScheme.primary,
-                                            blurRadius = 5f
-                                        ),
+                                                blurRadius = 5f,
                                             ),
+                                    ),
                             )
                         }
                     }
@@ -303,9 +309,9 @@ fun StarryLoader(
                                         shadow =
                                             Shadow(
                                                 MaterialTheme.colorScheme.primary,
-                                            blurRadius = 5f
-                                        ),
+                                                blurRadius = 5f,
                                             ),
+                                    ),
                                 modifier = Modifier.padding(top = 8.dp),
                             )
                         }

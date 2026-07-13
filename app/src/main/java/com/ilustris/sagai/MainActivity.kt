@@ -11,6 +11,9 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -25,7 +28,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -51,7 +53,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -60,31 +61,37 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import com.google.firebase.installations.FirebaseInstallations
+import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.data.SideEffect
+import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.core.navigation.SagaNavigationTracker
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
-import com.ilustris.sagai.core.notifications.SagaNotificationRouter
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
+import com.ilustris.sagai.features.act.BookGenerationService
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
 import com.ilustris.sagai.ui.components.BlurProvider
-import com.ilustris.sagai.ui.components.SagaInAppNotificationBanner
+import com.ilustris.sagai.ui.components.BlurTarget
 import com.ilustris.sagai.ui.components.SagaSnackBar
+import com.ilustris.sagai.ui.components.globalshell.GlobalShellHost
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
 import com.ilustris.sagai.ui.navigation.FAQKey
 import com.ilustris.sagai.ui.navigation.HomeKey
 import com.ilustris.sagai.ui.navigation.Navigator
 import com.ilustris.sagai.ui.navigation.NewSagaKey
 import com.ilustris.sagai.ui.navigation.PlaythroughKey
-import com.ilustris.sagai.ui.navigation.ProfileKey
+import com.ilustris.sagai.ui.navigation.SettingsKey
 import com.ilustris.sagai.ui.navigation.createSagaEntryProvider
 import com.ilustris.sagai.ui.navigation.findNavKey
 import com.ilustris.sagai.ui.navigation.isSameDestinationAs
 import com.ilustris.sagai.ui.navigation.rememberNavigationState
 import com.ilustris.sagai.ui.navigation.toEntries
+import com.ilustris.sagai.ui.theme.SAGA_THEME_TRANSITION_MS
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.sagaShape
 import dagger.hilt.android.AndroidEntryPoint
@@ -103,20 +110,34 @@ class MainActivity : ComponentActivity() {
     lateinit var sideEffectService: SideEffectService
 
     @Inject
+    lateinit var imageGenerationService: ImageGenerationService
+
+    @Inject
+    lateinit var bookGenerationService: BookGenerationService
+
+    @Inject
+    lateinit var chatGenerationService: ChatGenerationService
+
+    @Inject
+    lateinit var debugImageFallbackService: DebugImageFallbackService
+
+    @Inject
     lateinit var sagaThemeManager: SagaThemeManager
 
     @Inject
-    lateinit var sagaNotificationRouter: SagaNotificationRouter
+    lateinit var sagaNavigationTracker: SagaNavigationTracker
 
     @Inject
-    lateinit var sagaNavigationTracker: SagaNavigationTracker
+    lateinit var globalShellService: GlobalShellService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         printFirebaseInstallationAuthToken()
         enableEdgeToEdge()
-
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         val initialDeepLinkString = intent?.getStringExtra("deepLink")
         intent?.removeExtra("deepLink")
         Timber.i("onCreate: deeplinkExtra: $initialDeepLinkString")
@@ -131,7 +152,7 @@ class MainActivity : ComponentActivity() {
                     topLevelRoutes =
                         setOf(
                             HomeKey,
-                            ProfileKey,
+                            SettingsKey,
                             FAQKey,
                             NewSagaKey,
                             AuditLogsKey,
@@ -145,7 +166,7 @@ class MainActivity : ComponentActivity() {
 
             val isNeutralScreen =
                 currentKey is HomeKey ||
-                    currentKey is ProfileKey ||
+                    currentKey is SettingsKey ||
                     currentKey is FAQKey ||
                     currentKey is NewSagaKey ||
                     currentKey is AuditLogsKey ||
@@ -162,16 +183,12 @@ class MainActivity : ComponentActivity() {
                 sagaNavigationTracker.update(currentKey)
             }
 
-            LaunchedEffect(Unit) {
-                sagaNotificationRouter.start()
-            }
-
             SagAITheme(genre = themeGenre) {
                 Timber.d("MainActivity: SagAITheme block")
 
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
-                val inAppNotification by sagaNotificationRouter.inAppNotification.collectAsState()
+                val globalShellState by globalShellService.uiState.collectAsState()
 
                 LaunchedEffect(Unit) {
                     sideEffectService.sideEffects.collect { effect ->
@@ -277,83 +294,157 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                BlurProvider {
-                    Scaffold(
-                        modifier =
-                            Modifier
-                                .background(MaterialTheme.colorScheme.background)
-                                .fillMaxSize(),
-                        bottomBar = {
-                            // SagaBottomNavigation(navController, route)
-                        },
-                    ) { padding ->
-                        AnimatedContent(isOnline, transitionSpec = {
-                            fadeIn() togetherWith fadeOut()
-                        }) {
-                            if (it) {
-                                SharedTransitionLayout {
-                                    val entryProvider =
-                                        remember(
-                                            navigator,
-                                            padding,
-                                            this@SharedTransitionLayout,
-                                        ) {
-                                            createSagaEntryProvider(
+                val imageGenState by imageGenerationService.uiState.collectAsState()
+                val bookGenState by bookGenerationService.uiState.collectAsState()
+                val chatGenState by chatGenerationService.activeGenerations.collectAsState()
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    BlurProvider {
+                        Scaffold(
+                            modifier =
+                                Modifier
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .fillMaxSize(),
+                            bottomBar = {
+                                // SagaBottomNavigation(navController, route)
+                            },
+                        ) { padding ->
+                            AnimatedContent(isOnline, transitionSpec = {
+                                fadeIn() togetherWith fadeOut()
+                            }) {
+                                if (it) {
+                                    SharedTransitionLayout {
+                                        val entryProvider =
+                                            remember(
                                                 navigator,
                                                 padding,
                                                 this@SharedTransitionLayout,
-                                            )
-                                        }
-                                    Box(modifier = Modifier.fillMaxSize()) {
-                                        NavDisplay(
-                                            entries =
-                                                navigationState.toEntries(
-                                                    entryProvider,
-                                                ),
-                                            onBack = { navigator.goBack() },
-                                            transitionSpec = {
-                                                fadeIn() togetherWith fadeOut()
+                                            ) {
+                                                createSagaEntryProvider(
+                                                    navigator,
+                                                    padding,
+                                                    this@SharedTransitionLayout,
+                                                )
+                                            }
+                                        GlobalShellHost(
+                                            globalState = globalShellState,
+                                            imageGenState = imageGenState,
+                                            bookGenState = bookGenState,
+                                            chatGenState = chatGenState,
+                                            sagaNavigationTracker = sagaNavigationTracker,
+                                            debugImageFallbackService = debugImageFallbackService,
+                                            onImageSetExpansion = { expansion ->
+                                                imageGenerationService.setIslandExpansion(expansion)
                                             },
-                                            popTransitionSpec = {
-                                                slideInVertically { it / 2 } togetherWith slideOutVertically { it }
-                                            },
-                                            predictivePopTransitionSpec = {
-                                                slideInVertically { it / 2 } togetherWith slideOutVertically { it }
-                                            },
-                                        )
-
-                                        SagaInAppNotificationBanner(
-                                            notification = inAppNotification,
-                                            onOpen = { deepLink ->
+                                            onImageCancel = imageGenerationService::cancelCurrent,
+                                            onImageDismissReveal = imageGenerationService::dismissReveal,
+                                            onNavigate = { deepLink ->
                                                 navigateDeepLink(deepLink)
-                                                sagaNotificationRouter.dismissInApp()
                                             },
-                                            onDismiss = { sagaNotificationRouter.dismissInApp() },
-                                            modifier =
-                                                Modifier
-                                                    .align(Alignment.TopCenter)
-                                                    .zIndex(2f)
-                                                    .statusBarsPadding()
-                                                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                                                    .fillMaxWidth(),
-                                        )
+                                            onDismiss = { globalShellService.dismiss() },
+                                            onSetGlobalExpansion = { expansion ->
+                                                globalShellService.setExpansion(expansion)
+                                            },
+                                            modifier = Modifier.fillMaxSize(),
+                                            content = {
+                                                Box(modifier = Modifier.fillMaxSize()) {
+                                                    BlurTarget(modifier = Modifier.fillMaxSize()) {
+                                                        NavDisplay(
+                                                            entries =
+                                                                navigationState.toEntries(
+                                                                    entryProvider,
+                                                                ),
+                                                            onBack = { navigator.goBack() },
+                                                            transitionSpec = {
+                                                                fadeIn(
+                                                                    tween(
+                                                                        SAGA_THEME_TRANSITION_MS,
+                                                                        easing = FastOutSlowInEasing,
+                                                                    ),
+                                                                ) togetherWith
+                                                                    fadeOut(
+                                                                        tween(
+                                                                            SAGA_THEME_TRANSITION_MS,
+                                                                            easing = FastOutSlowInEasing,
+                                                                        ),
+                                                                    )
+                                                            },
+                                                            popTransitionSpec = {
+                                                                slideInVertically(
+                                                                    tween(
+                                                                        SAGA_THEME_TRANSITION_MS,
+                                                                        easing = FastOutSlowInEasing,
+                                                                    ),
+                                                                ) { it / 4 } +
+                                                                    fadeIn(
+                                                                        tween(
+                                                                            SAGA_THEME_TRANSITION_MS,
+                                                                            easing = EaseIn,
+                                                                        ),
+                                                                    ) togetherWith
+                                                                    slideOutVertically(
+                                                                        tween(
+                                                                            SAGA_THEME_TRANSITION_MS,
+                                                                            easing = FastOutSlowInEasing,
+                                                                        ),
+                                                                    ) { it / 4 } +
+                                                                    fadeOut(
+                                                                        tween(
+                                                                            SAGA_THEME_TRANSITION_MS,
+                                                                            easing = EaseIn,
+                                                                        ),
+                                                                    )
+                                                            },
+                                                            predictivePopTransitionSpec = {
+                                                                slideInVertically(
+                                                                    tween(
+                                                                        SAGA_THEME_TRANSITION_MS,
+                                                                        easing = FastOutSlowInEasing,
+                                                                    ),
+                                                                ) { it / 4 } +
+                                                                    fadeIn(
+                                                                        tween(
+                                                                            SAGA_THEME_TRANSITION_MS,
+                                                                            easing = FastOutSlowInEasing,
+                                                                        ),
+                                                                    ) togetherWith
+                                                                    slideOutVertically(
+                                                                        tween(
+                                                                            SAGA_THEME_TRANSITION_MS,
+                                                                            easing = FastOutSlowInEasing,
+                                                                        ),
+                                                                    ) { it / 4 } +
+                                                                    fadeOut(
+                                                                        tween(
+                                                                            SAGA_THEME_TRANSITION_MS,
+                                                                            easing = FastOutSlowInEasing,
+                                                                        ),
+                                                                    )
+                                                            },
+                                                        )
+                                                    }
 
-                                        SagaSnackBar(
-                                            snackBarMessage = globalSnackBar,
-                                            genre = currentGenre,
-                                            modifier =
-                                                Modifier
-                                                    .align(Alignment.BottomCenter)
-                                                    .navigationBarsPadding()
-                                                    .padding(horizontal = 16.dp, vertical = 16.dp)
-                                                    .fillMaxWidth()
-                                                    .clip(sagaShape()),
-                                            onDismiss = { sagaThemeManager.dismissSnackBar() },
+                                                    SagaSnackBar(
+                                                        snackBarMessage = globalSnackBar,
+                                                        genre = currentGenre,
+                                                        modifier =
+                                                            Modifier
+                                                                .align(Alignment.BottomCenter)
+                                                                .navigationBarsPadding()
+                                                                .padding(
+                                                                    horizontal = 16.dp,
+                                                                    vertical = 16.dp,
+                                                                ).fillMaxWidth()
+                                                                .clip(sagaShape()),
+                                                        onDismiss = { sagaThemeManager.dismissSnackBar() },
+                                                    )
+                                                }
+                                            },
                                         )
                                     }
+                                } else {
+                                    NoInternetScreen()
                                 }
-                            } else {
-                                NoInternetScreen()
                             }
                         }
                     }
@@ -433,6 +524,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+
                 }
             }
         }

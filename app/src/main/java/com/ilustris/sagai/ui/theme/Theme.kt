@@ -14,6 +14,7 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -41,14 +42,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.TextStyle
@@ -71,10 +77,12 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.animations.genreVfx
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
+
+const val SAGA_THEME_TRANSITION_MS = 500
 
 private val DarkColorScheme =
     darkColorScheme(
@@ -83,7 +91,7 @@ private val DarkColorScheme =
         secondary = MaterialColor.Blue400,
         tertiary = MaterialColor.Teal700,
         background = Color.Black,
-        surfaceContainer = MaterialColor.Gray800.darker(.5f),
+        surfaceContainer = MaterialColor.Gray900,
     )
 
 private val LightColorScheme =
@@ -92,8 +100,8 @@ private val LightColorScheme =
         secondary = MaterialColor.Blue800,
         tertiary = MaterialColor.Teal300,
         onPrimary = MaterialColor.White,
-        background = MaterialColor.Gray100,
-        surfaceContainer = Color.White,
+        background = MaterialColor.White,
+        surfaceContainer = MaterialColor.Gray50,
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
     surface = Color(0xFFFFFBFE),
@@ -115,6 +123,7 @@ fun themeBrushColors(): List<Color> {
 }
 
 @Composable
+@Deprecated("Use MorphingThemeIcon for interactive UI. Keep themeIcon() for Coil placeholders.")
 fun themeIcon(): Painter {
     val genre = LocalSagaGenre.current
     val iconRes = genre?.icon ?: R.drawable.ic_spark
@@ -122,15 +131,74 @@ fun themeIcon(): Painter {
 }
 
 @Composable
-fun Modifier.themeVfx(): Modifier {
+fun themeIconVector(): ImageVector {
+    val genre = LocalSagaGenre.current
+    return ImageVector.vectorResource(genre?.icon ?: R.drawable.ic_spark)
+}
+
+@Composable
+fun themePainter() = painterResource(LocalSagaGenre.current?.icon ?: R.drawable.ic_spark)
+
+@Composable
+fun genreIconVector(genre: Genre): ImageVector = ImageVector.vectorResource(genre.icon)
+
+@Composable
+fun ThemeIcon(
+    modifier: Modifier = Modifier,
+    imageVector: ImageVector = themeIconVector(),
+    brush: Brush? = null,
+    tint: Color = Color.Unspecified,
+    contentDescription: String? = null,
+    glowBrush: Brush? = null,
+    glowIntensity: Float = 0f,
+    glowRadius: Dp = 14.dp,
+    iconModifier: Modifier = Modifier,
+) {
+    val clampedGlow = glowIntensity.coerceIn(0f, 1f)
+    val resolvedGlowBrush = glowBrush ?: brush
+
+    Box(
+        modifier = modifier.graphicsLayer { clip = false },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (clampedGlow > 0f && resolvedGlowBrush != null) {
+            Icon(
+                imageVector = imageVector,
+                contentDescription = null,
+                tint = Color.Unspecified,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .gradientFill(resolvedGlowBrush)
+                        .graphicsLayer {
+                            clip = false
+                            alpha = 0.8f * clampedGlow
+                        }
+                        .blur(glowRadius * clampedGlow),
+            )
+        }
+        Icon(
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            tint = if (brush == null) tint else Color.Unspecified,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .then(if (brush != null) Modifier.gradientFill(brush) else Modifier)
+                    .then(iconModifier),
+        )
+    }
+}
+
+@Composable
+fun Modifier.themeVfx(isPlaying: Boolean = true): Modifier {
+    if (isPlaying.not()) return this
     val genre = LocalSagaGenre.current
     return this.genreVfx(genre)
 }
 
-private const val THEME_ANIMATION_DURATION = 600
-
 private val themeColorAnimationSpec =
-    tween<Color>(THEME_ANIMATION_DURATION, easing = FastOutSlowInEasing)
+    tween<Color>(SAGA_THEME_TRANSITION_MS, easing = FastOutSlowInEasing)
 
 private data class SagaThemeTargets(
     val primary: Color,
@@ -159,18 +227,9 @@ private fun resolveCornerSize(
     visualConfig: GenreVisualConfig?,
 ): Dp? {
     if (genre == null) return null
-    if (visualConfig != null && visualConfig.cornerSizeDp > 0f) return visualConfig.cornerSizeDp.dp
-    return when (genre) {
-        Genre.CYBERPUNK -> 20.dp
-        Genre.FANTASY -> 16.dp
-        Genre.HORROR -> 4.dp
-        Genre.HEROES -> 14.dp
-        Genre.CRIME -> 18.dp
-        Genre.SHINOBI -> 10.dp
-        Genre.SPACE_OPERA -> 24.dp
-        Genre.COWBOY -> 12.dp
-        Genre.PUNK_ROCK -> 2.dp
-    }
+    if (visualConfig == null) return null
+    if (visualConfig.cornerSizeDp == 0) return 0.dp
+    return visualConfig.cornerSizeDp.dp
 }
 
 private fun resolveSagaThemeTargets(
@@ -215,27 +274,29 @@ fun SagAITheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
+    // Null in Compose Preview (see rememberGenreThemeServices) — every lookup below already
+    // treats "not loaded yet" as a valid state, so a null service just means we stay there.
     val themeServices = rememberGenreThemeServices()
     val activeGenre = genre
 
     var activeVisualConfig by remember(activeGenre) {
-        mutableStateOf(activeGenre?.let { themeServices.visualConfigService.peekVisualConfig(it) })
+        mutableStateOf(activeGenre?.let { themeServices?.visualConfigService?.peekVisualConfig(it) })
     }
 
     LaunchedEffect(activeGenre) {
         activeVisualConfig =
-            activeGenre?.let { themeServices.visualConfigService.getVisualConfig(it) }
+            activeGenre?.let { themeServices?.visualConfigService?.getVisualConfig(it) }
     }
 
     LaunchedEffect(activeGenre, activeVisualConfig) {
         val g = activeGenre ?: return@LaunchedEffect
         val config = activeVisualConfig ?: return@LaunchedEffect
-        themeServices.fontService.ensureLoaded(g, config)
+        themeServices?.fontService?.ensureLoaded(g, config)
     }
 
     val genreForFonts = activeGenre
     val resolvedFonts by
-        if (genreForFonts != null) {
+        if (genreForFonts != null && themeServices != null) {
             themeServices.fontService.fontsFor(genreForFonts).collectAsState()
         } else {
             remember { mutableStateOf<ResolvedGenreFonts?>(null) }
@@ -337,7 +398,7 @@ fun SagAITheme(
     val targetCorner = targets.cornerSize
     val animatedCorner by animateDpAsState(
         targetValue = targetCorner ?: 16.dp,
-        animationSpec = tween(THEME_ANIMATION_DURATION, easing = FastOutSlowInEasing),
+        animationSpec = tween(SAGA_THEME_TRANSITION_MS, easing = FastOutSlowInEasing),
         label = "themeCorner",
     )
     val dynamicShapes =
@@ -363,6 +424,14 @@ fun SagAITheme(
             content = content,
         )
     }
+}
+
+@Composable
+fun ThemeCover(): String? {
+    val genre = LocalSagaGenre.current
+    val currentVisualConfig = LocalGenreVisualConfig.current
+
+    return currentVisualConfig?.imageUrl
 }
 
 // ── Theme Extension Properties ─────────────────────────────────────────
@@ -402,16 +471,20 @@ val MaterialTheme.sagaShape: Shape
  */
 @Composable
 fun Modifier.sagaHighlight(): Modifier =
-    this.then(
-        selectiveColorHighlight(
-            LocalSagaGenre.current?.selectiveHighlight(LocalGenreVisualConfig.current),
-        ),
+    effectForGenre(
+        LocalSagaGenre.current,
+        LocalGenreVisualConfig.current,
+        enableSelectiveHighlight = true,
     )
 
 @Composable
-fun Modifier.sagaShader(): Modifier =
+fun Modifier.sagaShader(enableSelectiveHighlight: Boolean = false): Modifier =
     this.then(
-        effectForGenre(LocalSagaGenre.current, LocalGenreVisualConfig.current),
+        effectForGenre(
+            LocalSagaGenre.current,
+            LocalGenreVisualConfig.current,
+            enableSelectiveHighlight = enableSelectiveHighlight,
+        ),
     )
 
 // ── Theme Extension Functions ─────────────────────────────────────────
@@ -423,6 +496,9 @@ fun Modifier.sagaShader(): Modifier =
  */
 @Composable
 fun sagaShape(): Shape = LocalSagaGenre.current.shape()
+
+@Composable
+fun themeBubble() = LocalSagaGenre.current.bubble(isNarrator = true)
 
 /**
  * Returns a gradient [Brush] for the current genre, or the brand holographic gradient.
@@ -439,9 +515,10 @@ fun sagaBrush(
 fun SagAIScaffold(
     title: String? = null,
     showTopBar: Boolean = false,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    SagAITheme {
+    SagAITheme(darkTheme = darkTheme) {
         Scaffold(topBar = {
             AnimatedVisibility(showTopBar) {
                 TopAppBar(
@@ -481,6 +558,8 @@ fun SagAIScaffold(
 
 @Composable
 fun MorphShape(modifier: Modifier) {
+    if (!rememberLifecycleAnimationsActive()) return
+
     val shapeA =
         remember {
             RoundedPolygon(

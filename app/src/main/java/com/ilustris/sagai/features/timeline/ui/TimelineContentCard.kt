@@ -52,7 +52,6 @@ import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaShape
@@ -101,8 +100,7 @@ fun TimelineContentViewCard(
                 modifier =
                     Modifier
                         .size(48.dp)
-                        .effectForGenre(genre)
-                        .selectiveColorHighlight(saga.genre),
+                        .effectForGenre(genre, enableSelectiveHighlight = true),
             )
 
             Column(

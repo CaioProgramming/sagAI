@@ -26,7 +26,7 @@ data class GenreVisualConfig(
     val colorPalette: List<String> = emptyList(),
     // ── Shape ────────────────────────────────────────────────────────
     @SerializedName("cornerSizeDp")
-    val cornerSizeDp: Float = 0f,
+    val cornerSizeDp: Int = 0,
     // ── Haptics (waveform in ms, tuned per genre SFX — see Remote Config) ──
     @SerializedName("vibrationPattern")
     val vibrationPattern: List<Long> = emptyList(),
@@ -105,6 +105,35 @@ data class ShaderParamsConfig(
     val pixelationBlockSize: Float = 0f,
     @SerializedName("colorTemperature")
     val colorTemperature: Float = 0f,
+    @SerializedName("blackPoint")
+    val blackPoint: Float = 0f,
+    @SerializedName("whitePoint")
+    val whitePoint: Float = 1f,
+    /** Horizontal RGB fringe intensity. ~0.03–0.08 subtle; 0.15+ strong. Not a 0–1 fraction of image width. */
+    @SerializedName("chromaticAberration")
+    val chromaticAberration: Float = 0f,
+    @SerializedName("scanlineIntensity")
+    val scanlineIntensity: Float = 0f,
+    @SerializedName("scanlineDensity")
+    val scanlineDensity: Float = 2f,
+    @SerializedName("posterizeLevels")
+    val posterizeLevels: Float = 0f,
+    @SerializedName("halftoneScale")
+    val halftoneScale: Float = 0f,
+    @SerializedName("sharpenAmount")
+    val sharpenAmount: Float = 0f,
+    @SerializedName("rimEnergyIntensity")
+    val rimEnergyIntensity: Float = 0f,
+    @SerializedName("rimEnergyColor")
+    val rimEnergyColor: List<Float> = emptyList(),
+    @SerializedName("rimEnergyOuterColor")
+    val rimEnergyOuterColor: List<Float> = emptyList(),
+    @SerializedName("rimEnergyWidth")
+    val rimEnergyWidth: Float = 8f,
+    @SerializedName("wispIntensity")
+    val wispIntensity: Float = 0f,
+    @SerializedName("wispSpeed")
+    val wispSpeed: Float = 3f,
 )
 
 /**

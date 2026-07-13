@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.model.ChapterConclusionContext
 import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.prompts.ChapterPrompts.CHAPTER_SYNTHESIS_BLUEPRINT
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.asMap
@@ -56,7 +57,15 @@ object ChapterPrompts {
      */
 
     val CHAPTER_EXCLUSIONS =
-        listOf("id", "currentEventId", "coverImage", "createdAt", "actId", "featuredCharacters") +
+        listOf(
+            "id",
+            "currentEventId",
+            "coverImage",
+            "artwork",
+            "createdAt",
+            "actId",
+            "featuredCharacters",
+        ) +
             LorePrompts.LORE_OUTPUT_ONLY_FIELDS
 
     suspend fun chapterIntroductionPrompt(

@@ -54,6 +54,7 @@ data class GeneratedChapter(
     val narrativeGuide: String? = null,
     val emotionalTone: EmotionalTone? = null,
     val featuredCharacters: List<Int> = emptyList(),
+    val artwork: String? = null,
 ) {
     fun toLoreContent(): LoreContent =
         LoreContent(
@@ -72,6 +73,7 @@ data class GeneratedChapter(
             emotionalReview = emotionalReview,
             narrativeGuide = narrativeGuide,
             featuredCharacters = featuredCharacters.ifEmpty { existing.featuredCharacters },
+            artwork = artwork ?: existing.artwork,
         )
 }
 

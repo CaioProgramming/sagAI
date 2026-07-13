@@ -5,7 +5,6 @@ import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.mergeInstructions
-import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -14,18 +13,16 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
-import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
-import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.narrative.domain.rollupContinuity
-import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -355,33 +352,6 @@ class TimelineUseCaseImpl
 
         override suspend fun deleteTimeline(timeline: Timeline) {
             timelineRepository.deleteTimeline(timeline)
-        }
-
-        override suspend fun getTimelineObjective(
-            saga: SagaMetadata,
-            timeline: Timeline,
-        ) = executeRequest {
-            val fullSaga = sagaHistoryUseCase.getSagaById(saga.data.id).first() as SagaContent
-            val objectivePrompt =
-                ChatPrompts.sceneSummarizationPrompt(
-                    promptService = promptService,
-                    saga = fullSaga,
-                    remoteConfigService.getNarrativeRules(),
-                )
-            val summary =
-                gemmaClient
-                    .generate<SceneSummary>(
-                        promptSplit = objectivePrompt,
-                        requirement = ModelRequirement.MEDIUM,
-                        useCore = true,
-                    )!!
-
-            updateTimeline(
-                timeline.copy(
-                    sceneSummary = summary,
-                    currentObjective = summary.immediateObjective,
-                ),
-            )
         }
 
         override suspend fun generateTimelineContent(

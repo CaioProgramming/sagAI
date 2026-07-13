@@ -2,6 +2,8 @@ package com.ilustris.sagai.core.file
 
 import android.content.ContentResolver
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.core.net.toFile
@@ -90,3 +92,13 @@ fun queryContentUriInfo(
     }
     return ContentUriInfo(displayName, size)
 }
+
+fun Context.readUriAsBitmap(uri: Uri): Bitmap? =
+    try {
+        contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }

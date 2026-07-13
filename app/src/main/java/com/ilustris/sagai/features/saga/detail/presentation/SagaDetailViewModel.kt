@@ -18,6 +18,8 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.SagaDetailUIMapper
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationCoordinator
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -39,14 +41,12 @@ class SagaDetailViewModel
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val stringResourceHelper: StringResourceHelper,
+        private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
         val sagaResume = MutableStateFlow<SagaDetailResume?>(null)
-        val isGenerating = MutableStateFlow(false)
         val showIntro = MutableStateFlow(false)
-        private val _loadingMessage = MutableStateFlow<String?>(null)
-        val loadingMessage: StateFlow<String?> = _loadingMessage.asStateFlow()
         val backupEnabled = sagaDetailUseCase.getBackupEnabled()
 
         val showPremiumSheet = MutableStateFlow(false)
@@ -55,6 +55,12 @@ class SagaDetailViewModel
         val initialSection = _initialSection.asStateFlow()
 
         val detailDrawer = MutableStateFlow<TimelineDrawer?>(null)
+
+        private val _reviewGenerationState =
+            MutableStateFlow<ReviewGenerationState>(ReviewGenerationState.Idle)
+        val reviewGenerationState = _reviewGenerationState.asStateFlow()
+
+        private var reviewGenerationJob: kotlinx.coroutines.Job? = null
 
         private var cachedSegmentedImage: Pair<Bitmap, Bitmap>? = null
         private var cachedIconPath: String? = null
@@ -138,6 +144,7 @@ class SagaDetailViewModel
                             }
 
                             loadInitialSection()
+                            observeReviewGeneration(sagaId)
                             detailDrawer.value =
                                 sagaDetailUIMapper.buildDrawer(
                                     data.saga,
@@ -163,32 +170,21 @@ class SagaDetailViewModel
 
         fun regenerateIcon() {
             val currentSagaId = sagaResume.value?.saga?.id ?: return
-            isGenerating.value = true
-            _loadingMessage.value = stringResourceHelper.getString(R.string.saga_detail_regenerating_icon)
             viewModelScope.launch(Dispatchers.IO) {
-                sagaDetailUseCase
-                    .regenerateSagaIconStream(currentSagaId)
-                    .collect { state ->
-                        when (state) {
-                            is StreamingState.Reasoning -> {
-                                _loadingMessage.value = state.chunk
-                            }
+                sagaDetailUseCase.regenerateSagaIconStream(currentSagaId).collect { }
+            }
+        }
 
-                            is StreamingState.Success -> {
-                                isGenerating.value = false
-                                _loadingMessage.value = null
-                            }
-
-                            is StreamingState.Error -> {
-                                isGenerating.value = false
-                                _loadingMessage.value =
-                                    stringResourceHelper.getString(
-                                        R.string.saga_detail_error_regenerating_icon,
-                                        state.message,
-                                    )
-                            }
-                        }
+        private fun observeReviewGeneration(sagaId: Int) {
+            reviewGenerationJob?.cancel()
+            reviewGenerationJob =
+                viewModelScope.launch {
+                    reviewGenerationCoordinator.stateFor(sagaId).collect { state ->
+                        _reviewGenerationState.value = state
                     }
+                }
+            if (sagaResume.value?.saga?.isEnded == true) {
+                reviewGenerationCoordinator.enqueue(sagaId)
             }
         }
 
@@ -211,6 +207,7 @@ class SagaDetailViewModel
 
         override fun onCleared() {
             pendingEntryVfxSagaId = null
+            reviewGenerationJob?.cancel()
             super.onCleared()
             sagaImmersiveSession.pop("saga_detail")
         }

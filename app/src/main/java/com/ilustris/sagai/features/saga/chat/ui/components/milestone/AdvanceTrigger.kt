@@ -1,12 +1,17 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,9 +19,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,12 +28,11 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.presentation.model.toUi
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.iconDropShadow
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.progressiveBrush
-import com.ilustris.sagai.ui.theme.sagaBrush
-import com.ilustris.sagai.ui.theme.themeIcon
-import com.ilustris.sagai.ui.theme.themeVfx
+import com.ilustris.sagai.ui.theme.rememberVectorShape
+import com.ilustris.sagai.ui.theme.themeIconVector
+import com.ilustris.sagai.ui.theme.themePainter
 
 private const val PULL_PROGRESS_ANIMATION_MS = 16
 
@@ -42,7 +45,6 @@ fun AdvancePullIndicator(
 ) {
     val actionUi = action.toUi()
     val primaryColor = MaterialTheme.colorScheme.primary
-    val shadowBrush = sagaBrush()
     val dragProgress = pullProgress.coerceIn(0f, 1f)
 
     val scale by animateFloatAsState(
@@ -63,75 +65,76 @@ fun AdvancePullIndicator(
         label = "labelAlpha",
     )
 
+    val iconSize by animateDpAsState(
+        targetValue = if (dragProgress == 1f) 64.dp else 36.dp,
+        animationSpec = tween(1200, easing = FastOutSlowInEasing),
+        label = "iconSize",
+    )
+
+    val brush =
+        if (isGenerating) {
+            Brush.verticalGradient(morphingGradient())
+        } else {
+            progressiveBrush(
+                tintColor = primaryColor,
+                progress = dragProgress,
+                animationDuration = PULL_PROGRESS_ANIMATION_MS,
+            )
+        }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .alpha(contentAlpha),
+                .padding(16.dp)
+                .alpha(contentAlpha)
+                .gradientFill(
+                    brush,
+                ),
     ) {
-        Image(
-            themeIcon(),
-            contentDescription =
-                if (isGenerating) {
-                    stringResource(R.string.milestone_loading_cd)
-                } else {
-                    null
-                },
-            colorFilter =
-                if (!isGenerating) {
-                    ColorFilter.tint(
-                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                    )
-                } else {
-                    null
-                },
-            modifier =
-                Modifier
-                    .size(36.dp)
-                    .then(if (!isGenerating) Modifier.scale(scale) else Modifier)
-                    .then(
-                        if (isGenerating) {
-                            Modifier
-                                .gradientFill(Brush.verticalGradient(morphingGradient()))
-                                .themeVfx()
-                        } else {
-                            Modifier
-                                .iconDropShadow(
-                                    brush = shadowBrush,
-                                    progress = dragProgress,
-                                ).gradientFill(
-                                    progressiveBrush(
-                                        tintColor = primaryColor,
-                                        progress = dragProgress,
-                                        animationDuration = PULL_PROGRESS_ANIMATION_MS,
-                                    ),
-                                )
-                        },
-                    ),
+        val glowAlpha by animateFloatAsState(
+            if (isGenerating) 1f else 0f,
         )
 
-        if (dragProgress > 0f || isGenerating) {
+        Icon(
+            themePainter(),
+            null,
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier =
+                Modifier
+                    .size(iconSize * scale)
+                    .dropShadow(rememberVectorShape(themeIconVector())) {
+                        this.brush = brush
+                        this.radius = 20f
+                        this.spread = 1f
+                        this.alpha = glowAlpha
+                    },
+        )
+
+        AnimatedContent(isGenerating) {
             Text(
-                text = stringResource(actionUi.holdingTextRes),
+                text =
+                    stringResource(
+                        if (!it) {
+                            (
+                                actionUi.titleRes
+                                    ?: R.string.continue_text
+                            )
+                        } else {
+                            actionUi.holdingTextRes
+                        },
+                    ),
                 style =
                     MaterialTheme.typography.labelSmall.copy(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f * labelAlpha),
                         textAlign = TextAlign.Center,
                     ),
-                modifier = Modifier.padding(top = 8.dp),
             )
-        } else {
-            Text(
-                text = stringResource(actionUi.titleRes ?: R.string.continue_text),
-                style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f * labelAlpha),
-                        textAlign = TextAlign.Center,
-                    ),
-                modifier = Modifier.padding(top = 8.dp),
-            )
+        }
+
+        AnimatedVisibility(isGenerating.not()) {
             Text(
                 text = stringResource(R.string.advance_pull_hint),
                 style =

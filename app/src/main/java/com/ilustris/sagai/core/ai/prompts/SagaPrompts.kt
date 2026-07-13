@@ -122,6 +122,13 @@ object SagaPrompts {
             "emotionalProfile",
         )
 
+    val summaryExclusions =
+        listOf(
+            "notificationHook",
+            "notificationCharacterName",
+            "quote",
+        )
+
     fun mainContext(
         saga: SagaContent,
         character: CharacterContent? = null,

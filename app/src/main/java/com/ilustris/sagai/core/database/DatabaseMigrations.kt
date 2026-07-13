@@ -294,6 +294,27 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_22_23 =
+        object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE Chapter ADD COLUMN `artwork` TEXT DEFAULT ''")
+            }
+        }
+
+    val MIGRATION_23_24 =
+        object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_notificationHook` TEXT")
+            }
+        }
+
+    val MIGRATION_24_25 =
+        object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_notificationCharacterName` TEXT")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -317,5 +338,8 @@ object DatabaseMigrations {
             MIGRATION_19_20,
             MIGRATION_20_21,
             MIGRATION_21_22,
+            MIGRATION_22_23,
+            MIGRATION_23_24,
+            MIGRATION_24_25,
         )
 }

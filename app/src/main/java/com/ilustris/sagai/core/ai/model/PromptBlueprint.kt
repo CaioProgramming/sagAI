@@ -22,7 +22,9 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
  *
  * ### Data (Dynamic — sent as `contents` / user turn)
  * These fields support `{key}` placeholder substitution with runtime values.
- * - **template**: The narrative bridge. The **ONLY** field that supports `{key}` replacement.
+ * - **template**: The narrative bridge. Optional. If provided, it supports `{key}` replacement.
+ *   If left blank, the system automatically generates a structured `# TASK CONTEXT` from
+ *   the runtime variables/objects.
  * - **examples**: Few-shot examples rendered after placeholder substitution.
  *
  * ## CRITICAL GUIDELINES
@@ -37,7 +39,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 data class PromptBlueprint(
     val title: String = "",
     val role: String = "",
-    val template: String = "",
+    val template: String? = null,
     val directives: Map<String, String> = emptyMap(),
     val rules: Map<String, String> = emptyMap(),
     val examples: List<Map<String, String>> = emptyList(),

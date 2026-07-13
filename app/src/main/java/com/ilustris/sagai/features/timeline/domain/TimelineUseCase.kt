@@ -34,11 +34,6 @@ interface TimelineUseCase {
 
     suspend fun deleteTimeline(timeline: Timeline)
 
-    suspend fun getTimelineObjective(
-        saga: SagaMetadata,
-        timeline: Timeline,
-    ): RequestResult<Timeline>
-
     suspend fun generateTimelineContent(
         saga: SagaMetadata,
         timeline: Timeline,

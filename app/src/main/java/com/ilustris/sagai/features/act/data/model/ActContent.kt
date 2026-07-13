@@ -62,7 +62,7 @@ data class ActContent(
             )
             appendLine("CHAPTERS: ")
             chapters.forEach { chapter ->
-                appendLine(chapters.indexOf(chapter) + 1)
+                appendLine("Chapter ${chapters.indexOf(chapter) + 1}")
                 appendLine(
                     chapter.data.toAINormalize(LorePrompts.CHAPTER_EXCLUDED_FIELDS),
                 )

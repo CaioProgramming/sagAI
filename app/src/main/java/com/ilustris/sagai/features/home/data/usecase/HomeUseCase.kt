@@ -28,4 +28,18 @@ interface HomeUseCase {
     suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
 
     suspend fun autoBackup(): RequestResult<Unit>
+
+    fun canCreateNewSaga(activeSagaCount: Int): Boolean
+
+    fun filterVisibleSagas(
+        sagas: List<com.ilustris.sagai.features.home.data.model.SagaSummary>,
+        includeDebugSagas: Boolean,
+    ): List<com.ilustris.sagai.features.home.data.model.SagaSummary>
+
+    fun canOpenSaga(
+        saga: Saga,
+        showDebugSagas: Boolean,
+    ): Boolean
+
+    fun isPremium(): Boolean
 }

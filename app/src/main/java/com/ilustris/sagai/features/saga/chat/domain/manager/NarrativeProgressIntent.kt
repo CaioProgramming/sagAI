@@ -24,10 +24,6 @@ sealed class NarrativeProgressIntent {
         val chapterId: Int,
     ) : NarrativeProgressIntent()
 
-    data class EnsureTimelineSceneSummary(
-        val timelineId: Int,
-    ) : NarrativeProgressIntent()
-
     data class EvolveTimeline(
         val timelineId: Int,
     ) : NarrativeProgressIntent()

@@ -50,6 +50,7 @@ import com.ilustris.sagai.features.brain.domain.model.connectionScale
 import com.ilustris.sagai.features.brain.domain.model.satelliteScale
 import com.ilustris.sagai.features.brain.domain.model.starScale
 import com.ilustris.sagai.ui.animations.draw4PointCosmicStar
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import kotlinx.coroutines.launch
 import kotlin.math.sqrt
@@ -337,27 +338,12 @@ fun BrainCanvas(
         }
     }
 
-    val twinkleTransition = rememberInfiniteTransition(label = "brain_twinkle")
-    val twinkle by twinkleTransition.animateFloat(
-        initialValue = 0.75f,
-        targetValue = 1f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(2400, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-        label = "twinkle_alpha",
-    )
-    val nebulaBreathe by twinkleTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(9000, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-        label = "nebula_breathe",
-    )
+    val (twinkle, nebulaBreathe) =
+        if (rememberLifecycleAnimationsActive()) {
+            rememberBrainTwinkleValues()
+        } else {
+            1f to 0.5f
+        }
 
     val nebulaColors = themeBrushColors()
     val nebulae =
@@ -406,8 +392,8 @@ fun BrainCanvas(
                                     val effectiveAfterPinch = focusScaleAnim.value * pinchScale
                                     val scaledDrift =
                                         maxDriftPx *
-                                            (effectiveAfterPinch / MOBILE_BASE_ZOOM)
-                                                .coerceIn(0.55f, 1.6f)
+                                                (effectiveAfterPinch / MOBILE_BASE_ZOOM)
+                                                    .coerceIn(0.55f, 1.6f)
                                     val (anchorUserX, anchorUserY) =
                                         focusAnchorUserOffset(
                                             focusId = focusId,
@@ -653,17 +639,12 @@ fun BrainMiniCanvas(
     genrePrimary: Color = Color(0xFF90E0EF),
     genreSecondary: Color = Color(0xFFB0BEC5),
 ) {
-    val twinkleTransition = rememberInfiniteTransition(label = "mini_twinkle")
-    val twinkle by twinkleTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 1f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(3000, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-        label = "mini_twinkle_alpha",
-    )
+    val twinkle =
+        if (rememberLifecycleAnimationsActive()) {
+            rememberBrainMiniTwinkle()
+        } else {
+            0.85f
+        }
 
     BrainCosmicBackground(modifier = modifier) {
         val canvasPrimary = BrainStarGlow.themeAccentForCanvas(genrePrimary)
@@ -928,4 +909,46 @@ private fun findNodeAt(
         }
     }
     return closest
+}
+
+@Composable
+private fun rememberBrainTwinkleValues(): Pair<Float, Float> {
+    val twinkleTransition = rememberInfiniteTransition(label = "brain_twinkle")
+    val twinkle by twinkleTransition.animateFloat(
+        initialValue = 0.75f,
+        targetValue = 1f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(2400, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "twinkle_alpha",
+    )
+    val nebulaBreathe by twinkleTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(9000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "nebula_breathe",
+    )
+    return twinkle to nebulaBreathe
+}
+
+@Composable
+private fun rememberBrainMiniTwinkle(): Float {
+    val twinkleTransition = rememberInfiniteTransition(label = "mini_twinkle")
+    val twinkle by twinkleTransition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 1f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(3000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "mini_twinkle_alpha",
+    )
+    return twinkle
 }

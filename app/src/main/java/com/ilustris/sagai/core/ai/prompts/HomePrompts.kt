@@ -2,7 +2,6 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
-import com.ilustris.sagai.core.utils.asMap
 
 data class DynamicSagaCreationArgs(
     val genreEnumNames: String,
@@ -14,14 +13,12 @@ object HomePrompts {
 
     suspend fun dynamicSagaCreationPrompt(
         promptService: PromptService,
-        genreAesthetics: String = "",
-    ): SplitPrompt {
-        val args =
-            DynamicSagaCreationArgs(
-                genreEnumNames = genreAesthetics,
-                genreAesthetics = genreAesthetics,
-            )
-
-        return promptService.buildSplitBlueprint(DYNAMIC_SAGA_CREATION_BLUEPRINT, args.asMap())
-    }
+        selectedTheme: String = "",
+    ): SplitPrompt =
+        promptService.buildSplitBlueprint(
+            DYNAMIC_SAGA_CREATION_BLUEPRINT,
+            mapOf(
+                "selectedTheme" to selectedTheme,
+            ),
+        )
 }

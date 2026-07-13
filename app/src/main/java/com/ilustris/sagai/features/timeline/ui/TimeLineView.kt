@@ -25,7 +25,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -36,19 +35,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
 import com.ilustris.sagai.features.timeline.ui.components.TimelineThreadList
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaShader
+import com.ilustris.sagai.ui.theme.themeBrushColors
 
 @Composable
 fun TimeLineContent(
@@ -117,9 +112,7 @@ fun AvatarTimelineIcon(
     borderColor: Color = Color.Transparent,
     borderWidth: Dp = 0.dp,
     modifier: Modifier = Modifier,
-    visualConfig: GenreVisualConfig? = null,
 ) {
-    val brushColors = genre.colorPalette(visualConfig)
     Box(
         modifier =
             modifier
@@ -150,23 +143,11 @@ fun AvatarTimelineIcon(
                     Modifier
                         .fillMaxSize()
                         .clip(CircleShape)
-                        .border(borderWidth, Brush.verticalGradient(brushColors), CircleShape)
-                        .effectForGenre(genre, visualConfig)
-                        .selectiveColorHighlight(genre.selectiveHighlight(visualConfig)),
-            )
-        }
-        if (showSpark) {
-            Icon(
-                painterResource(R.drawable.ic_spark),
-                null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier =
-                    Modifier
-                        .size(12.dp)
-                        .align(Alignment.BottomCenter)
-                        .graphicsLayer {
-                            this.translationY = -25f
-                        },
+                        .border(
+                            borderWidth,
+                            Brush.verticalGradient(themeBrushColors()),
+                            CircleShape,
+                        ).sagaShader(),
             )
         }
     }

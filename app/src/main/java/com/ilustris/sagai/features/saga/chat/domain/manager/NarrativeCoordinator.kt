@@ -20,6 +20,7 @@ class NarrativeCoordinator
         fun reevaluate(
             nextResolvedAction: NarrativeAction?,
             context: NarrativeEvaluationContext,
+            isAutomatic: Boolean = false,
         ): NarrativeUiState {
             if (context.isNarrativeProcessing) {
                 schedulePendingReevaluation()
@@ -62,13 +63,23 @@ class NarrativeCoordinator
                     }
 
                     else -> {
-                        NarrativeUiState(
-                            phase = NarrativePhase.AwaitingAdvance(nextAction),
-                            pendingAction = nextAction,
-                            backgroundTask = null,
-                            lastError = null,
-                            isProcessing = false,
-                        )
+                        if (isAutomatic) {
+                            NarrativeUiState(
+                                phase = NarrativePhase.Processing(nextAction),
+                                pendingAction = null,
+                                backgroundTask = null,
+                                lastError = null,
+                                isProcessing = true,
+                            )
+                        } else {
+                            NarrativeUiState(
+                                phase = NarrativePhase.AwaitingAdvance(nextAction),
+                                pendingAction = nextAction,
+                                backgroundTask = null,
+                                lastError = null,
+                                isProcessing = false,
+                            )
+                        }
                     }
                 }
 
