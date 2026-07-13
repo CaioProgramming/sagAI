@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.domain
 
+import android.content.Context
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeProcessingGate
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.core.globalshell.GlobalShellService
@@ -9,6 +11,7 @@ import com.ilustris.sagai.features.saga.detail.data.model.isComplete
 import com.ilustris.sagai.features.saga.detail.data.usecase.ReviewState
 import com.ilustris.sagai.features.saga.detail.review.domain.model.ReviewSteps
 import com.ilustris.sagai.features.saga.detail.review.domain.model.isPresentIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,6 +39,7 @@ class ReviewGenerationCoordinator
         private val sagaRepository: SagaRepository,
         private val narrativeProcessingGate: NarrativeProcessingGate,
         private val globalShellService: GlobalShellService,
+        @ApplicationContext private val context: Context,
     ) {
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         private val jobs = ConcurrentHashMap<Int, Job>()
@@ -68,15 +72,9 @@ class ReviewGenerationCoordinator
             val existingReview = content.data.review
 
             if (existingReview.isComplete()) {
+                // Review was already ready before this call — no new generation ran,
+                // so don't re-emit the "review ready" shell effect/notification.
                 stateFlow.value = ReviewGenerationState.Complete
-                globalShellService.post(
-                    ReviewReadyEffect(
-                        sagaId = sagaId,
-                        sagaTitle = content.data.title,
-                        genre = content.data.genre,
-                        deepLink = "saga://saga_detail/$sagaId",
-                    ),
-                )
                 return
             }
 
@@ -158,6 +156,11 @@ class ReviewGenerationCoordinator
                                 sagaId = sagaId,
                                 sagaTitle = content.data.title,
                                 genre = content.data.genre,
+                                message =
+                                    context.getString(
+                                        R.string.notification_review_ready_content,
+                                        content.data.title,
+                                    ),
                                 deepLink = "saga://saga_detail/$sagaId",
                             ),
                         )

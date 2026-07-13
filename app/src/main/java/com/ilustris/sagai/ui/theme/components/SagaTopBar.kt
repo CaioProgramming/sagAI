@@ -92,7 +92,7 @@ fun SagaTopBar(
                 Text(
                     subtitle,
                     style =
-                        MaterialTheme.typography.labelMedium.copy(
+                        MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Light,
                             textAlign = TextAlign.Center,
                         ),

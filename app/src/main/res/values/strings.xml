@@ -549,6 +549,8 @@
     <string name="notification_timeline_event_content">New event: %s</string>
     <string name="notification_milestone">Milestone Reached</string>
     <string name="notification_milestone_content">You reached a new milestone!</string>
+    <string name="notification_review_ready">Review ready</string>
+    <string name="notification_review_ready_content">Your review for %s is ready!</string>
     <string name="smart_notification_fallback">I was thinking about our story, let\'s continue when you have time.</string>
     <string name="notification_progress_subtext">%1$d%% • Volume %2$s of %3$s</string>
     <string name="mic_permission_title">Record audio permission</string>

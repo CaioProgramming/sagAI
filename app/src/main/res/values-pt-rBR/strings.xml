@@ -429,6 +429,8 @@
     <string name="notification_timeline_event_content">Novo evento: %s</string>
     <string name="notification_milestone">Marco Alcançado</string>
     <string name="notification_milestone_content">Você alcançou um novo marco!</string>
+    <string name="notification_review_ready">Review pronto</string>
+    <string name="notification_review_ready_content">A review de %s está pronta!</string>
     <string name="playtime_title">Tempo de Jogo</string>
     <string name="your_playthrough_title">Sua jornada</string>
 

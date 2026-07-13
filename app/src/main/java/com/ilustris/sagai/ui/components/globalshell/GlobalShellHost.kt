@@ -749,14 +749,15 @@ private class GenericNotificationShellContent(
         }
     }
 
+    @Composable
     private fun genericLabelFor(effect: GlobalShellEffect): String =
         when (effect) {
-            is NewChapterEffect -> "Novo capítulo"
-            is NewCharacterEffect -> "Novo personagem"
-            is ImageGenerationWorkEffect -> "Gerando imagem"
+            is NewChapterEffect -> stringResource(R.string.notification_new_chapter)
+            is NewCharacterEffect -> stringResource(R.string.notification_new_character)
+            is ImageGenerationWorkEffect -> stringResource(R.string.image_generation_default_label)
             is BookGenerationWorkEffect -> "Gerando livro"
             is ChatGenerationWorkEffect -> "Gerando resposta"
-            is ReviewReadyEffect -> "Review pronto"
+            is ReviewReadyEffect -> stringResource(R.string.notification_review_ready)
             is BookReadyEffect -> "Livro gerado"
             else -> "Atualização"
         }
