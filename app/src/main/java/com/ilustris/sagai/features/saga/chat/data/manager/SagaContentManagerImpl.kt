@@ -642,10 +642,16 @@ class SagaContentManagerImpl
                     return@withLock
                 }
 
+                val isAutomatic = hydrated is NarrativeAction.CreateTimeline
                 narrativeCoordinator.reevaluate(
                     nextResolvedAction = hydrated,
                     context = buildEvaluationContext(),
+                    isAutomatic = isAutomatic,
                 )
+
+                if (isAutomatic && hydrated != null) {
+                    executeNarrativeAction(hydrated, isRetry = false)
+                }
 
                 if (narrativeCoordinator.consumePendingReevaluation()) {
                     requestNarrativeProgression(isRetry = false)
