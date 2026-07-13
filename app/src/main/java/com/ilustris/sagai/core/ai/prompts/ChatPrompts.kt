@@ -161,7 +161,18 @@ object ChatPrompts {
                     it.content.contains(message.text, ignoreCase = true)
             }
 
-        val narrativeContinuity = saga.buildChatContinuityContext(narrativeRules).toContextMap()
+        val narrativeContinuity =
+            saga.buildChatContinuityContext(narrativeRules).toAINormalize(
+                buildList {
+                    addAll(SagaPrompts.SAGA_EXCLUDED_FIELDS)
+                    addAll(ChatPrompts.messageExclusions)
+                    addAll(ChatPrompts.CHARACTER_EXCLUSIONS)
+                    addAll(TimelinePrompts.timelineExclusions)
+                    addAll(ActPrompts.ACT_EXCLUSIONS)
+                    addAll(CharacterPrompts.ARCS_EXCLUSIONS)
+                    addAll(SagaPrompts.summaryExclusions)
+                },
+            )
 
         val worldContext =
             buildMap {
@@ -169,9 +180,7 @@ object ChatPrompts {
                     "sagaContext",
                     saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
                 )
-                sceneSummary?.let {
-                    put("currentStoryContext", sceneSummary.toAINormalize())
-                }
+
                 if (narrativeContinuity.isNotEmpty()) {
                     put("narrativeContinuity", narrativeContinuity)
                 }
@@ -193,7 +202,7 @@ object ChatPrompts {
                             storyArcs?.let {
                                 put(
                                     "CharacterArcs",
-                                    storyArcs.takeLast(3).normalizetoAIItems(),
+                                    storyArcs.takeLast(1).normalizetoAIItems(CharacterPrompts.ARCS_EXCLUSIONS),
                                 )
                             }
                             put(

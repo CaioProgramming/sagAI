@@ -86,6 +86,14 @@ data class RefineDraftArgs(
 
 @Suppress("ktlint:standard:max-line-length")
 object CharacterPrompts {
+    val ARCS_EXCLUSIONS =
+        listOf(
+            "id",
+            "characterId",
+            "createdAt",
+            "sourceId",
+            "sourceType",
+        )
     const val CHARACTER_ADAPTATION_BLUEPRINT = "character_adaptation_blueprint"
     const val CHARACTER_GENERATION_BLUEPRINT = "character_generation_blueprint"
     const val CHARACTER_INTRO_BLUEPRINT = "character_intro_blueprint"
