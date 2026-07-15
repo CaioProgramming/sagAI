@@ -81,12 +81,14 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.home.ui.components.DynamicPromptShellContent
 import com.ilustris.sagai.features.home.ui.components.HomeSplashLoader
+import com.ilustris.sagai.features.home.ui.components.PersonalizedHomeHeader
 import com.ilustris.sagai.features.home.ui.components.PremiumShellContent
 import com.ilustris.sagai.features.home.ui.components.TrophyShelf
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.features.player.domain.UserIdentityUseCase
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
@@ -119,6 +121,13 @@ fun HomeView(
 ) {
     val viewModel: HomeViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val userName by viewModel.userName.collectAsStateWithLifecycle("")
+    var showNamePrompt by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        // Check if player name prompt should be shown
+        showNamePrompt = viewModel.shouldPromptName()
+    }
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -161,6 +170,7 @@ fun HomeView(
                 HomeScreen.Content -> {
                     HomeContent(
                         state = uiState,
+                        userName = userName,
                         onAction = viewModel::handleAction,
                         padding = padding,
                         sharedTransitionScope = sharedTransitionScope,
@@ -189,12 +199,20 @@ fun HomeView(
     )
 
     OnboardingDialog(type = OnboardingType.APP_INTRO)
+
+    if (showNamePrompt) {
+        com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog(
+            userIdentityUseCase = viewModel.userIdentityUseCase,
+            onDismiss = { showNamePrompt = false },
+        )
+    }
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 private fun HomeContent(
     state: HomeUiState,
+    userName: String,
     onAction: (HomeUiAction) -> Unit,
     padding: PaddingValues,
     sharedTransitionScope: SharedTransitionScope,
@@ -205,6 +223,7 @@ private fun HomeContent(
 ) {
     var topExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
     var bottomExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
+    val lazyListState = rememberLazyListState()
 
     LaunchedEffect(state.showPremiumOnboarding) {
         if (state.showPremiumOnboarding) {
@@ -245,55 +264,43 @@ private fun HomeContent(
             null
         }
 
-    val topSlot =
-        if (bottomSlot?.expansion == TaskShellExpansion.Collapsed) {
-            state.dynamicNewSagaTexts?.let { prompt ->
-                TaskShellSlotState(
-                    content =
-                        DynamicPromptShellContent(
-                            prompt = prompt,
-                            onCreateNewSaga = { onAction(HomeUiAction.CreateNewSaga) },
-                        ),
-                    expansion = topExpansion,
-                    onExpansionChange = { topExpansion = it },
-                )
-            }
-        } else {
-            null
-        }
-
-    TaskShellLayout(
-        modifier = modifier.background(MaterialTheme.colorScheme.background),
-        topSlot = topSlot,
-        bottomSlot = bottomSlot,
-        background = { top, bottom ->
-            SagAITheme(state.dynamicNewSagaTexts?.genre) {
-                val backgroundColor by animateColorAsState(
-                    if (top != null) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.background
-                    },
-                )
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(.25f)
-                        .background(fadeGradientTop(backgroundColor)),
-                )
-            }
-        },
-    ) {
-        ChatList(
-            state = state,
-            onAction = onAction,
-            padding = padding,
-            sharedTransitionScope = sharedTransitionScope,
-            splashAnimatedContentScope = splashAnimatedContentScope,
-            navAnimatedVisibilityScope = navAnimatedVisibilityScope,
-            openSettings = openSettings,
-            modifier = Modifier.fillMaxSize(),
+    Column(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
+        PersonalizedHomeHeader(
+            userName = userName,
+            currentGenre = state.dynamicNewSagaTexts?.genre,
+            scrollState = lazyListState,
         )
+
+        TaskShellLayout(
+            modifier = Modifier.fillMaxSize(),
+            topSlot = null,
+            bottomSlot = bottomSlot,
+            background = { top, bottom ->
+                SagAITheme(state.dynamicNewSagaTexts?.genre) {
+                    val backgroundColor by animateColorAsState(
+                        MaterialTheme.colorScheme.background,
+                    )
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(.25f)
+                            .background(fadeGradientTop(backgroundColor)),
+                    )
+                }
+            },
+        ) {
+            ChatList(
+                state = state,
+                onAction = onAction,
+                padding = padding,
+                lazyListState = lazyListState,
+                sharedTransitionScope = sharedTransitionScope,
+                splashAnimatedContentScope = splashAnimatedContentScope,
+                navAnimatedVisibilityScope = navAnimatedVisibilityScope,
+                openSettings = openSettings,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -303,17 +310,16 @@ private fun ChatList(
     state: HomeUiState,
     onAction: (HomeUiAction) -> Unit,
     padding: PaddingValues = PaddingValues(0.dp),
+    lazyListState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
     sharedTransitionScope: SharedTransitionScope,
     splashAnimatedContentScope: AnimatedContentScope,
     navAnimatedVisibilityScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
     openSettings: () -> Unit = {},
 ) {
-    val listState = rememberLazyListState()
-
     with(sharedTransitionScope) {
         LazyColumn(
-            state = listState,
+            state = lazyListState,
             modifier =
                 modifier
                     .animateContentSize()

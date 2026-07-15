@@ -609,6 +609,7 @@ class SagaContentManagerImpl
                 return
             }
 
+            var hydrated: NarrativeAction? = null
             progressionMutex.withLock {
                 val currentSaga = content.value ?: fallbackSaga ?: return@withLock
 
@@ -632,7 +633,7 @@ class SagaContentManagerImpl
                 messageDao.getMessagesCount(currentSaga.data.id).first()
 
                 val intent = NarrativeCheck.validateProgressionMetadata(currentSaga, rules)
-                val hydrated =
+                hydrated =
                     intent?.let { NarrativeActionMaterializer.materialize(it, sagaContent) }
                 if (intent != null && hydrated == null) {
                     Timber.w(
@@ -649,13 +650,13 @@ class SagaContentManagerImpl
                     isAutomatic = isAutomatic,
                 )
 
-                if (isAutomatic && hydrated != null) {
-                    executeNarrativeAction(hydrated, isRetry = false)
-                }
-
                 if (narrativeCoordinator.consumePendingReevaluation()) {
                     requestNarrativeProgression(isRetry = false)
                 }
+            }
+
+            if (hydrated is NarrativeAction.CreateTimeline) {
+                executeNarrativeAction(hydrated, isRetry = false)
             }
         }
 

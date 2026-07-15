@@ -249,6 +249,7 @@ fun escapeCursorFromTag(currentValue: TextFieldValue): TextFieldValue {
 
 /**
  * Closes any expressive tags that were left open while editing.
+ * Inserts closing tags at the end of text for any unclosed opening tags.
  */
 fun ensureExpressiveTagsClosed(text: String): String {
     var result = normalizeThinkTags(text)
@@ -256,16 +257,24 @@ fun ensureExpressiveTagsClosed(text: String): String {
         val openTag = tag.openingTag()
         val closeTag = tag.closingTag()
         var searchFrom = 0
+        var unclosedCount = 0
+
         while (true) {
             val openIndex = result.indexOf(openTag, searchFrom)
             if (openIndex == -1) break
             val contentStart = openIndex + openTag.length
             val closeIndex = result.indexOf(closeTag, contentStart)
             if (closeIndex == -1) {
-                result += closeTag
-                break
+                unclosedCount++
+                searchFrom = result.length  // Skip to end
+            } else {
+                searchFrom = closeIndex + closeTag.length
             }
-            searchFrom = closeIndex + closeTag.length
+        }
+
+        // Append closing tags for all unclosed opening tags of this type
+        repeat(unclosedCount) {
+            result += closeTag
         }
     }
     return result
