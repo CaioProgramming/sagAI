@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.components.taskshell
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
@@ -12,6 +13,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
@@ -30,9 +32,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -154,20 +156,17 @@ fun TaskShellLayout(
     var bottomOccupiedPx by remember { mutableFloatStateOf(0f) }
 
     var lastTopSlot by remember { mutableStateOf(topSlot) }
-    androidx.compose.runtime.LaunchedEffect(topSlot) {
+    LaunchedEffect(topSlot) {
         if (topSlot != null) lastTopSlot = topSlot
     }
     val effectiveTopSlot = topSlot ?: lastTopSlot
 
-    // bottomSlot has no "keep last content" treatment, so its size tracking would go
-    // stale once it disappears — reset explicitly rather than leaving topSlot's Full
-    // height calculation working off a phantom bottom.
-    androidx.compose.runtime.LaunchedEffect(bottomSlot) {
+    LaunchedEffect(bottomSlot) {
         if (bottomSlot == null) bottomOccupiedPx = 0f
     }
 
     // Only one slot should ever own the whole screen at a time.
-    androidx.compose.runtime.LaunchedEffect(topSlot?.expansion) {
+    LaunchedEffect(topSlot?.expansion) {
         if (topSlot?.expansion == TaskShellExpansion.Full &&
             bottomSlot?.expansion != null &&
             bottomSlot.expansion != TaskShellExpansion.Collapsed
@@ -175,7 +174,7 @@ fun TaskShellLayout(
             bottomSlot.onExpansionChange(TaskShellExpansion.Collapsed)
         }
     }
-    androidx.compose.runtime.LaunchedEffect(bottomSlot?.expansion) {
+    LaunchedEffect(bottomSlot?.expansion) {
         if (bottomSlot?.expansion == TaskShellExpansion.Full &&
             topSlot?.expansion != null &&
             topSlot.expansion != TaskShellExpansion.Collapsed
@@ -211,7 +210,9 @@ fun TaskShellLayout(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .animateContentSize(),
+                    .animateContentSize(
+                        tween(500, easing = EaseIn),
+                    ),
         ) {
             TaskShellExpandedSection(
                 visible = topSlot != null,
@@ -242,32 +243,46 @@ fun TaskShellLayout(
                     Modifier
                         .clip(MaterialTheme.shapes.large)
                         .weight(1f)
-                        .background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.large)
-                        .padding(top = topPadding, bottom = bottomPadding, start = horizontalInset, end = horizontalInset),
+                        .background(
+                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.shapes.large,
+                        ).padding(
+                            top = topPadding,
+                            bottom = bottomPadding,
+                            start = horizontalInset,
+                            end = horizontalInset,
+                        ),
             ) {
                 content()
             }
 
-            bottomSlot?.let { slot ->
+            bottomSlot?.let {
                 Box(
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .onSizeChanged { bottomOccupiedPx = it.height.toFloat() },
                 ) {
-                    if (slot.content.isDraggable) {
+                    if (it.content.isDraggable) {
                         TaskShellBottomDraggableRegion(
-                            slot = slot,
+                            slot = it,
                             topOccupiedPx = topOccupiedPx,
                             screenHeightPx = screenHeightPx,
                         )
                     } else {
                         TaskShellBottomStateRegion(
-                            slot = slot,
+                            slot = it,
                             topOccupiedPx = topOccupiedPx,
                             screenHeightPx = screenHeightPx,
                         )
                     }
+                }
+            }
+
+            AnimatedContent(bottomSlot, transitionSpec = {
+                fadeIn(animationSpec = ShellFadeInTween) togetherWith fadeOut(animationSpec = ShellFadeOutTween)
+            }) {
+                it?.let { slot ->
                 }
             }
         }
@@ -391,7 +406,7 @@ private fun TaskShellBottomDraggableRegion(
 
     val dragSnapThresholdPx = with(density) { 40.dp.toPx() }
 
-    androidx.compose.runtime.LaunchedEffect(draggableState.offset, bottomCompactPx) {
+    LaunchedEffect(draggableState.offset, bottomCompactPx) {
         if (
             draggableState.currentValue == TaskShellExpansion.Collapsed &&
             sheetHeightPx > bottomCompactPx + dragSnapThresholdPx
@@ -400,13 +415,13 @@ private fun TaskShellBottomDraggableRegion(
         }
     }
 
-    androidx.compose.runtime.LaunchedEffect(slot.expansion) {
+    LaunchedEffect(slot.expansion) {
         if (draggableState.currentValue != slot.expansion) {
             draggableState.snapTo(slot.expansion)
         }
     }
 
-    androidx.compose.runtime.LaunchedEffect(draggableState.currentValue) {
+    LaunchedEffect(draggableState.currentValue) {
         if (draggableState.currentValue != slot.expansion) {
             slot.onExpansionChange(draggableState.currentValue)
         }
@@ -567,7 +582,7 @@ private fun TaskShellTopDraggableRegion(
             )
         }
 
-    androidx.compose.runtime.LaunchedEffect(slot.expansion) {
+    LaunchedEffect(slot.expansion) {
         val draggableTarget = if (isFull) TaskShellExpansion.Expanded else slot.expansion
         if (draggableState.currentValue != draggableTarget) {
             draggableState.snapTo(draggableTarget)
@@ -576,7 +591,7 @@ private fun TaskShellTopDraggableRegion(
 
     // Only propagate real user drags back into slot state; while Full, the header's tiny
     // Collapsed/Expanded anchors aren't meaningful and must not downgrade it.
-    androidx.compose.runtime.LaunchedEffect(draggableState.currentValue) {
+    LaunchedEffect(draggableState.currentValue) {
         if (isFull) return@LaunchedEffect
         if (draggableState.currentValue != slot.expansion) {
             slot.onExpansionChange(draggableState.currentValue)

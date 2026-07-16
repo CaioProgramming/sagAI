@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaEnding
 import com.ilustris.sagai.features.home.data.model.inheritSceneSummaryForChapter
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.player.domain.PlayerProfileUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
@@ -40,6 +41,7 @@ class NarrativeActionExecutorImpl
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val messageDao: MessageDao,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
+        private val playerProfileUseCase: PlayerProfileUseCase,
     ) : NarrativeActionExecutor {
         override suspend fun execute(
             action: NarrativeAction,
@@ -384,6 +386,10 @@ class NarrativeActionExecutorImpl
                         is StreamingState.Success -> {
                             generated = state.data
                             environment.onReasoningChunk(null)
+                            // Record player profile insight
+                            generated?.data?.let { actData ->
+                                playerProfileUseCase.recordActInsight(fullSaga, actData)
+                            }
                         }
 
                         is StreamingState.Error -> {

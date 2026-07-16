@@ -10,6 +10,9 @@ data object HomeKey : NavKey
 data object SettingsKey : NavKey
 
 @Serializable
+data object PlayerProfileKey : NavKey
+
+@Serializable
 data object FAQKey : NavKey
 
 @Serializable

@@ -5,7 +5,6 @@ import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +33,7 @@ fun AnimatedPlaytimeCounter(
     labelStyle: TextStyle = MaterialTheme.typography.labelMedium,
     animationDuration: Duration = 5.seconds,
     onAnimationFinished: () -> Unit = {},
+    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     modifier: Modifier = Modifier,
 ) {
     val hours = (playtimeMs / 3600000).toInt()
@@ -63,10 +63,9 @@ fun AnimatedPlaytimeCounter(
     }
 
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = horizontalAlignment,
         modifier =
             modifier
-                .fillMaxWidth()
                 .padding(16.dp),
     ) {
         Text(
@@ -74,12 +73,11 @@ fun AnimatedPlaytimeCounter(
             style =
                 textStyle.copy(
                     fontWeight = FontWeight.Normal,
-                    textAlign = TextAlign.Center,
+                    textAlign = if (horizontalAlignment == Alignment.CenterHorizontally) TextAlign.Center else TextAlign.Start,
                 ),
             modifier =
                 Modifier
-                    .padding(2.dp)
-                    .fillMaxWidth(),
+                    .padding(2.dp),
         )
 
         Text(

@@ -26,3 +26,4 @@ gha-creds-*.json
 .kotlin/sessions/
 keystore.properties
 .hotswan/
+.claude/settings.local.json
