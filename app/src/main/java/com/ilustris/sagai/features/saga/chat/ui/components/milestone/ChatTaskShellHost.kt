@@ -50,20 +50,8 @@ fun ChatTaskShellHost(
     val isProcessing by viewModel.isProcessing.collectAsStateWithLifecycle()
 
     val milestone = uiState.milestone
-    val dashboardItems by milestoneViewModel.dashboardItems.collectAsStateWithLifecycle()
-
-    LaunchedEffect(milestone) {
-        milestone?.let { milestoneViewModel.loadDashboardItems(it, sagaContent.data.id) }
-    }
-
-    val milestoneOwnsTop =
-        milestone is SagaMilestone.Introduction || milestone is SagaMilestone.NewCharacter
     // Loading is now a compact-only bottom island (published below), not a full-screen slot.
     val milestoneLoading = milestone is SagaMilestone.Loading
-    val milestoneOwnsBottom =
-        milestone is SagaMilestone.NewEvent ||
-            milestone is SagaMilestone.ChapterFinished ||
-            milestone is SagaMilestone.ActFinished
 
     val objectiveText = sagaContent.getCurrentTimeLine()?.data?.displayObjective()
     val showObjectiveShell = !objectiveText.isNullOrBlank()
@@ -107,11 +95,10 @@ fun ChatTaskShellHost(
         viewModel.publishBottomIsland(content)
     }
 
-    // Current objective is now a top island in the global overlay (Shell v2). Suppressed while a
-    // milestone owns the top (mutually exclusive with the milestone reveal).
-    LaunchedEffect(showObjectiveShell, milestoneOwnsTop, objectiveText, progress) {
+    // Current objective is now a top island in the global overlay (Shell v2).
+    LaunchedEffect(showObjectiveShell, objectiveText, progress) {
         val content =
-            if (showObjectiveShell && !milestoneOwnsTop) {
+            if (showObjectiveShell) {
                 ObjectiveIslandContent(
                     titleRes = R.string.current_objective,
                     objective = objectiveText.orEmpty(),
@@ -130,51 +117,9 @@ fun ChatTaskShellHost(
         }
     }
 
-    // Milestone content for top island (Introduction, NewCharacter)
-    val topMilestoneContent: IslandContent? =
-        when {
-            milestoneOwnsTop -> {
-                when (milestone) {
-                    is SagaMilestone.Introduction -> {
-                        IntroductionShellContent(milestone, sagaContent.data)
-                    }
-
-                    is SagaMilestone.NewCharacter -> {
-                        CharacterMilestoneShellContent(
-                            milestone = milestone,
-                            saga = sagaContent.data,
-                            dashboardItems = dashboardItems,
-                            onRevealStarted = milestoneViewModel::onRevealStarted,
-                            onDetailAction = { onNavigate(it.toNavKey()) },
-                        )
-                    }
-
-                    else -> null
-                }
-            }
-
-            else -> null
-        }
-
-    // Milestone content for bottom island (NewEvent, ChapterFinished, ActFinished)
-    val bottomMilestoneContent: IslandContent? =
-        when {
-            milestoneOwnsBottom -> {
-                NarrativeMilestoneShellContent(
-                    milestone = milestone,
-                    saga = sagaContent.data,
-                    dashboardItems = dashboardItems,
-                    reasoningChunk = uiState.reasoningChunk,
-                    onRevealStarted = milestoneViewModel::onRevealStarted,
-                    onDetailAction = { onNavigate(it.toNavKey()) },
-                )
-            }
-
-            else -> null
-        }
-
-    var topIslandExpanded by remember { mutableStateOf(false) }
-    var bottomIslandExpanded by remember { mutableStateOf(false) }
+    // TODO: Milestone full-screen reveals (Introduction, NewCharacter, NewEvent, etc.)
+    // will be integrated here once MilestoneShellContent is refactored for IslandContent.
+    // For now, milestones bypass the shell entirely (handled elsewhere).
 
     Box(
         modifier =
@@ -185,35 +130,5 @@ fun ChatTaskShellHost(
                 .imePadding(),
     ) {
         content()
-
-        // Top island for milestones
-        topMilestoneContent?.let {
-            DynamicIslandOverlay(
-                content = it,
-                expanded = topIslandExpanded,
-                onExpandedChange = { expanded ->
-                    topIslandExpanded = expanded
-                    if (!expanded && milestoneOwnsTop) {
-                        onAction(ChatUiAction.ContinueMilestone)
-                    }
-                },
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-
-        // Bottom island for milestones
-        bottomMilestoneContent?.let {
-            DynamicBottomIsland(
-                content = it,
-                expanded = bottomIslandExpanded,
-                onExpandedChange = { expanded ->
-                    bottomIslandExpanded = expanded
-                    if (!expanded && milestoneOwnsBottom) {
-                        onAction(ChatUiAction.ContinueMilestone)
-                    }
-                },
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
     }
 }
