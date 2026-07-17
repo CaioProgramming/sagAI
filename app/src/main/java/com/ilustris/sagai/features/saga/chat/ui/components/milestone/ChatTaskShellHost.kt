@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -7,9 +9,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
@@ -22,11 +26,11 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatUiAction
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.ui.components.island.AdvanceIslandContent
+import com.ilustris.sagai.ui.components.island.DynamicBottomIsland
+import com.ilustris.sagai.ui.components.island.DynamicIslandOverlay
+import com.ilustris.sagai.ui.components.island.IslandContent
 import com.ilustris.sagai.ui.components.island.LoadingIslandContent
 import com.ilustris.sagai.ui.components.island.ObjectiveIslandContent
-import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
-import com.ilustris.sagai.ui.components.taskshell.TaskShellLayout
-import com.ilustris.sagai.ui.components.taskshell.TaskShellSlotState
 
 @Composable
 fun ChatTaskShellHost(
@@ -126,85 +130,90 @@ fun ChatTaskShellHost(
         }
     }
 
-    val topSlot =
+    // Milestone content for top island (Introduction, NewCharacter)
+    val topMilestoneContent: IslandContent? =
         when {
             milestoneOwnsTop -> {
-                val content =
-                    when (milestone) {
-                        is SagaMilestone.Introduction -> {
-                            IntroductionShellContent(milestone, sagaContent.data)
-                        }
-
-                        is SagaMilestone.NewCharacter -> {
-                            CharacterMilestoneShellContent(
-                                milestone = milestone,
-                                saga = sagaContent.data,
-                                dashboardItems = dashboardItems,
-                                onRevealStarted = milestoneViewModel::onRevealStarted,
-                                onDetailAction = { onNavigate(it.toNavKey()) },
-                            )
-                        }
-
-                        else -> {
-                            null
-                        }
+                when (milestone) {
+                    is SagaMilestone.Introduction -> {
+                        IntroductionShellContent(milestone, sagaContent.data)
                     }
-                content?.let {
-                    TaskShellSlotState(
-                        content = it,
-                        expansion = TaskShellExpansion.Full,
-                        onExpansionChange = { expansion ->
-                            if (expansion == TaskShellExpansion.Collapsed) {
-                                onAction(ChatUiAction.ContinueMilestone)
-                            }
-                        },
-                    )
-                }
-            }
 
-            // Current objective moved to the global top island (published above).
-            else -> {
-                null
-            }
-        }
-
-    val bottomSlot =
-        when {
-            milestoneOwnsBottom -> {
-                TaskShellSlotState(
-                    content =
-                        NarrativeMilestoneShellContent(
+                    is SagaMilestone.NewCharacter -> {
+                        CharacterMilestoneShellContent(
                             milestone = milestone,
                             saga = sagaContent.data,
                             dashboardItems = dashboardItems,
-                            reasoningChunk = uiState.reasoningChunk,
                             onRevealStarted = milestoneViewModel::onRevealStarted,
                             onDetailAction = { onNavigate(it.toNavKey()) },
-                        ),
-                    expansion = TaskShellExpansion.Full,
-                    onExpansionChange = { expansion ->
-                        if (expansion == TaskShellExpansion.Collapsed) {
-                            onAction(ChatUiAction.ContinueMilestone)
-                        }
-                    },
+                        )
+                    }
+
+                    else -> null
+                }
+            }
+
+            else -> null
+        }
+
+    // Milestone content for bottom island (NewEvent, ChapterFinished, ActFinished)
+    val bottomMilestoneContent: IslandContent? =
+        when {
+            milestoneOwnsBottom -> {
+                NarrativeMilestoneShellContent(
+                    milestone = milestone,
+                    saga = sagaContent.data,
+                    dashboardItems = dashboardItems,
+                    reasoningChunk = uiState.reasoningChunk,
+                    onRevealStarted = milestoneViewModel::onRevealStarted,
+                    onDetailAction = { onNavigate(it.toNavKey()) },
                 )
             }
 
-            // Narrative advance moved to the global bottom island (published above).
-            else -> {
-                null
-            }
+            else -> null
         }
 
-    TaskShellLayout(
+    var topIslandExpanded by remember { mutableStateOf(false) }
+    var bottomIslandExpanded by remember { mutableStateOf(false) }
+
+    Box(
         modifier =
             modifier
+                .fillMaxSize()
                 .navigationBarsPadding()
                 .statusBarsPadding()
                 .imePadding(),
-        horizontalInset = 2.dp,
-        topSlot = topSlot,
-        bottomSlot = bottomSlot,
-        content = content,
-    )
+    ) {
+        content()
+
+        // Top island for milestones
+        topMilestoneContent?.let {
+            DynamicIslandOverlay(
+                content = it,
+                expanded = topIslandExpanded,
+                onExpandedChange = { expanded ->
+                    topIslandExpanded = expanded
+                    if (!expanded && milestoneOwnsTop) {
+                        onAction(ChatUiAction.ContinueMilestone)
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        // Bottom island for milestones
+        bottomMilestoneContent?.let {
+            DynamicBottomIsland(
+                content = it,
+                expanded = bottomIslandExpanded,
+                onExpandedChange = { expanded ->
+                    bottomIslandExpanded = expanded
+                    if (!expanded && milestoneOwnsBottom) {
+                        onAction(ChatUiAction.ContinueMilestone)
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
 }
