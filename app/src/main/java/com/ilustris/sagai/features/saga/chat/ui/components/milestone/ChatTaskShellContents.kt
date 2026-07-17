@@ -101,8 +101,6 @@ class ObjectiveShellContent(
         ObjectiveOverlay(
             title = title,
             objective = objective,
-            progress = progress,
-            applyStatusBarsPadding = false,
             modifier = Modifier.fillMaxWidth(),
             onDismiss = scope.onMinimize,
         )

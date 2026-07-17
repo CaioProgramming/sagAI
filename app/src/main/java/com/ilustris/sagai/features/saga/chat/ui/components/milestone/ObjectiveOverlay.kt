@@ -13,21 +13,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
 
 @Composable
 fun ObjectiveOverlay(
     title: String,
     objective: String,
-    progress: Float,
-    sparkModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
-    applyStatusBarsPadding: Boolean = true,
     onDismiss: () -> Unit,
 ) {
-    val shape = sagaShape() ?: RoundedCornerShape(12.dp)
-    val cardColor = MaterialTheme.colorScheme.surfaceContainer
-    val resolvedColor = MaterialTheme.colorScheme.primary
 
     Column(
         modifier =
@@ -40,10 +36,9 @@ fun ObjectiveOverlay(
         Text(
             text = title,
             style =
-                MaterialTheme.typography.labelSmall.copy(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f),
-                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                ),
+                MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimary,
+            textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -51,10 +46,9 @@ fun ObjectiveOverlay(
         Text(
             text = objective,
             style =
-                MaterialTheme.typography.labelLarge.copy(
-                    textAlign = TextAlign.Center,
-                ),
-            maxLines = 3,
+                MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onPrimary,
+            textAlign = TextAlign.Center,
             overflow = TextOverflow.Ellipsis,
         )
     }

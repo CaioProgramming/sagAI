@@ -90,9 +90,6 @@ import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
-import com.ilustris.sagai.ui.components.taskshell.TaskShellLayout
-import com.ilustris.sagai.ui.components.taskshell.TaskShellSlotState
 import com.ilustris.sagai.ui.theme.SAGA_THEME_TRANSITION_MS
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
@@ -215,67 +212,21 @@ private fun HomeContent(
     openSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var topExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
-    var bottomExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
     val lazyListState = rememberLazyListState()
 
-    LaunchedEffect(state.showPremiumOnboarding) {
-        if (state.showPremiumOnboarding) {
-            bottomExpansion = TaskShellExpansion.Full
-        } else if (bottomExpansion == TaskShellExpansion.Full) {
-            bottomExpansion = TaskShellExpansion.Collapsed
-        }
-    }
-
-    val bottomSlot =
-        if (!state.isPremium) {
-            TaskShellSlotState(
-                content =
-                    PremiumShellContent(
-                        onDismissPremium = { onAction(HomeUiAction.DismissPremiumOnboarding) },
-                    ),
-                expansion = bottomExpansion,
-                onExpansionChange = { expansion ->
-                    bottomExpansion = expansion
-                    when (expansion) {
-                        TaskShellExpansion.Full -> {
-                            onAction(HomeUiAction.OpenPremium)
-                        }
-
-                        TaskShellExpansion.Collapsed -> {
-                            if (state.showPremiumOnboarding) {
-                                onAction(HomeUiAction.DismissPremiumOnboarding)
-                            }
-                        }
-
-                        else -> {
-                            Unit
-                        }
-                    }
-                },
-            )
-        } else {
-            null
-        }
-
-    TaskShellLayout(
+    // TODO: Move premium upsell to DynamicBottomIsland via global effect
+    ChatList(
+        state = state,
+        onAction = onAction,
+        padding = padding,
+        userName = userName,
+        lazyListState = lazyListState,
+        sharedTransitionScope = sharedTransitionScope,
+        splashAnimatedContentScope = splashAnimatedContentScope,
+        navAnimatedVisibilityScope = navAnimatedVisibilityScope,
+        openSettings = openSettings,
         modifier = Modifier.fillMaxSize(),
-        topSlot = null,
-        bottomSlot = bottomSlot,
-    ) {
-        ChatList(
-            state = state,
-            onAction = onAction,
-            padding = padding,
-            userName = userName,
-            lazyListState = lazyListState,
-            sharedTransitionScope = sharedTransitionScope,
-            splashAnimatedContentScope = splashAnimatedContentScope,
-            navAnimatedVisibilityScope = navAnimatedVisibilityScope,
-            openSettings = openSettings,
-            modifier = Modifier.fillMaxSize(),
-        )
-    }
+    )
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)

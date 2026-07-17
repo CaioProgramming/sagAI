@@ -1,22 +1,14 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,6 +21,9 @@ import com.ilustris.sagai.features.milestone.presentation.MilestoneViewModel
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiAction
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
+import com.ilustris.sagai.ui.components.island.AdvanceIslandContent
+import com.ilustris.sagai.ui.components.island.LoadingIslandContent
+import com.ilustris.sagai.ui.components.island.ObjectiveIslandContent
 import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
 import com.ilustris.sagai.ui.components.taskshell.TaskShellLayout
 import com.ilustris.sagai.ui.components.taskshell.TaskShellSlotState
@@ -59,35 +54,75 @@ fun ChatTaskShellHost(
 
     val milestoneOwnsTop =
         milestone is SagaMilestone.Introduction || milestone is SagaMilestone.NewCharacter
+    // Loading is now a compact-only bottom island (published below), not a full-screen slot.
+    val milestoneLoading = milestone is SagaMilestone.Loading
     val milestoneOwnsBottom =
-        milestone is SagaMilestone.Loading ||
-            milestone is SagaMilestone.NewEvent ||
+        milestone is SagaMilestone.NewEvent ||
             milestone is SagaMilestone.ChapterFinished ||
             milestone is SagaMilestone.ActFinished
-
-    var topExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
-    var bottomExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
-    var advanceDragProgress by remember { mutableFloatStateOf(0f) }
 
     val objectiveText = sagaContent.getCurrentTimeLine()?.data?.displayObjective()
     val showObjectiveShell = !objectiveText.isNullOrBlank()
 
+    val advanceAction = narrativeState.displayAdvanceAction
     val showAdvanceShell =
         narrativeState.showAdvanceTrigger &&
-            narrativeState.displayAdvanceAction != null &&
+            advanceAction != null &&
             uiState.onboardingType == null &&
-            !uiState.selectionState.isSelectionMode
+            !uiState.selectionState.isSelectionMode &&
+            // Never offer "advance" while a reply is still generating — wait for it to land.
+            !uiState.isGenerating
 
-    LaunchedEffect(showObjectiveShell) {
-        if (!showObjectiveShell) {
-            topExpansion = TaskShellExpansion.Collapsed
-        }
+    // Bottom island: Loading (compact loader) takes precedence over the advance trigger, which is
+    // itself gated by the chat's full context. Published while on screen; cleared on dispose.
+    LaunchedEffect(milestoneLoading, showAdvanceShell, advanceAction, isProcessing, reasoning) {
+        val content =
+            when {
+                milestoneLoading ->
+                    LoadingIslandContent(
+                        reasoning = reasoning ?: uiState.reasoningChunk,
+                        genre = sagaContent.data.genre,
+                    )
+
+                showAdvanceShell && advanceAction != null ->
+                    AdvanceIslandContent(
+                        action = advanceAction,
+                        reasoning = reasoning,
+                        isProcessing = isProcessing,
+                        genre = sagaContent.data.genre,
+                        onAction = {
+                            if (!isProcessing) {
+                                context.vibrate(longArrayOf(0, 400))
+                                viewModel.advanceNarrative()
+                            }
+                        },
+                    )
+
+                else -> null
+            }
+        viewModel.publishBottomIsland(content)
     }
 
-    LaunchedEffect(showAdvanceShell, isProcessing) {
-        if (!showAdvanceShell || isProcessing) {
-            bottomExpansion = TaskShellExpansion.Collapsed
-            advanceDragProgress = 0f
+    // Current objective is now a top island in the global overlay (Shell v2). Suppressed while a
+    // milestone owns the top (mutually exclusive with the milestone reveal).
+    LaunchedEffect(showObjectiveShell, milestoneOwnsTop, objectiveText, progress) {
+        val content =
+            if (showObjectiveShell && !milestoneOwnsTop) {
+                ObjectiveIslandContent(
+                    titleRes = R.string.current_objective,
+                    objective = objectiveText.orEmpty(),
+                    genre = sagaContent.data.genre,
+                )
+            } else {
+                null
+            }
+        viewModel.publishTopIsland(content)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.publishBottomIsland(null)
+            viewModel.publishTopIsland(null)
         }
     }
 
@@ -127,20 +162,7 @@ fun ChatTaskShellHost(
                 }
             }
 
-            showObjectiveShell -> {
-                TaskShellSlotState(
-                    content =
-                        ObjectiveShellContent(
-                            title = stringResource(R.string.current_objective),
-                            objective = objectiveText.orEmpty(),
-                            progress = progress,
-                            isLoading = isProcessing,
-                        ),
-                    expansion = topExpansion,
-                    onExpansionChange = { topExpansion = it },
-                )
-            }
-
+            // Current objective moved to the global top island (published above).
             else -> {
                 null
             }
@@ -168,35 +190,7 @@ fun ChatTaskShellHost(
                 )
             }
 
-            showAdvanceShell -> {
-                val action = narrativeState.displayAdvanceAction!!
-                TaskShellSlotState(
-                    content =
-                        NarrativeAdvanceShellContent(
-                            action = action,
-                            reasoning = reasoning,
-                            isProcessing = isProcessing,
-                            dragProgress = advanceDragProgress,
-                        ),
-                    expansion = bottomExpansion,
-                    onExpansionChange = { expansion ->
-                        if (expansion == TaskShellExpansion.Full && !isProcessing) {
-                            context.vibrate(longArrayOf(0, 400))
-                            viewModel.advanceNarrative()
-                            bottomExpansion = TaskShellExpansion.Collapsed
-                        } else {
-                            bottomExpansion = expansion
-                            advanceDragProgress =
-                                when (expansion) {
-                                    TaskShellExpansion.Full -> 1f
-                                    TaskShellExpansion.Expanded -> 0.5f
-                                    TaskShellExpansion.Collapsed -> 0f
-                                }
-                        }
-                    },
-                )
-            }
-
+            // Narrative advance moved to the global bottom island (published above).
             else -> {
                 null
             }
@@ -211,18 +205,6 @@ fun ChatTaskShellHost(
         horizontalInset = 2.dp,
         topSlot = topSlot,
         bottomSlot = bottomSlot,
-        background = { top, bottom ->
-            val topIsObjective = top != null && top.content is ObjectiveShellContent
-            val isActive = (topIsObjective && top.expansion != TaskShellExpansion.Collapsed)
-            val backgroundColor by animateColorAsState(
-                if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.background,
-            )
-            Box(
-                Modifier
-                    .matchParentSize()
-                    .background(backgroundColor),
-            )
-        },
         content = content,
     )
 }

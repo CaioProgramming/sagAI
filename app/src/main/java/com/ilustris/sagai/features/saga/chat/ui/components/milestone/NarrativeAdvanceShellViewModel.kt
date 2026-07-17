@@ -6,6 +6,8 @@ import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCoordinator
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
+import com.ilustris.sagai.ui.components.island.ChatIslandService
+import com.ilustris.sagai.ui.components.island.IslandContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +22,7 @@ class NarrativeAdvanceShellViewModel
     constructor(
         narrativeCoordinator: NarrativeCoordinator,
         private val sagaContentManager: SagaContentManager,
+        private val chatIslandService: ChatIslandService,
     ) : ViewModel() {
         val narrativeUiState: StateFlow<NarrativeUiState> = narrativeCoordinator.uiState
 
@@ -45,5 +48,15 @@ class NarrativeAdvanceShellViewModel
             viewModelScope.launch {
                 sagaContentManager.advanceNarrative()
             }
+        }
+
+        /** Publishes (or clears) the chat's bottom island contribution to the global overlay. */
+        fun publishBottomIsland(content: IslandContent?) {
+            chatIslandService.setBottom(content)
+        }
+
+        /** Publishes (or clears) the chat's top island contribution to the global overlay. */
+        fun publishTopIsland(content: IslandContent?) {
+            chatIslandService.setTop(content)
         }
     }

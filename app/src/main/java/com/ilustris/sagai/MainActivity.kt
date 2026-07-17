@@ -38,6 +38,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,7 +64,10 @@ import androidx.navigation3.ui.NavDisplay
 import com.google.firebase.installations.FirebaseInstallations
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.data.SideEffect
+import com.ilustris.sagai.core.globalshell.BookGenerationWorkEffect
+import com.ilustris.sagai.core.globalshell.ChatGenerationWorkEffect
 import com.ilustris.sagai.core.globalshell.GlobalShellService
+import com.ilustris.sagai.core.globalshell.ImageGenerationWorkEffect
 import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.core.navigation.SagaNavigationTracker
 import com.ilustris.sagai.core.network.ConnectivityObserver
@@ -71,13 +75,26 @@ import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.act.BookGenerationService
+import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
 import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.components.BlurTarget
 import com.ilustris.sagai.ui.components.SagaSnackBar
+import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
+import com.ilustris.sagai.ui.components.island.ChatGenerationIslandContent
+import com.ilustris.sagai.ui.components.island.ChatIslandService
+import com.ilustris.sagai.ui.components.island.DynamicBottomComponent
+import com.ilustris.sagai.ui.components.island.DynamicIslandOverlay
+import com.ilustris.sagai.ui.components.island.ImageGenerationIslandContent
+import com.ilustris.sagai.ui.components.island.IslandContent
+import com.ilustris.sagai.ui.components.island.IslandInsets
+import com.ilustris.sagai.ui.components.island.NotificationIslandContent
+import com.ilustris.sagai.ui.components.island.LocalIslandInsets
+import com.ilustris.sagai.ui.components.island.islandPadding
 import com.ilustris.sagai.ui.components.globalshell.GlobalShellHost
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
 import com.ilustris.sagai.ui.navigation.FAQKey
@@ -129,6 +146,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var globalShellService: GlobalShellService
+
+    @Inject
+    lateinit var chatIslandService: ChatIslandService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -298,6 +318,86 @@ class MainActivity : ComponentActivity() {
                 val bookGenState by bookGenerationService.uiState.collectAsState()
                 val chatGenState by chatGenerationService.activeGenerations.collectAsState()
 
+                // Shell v2: top DynamicIslandOverlay owns image + book + chat generation.
+                // Priority mirrors the legacy host: image > book > chat.
+                val imageGenActive =
+                    imageGenState is ImageGenerationUiState.Generating ||
+                        imageGenState is ImageGenerationUiState.AwaitingManualFallback ||
+                        imageGenState is ImageGenerationUiState.Reveal
+                val visibleBookGen =
+                    (bookGenState as? BookGenerationUiState.Generating)
+                        ?.takeUnless { sagaNavigationTracker.isOnChronicle(it.sagaId) }
+                val visibleChatGen =
+                    chatGenState.values.firstOrNull { !sagaNavigationTracker.isOnChatForSaga(it.sagaId) }
+                // Real notifications only — the generation "work effects" arbitrate priority in
+                // GlobalShellService but render as their own islands (above), never here.
+                val notificationEffect =
+                    globalShellState.effect?.takeUnless {
+                        it is ImageGenerationWorkEffect ||
+                            it is BookGenerationWorkEffect ||
+                            it is ChatGenerationWorkEffect
+                    }
+                // Top island contributed by the active chat (e.g. current objective) — lowest priority.
+                val chatTopIsland by chatIslandService.top.collectAsState()
+                val islandContent: IslandContent? =
+                    when {
+                        imageGenActive ->
+                            ImageGenerationIslandContent(
+                                state = imageGenState,
+                                debugImageFallbackService = debugImageFallbackService,
+                                onCancel = imageGenerationService::cancelCurrent,
+                                onDismissReveal = imageGenerationService::dismissReveal,
+                            )
+                        visibleBookGen != null -> BookGenerationIslandContent(visibleBookGen)
+                        visibleChatGen != null -> ChatGenerationIslandContent(visibleChatGen)
+                        notificationEffect != null ->
+                            NotificationIslandContent(
+                                effect = notificationEffect,
+                                onNavigate = { deepLink -> navigateDeepLink(deepLink) },
+                                onDismiss = { globalShellService.dismiss() },
+                            )
+                        chatTopIsland != null -> chatTopIsland
+                        else -> null
+                    }
+                // Stable per-source key: reset expansion only when the island's *source* changes,
+                // so a persistent island (e.g. objective) reappears collapsed after a transient one
+                // (generation/notification) clears — instead of inheriting its expanded state.
+                val islandKey: String? =
+                    when {
+                        imageGenActive -> "image"
+                        visibleBookGen != null -> "book"
+                        visibleChatGen != null -> "chat:${visibleChatGen.sagaId}"
+                        notificationEffect != null -> "notif:${notificationEffect.id}"
+                        chatTopIsland != null -> "objective"
+                        else -> null
+                    }
+                val islandInsets = remember { IslandInsets() }
+
+                var islandExpanded by remember { mutableStateOf(false) }
+                LaunchedEffect(islandKey) { islandExpanded = false }
+                LaunchedEffect(islandContent == null) {
+                    if (islandContent == null) islandInsets.top = 0.dp
+                }
+
+                // Shell v2 bottom island — contributed by the active chat (narrative advance).
+                val bottomIsland by chatIslandService.bottom.collectAsState()
+                var bottomExpanded by remember { mutableStateOf(false) }
+                LaunchedEffect(bottomIsland == null) {
+                    if (bottomIsland == null) {
+                        bottomExpanded = false
+                        islandInsets.bottom = 0.dp
+                    }
+                }
+                // Image reveal / manual fallback are terminal, attention-worthy states — auto-expand.
+                LaunchedEffect(imageGenState) {
+                    if (imageGenState is ImageGenerationUiState.Reveal ||
+                        imageGenState is ImageGenerationUiState.AwaitingManualFallback
+                    ) {
+                        islandExpanded = true
+                    }
+                }
+
+                CompositionLocalProvider(LocalIslandInsets provides islandInsets) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     BlurProvider {
                         Scaffold(
@@ -348,7 +448,7 @@ class MainActivity : ComponentActivity() {
                                             modifier = Modifier.fillMaxSize(),
                                             content = {
                                                 Box(modifier = Modifier.fillMaxSize()) {
-                                                    BlurTarget(modifier = Modifier.fillMaxSize()) {
+                                                    BlurTarget(modifier = Modifier.fillMaxSize().islandPadding()) {
                                                         NavDisplay(
                                                             entries =
                                                                 navigationState.toEntries(
@@ -449,6 +549,29 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
+                    // Shell v2 top island — floats above nav content, no scrim/blur.
+                    DynamicIslandOverlay(
+                        content = islandContent,
+                        expanded = islandExpanded,
+                        onExpandedChange = { expanded ->
+                            // Collapsing a terminal image reveal clears the underlying state
+                            // (it must not linger and re-expand); other states just toggle.
+                            if (!expanded && imageGenState is ImageGenerationUiState.Reveal) {
+                                imageGenerationService.dismissReveal()
+                            }
+                            islandExpanded = expanded
+                        },
+                        onHeightChanged = { islandInsets.top = it },
+                    )
+
+                    // Shell v2 bottom island — floats above the nav bar, no scrim/blur.
+                    DynamicBottomComponent(
+                        content = bottomIsland,
+                        expanded = bottomExpanded,
+                        onExpandedChange = { bottomExpanded = it },
+                        onHeightChanged = { islandInsets.bottom = it },
+                    )
+
                     if (activeSideEffect == SideEffect.ShowPremiumOnboarding) {
                         OnboardingDialog(
                             type = OnboardingType.PREMIUM_GUIDE,
@@ -525,6 +648,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
+                }
                 }
             }
         }

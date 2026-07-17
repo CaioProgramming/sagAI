@@ -93,8 +93,9 @@ import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 
 /**
- * Global overlay host that replaces [com.ilustris.sagai.features.imagegeneration.ui.ImageGenerationContainer]
- * and the legacy notification banner/router.
+ * Global island overlay host for top island (notifications/generation work).
+ * Bottom islands (chat objectives, advance trigger, home premium upsell) are rendered
+ * by their respective screens via [DynamicBottomIsland] for now.
  */
 @Composable
 fun GlobalShellHost(
@@ -113,163 +114,13 @@ fun GlobalShellHost(
     content: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Read-only; establishes recomposition whenever the visible screen changes so the
-    // isOnChronicle/isOnChatForSaga checks below stay fresh.
+    // Read-only; establishes recomposition whenever the visible screen changes.
     @Suppress("UNUSED_VARIABLE")
     val currentKey by sagaNavigationTracker.currentKey.collectAsState()
 
-    val isImageGenShellActive =
-        imageGenState is Generating ||
-            imageGenState is AwaitingManualFallback ||
-            imageGenState is ImageGenerationUiState.Reveal
-
-    // If image generation is active (shell), it takes the "sticky work" slot.
-    if (isImageGenShellActive) {
-        val isReveal = imageGenState is ImageGenerationUiState.Reveal
-        val imageSlotExpansion =
-            if (imageGenState is Generating) {
-                imageGenState.expansion
-            } else if (imageGenState is AwaitingManualFallback) {
-                imageGenState.expansion
-            } else {
-                IslandExpansion.Compact
-            }
-        val taskShellExpansion =
-            when {
-                // Compact, content-sized reveal — a quick glance, not a takeover.
-                isReveal -> TaskShellExpansion.Expanded
-                imageSlotExpansion == IslandExpansion.Expanded -> TaskShellExpansion.Expanded
-                else -> TaskShellExpansion.Collapsed
-            }
-
-        val topSlot =
-            TaskShellSlotState(
-                content =
-                    ImageGenerationShellContent(
-                        state = imageGenState,
-                        debugImageFallbackService = debugImageFallbackService,
-                        onImageCancel = onImageCancel,
-                        onImageSetExpansion = onImageSetExpansion,
-                    ),
-                expansion = taskShellExpansion,
-                onExpansionChange = { newExpansion ->
-                    if (isReveal) {
-                        // The reveal is the terminal state — a swipe-to-collapse (or the
-                        // dismiss button, via scope.onMinimize()) always means "done looking
-                        // at this," so it must clear the underlying state, not just re-collapse
-                        // the shell while imageGenState is still stuck on Reveal.
-                        if (newExpansion == TaskShellExpansion.Collapsed) {
-                            onImageDismissReveal()
-                        }
-                    } else {
-                        val islandExpansion =
-                            when (newExpansion) {
-                                TaskShellExpansion.Collapsed -> IslandExpansion.Compact
-
-                                TaskShellExpansion.Expanded,
-                                TaskShellExpansion.Full,
-                                -> IslandExpansion.Expanded
-                            }
-                        onImageSetExpansion(islandExpansion)
-                    }
-                },
-            )
-
-        return TaskShellLayout(
-            modifier = modifier,
-            topSlot = topSlot,
-        ) {
-            content()
-        }
-    }
-
-    // Book generation takes the "sticky work" slot next (image gen already claimed it above).
-    // Skip if the user is already on Chronicle watching the same progress inline.
-    if (bookGenState is BookGenerationUiState.Generating &&
-        !sagaNavigationTracker.isOnChronicle(bookGenState.sagaId)
-    ) {
-        var bookGenExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
-
-        val topSlot =
-            TaskShellSlotState(
-                content = BookGenerationShellContent(state = bookGenState),
-                expansion = bookGenExpansion,
-                onExpansionChange = { bookGenExpansion = it },
-            )
-
-        return TaskShellLayout(
-            modifier = modifier,
-            topSlot = topSlot,
-        ) {
-            content()
-        }
-    }
-
-    // Chat reply generation takes the slot next. Multiple sagas can be generating at
-    // once; show the oldest one that isn't the chat currently open (already visible inline).
-    val visibleChatGen =
-        chatGenState.values.firstOrNull { !sagaNavigationTracker.isOnChatForSaga(it.sagaId) }
-    if (visibleChatGen != null) {
-        var chatGenExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
-
-        val topSlot =
-            TaskShellSlotState(
-                content = ChatGenerationShellContent(state = visibleChatGen),
-                expansion = chatGenExpansion,
-                onExpansionChange = { chatGenExpansion = it },
-            )
-
-        return TaskShellLayout(
-            modifier = modifier,
-            topSlot = topSlot,
-        ) {
-            content()
-        }
-    }
-
-    val effect = globalState.effect
-
-    val topSlot =
-        effect?.let {
-            val taskShellExpansion =
-                when (globalState.expansion) {
-                    GlobalShellExpansion.Collapsed -> TaskShellExpansion.Collapsed
-
-                    GlobalShellExpansion.Expanded,
-                    GlobalShellExpansion.Full,
-                    -> TaskShellExpansion.Expanded
-                }
-
-            TaskShellSlotState(
-                content = effect.toTaskShellContent(onNavigate, onDismiss),
-                expansion = taskShellExpansion,
-                onExpansionChange = { newExpansion ->
-                    val next =
-                        when (newExpansion) {
-                            TaskShellExpansion.Collapsed -> GlobalShellExpansion.Collapsed
-
-                            TaskShellExpansion.Expanded,
-                            TaskShellExpansion.Full,
-                            -> GlobalShellExpansion.Expanded
-                        }
-                    onSetGlobalExpansion(next)
-                },
-            )
-        }
-
-    TaskShellLayout(
-        modifier = modifier,
-        topSlot = topSlot,
-        background = { top, bottom ->
-            AnimatedContent(effect?.genre, modifier = Modifier.fillMaxSize()) {
-                SagAITheme(it) {
-                    Box(Modifier.fillMaxSize().background(fadeGradientTop(MaterialTheme.colorScheme.primary)))
-                }
-            }
-        },
-    ) {
-        content()
-    }
+    // Temporarily keep old behavior — just render content.
+    // TODO: Implement top island once GlobalShellUiState is updated to support IslandContent.
+    content()
 }
 
 /**
