@@ -758,10 +758,16 @@ class SagaContentManagerImpl
             val bottomContent: IslandContent? =
                 when {
                     milestoneOwnsBottom && milestone != null -> {
-                        val stats = when {
-                            milestone is SagaMilestone.NewEvent -> milestone.stats
-                            milestone is SagaMilestone.ChapterFinished -> milestone.stats
-                            milestone is SagaMilestone.ActFinished -> milestone.stats
+                        val characters = when {
+                            milestone is SagaMilestone.NewEvent -> milestone.characters
+                            milestone is SagaMilestone.ChapterFinished -> milestone.characters
+                            milestone is SagaMilestone.ActFinished -> milestone.characters
+                            else -> emptyList()
+                        }
+                        val wikis = when {
+                            milestone is SagaMilestone.NewEvent -> milestone.wikis
+                            milestone is SagaMilestone.ChapterFinished -> milestone.wikis
+                            milestone is SagaMilestone.ActFinished -> milestone.wikis
                             else -> emptyList()
                         }
                         val emotionalTone = when {
@@ -773,7 +779,8 @@ class SagaContentManagerImpl
                         NarrativeMilestoneIslandContent(
                             milestone = milestone,
                             genre = genre,
-                            stats = stats,
+                            characters = characters,
+                            wikis = wikis,
                             emotionalTone = emotionalTone,
                             onRevealStarted = ::onMilestoneRevealStarted,
                             onContinue = onContinue,

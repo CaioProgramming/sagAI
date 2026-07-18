@@ -4,12 +4,14 @@ import androidx.compose.runtime.Composable
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.UnifiedActUpdate
 import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 /**
  * Milestones don't get a full-screen overlay of their own anymore — they're just island content
@@ -58,13 +60,14 @@ class IntroductionIslandContent(
  * Bottom-island reveal covering [SagaMilestone.NewEvent], [SagaMilestone.ChapterFinished] and
  * [SagaMilestone.ActFinished] — these are all the *result* of the user pulling the narrative-
  * advance trigger, so they take over the same bottom slot rather than a separate system.
- * Shows dynamic stats (characters/wikis created, arcs, etc) and emotional tone instead of
+ * Shows visual galleries of created characters/wikis and emotional tone instead of
  * a full dashboard — matching the compact Dynamic Island philosophy.
  */
 class NarrativeMilestoneIslandContent(
     private val milestone: SagaMilestone,
     private val genre: Genre,
-    private val stats: List<String>,
+    private val characters: List<Character>,
+    private val wikis: List<Wiki>,
     private val emotionalTone: EmotionalTone,
     private val onRevealStarted: () -> Unit,
     private val onContinue: () -> Unit,
@@ -84,7 +87,8 @@ class NarrativeMilestoneIslandContent(
             genre = genre,
             title = milestone.subtitle,
             description = milestone.message?.takeIf { it.isNotBlank() },
-            stats = stats,
+            characters = characters,
+            wikis = wikis,
             emotionalTone = emotionalTone,
             onContinue = onContinue,
             onRevealStarted = onRevealStarted,

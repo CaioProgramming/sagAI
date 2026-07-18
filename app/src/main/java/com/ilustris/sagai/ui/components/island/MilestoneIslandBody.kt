@@ -1,18 +1,19 @@
 package com.ilustris.sagai.ui.components.island
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -22,22 +23,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.AnimatedEmotionalShape
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.themePainter
 
 /**
- * Lean expanded body for dynamic milestone islands — shows dynamic stats (characters, wikis, arcs)
- * and emotional tone indicator using the animated star shape. Replaces the old dashboard-item
- * grid with compact badge summaries of what the player generated.
+ * Lean expanded body for dynamic milestone islands — shows visual galleries of created
+ * characters and wikis, plus emotional tone indicator. Replaces the old dashboard-item
+ * grid with compact visual references of what the player generated.
  */
 @Composable
 fun MilestoneIslandBody(
     genre: Genre,
     title: String,
     description: String?,
-    stats: List<String>,
+    characters: List<Character>,
+    wikis: List<Wiki>,
     emotionalTone: EmotionalTone,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
@@ -82,15 +87,48 @@ fun MilestoneIslandBody(
             }
         }
 
-        // Dynamic stat badges
-        if (stats.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                stats.forEach { stat ->
-                    StatBadge(text = stat)
+        // Characters gallery
+        if (characters.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "Personagens Criados",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    characters.forEach { character ->
+                        CharacterAvatar(
+                            character = character,
+                            genre = genre,
+                            modifier = Modifier.size(48.dp),
+                        )
+                    }
+                }
+            }
+        }
+
+        // Wikis gallery
+        if (wikis.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "Wikis Criadas",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    wikis.forEach { wiki ->
+                        WikiBadge(wiki = wiki)
+                    }
                 }
             }
         }
@@ -100,7 +138,6 @@ fun MilestoneIslandBody(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Animated emotional shape
             AnimatedEmotionalShape(
                 emotionalTone = emotionalTone,
                 morphProgress = 1f,
@@ -132,8 +169,8 @@ fun MilestoneIslandBody(
 }
 
 @Composable
-private fun StatBadge(
-    text: String,
+private fun WikiBadge(
+    wiki: Wiki,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -144,10 +181,14 @@ private fun StatBadge(
                     shape = CircleShape,
                 ).padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            text = text,
+            text = wiki.emojiTag ?: "📖",
+            style = MaterialTheme.typography.labelSmall,
+        )
+        Text(
+            text = wiki.title,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
