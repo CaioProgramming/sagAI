@@ -143,6 +143,9 @@ import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDia
 import com.ilustris.sagai.features.saga.chat.ui.components.MessageOptionsSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.MilestoneContinuePanel
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
@@ -645,8 +648,18 @@ fun ChatContent(
                 )
 
                 val hasActiveTimeline = content.getCurrentTimeLine() != null
+                val activeMilestone = uiState.milestone
+                val milestoneRequiresContinue =
+                    activeMilestone is SagaMilestone.NewEvent ||
+                        activeMilestone is SagaMilestone.ChapterFinished ||
+                        activeMilestone is SagaMilestone.ActFinished
                 val bottomInputState =
                     when {
+                        milestoneRequiresContinue &&
+                            !uiState.selectionState.isSelectionMode -> {
+                            BottomInputState.MilestoneContinue(activeMilestone!!)
+                        }
+
                         narrativeState.showBackgroundBanner &&
                             !uiState.selectionState.isSelectionMode -> {
                             BottomInputState.Background(narrativeState.backgroundTask!!)
@@ -680,6 +693,41 @@ fun ChatContent(
                     },
                 ) { inputState ->
                     when (inputState) {
+                        is BottomInputState.MilestoneContinue -> {
+                            val milestone = inputState.milestone
+                            val characters =
+                                when (milestone) {
+                                    is SagaMilestone.NewEvent -> milestone.characters
+                                    is SagaMilestone.ChapterFinished -> milestone.characters
+                                    is SagaMilestone.ActFinished -> milestone.characters
+                                    else -> emptyList()
+                                }
+                            val wikis =
+                                when (milestone) {
+                                    is SagaMilestone.NewEvent -> milestone.wikis
+                                    is SagaMilestone.ChapterFinished -> milestone.wikis
+                                    is SagaMilestone.ActFinished -> milestone.wikis
+                                    else -> emptyList()
+                                }
+                            val emotionalTone =
+                                when (milestone) {
+                                    is SagaMilestone.NewEvent -> milestone.emotionalTone
+                                    is SagaMilestone.ChapterFinished -> milestone.emotionalTone
+                                    is SagaMilestone.ActFinished -> milestone.emotionalTone
+                                    else -> EmotionalTone.NEUTRAL
+                                }
+                            MilestoneContinuePanel(
+                                genre = content.data.genre,
+                                title = milestone.subtitle,
+                                description = milestone.message?.takeIf { it.isNotBlank() },
+                                characters = characters,
+                                wikis = wikis,
+                                emotionalTone = emotionalTone,
+                                onContinue = { onAction(ChatUiAction.ContinueMilestone) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+
                         is BottomInputState.Background -> {
                             NarrativeBackgroundBanner(
                                 task = inputState.task,
@@ -1486,6 +1534,13 @@ private sealed interface BottomInputState {
 
     data class Background(
         val task: BackgroundTask,
+    ) : BottomInputState
+
+    /** A narrative-result milestone (new event/chapter/act) needs the player to continue —
+     * takes over the chat input slot instead of a duplicate floating island, since the
+     * milestone's own reveal already renders inline in the message list. */
+    data class MilestoneContinue(
+        val milestone: SagaMilestone,
     ) : BottomInputState
 
     /** No active timeline and no narrative advance/background UI — chat input must stay hidden. */

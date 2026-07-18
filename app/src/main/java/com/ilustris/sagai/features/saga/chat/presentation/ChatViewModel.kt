@@ -310,6 +310,12 @@ class ChatViewModel
                     sagaContentManager.dismissMilestone()
                 }
 
+                is ChatUiAction.ContinueMilestone -> {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        sagaContentManager.continueMilestone()
+                    }
+                }
+
                 is ChatUiAction.DismissObjective -> {
                     sagaContentManager.dismissObjective()
                 }

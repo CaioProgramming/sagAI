@@ -54,7 +54,6 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
-import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -72,9 +71,6 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeProcessingG
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.MilestoneDashboardMapper
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.MilestoneDetailAction
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.toDeepLink
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -86,7 +82,6 @@ import com.ilustris.sagai.ui.components.island.ChatIslandService
 import com.ilustris.sagai.ui.components.island.IntroductionIslandContent
 import com.ilustris.sagai.ui.components.island.IslandContent
 import com.ilustris.sagai.ui.components.island.LoadingIslandContent
-import com.ilustris.sagai.ui.components.island.NarrativeMilestoneIslandContent
 import com.ilustris.sagai.ui.components.island.ObjectiveIslandContent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -133,7 +128,6 @@ class SagaContentManagerImpl
         private val stringResourceHelper: StringResourceHelper,
         private val globalShellService: GlobalShellService,
         private val chatIslandService: ChatIslandService,
-        private val milestoneDashboardMapper: MilestoneDashboardMapper,
         private val sagaNavigationTracker: SagaNavigationTracker,
         @ApplicationContext
         private val context: Context,
@@ -151,11 +145,6 @@ class SagaContentManagerImpl
         // message-selection mode, chat-reply generation) — forwarded by the chat screen via
         // setAdvanceTriggerSuppressed rather than derived here.
         private val _advanceTriggerSuppressed = MutableStateFlow(false)
-
-        // Set once per milestone occurrence; consumed by onMilestoneRevealStarted() the moment the
-        // reveal composable's own animation reaches its "spark" phase (mirrors the old
-        // MilestoneViewModel.onRevealStarted/loadDashboardItems pairing).
-        private var pendingRevealSfx = false
 
         override val contentUpdateMessages: MutableSharedFlow<Message> =
             MutableSharedFlow(
@@ -633,23 +622,6 @@ class SagaContentManagerImpl
             _advanceTriggerSuppressed.value = suppressed
         }
 
-        /** Tracks whether the currently-published milestone still owes its reveal SFX, mirroring
-         * the old MilestoneViewModel.loadDashboardItems/onRevealStarted pairing — set once per
-         * milestone occurrence, consumed by [onMilestoneRevealStarted]. */
-        private fun observeMilestoneRevealSfx() =
-            managerScope.launch {
-                milestoneUpdate.collectLatest { milestone ->
-                    pendingRevealSfx = milestone != null && milestone.shouldPlaySoundFx && milestone.playsRevealSfx
-                }
-            }
-
-        private fun onMilestoneRevealStarted() {
-            if (pendingRevealSfx) {
-                sagaThemeManager.playVfx()
-                pendingRevealSfx = false
-            }
-        }
-
         private data class IslandSnapshot(
             val saga: SagaMetadata?,
             val milestone: SagaMilestone?,
@@ -668,7 +640,6 @@ class SagaContentManagerImpl
          * reacts to navigation itself rather than the chat leaving composition.
          */
         private fun observeIslands(): kotlinx.coroutines.Job {
-            observeMilestoneRevealSfx()
             return managerScope.launch {
                 combine(
                     content,
@@ -719,15 +690,7 @@ class SagaContentManagerImpl
                 return
             }
             val genre = saga.data.genre
-            val onDetailAction: (MilestoneDetailAction) -> Unit = { action ->
-                chatIslandService.requestNavigation(action.toDeepLink())
-            }
             val onContinue: () -> Unit = { managerScope.launch { continueMilestone() } }
-
-            val milestoneOwnsBottom =
-                milestone is SagaMilestone.NewEvent ||
-                    milestone is SagaMilestone.ChapterFinished ||
-                    milestone is SagaMilestone.ActFinished
 
             val topContent: IslandContent? =
                 when {
@@ -757,36 +720,6 @@ class SagaContentManagerImpl
 
             val bottomContent: IslandContent? =
                 when {
-                    milestoneOwnsBottom && milestone != null -> {
-                        val characters = when {
-                            milestone is SagaMilestone.NewEvent -> milestone.characters
-                            milestone is SagaMilestone.ChapterFinished -> milestone.characters
-                            milestone is SagaMilestone.ActFinished -> milestone.characters
-                            else -> emptyList()
-                        }
-                        val wikis = when {
-                            milestone is SagaMilestone.NewEvent -> milestone.wikis
-                            milestone is SagaMilestone.ChapterFinished -> milestone.wikis
-                            milestone is SagaMilestone.ActFinished -> milestone.wikis
-                            else -> emptyList()
-                        }
-                        val emotionalTone = when {
-                            milestone is SagaMilestone.NewEvent -> milestone.emotionalTone
-                            milestone is SagaMilestone.ChapterFinished -> milestone.emotionalTone
-                            milestone is SagaMilestone.ActFinished -> milestone.emotionalTone
-                            else -> EmotionalTone.NEUTRAL
-                        }
-                        NarrativeMilestoneIslandContent(
-                            milestone = milestone,
-                            genre = genre,
-                            characters = characters,
-                            wikis = wikis,
-                            emotionalTone = emotionalTone,
-                            onRevealStarted = ::onMilestoneRevealStarted,
-                            onContinue = onContinue,
-                        )
-                    }
-
                     milestone is SagaMilestone.Loading ->
                         LoadingIslandContent(reasoning = reasoning, genre = genre)
 
@@ -962,7 +895,7 @@ class SagaContentManagerImpl
                 if (milestone != null && milestone.isIntrusive) {
                     isMilestoneActive.value = true
                     narrativeCoordinator.markMilestoneActive()
-                    if (milestone.shouldPlaySoundFx && !milestone.playsRevealSfx) {
+                    if (milestone.shouldPlaySoundFx) {
                         sagaThemeManager.playVfx()
                     }
                     postMilestoneEffect(milestone)

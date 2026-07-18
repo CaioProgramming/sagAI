@@ -208,6 +208,8 @@
     <string name="continue_to_saga">Ver saga</string>
     <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
     <string name="continue_text">continuar</string>
+    <string name="milestone_characters_created">Personagens Criados</string>
+    <string name="milestone_wikis_created">Wikis Criadas</string>
     <string name="notification_title">Nova mensagem em %s</string>
     <string name="notification_open_chat">Abrir</string>
     <string name="notification_playing_act">Jogando volume %s</string>

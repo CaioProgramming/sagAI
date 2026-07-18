@@ -1,6 +1,7 @@
-package com.ilustris.sagai.ui.components.island
+package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,9 +16,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,15 +30,18 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.AnimatedEmotionalShape
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.ui.theme.sagaShape
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themePainter
 
 /**
- * Lean expanded body for dynamic milestone islands — shows visual galleries of created
- * characters and wikis, plus emotional tone indicator. Replaces the old dashboard-item
- * grid with compact visual references of what the player generated.
+ * Chat-anchored panel shown when a narrative milestone (new event, chapter or act finished)
+ * needs the player's confirmation to continue — replaces [ChatInputView] in the same slot
+ * instead of duplicating the reveal in a floating island, since the milestone's own card
+ * already renders inline in the message list.
  */
 @Composable
-fun MilestoneIslandBody(
+fun MilestoneContinuePanel(
     genre: Genre,
     title: String,
     description: String?,
@@ -46,15 +50,20 @@ fun MilestoneIslandBody(
     emotionalTone: EmotionalTone,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
-    onRevealStarted: () -> Unit = {},
 ) {
-    LaunchedEffect(Unit) { onRevealStarted() }
+    val borderBrush = Brush.horizontalGradient(themeBrushColors())
+    val shape = sagaShape()
 
     Column(
-        modifier = modifier.fillMaxWidth().padding(16.dp),
+        modifier =
+            modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+                .border(1.dp, borderBrush, shape)
+                .background(MaterialTheme.colorScheme.background, shape)
+                .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Header: icon + title + description
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Top,
@@ -87,18 +96,18 @@ fun MilestoneIslandBody(
             }
         }
 
-        // Characters gallery
         if (characters.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "Personagens Criados",
+                    text = stringResource(R.string.milestone_characters_created),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     characters.forEach { character ->
@@ -112,18 +121,18 @@ fun MilestoneIslandBody(
             }
         }
 
-        // Wikis gallery
         if (wikis.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "Wikis Criadas",
+                    text = stringResource(R.string.milestone_wikis_created),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     wikis.forEach { wiki ->
@@ -133,7 +142,6 @@ fun MilestoneIslandBody(
             }
         }
 
-        // Emotional tone indicator
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -142,12 +150,14 @@ fun MilestoneIslandBody(
                 emotionalTone = emotionalTone,
                 morphProgress = 1f,
                 rotationAngle = 0f,
-                backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(
-                    listOf(emotionalTone.color, emotionalTone.color.copy(alpha = 0.7f)),
-                ),
-                outlineBrush = androidx.compose.ui.graphics.Brush.linearGradient(
-                    listOf(emotionalTone.color, emotionalTone.color.copy(alpha = 0.7f)),
-                ),
+                backgroundBrush =
+                    Brush.linearGradient(
+                        listOf(emotionalTone.color, emotionalTone.color.copy(alpha = 0.7f)),
+                    ),
+                outlineBrush =
+                    Brush.linearGradient(
+                        listOf(emotionalTone.color, emotionalTone.color.copy(alpha = 0.7f)),
+                    ),
                 modifier = Modifier.size(28.dp),
             )
             Text(
@@ -157,7 +167,6 @@ fun MilestoneIslandBody(
             )
         }
 
-        // Continue button
         Button(
             onClick = onContinue,
             shape = CircleShape,
