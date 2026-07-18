@@ -655,6 +655,13 @@ fun ChatContent(
                         activeMilestone is SagaMilestone.ActFinished
                 val bottomInputState =
                     when {
+                        // Loading/reasoning now lives in the top island — chat input stays hidden
+                        // for the duration instead of showing alongside a second loading pill.
+                        activeMilestone is SagaMilestone.Loading &&
+                            !uiState.selectionState.isSelectionMode -> {
+                            BottomInputState.Unavailable
+                        }
+
                         milestoneRequiresContinue &&
                             !uiState.selectionState.isSelectionMode -> {
                             BottomInputState.MilestoneContinue(activeMilestone!!)

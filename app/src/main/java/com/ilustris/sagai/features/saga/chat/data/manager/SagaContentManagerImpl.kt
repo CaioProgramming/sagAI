@@ -694,6 +694,13 @@ class SagaContentManagerImpl
 
             val topContent: IslandContent? =
                 when {
+                    // Loading/reasoning takes over the global (top) island regardless of which
+                    // narrative action is in flight — chat input hides for the duration (see
+                    // ChatView's bottomInputState), so the bottom slot stays fully free instead of
+                    // hosting its own separate loading pill.
+                    milestone is SagaMilestone.Loading ->
+                        LoadingIslandContent(reasoning = reasoning, genre = genre)
+
                     milestone is SagaMilestone.Introduction ->
                         IntroductionIslandContent(milestone, saga.data, onContinue)
 
@@ -720,9 +727,6 @@ class SagaContentManagerImpl
 
             val bottomContent: IslandContent? =
                 when {
-                    milestone is SagaMilestone.Loading ->
-                        LoadingIslandContent(reasoning = reasoning, genre = genre)
-
                     showAdvance && advanceAction != null ->
                         AdvanceIslandContent(
                             action = advanceAction,
@@ -1085,12 +1089,19 @@ class SagaContentManagerImpl
 
                 is NarrativeAction.CreateTimeline -> {
                     val timeline = resultValue as? Timeline
-                    if (timeline != null && timeline.hasActiveSceneSummary()) {
-                        timeline.sceneSummary?.let { _sceneSummary.value = it }
-                        showObjective()
-                    } else {
-                        dismissMilestone()
-                    }
+                    timeline?.let { t ->
+                        t.sceneSummary?.let { _sceneSummary.value = it }
+                        getSagaContent()?.let { fullSaga ->
+                            emitMilestone(
+                                SagaMilestone.NewEvent(
+                                    timeline = t,
+                                    emotionalMascot = null,
+                                    messageText = t.sceneSummary?.immediateObjective,
+                                    sagaContent = fullSaga,
+                                ),
+                            )
+                        }
+                    } ?: dismissMilestone()
                 }
 
                 is NarrativeAction.EvolveTimeline -> {
