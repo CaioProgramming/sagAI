@@ -18,6 +18,7 @@ import com.ilustris.sagai.core.globalshell.GlobalShellEffect
 import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.globalshell.NewChapterEffect
 import com.ilustris.sagai.core.globalshell.NewCharacterEffect
+import com.ilustris.sagai.core.navigation.SagaNavigationTracker
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
@@ -53,6 +54,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -65,16 +67,27 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCoordinator
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeEvaluationContext
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeProcessingGate
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.MilestoneDashboardMapper
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.MilestoneDetailAction
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.toDeepLink
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
+import com.ilustris.sagai.ui.components.island.AdvanceIslandContent
+import com.ilustris.sagai.ui.components.island.ChatIslandService
+import com.ilustris.sagai.ui.components.island.IntroductionIslandContent
+import com.ilustris.sagai.ui.components.island.IslandContent
+import com.ilustris.sagai.ui.components.island.LoadingIslandContent
+import com.ilustris.sagai.ui.components.island.NarrativeMilestoneIslandContent
+import com.ilustris.sagai.ui.components.island.ObjectiveIslandContent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -86,6 +99,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -118,6 +132,9 @@ class SagaContentManagerImpl
         private val narrativeProcessingGate: NarrativeProcessingGate,
         private val stringResourceHelper: StringResourceHelper,
         private val globalShellService: GlobalShellService,
+        private val chatIslandService: ChatIslandService,
+        private val milestoneDashboardMapper: MilestoneDashboardMapper,
+        private val sagaNavigationTracker: SagaNavigationTracker,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -129,6 +146,16 @@ class SagaContentManagerImpl
         private val _showObjectiveOverlay = MutableStateFlow(false)
         override val showObjectiveOverlay: StateFlow<Boolean> = _showObjectiveOverlay.asStateFlow()
         override val isOnboardingVisible = MutableStateFlow(false)
+
+        // Advance-trigger bottom island gating that's purely a UI concern (onboarding overlays,
+        // message-selection mode, chat-reply generation) — forwarded by the chat screen via
+        // setAdvanceTriggerSuppressed rather than derived here.
+        private val _advanceTriggerSuppressed = MutableStateFlow(false)
+
+        // Set once per milestone occurrence; consumed by onMilestoneRevealStarted() the moment the
+        // reveal composable's own animation reaches its "spark" phase (mirrors the old
+        // MilestoneViewModel.onRevealStarted/loadDashboardItems pairing).
+        private var pendingRevealSfx = false
 
         override val contentUpdateMessages: MutableSharedFlow<Message> =
             MutableSharedFlow(
@@ -148,6 +175,7 @@ class SagaContentManagerImpl
         private var loadingObserverJob: kotlinx.coroutines.Job? = null
         private var milestoneObserverJob: kotlinx.coroutines.Job? = null
         private var reasoningObserverJob: kotlinx.coroutines.Job? = null
+        private var islandObserverJob: kotlinx.coroutines.Job? = null
 
         private var isDebugModeEnabled: Boolean = false
         private val isProcessing = AtomicBoolean(false)
@@ -256,6 +284,15 @@ class SagaContentManagerImpl
                 contentReasoning.value = null
                 narrativeCoordinator.markProcessing(false)
                 setNarrativeProcessingStatus(false)
+                // reevaluate() bails out early while isNarrativeProcessing is true (still the case
+                // for the Success branch's own requestNarrativeProgression call above, since that
+                // runs before this block resets the flag) and just queues a pending reevaluation
+                // instead. Nothing else proactively consumes that flag once processing actually
+                // clears, so without this the advance trigger can silently never reappear until an
+                // unrelated event (new message, saga reload) happens to ask again.
+                if (narrativeCoordinator.consumePendingReevaluation()) {
+                    requestNarrativeProgression(isRetry = false)
+                }
             }
         }
 
@@ -359,6 +396,9 @@ class SagaContentManagerImpl
                         }
                         if (reasoningObserverJob == null || reasoningObserverJob?.isActive == false) {
                             reasoningObserverJob = observeReasoning()
+                        }
+                        if (islandObserverJob == null || islandObserverJob?.isActive == false) {
+                            islandObserverJob = observeIslands()
                         }
                         managerScope.launch {
                             isOnboardingVisible.collect { isVisible ->
@@ -589,6 +629,176 @@ class SagaContentManagerImpl
                 }
             }
 
+        override fun setAdvanceTriggerSuppressed(suppressed: Boolean) {
+            _advanceTriggerSuppressed.value = suppressed
+        }
+
+        /** Tracks whether the currently-published milestone still owes its reveal SFX, mirroring
+         * the old MilestoneViewModel.loadDashboardItems/onRevealStarted pairing — set once per
+         * milestone occurrence, consumed by [onMilestoneRevealStarted]. */
+        private fun observeMilestoneRevealSfx() =
+            managerScope.launch {
+                milestoneUpdate.collectLatest { milestone ->
+                    pendingRevealSfx = milestone != null && milestone.shouldPlaySoundFx && milestone.playsRevealSfx
+                }
+            }
+
+        private fun onMilestoneRevealStarted() {
+            if (pendingRevealSfx) {
+                sagaThemeManager.playVfx()
+                pendingRevealSfx = false
+            }
+        }
+
+        private data class IslandSnapshot(
+            val saga: SagaMetadata?,
+            val milestone: SagaMilestone?,
+            val narrativeState: NarrativeUiState,
+            val reasoning: String?,
+            val advanceSuppressed: Boolean,
+        )
+
+        /**
+         * Publishes the chat's top/bottom island content directly — no per-screen Composable host
+         * needed. A milestone in flight takes over the top or bottom slot (matching the reveal's
+         * intrusiveness); otherwise top falls back to the current objective and bottom to the
+         * loading pulse or the narrative-advance trigger. Cleared whenever the user navigates away
+         * from this saga's chat — islands published from here are only meaningful while it's the
+         * visible screen, unlike the old per-Composable host's DisposableEffect(onDispose), this
+         * reacts to navigation itself rather than the chat leaving composition.
+         */
+        private fun observeIslands(): kotlinx.coroutines.Job {
+            observeMilestoneRevealSfx()
+            return managerScope.launch {
+                combine(
+                    content,
+                    milestoneUpdate,
+                    narrativeCoordinator.uiState,
+                    contentReasoning,
+                    _advanceTriggerSuppressed,
+                ) { saga, milestone, narrativeState, reasoning, advanceSuppressed ->
+                    IslandSnapshot(saga, milestone, narrativeState, reasoning, advanceSuppressed)
+                }.combine(sagaNavigationTracker.currentKey) { snapshot, _ -> snapshot }
+                    .collectLatest { snapshot ->
+                        val sagaId = snapshot.saga?.data?.id
+                        if (sagaId == null || !sagaNavigationTracker.isOnChatForSaga(sagaId)) {
+                            chatIslandService.setTop(null)
+                            chatIslandService.setBottom(null)
+                        } else {
+                            publishIslands(
+                                snapshot.saga,
+                                snapshot.milestone,
+                                snapshot.narrativeState,
+                                snapshot.reasoning,
+                                snapshot.advanceSuppressed,
+                            )
+                        }
+                    }
+            }
+        }
+
+        /** Same `messages / loreUpdateLimit` fraction the chat's own progress ring used to
+         * compute — now feeding the objective island's compact progress ring instead. */
+        private suspend fun currentObjectiveProgress(saga: SagaMetadata): Float {
+            if (saga.data.isEnded) return 1f
+            val timeline = saga.getCurrentTimeLine() ?: return 0f
+            val updateLimit = fetchNarrativeRules().loreUpdateLimit
+            return (timeline.messages.size.toFloat() / updateLimit.toFloat()).coerceIn(0f, 1f)
+        }
+
+        private suspend fun publishIslands(
+            saga: SagaMetadata?,
+            milestone: SagaMilestone?,
+            narrativeState: NarrativeUiState,
+            reasoning: String?,
+            advanceSuppressed: Boolean,
+        ) {
+            if (saga == null) {
+                chatIslandService.setTop(null)
+                chatIslandService.setBottom(null)
+                return
+            }
+            val genre = saga.data.genre
+            val onDetailAction: (MilestoneDetailAction) -> Unit = { action ->
+                chatIslandService.requestNavigation(action.toDeepLink())
+            }
+            val onContinue: () -> Unit = { managerScope.launch { continueMilestone() } }
+
+            val milestoneOwnsBottom =
+                milestone is SagaMilestone.NewEvent ||
+                    milestone is SagaMilestone.ChapterFinished ||
+                    milestone is SagaMilestone.ActFinished
+
+            val topContent: IslandContent? =
+                when {
+                    milestone is SagaMilestone.Introduction ->
+                        IntroductionIslandContent(milestone, saga.data, onContinue)
+
+                    else -> {
+                        val objectiveText = saga.getCurrentTimeLine()?.data?.displayObjective()
+                        if (!objectiveText.isNullOrBlank()) {
+                            ObjectiveIslandContent(
+                                titleRes = R.string.current_objective,
+                                objective = objectiveText,
+                                genre = genre,
+                                progress = currentObjectiveProgress(saga),
+                            )
+                        } else {
+                            null
+                        }
+                    }
+                }
+            chatIslandService.setTop(topContent)
+
+            val advanceAction = narrativeState.displayAdvanceAction
+            val isProcessing = narrativeState.phase is NarrativePhase.Processing || narrativeState.isProcessing
+            val showAdvance =
+                narrativeState.showAdvanceTrigger && advanceAction != null && !advanceSuppressed
+
+            val bottomContent: IslandContent? =
+                when {
+                    milestoneOwnsBottom && milestone != null -> {
+                        val stats = when {
+                            milestone is SagaMilestone.NewEvent -> milestone.stats
+                            milestone is SagaMilestone.ChapterFinished -> milestone.stats
+                            milestone is SagaMilestone.ActFinished -> milestone.stats
+                            else -> emptyList()
+                        }
+                        val emotionalTone = when {
+                            milestone is SagaMilestone.NewEvent -> milestone.emotionalTone
+                            milestone is SagaMilestone.ChapterFinished -> milestone.emotionalTone
+                            milestone is SagaMilestone.ActFinished -> milestone.emotionalTone
+                            else -> EmotionalTone.NEUTRAL
+                        }
+                        NarrativeMilestoneIslandContent(
+                            milestone = milestone,
+                            genre = genre,
+                            stats = stats,
+                            emotionalTone = emotionalTone,
+                            onRevealStarted = ::onMilestoneRevealStarted,
+                            onContinue = onContinue,
+                        )
+                    }
+
+                    milestone is SagaMilestone.Loading ->
+                        LoadingIslandContent(reasoning = reasoning, genre = genre)
+
+                    showAdvance && advanceAction != null ->
+                        AdvanceIslandContent(
+                            action = advanceAction,
+                            reasoning = reasoning,
+                            isProcessing = isProcessing,
+                            genre = genre,
+                            onAction = {
+                                if (!isProcessing) managerScope.launch { advanceNarrative() }
+                            },
+                        )
+
+                    else -> null
+                }
+            chatIslandService.setBottom(bottomContent)
+        }
+
         override fun checkNarrativeProgression(
             saga: SagaMetadata?,
             isRetrying: Boolean,
@@ -610,6 +820,10 @@ class SagaContentManagerImpl
             }
 
             var hydrated: NarrativeAction? = null
+            // Whether another reevaluation was queued *while we held the lock*. Consumed here but
+            // acted on below, outside withLock — recursing from inside it would always see the
+            // mutex as locked (by ourselves) and just re-queue forever without ever re-checking.
+            var shouldReevaluateAgain = false
             progressionMutex.withLock {
                 val currentSaga = content.value ?: fallbackSaga ?: return@withLock
 
@@ -650,13 +864,13 @@ class SagaContentManagerImpl
                     isAutomatic = isAutomatic,
                 )
 
-                if (narrativeCoordinator.consumePendingReevaluation()) {
-                    requestNarrativeProgression(isRetry = false)
-                }
+                shouldReevaluateAgain = narrativeCoordinator.consumePendingReevaluation()
             }
 
             if (hydrated is NarrativeAction.CreateTimeline) {
                 executeNarrativeAction(hydrated, isRetry = false)
+            } else if (shouldReevaluateAgain) {
+                requestNarrativeProgression(isRetry = false)
             }
         }
 

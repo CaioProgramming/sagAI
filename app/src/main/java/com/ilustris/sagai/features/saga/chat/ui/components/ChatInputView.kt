@@ -262,6 +262,10 @@ fun ChatInputView(
         Brush.horizontalGradient(
             if (isGenerating) morphingGradient() else themeBrushColors(),
         )
+    // dropShadow reallocates its shadow layer whenever brush/color changes, so it gets a fixed
+    // brush regardless of isGenerating — the animated color motion stays on the outline/border
+    // draws below, which are cheap stroke operations with no shadow layer behind them.
+    val shadowBrush = Brush.horizontalGradient(themeBrushColors())
     val textStyle =
         MaterialTheme.typography.labelMedium.copy(
             color = MaterialTheme.colorScheme.onBackground,
@@ -402,7 +406,7 @@ fun ChatInputView(
                 Modifier
                     .padding(16.dp)
                     .dropShadow(inputShape, {
-                        brush = inputBrush
+                        brush = shadowBrush
                         radius = glowRadiusState.value
                         spread = 10f
                     })

@@ -53,6 +53,23 @@ interface IslandContent {
     val forceExpanded: Boolean
         get() = false
 
+    /**
+     * When non-null, the host auto-expands this island this many ms after it's first published —
+     * a one-shot nudge, not a persistent force (unlike [forceExpanded], the user can still
+     * collapse it immediately after). Used for reveal content (milestones) that should present
+     * itself without requiring a tap.
+     */
+    val autoExpandAfterMs: Long?
+        get() = null
+
+    /**
+     * When non-null, the host invokes [onAction] this many ms after the island is first
+     * published — for content that shouldn't wait indefinitely for a tap to clear itself
+     * (e.g. an introduction recap that should step aside on its own).
+     */
+    val autoDismissAfterMs: Long?
+        get() = null
+
     @Composable
     fun Expanded(scope: IslandScope)
 }

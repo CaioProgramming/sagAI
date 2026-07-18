@@ -8,6 +8,7 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlin.time.Duration
@@ -28,6 +29,8 @@ sealed class SagaMilestone(
         val emotionalMascot: String?,
         val messageText: String? = null,
         val sagaContent: SagaContent,
+        val stats: List<String> = emptyList(),
+        val emotionalTone: EmotionalTone = EmotionalTone.NEUTRAL,
     ) : SagaMilestone(
             R.string.advance_evolve_timeline,
             timeline.title,
@@ -38,6 +41,8 @@ sealed class SagaMilestone(
         val chapter: Chapter,
         val messageText: String? = null,
         val sagaContent: SagaContent,
+        val stats: List<String> = emptyList(),
+        val emotionalTone: EmotionalTone = EmotionalTone.NEUTRAL,
     ) : SagaMilestone(
             R.string.notification_new_chapter,
             chapter.title,
@@ -47,6 +52,8 @@ sealed class SagaMilestone(
     data class ActFinished(
         val act: Act,
         val messageText: String? = null,
+        val stats: List<String> = emptyList(),
+        val emotionalTone: EmotionalTone = EmotionalTone.NEUTRAL,
     ) : SagaMilestone(
             R.string.notification_new_act,
             act.title,

@@ -1,6 +1,5 @@
 package com.ilustris.sagai.ui.components.island
 
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +20,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
@@ -32,12 +30,11 @@ import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState.AwaitingManualFallback
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState.Generating
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState.Reveal
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 
 /**
  * [IslandContent] for image generation — the richest of the top-island sources.
  *
- * - `Generating`: compact spinner + label; expanded streams the reasoning and offers cancel.
+ * - `Generating`: reasoning streams straight into the compact pill; expanded is just cancel.
  * - `AwaitingManualFallback`: (debug only) expanded shows the manual prompt input.
  * - `Reveal`: expanded shows the finished image with a "Continue" dismiss.
  *
@@ -62,7 +59,7 @@ class ImageGenerationIslandContent(
 
             is Generating -> {
                 CompactIslandData(
-                    label = state.label,
+                    label = state.reasoning,
                     labelRes = R.string.image_generation_default_label,
                     iconRes = R.drawable.ic_spark,
                     isLoading = true,
@@ -90,7 +87,7 @@ class ImageGenerationIslandContent(
             }
 
             is Generating -> {
-                GeneratingBody(state = state, onCancel = onCancel)
+                GeneratingBody(onCancel = onCancel)
             }
 
             is AwaitingManualFallback -> {
@@ -103,6 +100,7 @@ class ImageGenerationIslandContent(
                         scrollEnabled = false,
                         autoCopyPrompt = true,
                         showHeader = false,
+                        compact = true,
                     )
                 }
             }
@@ -156,27 +154,14 @@ private fun RevealBody(
     }
 }
 
+/** The reasoning is already streamed in the compact pill above (marquee-scrolling if long) —
+ * this expanded body only needs to offer the one thing that isn't available compact: cancel. */
 @Composable
-private fun GeneratingBody(
-    state: Generating,
-    onCancel: () -> Unit,
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+private fun GeneratingBody(onCancel: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = state.reasoning ?: stringResource(R.string.image_generation_reasoning_placeholder),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .reactiveShimmer(true, repeatMode = RepeatMode.Restart),
-        )
-
         TextButton(onClick = onCancel) {
             Text(
                 text = stringResource(R.string.cancel),

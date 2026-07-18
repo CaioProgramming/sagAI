@@ -55,6 +55,7 @@ private fun CompactIslandLoadingPreview() {
                     isLoading = true,
                     genre = previewGenre,
                 ),
+            expanded = false,
         )
     }
 }
@@ -71,6 +72,7 @@ private fun CompactIslandProgressPreview() {
                     progress = 0.6f,
                     genre = previewGenre,
                 ),
+            expanded = false,
         )
     }
 }

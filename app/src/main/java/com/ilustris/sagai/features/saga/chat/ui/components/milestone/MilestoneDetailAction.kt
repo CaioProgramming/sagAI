@@ -2,13 +2,7 @@ package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import androidx.navigation3.runtime.NavKey
 import com.ilustris.sagai.R
-import com.ilustris.sagai.ui.navigation.BookReaderKey
-import com.ilustris.sagai.ui.navigation.CharacterDetailKey
-import com.ilustris.sagai.ui.navigation.SagaCharactersKey
-import com.ilustris.sagai.ui.navigation.SagaEventsKey
-import com.ilustris.sagai.ui.navigation.SagaWikiKey
 
 sealed interface MilestoneDetailAction {
     data class OpenBookReader(
@@ -33,13 +27,19 @@ sealed interface MilestoneDetailAction {
     ) : MilestoneDetailAction
 }
 
-fun MilestoneDetailAction.toNavKey(): NavKey =
+/**
+ * Deep-link string for this action — resolved into a real [androidx.navigation3.runtime.NavKey]
+ * by `MainActivity.navigateDeepLink`, same mechanism used by [com.ilustris.sagai.core.globalshell.GlobalShellEffect].
+ * A plain string (not a NavKey) so this stays constructible from the data layer, which can't hold
+ * a reference to the screen-scoped `Navigator`.
+ */
+fun MilestoneDetailAction.toDeepLink(): String =
     when (this) {
-        is MilestoneDetailAction.OpenBookReader -> BookReaderKey(sagaId, actId)
-        is MilestoneDetailAction.OpenCharacter -> CharacterDetailKey(characterId)
-        is MilestoneDetailAction.OpenWiki -> SagaWikiKey(sagaId)
-        is MilestoneDetailAction.OpenEvents -> SagaEventsKey(sagaId)
-        is MilestoneDetailAction.OpenCharacters -> SagaCharactersKey(sagaId)
+        is MilestoneDetailAction.OpenBookReader -> "saga://book_reader/$sagaId/$actId"
+        is MilestoneDetailAction.OpenCharacter -> "saga://character_detail/$characterId"
+        is MilestoneDetailAction.OpenWiki -> "saga://saga_wiki/$sagaId"
+        is MilestoneDetailAction.OpenEvents -> "saga://saga_events/$sagaId"
+        is MilestoneDetailAction.OpenCharacters -> "saga://saga_characters/$sagaId"
     }
 
 @Composable

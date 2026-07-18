@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -142,7 +143,6 @@ import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDia
 import com.ilustris.sagai.features.saga.chat.ui.components.MessageOptionsSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ChatTaskShellHost
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
@@ -449,16 +449,12 @@ fun ChatContent(
     val resolvedColor = MaterialTheme.colorScheme.primary
     val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
 
-    ChatTaskShellHost(
-        uiState = uiState,
-        sagaContent = content,
-        progress = progressState.value,
-        onAction = onAction,
-        onNavigate = onNavigate,
+    Box(
         modifier =
             Modifier
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
+                .statusBarsPadding()
                 .imePadding(),
     ) {
         Box(contentAlignment = Alignment.Center) {

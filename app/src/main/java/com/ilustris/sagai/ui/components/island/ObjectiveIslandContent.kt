@@ -3,8 +3,6 @@ package com.ilustris.sagai.ui.components.island
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.ui.theme.SagAITheme
@@ -12,29 +10,31 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 /**
  * Top-island content for the current narrative objective.
  *
- * Compact shows the objective label with a determinate progress ring; expanded reveals the full
- * objective card ([ObjectiveOverlay]). Fed to the global top overlay by the active chat.
+ * It's just a shortcut to a short piece of text, so the compact row does double duty as its own
+ * header: collapsed, it shows the objective text itself (scrolling via marquee if it's long);
+ * expanded, the label swaps to [titleRes] ("Objetivo atual") and the actual text moves into
+ * [Expanded] below it — no separate icon/title header needed there.
  */
 class ObjectiveIslandContent(
     private val titleRes: Int,
     private val objective: String,
     private val genre: Genre?,
+    private val progress: Float?,
 ) : IslandContent {
-    // Compact is just the icon, floating with no card (showBackground = false); the card fades in
-    // only when expanded, where the full objective lives. Uses surface color when expanded.
     override val compact: CompactIslandData =
         CompactIslandData(
+            label = objective,
+            expandedLabelRes = titleRes,
             iconRes = genre?.icon,
+            progress = progress,
             genre = genre,
-            backgroundColor = IslandBackgroundColor.ThemeSurface,
-            showBackground = false,
+            backgroundColor = IslandBackgroundColor.ThemeBackground,
         )
 
     @Composable
     override fun Expanded(scope: IslandScope) {
         SagAITheme(genre) {
             ObjectiveOverlay(
-                title = stringResource(titleRes),
                 objective = objective,
                 modifier = Modifier.fillMaxWidth(),
                 onDismiss = scope.onCollapse,

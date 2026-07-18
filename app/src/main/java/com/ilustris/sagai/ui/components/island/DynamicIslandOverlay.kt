@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -27,13 +28,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.morphingGradient
 
 private val IslandFadeTween = tween<Float>(durationMillis = 220, easing = EaseInOut)
 
@@ -43,8 +45,8 @@ private val IslandFadeTween = tween<Float>(durationMillis = 220, easing = EaseIn
  * Compact form is content-sized (wrap width) and grows to a comfortable fixed width when expanded,
  * animating between the two. Deliberately **no scrim and no blur**. Honors
  * [IslandContent.hasSurface] (bare vs card), [IslandContent.expandsOnTap] and
- * [IslandContent.forceExpanded]. Reports its collapsed height via [onHeightChanged] so content can
- * reserve space with [islandPadding].
+ * [IslandContent.forceExpanded]. Content reserves space for this via [islandPadding], which is
+ * driven purely by presence (content null or not) — not by this overlay's measured size.
  */
 @Composable
 fun DynamicIslandOverlay(
@@ -52,11 +54,9 @@ fun DynamicIslandOverlay(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    onHeightChanged: (Dp) -> Unit = {},
 ) {
     if (content == null) return
 
-    val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val expandedWidth = (configuration.screenWidthDp.dp - 24.dp).coerceAtMost(520.dp)
 
@@ -91,9 +91,7 @@ fun DynamicIslandOverlay(
             Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
-                .onSizeChanged {
-                    if (!effectiveExpanded) onHeightChanged(with(density) { it.height.toDp() })
-                }.padding(horizontal = 12.dp, vertical = 6.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp)
                 .widthIn(max = expandedWidth)
                 .wrapContentWidth()
 
@@ -130,16 +128,30 @@ private fun IslandBody(
         // branching, just one animated alpha.
         val cardVisible = content.compact.showBackground || effectiveExpanded
         val cardAlpha by animateFloatAsState(if (cardVisible) 1f else 0f, label = "islandCardAlpha")
-        val shape = MaterialTheme.shapes.extraLarge
+        val shape = rememberIslandShape(effectiveExpanded)
         val shadowColor = MaterialTheme.colorScheme.primary
         val bg = content.compact.backgroundColor
-        val baseColor = when (bg) {
-            IslandBackgroundColor.ThemePrimary -> MaterialTheme.colorScheme.primary
-            IslandBackgroundColor.ThemeSurface -> MaterialTheme.colorScheme.surface
-            IslandBackgroundColor.ThemeBackground -> MaterialTheme.colorScheme.background
-            is IslandBackgroundColor.Fixed -> bg.color
-            null -> MaterialTheme.colorScheme.background
-        }
+        val baseColor =
+            when (bg) {
+                IslandBackgroundColor.ThemePrimary -> MaterialTheme.colorScheme.primary
+                IslandBackgroundColor.ThemeSurface -> MaterialTheme.colorScheme.surface
+                IslandBackgroundColor.ThemeBackground -> MaterialTheme.colorScheme.background
+                is IslandBackgroundColor.Fixed -> bg.color
+                null -> MaterialTheme.colorScheme.background
+            }
+
+        // The shadow's color/brush must stay fixed — dropShadow reallocates its blurred shadow
+        // layer every time brush/color changes, so an animated multi-stop gradient there (as
+        // opposed to just animating cheap scalars like alpha/spread/radius) redraws that layer
+        // every frame for as long as isLoading holds, which is a real OOM risk during long
+        // generation windows. The "living" color motion instead lives on the border stroke,
+        // a cheap draw-phase operation with no shadow layer behind it.
+        val borderBrush =
+            if (content.compact.isLoading) {
+                Brush.horizontalGradient(morphingGradient(isAnimating = true))
+            } else {
+                MaterialTheme.colorScheme.onBackground.gradientFade()
+            }
 
         Box(
             modifier =
@@ -147,21 +159,19 @@ private fun IslandBody(
                     .dropShadow(shape) {
                         color = shadowColor
                         radius = 25f
-                        spread = 2f
+                        spread = shadowAlpha
                         alpha = cardAlpha
                     }.clip(shape)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.onBackground.copy(alpha = .05f * cardAlpha),
-                        shape,
-                    ).background(baseColor.copy(alpha = cardAlpha), shape),
+                    .border(1.dp, borderBrush, shape)
+                    .background(baseColor.copy(alpha = cardAlpha), shape),
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().animateContentSize(),
+                modifier = Modifier.wrapContentSize().animateContentSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 CompactIslandLayout(
                     data = content.compact,
+                    expanded = effectiveExpanded,
                     modifier =
                         Modifier.pointerInput(content.expandsOnTap, forceExpanded) {
                             detectTapGestures {

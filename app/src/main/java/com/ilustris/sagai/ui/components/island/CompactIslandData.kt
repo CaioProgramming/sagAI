@@ -35,10 +35,24 @@ data class CompactIslandData(
     val label: String? = null,
     /** String-resource label, resolved by [CompactIslandLayout]. Used when [label] is null. */
     @param:StringRes val labelRes: Int? = null,
+    /**
+     * String-resource label swapped in while expanded, in place of [label]/[labelRes] — lets the
+     * always-visible compact row double as a header for the expanded content below it (e.g. the
+     * objective shows the objective text when collapsed, but "Objetivo atual" once expanded,
+     * where the actual text moves into the expanded body). Null = keep [label]/[labelRes] as-is.
+     */
+    @param:StringRes val expandedLabelRes: Int? = null,
     @param:DrawableRes val iconRes: Int? = null,
     val isLoading: Boolean = false,
     /** When non-null (0f..1f), a determinate progress indicator replaces the spinner. */
     val progress: Float? = null,
+    /**
+     * Trailing icon signaling "tap to act" (e.g. an arrow) for islands where tapping the compact
+     * row directly commits [IslandContent.onAction] instead of expanding — only shown when
+     * [isLoading] is false and [progress] is null (that trailing slot is otherwise the
+     * loading/progress indicator).
+     */
+    @param:DrawableRes val actionIconRes: Int? = null,
     /** Optional genre used to theme the compact row via `SagAITheme`. */
     val genre: Genre? = null,
     /** Lazy background color; resolved at render time in the overlay. Null = use theme default. */

@@ -29,10 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.ui.theme.SagAITheme
 
@@ -42,7 +39,8 @@ private val BottomFadeTween = tween<Float>(durationMillis = 220, easing = EaseIn
  * Bottom-anchored island overlay — the counterpart to [DynamicIslandOverlay], expanding *upward*
  * from a content-sized compact pill fixed above the navigation bar. Same contract, same
  * no-scrim/no-blur philosophy; honors [IslandContent.hasSurface], [IslandContent.expandsOnTap] and
- * [IslandContent.forceExpanded], and reports its collapsed height via [onHeightChanged].
+ * [IslandContent.forceExpanded]. Content reserves space for this via [islandPadding], which is
+ * driven purely by presence (content null or not) — not by this overlay's measured size.
  */
 @Composable
 fun DynamicBottomComponent(
@@ -50,11 +48,9 @@ fun DynamicBottomComponent(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    onHeightChanged: (Dp) -> Unit = {},
 ) {
     if (content == null) return
 
-    val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val expandedWidth = (configuration.screenWidthDp.dp - 24.dp).coerceAtMost(520.dp)
 
@@ -88,10 +84,6 @@ fun DynamicBottomComponent(
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
                 .imePadding()
-                // Measured inside the system insets so the reported height is the pill footprint.
-                .onSizeChanged {
-                    if (!effectiveExpanded) onHeightChanged(with(density) { it.height.toDp() })
-                }
                 .padding(horizontal = 12.dp, vertical = 6.dp)
                 .then(if (effectiveExpanded) Modifier.width(expandedWidth) else Modifier.wrapContentWidth())
 
@@ -101,7 +93,7 @@ fun DynamicBottomComponent(
             )
             val cardVisible = content.compact.showBackground || effectiveExpanded
             val cardAlpha by animateFloatAsState(if (cardVisible) 1f else 0f, label = "islandCardAlpha")
-            val shape = MaterialTheme.shapes.extraLarge
+            val shape = rememberIslandShape(effectiveExpanded)
             val shadowColor = MaterialTheme.colorScheme.primary
             val bg = content.compact.backgroundColor
             val baseColor = when (bg) {
@@ -123,7 +115,7 @@ fun DynamicBottomComponent(
                         }.clip(shape)
                         .border(
                             1.dp,
-                            MaterialTheme.colorScheme.onBackground.copy(alpha = .05f * cardAlpha),
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = .1f * cardAlpha),
                             shape,
                         ).background(baseColor.copy(alpha = cardAlpha), shape),
             ) {
@@ -145,6 +137,7 @@ fun DynamicBottomComponent(
 
                     CompactIslandLayout(
                         data = content.compact,
+                        expanded = effectiveExpanded,
                         modifier =
                             Modifier.pointerInput(content.expandsOnTap, forceExpanded) {
                                 detectTapGestures {

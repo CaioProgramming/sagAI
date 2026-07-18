@@ -68,6 +68,14 @@ interface SagaContentManager {
 
     val isMilestoneActive: StateFlow<Boolean>
 
+    /**
+     * Suppresses the advance-trigger bottom island while `true` — for gating that's purely a UI
+     * concern the manager wouldn't otherwise know about (onboarding overlays, message-selection
+     * mode). The chat screen forwards these as they change; the manager owns everything else
+     * about when/what island to publish.
+     */
+    fun setAdvanceTriggerSuppressed(suppressed: Boolean)
+
     fun dismissMilestone()
 
     suspend fun continueMilestone()

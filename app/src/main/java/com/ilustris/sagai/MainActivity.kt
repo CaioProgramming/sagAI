@@ -84,19 +84,21 @@ import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
 import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.components.BlurTarget
 import com.ilustris.sagai.ui.components.SagaSnackBar
+import com.ilustris.sagai.ui.components.globalshell.GlobalShellHost
 import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.ChatGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.ChatIslandService
+import com.ilustris.sagai.ui.components.island.CompactIslandHeight
 import com.ilustris.sagai.ui.components.island.DynamicBottomComponent
 import com.ilustris.sagai.ui.components.island.DynamicIslandOverlay
 import com.ilustris.sagai.ui.components.island.ImageGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.IslandContent
 import com.ilustris.sagai.ui.components.island.IslandInsets
-import com.ilustris.sagai.ui.components.island.NotificationIslandContent
 import com.ilustris.sagai.ui.components.island.LocalIslandInsets
+import com.ilustris.sagai.ui.components.island.NotificationIslandContent
 import com.ilustris.sagai.ui.components.island.islandPadding
-import com.ilustris.sagai.ui.components.globalshell.GlobalShellHost
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
+import com.ilustris.sagai.ui.navigation.ChatKey
 import com.ilustris.sagai.ui.navigation.FAQKey
 import com.ilustris.sagai.ui.navigation.HomeKey
 import com.ilustris.sagai.ui.navigation.Navigator
@@ -113,6 +115,7 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.sagaShape
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -314,6 +317,12 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                LaunchedEffect(navigator) {
+                    chatIslandService.navigationRequests.collect { deepLink ->
+                        navigateDeepLink(deepLink)
+                    }
+                }
+
                 val imageGenState by imageGenerationService.uiState.collectAsState()
                 val bookGenState by bookGenerationService.uiState.collectAsState()
                 val chatGenState by chatGenerationService.activeGenerations.collectAsState()
@@ -341,23 +350,38 @@ class MainActivity : ComponentActivity() {
                 val chatTopIsland by chatIslandService.top.collectAsState()
                 val islandContent: IslandContent? =
                     when {
-                        imageGenActive ->
+                        imageGenActive -> {
                             ImageGenerationIslandContent(
                                 state = imageGenState,
                                 debugImageFallbackService = debugImageFallbackService,
                                 onCancel = imageGenerationService::cancelCurrent,
                                 onDismissReveal = imageGenerationService::dismissReveal,
                             )
-                        visibleBookGen != null -> BookGenerationIslandContent(visibleBookGen)
-                        visibleChatGen != null -> ChatGenerationIslandContent(visibleChatGen)
-                        notificationEffect != null ->
+                        }
+
+                        visibleBookGen != null -> {
+                            BookGenerationIslandContent(visibleBookGen)
+                        }
+
+                        visibleChatGen != null -> {
+                            ChatGenerationIslandContent(visibleChatGen)
+                        }
+
+                        notificationEffect != null -> {
                             NotificationIslandContent(
                                 effect = notificationEffect,
                                 onNavigate = { deepLink -> navigateDeepLink(deepLink) },
                                 onDismiss = { globalShellService.dismiss() },
                             )
-                        chatTopIsland != null -> chatTopIsland
-                        else -> null
+                        }
+
+                        chatTopIsland != null -> {
+                            chatTopIsland
+                        }
+
+                        else -> {
+                            null
+                        }
                     }
                 // Stable per-source key: reset expansion only when the island's *source* changes,
                 // so a persistent island (e.g. objective) reappears collapsed after a transient one
@@ -375,18 +399,36 @@ class MainActivity : ComponentActivity() {
 
                 var islandExpanded by remember { mutableStateOf(false) }
                 LaunchedEffect(islandKey) { islandExpanded = false }
-                LaunchedEffect(islandContent == null) {
-                    if (islandContent == null) islandInsets.top = 0.dp
+                // Padding reserved for content is driven purely by presence — not by the
+                // island's measured/expanded size — so it never re-animates while expanding.
+                LaunchedEffect(islandContent != null) {
+                    islandInsets.top = if (islandContent != null) CompactIslandHeight else 0.dp
+                }
+                // Reveal content (e.g. a milestone) that wants to present itself without a tap.
+                LaunchedEffect(islandContent?.autoExpandAfterMs) {
+                    val delayMs = islandContent?.autoExpandAfterMs ?: return@LaunchedEffect
+                    delay(delayMs)
+                    islandExpanded = true
+                }
+                // Content that shouldn't wait indefinitely for a tap to clear itself (e.g. an
+                // introduction recap) — fires the same action a tap on it would.
+                LaunchedEffect(islandContent?.autoDismissAfterMs) {
+                    val delayMs = islandContent?.autoDismissAfterMs ?: return@LaunchedEffect
+                    delay(delayMs)
+                    islandContent?.onAction?.invoke()
                 }
 
                 // Shell v2 bottom island — contributed by the active chat (narrative advance).
                 val bottomIsland by chatIslandService.bottom.collectAsState()
                 var bottomExpanded by remember { mutableStateOf(false) }
-                LaunchedEffect(bottomIsland == null) {
-                    if (bottomIsland == null) {
-                        bottomExpanded = false
-                        islandInsets.bottom = 0.dp
-                    }
+                LaunchedEffect(bottomIsland != null) {
+                    if (bottomIsland == null) bottomExpanded = false
+                    islandInsets.bottom = if (bottomIsland != null) CompactIslandHeight else 0.dp
+                }
+                LaunchedEffect(bottomIsland?.autoExpandAfterMs) {
+                    val delayMs = bottomIsland?.autoExpandAfterMs ?: return@LaunchedEffect
+                    delay(delayMs)
+                    bottomExpanded = true
                 }
                 // Image reveal / manual fallback are terminal, attention-worthy states — auto-expand.
                 LaunchedEffect(imageGenState) {
@@ -398,257 +440,264 @@ class MainActivity : ComponentActivity() {
                 }
 
                 CompositionLocalProvider(LocalIslandInsets provides islandInsets) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    BlurProvider {
-                        Scaffold(
-                            modifier =
-                                Modifier
-                                    .background(MaterialTheme.colorScheme.background)
-                                    .fillMaxSize(),
-                            bottomBar = {
-                                // SagaBottomNavigation(navController, route)
-                            },
-                        ) { padding ->
-                            AnimatedContent(isOnline, transitionSpec = {
-                                fadeIn() togetherWith fadeOut()
-                            }) {
-                                if (it) {
-                                    SharedTransitionLayout {
-                                        val entryProvider =
-                                            remember(
-                                                navigator,
-                                                padding,
-                                                this@SharedTransitionLayout,
-                                            ) {
-                                                createSagaEntryProvider(
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        BlurProvider {
+                            Scaffold(
+                                modifier =
+                                    Modifier
+                                        .background(MaterialTheme.colorScheme.background)
+                                        .fillMaxSize(),
+                                bottomBar = {
+                                    // SagaBottomNavigation(navController, route)
+                                },
+                            ) { padding ->
+                                AnimatedContent(isOnline, transitionSpec = {
+                                    fadeIn() togetherWith fadeOut()
+                                }) {
+                                    if (it) {
+                                        SharedTransitionLayout {
+                                            val entryProvider =
+                                                remember(
                                                     navigator,
                                                     padding,
                                                     this@SharedTransitionLayout,
-                                                )
-                                            }
-                                        GlobalShellHost(
-                                            globalState = globalShellState,
-                                            imageGenState = imageGenState,
-                                            bookGenState = bookGenState,
-                                            chatGenState = chatGenState,
-                                            sagaNavigationTracker = sagaNavigationTracker,
-                                            debugImageFallbackService = debugImageFallbackService,
-                                            onImageSetExpansion = { expansion ->
-                                                imageGenerationService.setIslandExpansion(expansion)
-                                            },
-                                            onImageCancel = imageGenerationService::cancelCurrent,
-                                            onImageDismissReveal = imageGenerationService::dismissReveal,
-                                            onNavigate = { deepLink ->
-                                                navigateDeepLink(deepLink)
-                                            },
-                                            onDismiss = { globalShellService.dismiss() },
-                                            onSetGlobalExpansion = { expansion ->
-                                                globalShellService.setExpansion(expansion)
-                                            },
-                                            modifier = Modifier.fillMaxSize(),
-                                            content = {
-                                                Box(modifier = Modifier.fillMaxSize()) {
-                                                    BlurTarget(modifier = Modifier.fillMaxSize().islandPadding()) {
-                                                        NavDisplay(
-                                                            entries =
-                                                                navigationState.toEntries(
-                                                                    entryProvider,
-                                                                ),
-                                                            onBack = { navigator.goBack() },
-                                                            transitionSpec = {
-                                                                fadeIn(
-                                                                    tween(
-                                                                        SAGA_THEME_TRANSITION_MS,
-                                                                        easing = FastOutSlowInEasing,
-                                                                    ),
-                                                                ) togetherWith
-                                                                    fadeOut(
-                                                                        tween(
-                                                                            SAGA_THEME_TRANSITION_MS,
-                                                                            easing = FastOutSlowInEasing,
-                                                                        ),
-                                                                    )
-                                                            },
-                                                            popTransitionSpec = {
-                                                                slideInVertically(
-                                                                    tween(
-                                                                        SAGA_THEME_TRANSITION_MS,
-                                                                        easing = FastOutSlowInEasing,
-                                                                    ),
-                                                                ) { it / 4 } +
-                                                                    fadeIn(
-                                                                        tween(
-                                                                            SAGA_THEME_TRANSITION_MS,
-                                                                            easing = EaseIn,
-                                                                        ),
-                                                                    ) togetherWith
-                                                                    slideOutVertically(
-                                                                        tween(
-                                                                            SAGA_THEME_TRANSITION_MS,
-                                                                            easing = FastOutSlowInEasing,
-                                                                        ),
-                                                                    ) { it / 4 } +
-                                                                    fadeOut(
-                                                                        tween(
-                                                                            SAGA_THEME_TRANSITION_MS,
-                                                                            easing = EaseIn,
-                                                                        ),
-                                                                    )
-                                                            },
-                                                            predictivePopTransitionSpec = {
-                                                                slideInVertically(
-                                                                    tween(
-                                                                        SAGA_THEME_TRANSITION_MS,
-                                                                        easing = FastOutSlowInEasing,
-                                                                    ),
-                                                                ) { it / 4 } +
-                                                                    fadeIn(
-                                                                        tween(
-                                                                            SAGA_THEME_TRANSITION_MS,
-                                                                            easing = FastOutSlowInEasing,
-                                                                        ),
-                                                                    ) togetherWith
-                                                                    slideOutVertically(
-                                                                        tween(
-                                                                            SAGA_THEME_TRANSITION_MS,
-                                                                            easing = FastOutSlowInEasing,
-                                                                        ),
-                                                                    ) { it / 4 } +
-                                                                    fadeOut(
-                                                                        tween(
-                                                                            SAGA_THEME_TRANSITION_MS,
-                                                                            easing = FastOutSlowInEasing,
-                                                                        ),
-                                                                    )
-                                                            },
-                                                        )
-                                                    }
-
-                                                    SagaSnackBar(
-                                                        snackBarMessage = globalSnackBar,
-                                                        genre = currentGenre,
-                                                        modifier =
-                                                            Modifier
-                                                                .align(Alignment.BottomCenter)
-                                                                .navigationBarsPadding()
-                                                                .padding(
-                                                                    horizontal = 16.dp,
-                                                                    vertical = 16.dp,
-                                                                ).fillMaxWidth()
-                                                                .clip(sagaShape()),
-                                                        onDismiss = { sagaThemeManager.dismissSnackBar() },
+                                                ) {
+                                                    createSagaEntryProvider(
+                                                        navigator,
+                                                        padding,
+                                                        this@SharedTransitionLayout,
                                                     )
                                                 }
-                                            },
+                                            GlobalShellHost(
+                                                globalState = globalShellState,
+                                                imageGenState = imageGenState,
+                                                bookGenState = bookGenState,
+                                                chatGenState = chatGenState,
+                                                sagaNavigationTracker = sagaNavigationTracker,
+                                                debugImageFallbackService = debugImageFallbackService,
+                                                onImageSetExpansion = { expansion ->
+                                                    imageGenerationService.setIslandExpansion(expansion)
+                                                },
+                                                onImageCancel = imageGenerationService::cancelCurrent,
+                                                onImageDismissReveal = imageGenerationService::dismissReveal,
+                                                onNavigate = { deepLink ->
+                                                    navigateDeepLink(deepLink)
+                                                },
+                                                onDismiss = { globalShellService.dismiss() },
+                                                onSetGlobalExpansion = { expansion ->
+                                                    globalShellService.setExpansion(expansion)
+                                                },
+                                                modifier = Modifier.fillMaxSize(),
+                                                content = {
+                                                    Box(modifier = Modifier.fillMaxSize()) {
+                                                        // Chat already vacates its input area for the bottom
+                                                        // island (advance trigger/objective), so it doesn't
+                                                        // need the reserved bottom padding other screens do.
+                                                        BlurTarget(
+                                                            modifier =
+                                                                Modifier
+                                                                    .fillMaxSize()
+                                                                    .islandPadding(bottom = currentKey !is ChatKey),
+                                                        ) {
+                                                            NavDisplay(
+                                                                entries =
+                                                                    navigationState.toEntries(
+                                                                        entryProvider,
+                                                                    ),
+                                                                onBack = { navigator.goBack() },
+                                                                transitionSpec = {
+                                                                    fadeIn(
+                                                                        tween(
+                                                                            SAGA_THEME_TRANSITION_MS,
+                                                                            easing = FastOutSlowInEasing,
+                                                                        ),
+                                                                    ) togetherWith
+                                                                        fadeOut(
+                                                                            tween(
+                                                                                SAGA_THEME_TRANSITION_MS,
+                                                                                easing = FastOutSlowInEasing,
+                                                                            ),
+                                                                        )
+                                                                },
+                                                                popTransitionSpec = {
+                                                                    slideInVertically(
+                                                                        tween(
+                                                                            SAGA_THEME_TRANSITION_MS,
+                                                                            easing = FastOutSlowInEasing,
+                                                                        ),
+                                                                    ) { it / 4 } +
+                                                                        fadeIn(
+                                                                            tween(
+                                                                                SAGA_THEME_TRANSITION_MS,
+                                                                                easing = EaseIn,
+                                                                            ),
+                                                                        ) togetherWith
+                                                                        slideOutVertically(
+                                                                            tween(
+                                                                                SAGA_THEME_TRANSITION_MS,
+                                                                                easing = FastOutSlowInEasing,
+                                                                            ),
+                                                                        ) { it / 4 } +
+                                                                        fadeOut(
+                                                                            tween(
+                                                                                SAGA_THEME_TRANSITION_MS,
+                                                                                easing = EaseIn,
+                                                                            ),
+                                                                        )
+                                                                },
+                                                                predictivePopTransitionSpec = {
+                                                                    slideInVertically(
+                                                                        tween(
+                                                                            SAGA_THEME_TRANSITION_MS,
+                                                                            easing = FastOutSlowInEasing,
+                                                                        ),
+                                                                    ) { it / 4 } +
+                                                                        fadeIn(
+                                                                            tween(
+                                                                                SAGA_THEME_TRANSITION_MS,
+                                                                                easing = FastOutSlowInEasing,
+                                                                            ),
+                                                                        ) togetherWith
+                                                                        slideOutVertically(
+                                                                            tween(
+                                                                                SAGA_THEME_TRANSITION_MS,
+                                                                                easing = FastOutSlowInEasing,
+                                                                            ),
+                                                                        ) { it / 4 } +
+                                                                        fadeOut(
+                                                                            tween(
+                                                                                SAGA_THEME_TRANSITION_MS,
+                                                                                easing = FastOutSlowInEasing,
+                                                                            ),
+                                                                        )
+                                                                },
+                                                            )
+                                                        }
+
+                                                        SagaSnackBar(
+                                                            snackBarMessage = globalSnackBar,
+                                                            genre = currentGenre,
+                                                            modifier =
+                                                                Modifier
+                                                                    .align(Alignment.BottomCenter)
+                                                                    .navigationBarsPadding()
+                                                                    .padding(
+                                                                        horizontal = 16.dp,
+                                                                        vertical = 16.dp,
+                                                                    ).fillMaxWidth()
+                                                                    .clip(sagaShape()),
+                                                            onDismiss = { sagaThemeManager.dismissSnackBar() },
+                                                        )
+                                                    }
+                                                },
+                                            )
+                                        }
+                                    } else {
+                                        NoInternetScreen()
+                                    }
+                                }
+                            }
+                        }
+
+                        // Shell v2 bottom island — floats above the nav bar, no scrim/blur.
+                        // Declared before the top island so it paints underneath: an expanded top
+                        // island should cover the bottom pill, not have it poke through.
+                        DynamicBottomComponent(
+                            content = bottomIsland,
+                            expanded = bottomExpanded,
+                            onExpandedChange = { bottomExpanded = it },
+                        )
+
+                        // Shell v2 top island — floats above nav content, no scrim/blur.
+                        DynamicIslandOverlay(
+                            content = islandContent,
+                            expanded = islandExpanded,
+                            onExpandedChange = { expanded ->
+                                // Collapsing a terminal image reveal clears the underlying state
+                                // (it must not linger and re-expand); other states just toggle.
+                                if (!expanded && imageGenState is ImageGenerationUiState.Reveal) {
+                                    imageGenerationService.dismissReveal()
+                                }
+                                islandExpanded = expanded
+                            },
+                        )
+
+                        if (activeSideEffect == SideEffect.ShowPremiumOnboarding) {
+                            OnboardingDialog(
+                                type = OnboardingType.PREMIUM_GUIDE,
+                                force = true,
+                                onDismiss = { activeSideEffect = null },
+                                genre = currentGenre,
+                            )
+                        }
+
+                        if (activeSideEffect is SideEffect.GuardrailBlock) {
+                            val effect = activeSideEffect as SideEffect.GuardrailBlock
+                            val sheetState = rememberModalBottomSheetState()
+                            ModalBottomSheet(
+                                onDismissRequest = { activeSideEffect = null },
+                                sheetState = sheetState,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                dragHandle = {
+                                    BottomSheetDefaults.DragHandle(
+                                        color =
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                alpha = 0.4f,
+                                            ),
+                                    )
+                                },
+                            ) {
+                                Column(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(24.dp)
+                                            .padding(bottom = 32.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Icon(
+                                        painter = painterResource(effect.status.iconRes),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(48.dp),
+                                        tint = effect.status.color(MaterialTheme.colorScheme),
+                                    )
+
+                                    Spacer(modifier = Modifier.size(16.dp))
+
+                                    effect.status.titleRes?.let {
+                                        Text(
+                                            text = stringResource(it),
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            textAlign = TextAlign.Center,
                                         )
                                     }
-                                } else {
-                                    NoInternetScreen()
+
+                                    Spacer(modifier = Modifier.size(8.dp))
+
+                                    effect.status.messageRes?.let {
+                                        Text(
+                                            text = stringResource(it),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            textAlign = TextAlign.Center,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.size(32.dp))
+
+                                    Button(
+                                        onClick = { activeSideEffect = null },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                    ) {
+                                        Text(stringResource(R.string.guardrail_dismiss))
+                                    }
                                 }
                             }
                         }
                     }
-
-                    // Shell v2 top island — floats above nav content, no scrim/blur.
-                    DynamicIslandOverlay(
-                        content = islandContent,
-                        expanded = islandExpanded,
-                        onExpandedChange = { expanded ->
-                            // Collapsing a terminal image reveal clears the underlying state
-                            // (it must not linger and re-expand); other states just toggle.
-                            if (!expanded && imageGenState is ImageGenerationUiState.Reveal) {
-                                imageGenerationService.dismissReveal()
-                            }
-                            islandExpanded = expanded
-                        },
-                        onHeightChanged = { islandInsets.top = it },
-                    )
-
-                    // Shell v2 bottom island — floats above the nav bar, no scrim/blur.
-                    DynamicBottomComponent(
-                        content = bottomIsland,
-                        expanded = bottomExpanded,
-                        onExpandedChange = { bottomExpanded = it },
-                        onHeightChanged = { islandInsets.bottom = it },
-                    )
-
-                    if (activeSideEffect == SideEffect.ShowPremiumOnboarding) {
-                        OnboardingDialog(
-                            type = OnboardingType.PREMIUM_GUIDE,
-                            force = true,
-                            onDismiss = { activeSideEffect = null },
-                            genre = currentGenre,
-                        )
-                    }
-
-                    if (activeSideEffect is SideEffect.GuardrailBlock) {
-                        val effect = activeSideEffect as SideEffect.GuardrailBlock
-                        val sheetState = rememberModalBottomSheetState()
-                        ModalBottomSheet(
-                            onDismissRequest = { activeSideEffect = null },
-                            sheetState = sheetState,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            dragHandle = {
-                                BottomSheetDefaults.DragHandle(
-                                    color =
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                            alpha = 0.4f,
-                                        ),
-                                )
-                            },
-                        ) {
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(24.dp)
-                                        .padding(bottom = 32.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Icon(
-                                    painter = painterResource(effect.status.iconRes),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(48.dp),
-                                    tint = effect.status.color(MaterialTheme.colorScheme),
-                                )
-
-                                Spacer(modifier = Modifier.size(16.dp))
-
-                                effect.status.titleRes?.let {
-                                    Text(
-                                        text = stringResource(it),
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        textAlign = TextAlign.Center,
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.size(8.dp))
-
-                                effect.status.messageRes?.let {
-                                    Text(
-                                        text = stringResource(it),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        textAlign = TextAlign.Center,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.size(32.dp))
-
-                                Button(
-                                    onClick = { activeSideEffect = null },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp),
-                                ) {
-                                    Text(stringResource(R.string.guardrail_dismiss))
-                                }
-                            }
-                        }
-                    }
-
-                }
                 }
             }
         }
