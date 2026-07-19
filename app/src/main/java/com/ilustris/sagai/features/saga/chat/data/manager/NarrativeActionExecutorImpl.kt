@@ -19,6 +19,7 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
+import com.ilustris.sagai.features.saga.chat.domain.manager.TIMELINE_ALREADY_ACTIVE_MESSAGE
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationCoordinator
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -291,7 +292,7 @@ class NarrativeActionExecutorImpl
                         currentEventId = lastTimeline.data.id,
                     ),
                 )
-                throw IllegalArgumentException("Timeline already set at this chapter")
+                throw IllegalArgumentException(TIMELINE_ALREADY_ACTIVE_MESSAGE)
             }
 
             val sagaContent = environment.getSagaContent() ?: error("Saga not available")

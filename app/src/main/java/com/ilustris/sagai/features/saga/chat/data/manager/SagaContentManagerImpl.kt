@@ -71,6 +71,7 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionRe
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeProcessingGate
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
+import com.ilustris.sagai.features.saga.chat.domain.manager.TIMELINE_ALREADY_ACTIVE_MESSAGE
 import com.ilustris.sagai.features.saga.chat.domain.manager.executionMode
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -254,6 +255,26 @@ class SagaContentManagerImpl
                         action,
                         buildExecutionEnvironment(),
                     )
+
+                // CreateTimeline is automatic — several reactive triggers (milestone dismissal,
+                // loading state, the explicit continue call) can each independently resolve it
+                // before this manager's cached saga snapshot catches up with the first one's
+                // write. The executor throws when it finds a timeline already active as a
+                // self-healing signal, not a real failure: the desired end state (chapter has a
+                // current timeline) is already true, so surfacing an error + retry snackbar here
+                // would be actively wrong. Treat it as a silent no-op instead.
+                if (result is NarrativeExecutionResult.Failure &&
+                    action is NarrativeAction.CreateTimeline &&
+                    result.message == TIMELINE_ALREADY_ACTIVE_MESSAGE
+                ) {
+                    Timber.i("CreateTimeline raced another trigger and found a timeline already active — ignoring.")
+                    narrativeCoordinator.onActionCompleted(
+                        action,
+                        NarrativeExecutionResult.Success(value = null, shouldEmitMilestone = false),
+                    )
+                    return
+                }
+
                 narrativeCoordinator.onActionCompleted(action, result)
                 when (result) {
                     is NarrativeExecutionResult.Success -> {
