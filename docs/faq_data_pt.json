@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "categories": [
     {
       "title": "Boas-vindas ao Sagas",
@@ -15,6 +15,10 @@
         {
           "question": "Por que preciso de internet para jogar?",
           "answer": "Suas histórias são grandiosas! Enquanto seu progresso é salvo no dispositivo, o trabalho pesado — o 'cérebro' do Mestre da Saga e os sistemas do Diretor de Arte — vive em uma nuvem poderosa para garantir que cada resposta e imagem seja única."
+        },
+        {
+          "question": "Por que o app me perguntou umas coisas antes da minha primeira saga?",
+          "answer": "É o seu perfil de jogador — uma configuração rápida e única pra o Sagas personalizar o onboarding e ajustar o tom desde a primeira mensagem."
         }
       ]
     },
@@ -23,7 +27,11 @@
       "items": [
         {
           "question": "Como a história progride?",
-          "answer": "As histórias são divididas em Atos e Capítulos. Conforme você interage, a IA resume os eventos anteriores em um 'Resumo da Saga' e gera novas introduções. Você também pode iniciar um 'Novo Capítulo' manualmente para consolidar os eventos atuais e avançar."
+          "answer": "As histórias são divididas em Atos e Capítulos. Conforme você interage, a IA resume os eventos anteriores em um 'Resumo da Saga' e gera novas introduções. Você também pode iniciar um 'Novo Capítulo' manualmente para consolidar os eventos atuais e avançar. Trocar de cena quando não precisa de escrita nova da IA (tipo continuar exatamente de onde parou) agora acontece na hora — sem esperar."
+        },
+        {
+          "question": "O que é aquela pilulazinha flutuante no topo da tela?",
+          "answer": "É o status ao vivo da sua saga — objetivos, carregamento, personagens novos e marcos importantes aparecem ali, sem interromper sua tela com popups. Toque para expandir; ela some sozinha depois que você vê o que precisa."
         },
         {
           "question": "Qual a diferença entre 'Falar', 'Pensar' e 'Ação'?",

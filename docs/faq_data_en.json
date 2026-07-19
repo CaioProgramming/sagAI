@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "categories": [
     {
       "title": "Welcome to Sagas",
@@ -15,6 +15,10 @@
         {
           "question": "Why do I need an internet connection?",
           "answer": "Your stories are huge! While your progress is saved on your device, the heavy lifting—the 'Saga Master' brain and the 'Art Director' systems—lives in a powerful cloud to ensure every response and image is unique to your prompt."
+        },
+        {
+          "question": "Why did the app ask about me before starting my first saga?",
+          "answer": "That's your player profile — a quick, one-time setup so Sagas can personalize your onboarding and match its tone to you from the very first message."
         }
       ]
     },
@@ -23,7 +27,11 @@
       "items": [
         {
           "question": "How does the story progress?",
-          "answer": "Stories are divided into Acts and Chapters. As you interact, the AI recaps previous events into a 'Saga Resume' and generates new introductions to keep the narrative tight. You can also manually start a 'New Chapter' to summarize current events and move to the next phase of your journey."
+          "answer": "Stories are divided into Acts and Chapters. As you interact, the AI recaps previous events into a 'Saga Resume' and generates new introductions to keep the narrative tight. You can also manually start a 'New Chapter' to summarize current events and move to the next phase of your journey. Transitioning to a new scene that doesn't need fresh AI writing (like picking up right where you left off) now happens instantly — no waiting around."
+        },
+        {
+          "question": "What's that floating pill at the top of my screen?",
+          "answer": "That's your saga's live status — objectives, loading, new characters, big story beats all show up there instead of interrupting your screen with popups. Tap it to expand, and it clears itself once you've seen what it has to say."
         },
         {
           "question": "What's the difference between 'Talk', 'Think', and 'Action'?",
