@@ -17,6 +17,7 @@ import com.ilustris.sagai.features.debug.ui.LoreDebugView
 import com.ilustris.sagai.features.faq.ui.FAQView
 import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
+import com.ilustris.sagai.features.player.ui.PlayerProfileView
 import com.ilustris.sagai.features.playthrough.PlaythroughView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
@@ -48,6 +49,7 @@ fun createSagaEntryProvider(
             navToFAQ = { navigator.navigate(FAQKey) },
             navToAuditLogs = { navigator.navigate(AuditLogsKey) },
             navToPlaythrough = { navigator.navigate(PlaythroughKey) },
+            navToPlayerProfile = { navigator.navigate(PlayerProfileKey) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )
@@ -63,6 +65,14 @@ fun createSagaEntryProvider(
 
     entry<FAQKey> {
         FAQView(
+            onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    entry<PlayerProfileKey> {
+        PlayerProfileView(
             onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,

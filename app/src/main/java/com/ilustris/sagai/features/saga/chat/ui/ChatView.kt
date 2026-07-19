@@ -18,7 +18,6 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -44,6 +43,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -80,14 +80,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -102,9 +100,6 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.rememberAsyncImagePainter
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
@@ -131,7 +126,6 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.subtitleActAndChapterOrdinals
 import com.ilustris.sagai.features.home.data.model.toInfo
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -149,7 +143,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDia
 import com.ilustris.sagai.features.saga.chat.ui.components.MessageOptionsSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ChatTaskShellHost
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
@@ -166,19 +160,16 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.rememberVectorShape
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
-import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -459,16 +450,12 @@ fun ChatContent(
     val resolvedColor = MaterialTheme.colorScheme.primary
     val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
 
-    ChatTaskShellHost(
-        uiState = uiState,
-        sagaContent = content,
-        progress = progressState.value,
-        onAction = onAction,
-        onNavigate = onNavigate,
+    Box(
         modifier =
             Modifier
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
+                .statusBarsPadding()
                 .imePadding(),
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -483,12 +470,9 @@ fun ChatContent(
                 null,
                 tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
                 modifier =
-                    Modifier.size(64.dp).dropShadow(rememberVectorShape(themeIconVector())) {
-                        brush = morphingGradient
-                        radius = 10f
-                        spread = 1f
-                        alpha = shadowAlpha
-                    },
+                    Modifier
+                        .size(64.dp)
+                        .reactiveShimmer(iconAnimating, duration = 10.seconds),
             )
             ConstraintLayout(
                 Modifier.fillMaxSize(),
@@ -662,8 +646,25 @@ fun ChatContent(
                 )
 
                 val hasActiveTimeline = content.getCurrentTimeLine() != null
+                val activeMilestone = uiState.milestone
+                // Every reveal for these milestone types now lives in the top island (see
+                // NarrativeMilestoneIslandContent) — chat input just needs to stay out of the way
+                // while one is active, not render a second copy of the same content. NewCharacter
+                // is deliberately excluded: it has no island reveal wired yet, so blocking input
+                // for it would strand the user with nothing to interact with.
+                val milestoneBlocksInput =
+                    activeMilestone is SagaMilestone.Loading ||
+                        activeMilestone is SagaMilestone.Introduction ||
+                        activeMilestone is SagaMilestone.NewEvent ||
+                        activeMilestone is SagaMilestone.ChapterFinished ||
+                        activeMilestone is SagaMilestone.ActFinished
                 val bottomInputState =
                     when {
+                        milestoneBlocksInput &&
+                            !uiState.selectionState.isSelectionMode -> {
+                            BottomInputState.Unavailable
+                        }
+
                         narrativeState.showBackgroundBanner &&
                             !uiState.selectionState.isSelectionMode -> {
                             BottomInputState.Background(narrativeState.backgroundTask!!)
@@ -1505,7 +1506,8 @@ private sealed interface BottomInputState {
         val task: BackgroundTask,
     ) : BottomInputState
 
-    /** No active timeline and no narrative advance/background UI — chat input must stay hidden. */
+    /** No active timeline, no narrative advance/background UI, or an intrusive milestone is
+     * being revealed by the top island — chat input must stay hidden. */
     data object Unavailable : BottomInputState
 }
 

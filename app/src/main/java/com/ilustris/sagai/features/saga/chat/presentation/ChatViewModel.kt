@@ -60,6 +60,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -128,6 +129,7 @@ class ChatViewModel
         private var fullWikiObserverJob: kotlinx.coroutines.Job? = null
         private var generationJob: kotlinx.coroutines.Job? = null
         private var narrativeObserverJob: kotlinx.coroutines.Job? = null
+        private var advanceSuppressionObserverJob: kotlinx.coroutines.Job? = null
 
         init {
             viewModelScope.launch {
@@ -312,12 +314,6 @@ class ChatViewModel
                     sagaContentManager.dismissObjective()
                 }
 
-                is ChatUiAction.ContinueMilestone -> {
-                    viewModelScope.launch {
-                        sagaContentManager.continueMilestone()
-                    }
-                }
-
                 is ChatUiAction.ShowObjective -> {
                     viewModelScope.launch {
                         sagaContentManager.showObjective()
@@ -439,6 +435,9 @@ class ChatViewModel
             narrativeObserverJob?.cancel()
             narrativeObserverJob = observeNarrativeState()
 
+            advanceSuppressionObserverJob?.cancel()
+            advanceSuppressionObserverJob = observeAdvanceTriggerSuppression()
+
             sceneSummaryObserverJob?.cancel()
             sceneSummaryObserverJob = observeSceneSummary()
 
@@ -491,6 +490,20 @@ class ChatViewModel
                 sagaContentManager.narrativeUiState.collect { narrativeState ->
                     stateManager.updateNarrativeUiState(narrativeState)
                 }
+            }
+
+        /**
+         * Forwards gating the manager can't see on its own (onboarding overlays, message-selection
+         * mode, chat-reply generation) into the advance-trigger island's suppression flag — the
+         * chat screen just relays its own state, the manager owns everything else about when/what
+         * island to publish.
+         */
+        private fun observeAdvanceTriggerSuppression() =
+            viewModelScope.launch(Dispatchers.IO) {
+                uiState
+                    .map { it.onboardingType != null || it.selectionState.isSelectionMode || it.isGenerating }
+                    .distinctUntilChanged()
+                    .collect { suppressed -> sagaContentManager.setAdvanceTriggerSuppressed(suppressed) }
             }
 
         private fun observeSceneSummary() =

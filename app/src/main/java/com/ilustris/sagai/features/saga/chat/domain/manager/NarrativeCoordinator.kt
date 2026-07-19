@@ -65,7 +65,7 @@ class NarrativeCoordinator
                     else -> {
                         if (isAutomatic) {
                             NarrativeUiState(
-                                phase = NarrativePhase.Processing(nextAction),
+                                phase = NarrativePhase.Processing(nextAction, isAutomatic = true),
                                 pendingAction = null,
                                 backgroundTask = null,
                                 lastError = null,
@@ -193,4 +193,11 @@ class NarrativeCoordinator
         }
     }
 
-fun NarrativeAction.executionMode(): NarrativeExecutionMode = NarrativeExecutionMode.UserTriggered
+/** [NarrativeAction.CreateTimeline] is a pure local write (inherits the chapter's scene summary,
+ * no AI call) — it runs automatically instead of waiting for a user tap. Every other action
+ * involves a real generation request and stays user-triggered. */
+fun NarrativeAction.executionMode(): NarrativeExecutionMode =
+    when (this) {
+        is NarrativeAction.CreateTimeline -> NarrativeExecutionMode.Automatic
+        else -> NarrativeExecutionMode.UserTriggered
+    }
