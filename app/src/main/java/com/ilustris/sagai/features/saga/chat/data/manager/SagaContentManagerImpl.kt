@@ -66,10 +66,12 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCoordinator
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeEvaluationContext
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionMode
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeProcessingGate
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
+import com.ilustris.sagai.features.saga.chat.domain.manager.executionMode
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.datasource.MessageDao
@@ -837,7 +839,7 @@ class SagaContentManagerImpl
                     return@withLock
                 }
 
-                val isAutomatic = hydrated is NarrativeAction.CreateTimeline
+                val isAutomatic = hydrated?.executionMode() == NarrativeExecutionMode.Automatic
                 narrativeCoordinator.reevaluate(
                     nextResolvedAction = hydrated,
                     context = buildEvaluationContext(),
@@ -847,7 +849,7 @@ class SagaContentManagerImpl
                 shouldReevaluateAgain = narrativeCoordinator.consumePendingReevaluation()
             }
 
-            if (hydrated is NarrativeAction.CreateTimeline) {
+            if (hydrated != null && hydrated.executionMode() == NarrativeExecutionMode.Automatic) {
                 executeNarrativeAction(hydrated, isRetry = false)
             } else if (shouldReevaluateAgain) {
                 requestNarrativeProgression(isRetry = false)

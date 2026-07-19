@@ -11,7 +11,11 @@ data class NarrativeUiState(
         get() =
             when (val currentPhase = phase) {
                 is NarrativePhase.AwaitingAdvance -> pendingAction
-                is NarrativePhase.Processing -> currentPhase.action
+                // Automatic actions (e.g. CreateTimeline) skip AwaitingAdvance entirely and jump
+                // straight to Processing — they were never meant to surface a trigger, so this
+                // must not expose the action for those, or the advance island shows a "ghost"
+                // pill for a step the user never needed to confirm in the first place.
+                is NarrativePhase.Processing -> currentPhase.action.takeIf { !currentPhase.isAutomatic }
                 else -> null
             }
 
@@ -33,6 +37,7 @@ sealed class NarrativePhase {
 
     data class Processing(
         val action: NarrativeAction,
+        val isAutomatic: Boolean = false,
     ) : NarrativePhase()
 
     data class BackgroundProcessing(
