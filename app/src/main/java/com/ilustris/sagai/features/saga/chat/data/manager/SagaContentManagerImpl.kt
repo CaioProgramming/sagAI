@@ -52,6 +52,7 @@ import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.home.data.model.toNarrativeMetadata
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
@@ -849,7 +850,15 @@ class SagaContentManagerImpl
                 val rules = fetchNarrativeRules()
                 messageDao.getMessagesCount(currentSaga.data.id).first()
 
-                val intent = NarrativeCheck.validateProgressionMetadata(currentSaga, rules)
+                // sagaContent is a fresh DB read (getSagaContent() above); currentSaga is the
+                // cached content StateFlow, which is fed by a Room Flow and can lag a write from
+                // a sibling coroutine by a beat (e.g. continueMilestone() clearing currentEventId
+                // right before this runs). Deciding off the stale snapshot here is what let a
+                // moment-long CloseTimeline/EvolveTimeline resolve flash the advance pill before
+                // the correct CreateTimeline resolve (from the next, now-caught-up call) replaced
+                // it — same underlying race as the duplicate-timeline guard, just cosmetic instead
+                // of thrown.
+                val intent = NarrativeCheck.validateProgressionMetadata(sagaContent.toNarrativeMetadata(), rules)
                 hydrated =
                     intent?.let { NarrativeActionMaterializer.materialize(it, sagaContent) }
                 if (intent != null && hydrated == null) {
@@ -1147,20 +1156,19 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeAction.CreateTimeline -> {
+                    // Silent scaffold step — this timeline is empty (no messages, no generated
+                    // lore yet), so there's nothing to reveal. Emitting a NewEvent milestone here
+                    // (like a prior version of this code did) made continueMilestone() clear the
+                    // brand-new currentEventId right back to null, cascading into another
+                    // CreateTimeline and so on. The inherited scene summary/objective already
+                    // surfaces on its own via the top island's ObjectiveIslandContent once
+                    // `content` catches up with the chapter's new currentEventId.
                     val timeline = resultValue as? Timeline
-                    timeline?.let { t ->
-                        t.sceneSummary?.let { _sceneSummary.value = it }
-                        getSagaContent()?.let { fullSaga ->
-                            emitMilestone(
-                                SagaMilestone.NewEvent(
-                                    timeline = t,
-                                    emotionalMascot = null,
-                                    messageText = t.sceneSummary?.immediateObjective,
-                                    sagaContent = fullSaga,
-                                ),
-                            )
-                        }
-                    } ?: dismissMilestone()
+                    if (timeline != null) {
+                        timeline.sceneSummary?.let { _sceneSummary.value = it }
+                    } else {
+                        dismissMilestone()
+                    }
                 }
 
                 is NarrativeAction.EvolveTimeline -> {

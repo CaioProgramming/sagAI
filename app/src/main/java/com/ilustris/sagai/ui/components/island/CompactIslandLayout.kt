@@ -64,7 +64,8 @@ fun CompactIslandLayout(
             modifier =
                 modifier
                     .padding(16.dp)
-                    .fillMaxWidth(pillFill),
+                    .fillMaxWidth(pillFill)
+                    .reactiveShimmer(data.isLoading, repeatMode = RepeatMode.Restart),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -89,8 +90,7 @@ fun CompactIslandLayout(
                     modifier =
                         Modifier
                             .weight(1f)
-                            .basicMarquee()
-                            .reactiveShimmer(data.isLoading, repeatMode = RepeatMode.Restart),
+                            .basicMarquee(),
                 )
             }
 
