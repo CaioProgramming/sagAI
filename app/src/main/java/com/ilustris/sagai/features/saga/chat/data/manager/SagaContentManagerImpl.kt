@@ -54,6 +54,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -82,6 +83,7 @@ import com.ilustris.sagai.ui.components.island.ChatIslandService
 import com.ilustris.sagai.ui.components.island.IntroductionIslandContent
 import com.ilustris.sagai.ui.components.island.IslandContent
 import com.ilustris.sagai.ui.components.island.LoadingIslandContent
+import com.ilustris.sagai.ui.components.island.NarrativeMilestoneIslandContent
 import com.ilustris.sagai.ui.components.island.ObjectiveIslandContent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -703,6 +705,40 @@ class SagaContentManagerImpl
 
                     milestone is SagaMilestone.Introduction ->
                         IntroductionIslandContent(milestone, saga.data, onContinue)
+
+                    // Narrative-result milestones (event evolved/created, chapter or act
+                    // finished) also take over the top island — one surface for every milestone
+                    // reveal instead of a second, competing bottom one.
+                    milestone is SagaMilestone.NewEvent ||
+                        milestone is SagaMilestone.ChapterFinished ||
+                        milestone is SagaMilestone.ActFinished -> {
+                        val characters = when (milestone) {
+                            is SagaMilestone.NewEvent -> milestone.characters
+                            is SagaMilestone.ChapterFinished -> milestone.characters
+                            is SagaMilestone.ActFinished -> milestone.characters
+                            else -> emptyList()
+                        }
+                        val wikis = when (milestone) {
+                            is SagaMilestone.NewEvent -> milestone.wikis
+                            is SagaMilestone.ChapterFinished -> milestone.wikis
+                            is SagaMilestone.ActFinished -> milestone.wikis
+                            else -> emptyList()
+                        }
+                        val emotionalTone = when (milestone) {
+                            is SagaMilestone.NewEvent -> milestone.emotionalTone
+                            is SagaMilestone.ChapterFinished -> milestone.emotionalTone
+                            is SagaMilestone.ActFinished -> milestone.emotionalTone
+                            else -> EmotionalTone.NEUTRAL
+                        }
+                        NarrativeMilestoneIslandContent(
+                            milestone = milestone,
+                            genre = genre,
+                            characters = characters,
+                            wikis = wikis,
+                            emotionalTone = emotionalTone,
+                            onContinue = onContinue,
+                        )
+                    }
 
                     else -> {
                         val objectiveText = saga.getCurrentTimeLine()?.data?.displayObjective()

@@ -1,7 +1,6 @@
-package com.ilustris.sagai.features.saga.chat.ui.components.milestone
+package com.ilustris.sagai.ui.components.island
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,18 +29,16 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.AnimatedEmotionalShape
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.ui.theme.sagaShape
-import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themePainter
 
 /**
- * Chat-anchored panel shown when a narrative milestone (new event, chapter or act finished)
- * needs the player's confirmation to continue — replaces [ChatInputView] in the same slot
- * instead of duplicating the reveal in a floating island, since the milestone's own card
- * already renders inline in the message list.
+ * Expanded body for [NarrativeMilestoneIslandContent] — the single reveal surface for a
+ * narrative-result milestone (new event / chapter finished / act finished). Bare content, no own
+ * background/border/shape: [IslandBody] already draws the card behind it, same convention as
+ * [com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay].
  */
 @Composable
-fun MilestoneContinuePanel(
+fun MilestoneIslandBody(
     genre: Genre,
     title: String,
     description: String?,
@@ -51,17 +48,8 @@ fun MilestoneContinuePanel(
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val borderBrush = Brush.horizontalGradient(themeBrushColors())
-    val shape = sagaShape()
-
     Column(
-        modifier =
-            modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-                .border(1.dp, borderBrush, shape)
-                .background(MaterialTheme.colorScheme.background, shape)
-                .padding(16.dp),
+        modifier = modifier.fillMaxWidth().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
