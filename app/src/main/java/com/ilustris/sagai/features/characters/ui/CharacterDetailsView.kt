@@ -7,7 +7,6 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -22,6 +21,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidthIn
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,6 +30,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,7 +44,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -80,14 +83,14 @@ import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttac
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
-import com.ilustris.sagai.ui.components.views.HeroAction
-import com.ilustris.sagai.ui.components.views.HeroActionRow
-import com.ilustris.sagai.ui.components.views.heroScrimOverlay
-import com.ilustris.sagai.ui.components.views.heroTitleOverlay
+import com.ilustris.sagai.ui.components.views.HeroMenuAction
+import com.ilustris.sagai.ui.components.views.HeroOverflowMenu
+import com.ilustris.sagai.ui.components.views.heroBottomCluster
+import com.ilustris.sagai.ui.theme.PaletteTheme
 import com.ilustris.sagai.ui.theme.SagAITheme
-import com.ilustris.sagai.ui.theme.characterDetailsHeaderScrim
 import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -128,6 +131,7 @@ fun CharacterDetailsView(
             if (it != null) {
                 CharacterDetailsContent(
                     it,
+                    onBack = onBack,
                     onOpenCharacterBrain = onOpenCharacterBrain,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
@@ -144,6 +148,7 @@ fun CharacterDetailsView(
 @Composable
 fun CharacterDetailsContent(
     detailData: CharacterDetailData,
+    onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -155,6 +160,7 @@ fun CharacterDetailsContent(
     CharacterDetailsLoaded(
         detailData = detailData,
         openEvent = openEvent,
+        onBack = onBack,
         onOpenCharacterBrain = onOpenCharacterBrain,
         viewModel = viewModel,
         imagePalette = imagePalette,
@@ -180,26 +186,21 @@ fun CharacterDetailsContent(
 private fun CharacterDetailsLoaded(
     detailData: CharacterDetailData,
     viewModel: CharacterDetailsViewModel,
+    onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
     imagePalette: ImagePalette? = null,
     openEvent: (Timeline?) -> Unit = {},
 ) {
+    PaletteTheme(imagePalette = imagePalette) {
     val sagaInfo = detailData.sagaInfo
     val character = detailData.character
     val genre = sagaInfo.genre
     val resolvedColor = MaterialTheme.colorScheme.primary
-    MaterialTheme.colorScheme.secondary
 
-    val adaptiveColor by animateColorAsState(
-        targetValue = imagePalette?.dominant ?: MaterialTheme.colorScheme.background,
-        animationSpec = tween(1000),
-    )
-    val adaptiveTextColor by animateColorAsState(
-        targetValue = imagePalette?.onDominant ?: MaterialTheme.colorScheme.onBackground,
-        animationSpec = tween(1000),
-    )
+    val adaptiveColor = MaterialTheme.colorScheme.background
+    val adaptiveTextColor = MaterialTheme.colorScheme.onBackground
 
     val listState = rememberLazyListState()
     val characterEvents = detailData.events
@@ -223,7 +224,6 @@ private fun CharacterDetailsLoaded(
     ) { characterData ->
         var imageError by remember { mutableStateOf(false) }
         val characterColor = characterData.hexColor.hexToColor() ?: resolvedColor
-        val headerScrimColor = characterDetailsHeaderScrim(adaptiveColor, characterColor)
         val titleGradient =
             remember(adaptiveTextColor, characterColor) {
                 characterDetailsTitleGradient(adaptiveTextColor, characterColor)
@@ -285,49 +285,26 @@ private fun CharacterDetailsLoaded(
                                             .graphicsLayer(
                                                 translationY = 100f,
                                             ),
-                                ) {
-                                    Box(
-                                        Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.TopCenter,
-                                    ) {
-                                        heroScrimOverlay(adaptiveColor)
+                                ) {}
 
-                                        heroTitleOverlay(
-                                            text = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
-                                            genre = genre,
-                                            adaptiveColor = adaptiveColor,
-                                            titleGradient = titleGradient,
-                                            shimmerColors = characterColor.shimmerize(),
-                                        )
-                                    }
-                                }
+                                Box(
+                                    Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .fillMaxWidth()
+                                        .height(160.dp)
+                                        .background(fadeGradientBottom(adaptiveColor)),
+                                )
 
-                                HeroActionRow(
+                                heroBottomCluster(
+                                    title = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
+                                    genre = genre,
                                     adaptiveColor = adaptiveColor,
-                                    actions =
-                                        listOfNotNull(
-                                            HeroAction(
-                                                icon = painterResource(R.drawable.ic_spark),
-                                                contentDescription = stringResource(id = R.string.share_character_cd),
-                                                tint = characterColor,
-                                                onClick = { showCharacterShare = true },
-                                            ),
-                                            if (BuildConfig.DEBUG) {
-                                                HeroAction(
-                                                    icon = painterResource(R.drawable.ic_spark),
-                                                    contentDescription = stringResource(R.string.debug_regenerate_image),
-                                                    tint = characterColor,
-                                                    onClick = {
-                                                        viewModel.regenerate(
-                                                            sagaInfo,
-                                                            characterData,
-                                                        )
-                                                    },
-                                                )
-                                            } else {
-                                                null
-                                            },
-                                        ),
+                                    adaptiveTextColor = adaptiveTextColor,
+                                    titleGradient = titleGradient,
+                                    shimmerColors = characterColor.shimmerize(),
+                                    accentColor = characterColor,
+                                    onAccentColor = adaptiveTextColor,
+                                    modifier = Modifier.align(Alignment.BottomCenter),
                                 )
                             }
 
@@ -681,27 +658,60 @@ private fun CharacterDetailsLoaded(
                     }
                 }
 
-                val alpha by animateFloatAsState(
-                    if (listState.canScrollBackward.not()) 0f else 1f,
-                    animationSpec = tween(1500),
-                )
-                Text(
-                    "${characterData.name} ${characterData.lastName ?: emptyString()}",
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                            textAlign = TextAlign.Center,
-                            color = adaptiveTextColor,
-                        ),
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier =
                         Modifier
                             .align(Alignment.TopCenter)
-                            .alpha(alpha)
-                            .background(adaptiveColor)
-                            .padding(16.dp)
-                            .reactiveShimmer(true)
-                            .fillMaxWidth(),
-                )
+                            .fillMaxWidth()
+                            .statusBarsPadding()
+                            .padding(8.dp),
+                ) {
+                    IconButton(
+                        onClick = onBack,
+                        colors =
+                            IconButtonDefaults.iconButtonColors().copy(
+                                containerColor = adaptiveColor.copy(alpha = .5f),
+                            ),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_back_left),
+                            contentDescription = stringResource(R.string.back_button_description),
+                            tint = adaptiveTextColor,
+                        )
+                    }
+
+                    Spacer(Modifier.weight(1f))
+
+                    IconButton(
+                        onClick = { showCharacterShare = true },
+                        colors =
+                            IconButtonDefaults.iconButtonColors().copy(
+                                containerColor = adaptiveColor.copy(alpha = .5f),
+                            ),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_share),
+                            contentDescription = stringResource(id = R.string.share_character_cd),
+                            tint = adaptiveTextColor,
+                        )
+                    }
+
+                    if (BuildConfig.DEBUG) {
+                        HeroOverflowMenu(
+                            tint = adaptiveTextColor,
+                            containerColor = adaptiveColor.copy(alpha = .5f),
+                            actions =
+                                listOf(
+                                    HeroMenuAction(
+                                        label = stringResource(R.string.debug_regenerate_image),
+                                    ) {
+                                        viewModel.regenerate(sagaInfo, characterData)
+                                    },
+                                ),
+                        )
+                    }
+                }
             }
         }
 
@@ -717,5 +727,6 @@ private fun CharacterDetailsLoaded(
             character = shareCharacterContent,
             onDismiss = { showCharacterShare = false },
         )
+    }
     }
 }
