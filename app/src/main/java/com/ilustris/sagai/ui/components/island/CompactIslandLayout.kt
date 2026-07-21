@@ -63,7 +63,7 @@ fun CompactIslandLayout(
         Row(
             modifier =
                 modifier
-                    .padding(16.dp)
+                    .padding(12.dp)
                     .fillMaxWidth(pillFill)
                     .reactiveShimmer(data.isLoading, repeatMode = RepeatMode.Restart),
             verticalAlignment = Alignment.CenterVertically,

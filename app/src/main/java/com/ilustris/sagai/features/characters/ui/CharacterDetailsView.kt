@@ -28,10 +28,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -47,7 +45,6 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -83,18 +80,19 @@ import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttac
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
+import com.ilustris.sagai.ui.components.views.HeroAction
+import com.ilustris.sagai.ui.components.views.HeroActionRow
+import com.ilustris.sagai.ui.components.views.heroScrimOverlay
+import com.ilustris.sagai.ui.components.views.heroTitleOverlay
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.characterDetailsHeaderScrim
 import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.shimmerize
 
@@ -292,61 +290,45 @@ private fun CharacterDetailsLoaded(
                                         Modifier.fillMaxSize(),
                                         contentAlignment = Alignment.TopCenter,
                                     ) {
-                                        Column {
-                                            Box(
-                                                Modifier
-                                                    .background(adaptiveColor)
-                                                    .fillMaxWidth()
-                                                    .height(50.dp),
-                                            )
-                                            Box(
-                                                Modifier
-                                                    .background(fadeGradientTop(adaptiveColor))
-                                                    .fillMaxWidth()
-                                                    .height(50.dp),
-                                            )
-                                        }
+                                        heroScrimOverlay(adaptiveColor)
 
-                                        genre.stylisedText(
+                                        heroTitleOverlay(
                                             text = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
-                                            modifier =
-                                                Modifier
-                                                    .background(
-                                                        fadeGradientTop(adaptiveColor),
-                                                    )
-                                                    .fillMaxWidth()
-                                                    .statusBarsPadding()
-                                                    .padding(horizontal = 16.dp, vertical = 4.dp)
-                                                    .gradientFill(titleGradient)
-                                                    .reactiveShimmer(
-                                                        true,
-                                                        characterColor.shimmerize(),
-                                                    ),
+                                            genre = genre,
+                                            adaptiveColor = adaptiveColor,
+                                            titleGradient = titleGradient,
+                                            shimmerColors = characterColor.shimmerize(),
                                         )
                                     }
                                 }
 
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier =
-                                        Modifier
-                                            .background(fadeGradientBottom(adaptiveColor))
-                                            .fillMaxWidth()
-                                            .align(Alignment.BottomCenter),
-                                ) {
-                                    Image(
-                                        painterResource(R.drawable.ic_spark),
-                                        stringResource(id = R.string.share_character_cd),
-                                        modifier =
-                                            Modifier
-                                                .padding(top = 16.dp)
-                                                .size(24.dp)
-                                                .clip(CircleShape)
-                                                .gradientFill(sagaBrush())
-                                                .clickable { showCharacterShare = true },
-                                        colorFilter = ColorFilter.tint(characterColor),
-                                    )
-                                }
+                                HeroActionRow(
+                                    adaptiveColor = adaptiveColor,
+                                    actions =
+                                        listOfNotNull(
+                                            HeroAction(
+                                                icon = painterResource(R.drawable.ic_spark),
+                                                contentDescription = stringResource(id = R.string.share_character_cd),
+                                                tint = characterColor,
+                                                onClick = { showCharacterShare = true },
+                                            ),
+                                            if (BuildConfig.DEBUG) {
+                                                HeroAction(
+                                                    icon = painterResource(R.drawable.ic_spark),
+                                                    contentDescription = stringResource(R.string.debug_regenerate_image),
+                                                    tint = characterColor,
+                                                    onClick = {
+                                                        viewModel.regenerate(
+                                                            sagaInfo,
+                                                            characterData,
+                                                        )
+                                                    },
+                                                )
+                                            } else {
+                                                null
+                                            },
+                                        ),
+                                )
                             }
 
                             Column(
@@ -452,25 +434,6 @@ private fun CharacterDetailsLoaded(
                             genre = genre,
                             contentColor = adaptiveTextColor,
                         )
-                    }
-
-                    if (BuildConfig.DEBUG) {
-                        item {
-                            OutlinedButton(
-                                onClick = {
-                                    viewModel.regenerate(
-                                        sagaInfo,
-                                        characterData,
-                                    )
-                                },
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp),
-                            ) {
-                                Text(stringResource(R.string.debug_regenerate_image))
-                            }
-                        }
                     }
 
                     item {

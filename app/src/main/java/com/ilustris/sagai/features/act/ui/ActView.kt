@@ -43,7 +43,6 @@ fun ActComponent(
         ) {
             items(chapters) {
                 ChapterCardView(
-                    content.data.genre,
                     it.data,
                     chapters.indexOf(it),
                     Modifier

@@ -53,6 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -64,7 +65,6 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSectio
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
-import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darkerPalette
@@ -88,6 +88,7 @@ fun SagaDetailView(
     onCharacterDetails: (Int) -> Unit = {},
     onLoreDebug: () -> Unit = {},
     onBrain: () -> Unit = {},
+    onEmotionalProfile: () -> Unit = {},
     viewModel: SagaDetailViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -100,9 +101,9 @@ fun SagaDetailView(
 
     var showReview by remember { mutableStateOf(false) }
     val overlayVisibilityTracker = rememberOverlayVisibilityTracker()
-    var showEmotionalReview by remember { mutableStateOf(false) }
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     val drawer by viewModel.detailDrawer.collectAsStateWithLifecycle()
+    val imagePalette by viewModel.imagePalette.collectAsStateWithLifecycle()
     val reviewGenerationState by viewModel.reviewGenerationState.collectAsStateWithLifecycle()
     val gridState = rememberLazyGridState()
 
@@ -140,7 +141,7 @@ fun SagaDetailView(
                         }
 
                         DetailAction.OpenEmotionalReview -> {
-                            showEmotionalReview = true
+                            onEmotionalProfile()
                         }
 
                         is DetailAction.OpenChronicles -> {
@@ -175,7 +176,7 @@ fun SagaDetailView(
                                 RequestSection.CHAPTERS -> onChapters()
                                 RequestSection.ACTS -> onActs()
                                 RequestSection.BRAIN -> onBrain()
-                                RequestSection.START -> viewModel.loadInitialSection()
+                                RequestSection.START -> Unit
                             }
                         }
 
@@ -198,6 +199,7 @@ fun SagaDetailView(
             initialSection = initialSection,
             resume = resume,
             drawer = drawer,
+            imagePalette = imagePalette,
             reviewGenerationState = reviewGenerationState,
             gridState = gridState,
             onAction = onAction,
@@ -245,15 +247,6 @@ fun SagaDetailView(
             )
         }
 
-        if (showEmotionalReview) {
-            resume?.saga?.let {
-                EmotionalSheet(
-                    saga = it,
-                    onDismiss = { showEmotionalReview = false },
-                )
-            }
-        }
-
         if (showReview) {
             resume?.saga?.let {
                 ModalBottomSheet(
@@ -293,6 +286,7 @@ fun SagaDetailContentView(
     initialSection: DetailSectionView.InitialSection?,
     resume: SagaDetailResume?,
     drawer: TimelineDrawer?,
+    imagePalette: ImagePalette?,
     reviewGenerationState: ReviewGenerationState,
     gridState: LazyGridState,
     onAction: (DetailAction) -> Unit = {},
@@ -356,6 +350,7 @@ fun SagaDetailContentView(
                                     saga = baseSaga,
                                     section = initialSection!!,
                                     resume = sagaResume,
+                                    imagePalette = imagePalette,
                                     reviewGenerationState = reviewGenerationState,
                                     gridState = gridState,
                                     onAction = onAction,

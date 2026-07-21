@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
 import com.ilustris.sagai.features.characters.ui.SagaCharactersView
 import com.ilustris.sagai.features.debug.ui.LoreDebugView
+import com.ilustris.sagai.features.emotional.ui.EmotionalProfileView
 import com.ilustris.sagai.features.faq.ui.FAQView
 import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
@@ -134,8 +135,16 @@ fun createSagaEntryProvider(
             },
             onLoreDebug = { navigator.navigate(LoreDebugKey(key.sagaId)) },
             onBrain = { navigator.navigate(SagaBrainKey(key.sagaId)) },
+            onEmotionalProfile = { navigator.navigate(SagaEmotionalProfileKey(key.sagaId)) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    entry<SagaEmotionalProfileKey> { key ->
+        EmotionalProfileView(
+            sagaId = key.sagaId,
+            onBack = { navigator.goBack() },
         )
     }
 

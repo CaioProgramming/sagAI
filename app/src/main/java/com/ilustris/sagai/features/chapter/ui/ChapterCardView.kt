@@ -21,7 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,26 +33,30 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.SagAIScaffold
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
+import com.ilustris.sagai.ui.theme.themeBrushColors
+import com.ilustris.sagai.ui.theme.themeFilter
 
 @Composable
 fun ChapterCardView(
-    genre: Genre,
     chapter: Chapter,
     chapterIndex: Int,
     modifier: Modifier,
     showTitle: Boolean = true,
+    titleStyle: TextStyle = MaterialTheme.typography.labelMedium,
 ) {
     val shape = sagaShape()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
                 .clip(shape)
-                .border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), shape)
-                .background(MaterialTheme.colorScheme.surfaceContainer, shape)
+                .border(1.dp, MaterialTheme.colorScheme.onPrimary.gradientFade(), shape)
+                .background(Brush.verticalGradient(MaterialTheme.colorScheme.primary.darkerPalette(factor = .25f)), shape)
                 .fillMaxWidth()
                 .weight(1f),
         ) {
@@ -70,7 +76,7 @@ fun ChapterCardView(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .effectForGenre(genre, enableSelectiveHighlight = true),
+                        .themeFilter(selectiveHighlight = true),
             )
 
             Text(
@@ -79,7 +85,7 @@ fun ChapterCardView(
                     MaterialTheme.typography.headlineMedium.copy(
                         fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         textAlign = TextAlign.Center,
-                        brush = genre.gradient(),
+                        brush = Brush.verticalGradient(themeBrushColors()),
                     ),
                 modifier =
                     Modifier
@@ -93,11 +99,7 @@ fun ChapterCardView(
             Text(
                 text = chapter.title,
                 maxLines = 1,
-                style =
-                    MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        textAlign = TextAlign.Center,
-                    ),
+                style = titleStyle,
                 modifier =
                     Modifier
                         .padding(vertical = 8.dp)
@@ -148,7 +150,6 @@ fun ChapterCardViewPreview() {
             items(chapters.size) { index ->
                 ChapterCardView(
                     chapter = chapters[index],
-                    genre = Genre.FANTASY,
                     chapterIndex = index + 1,
                     modifier = Modifier.aspectRatio(1f),
                 )

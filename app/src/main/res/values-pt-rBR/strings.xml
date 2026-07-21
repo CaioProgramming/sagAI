@@ -178,6 +178,12 @@
     <string name="saga_detail_no_events_placeholder">Nenhum evento registrado</string>
     <string name="saga_detail_no_wiki_info_placeholder">Nenhuma informação salva</string>
     <string name="saga_detail_delete_saga_button">Excluir Saga</string>
+    <string name="saga_detail_ended_tag">Jornada Concluída</string>
+    <string name="saga_detail_about_title">Sobre %1$s</string>
+    <string name="saga_detail_about_more">Ver mais</string>
+    <string name="saga_detail_about_playtime">Tempo de jogo</string>
+    <string name="saga_detail_about_created">Criada em</string>
+    <string name="saga_detail_about_theme">Tema</string>
     <string name="saga_detail_read_story_title">Ler sua história</string>
     <string name="saga_detail_read_story_subtitle">Leia a história do começo até agora</string>
     <string name="saga_detail_manage_story">Gerenciar história</string>
@@ -791,6 +797,14 @@
     <string name="error_retry_align">Tentar Alinhar Novamente</string>
     <string name="read_chronicles">Ler Crônicas</string>
     <string name="the_chronicles">As Crônicas</string>
+    <string name="saga_detail_latest_chapter_label">Último Capítulo</string>
+    <string name="saga_detail_acts_no_acts_title">Continue a história</string>
+    <string name="saga_detail_acts_no_acts_subtitle">Complete um ato para desbloquear suas crônicas</string>
+    <string name="saga_detail_acts_no_books_title">Nenhum livro ainda</string>
+    <string name="saga_detail_acts_no_books_subtitle">Você já tem atos suficientes — hora de criar seu primeiro livro</string>
+    <string name="saga_detail_acts_create_first_book_cta">Criar primeiro livro</string>
+    <string name="saga_detail_characters_empty_title">Nenhum personagem ainda</string>
+    <string name="saga_detail_characters_empty_subtitle">Continue jogando para conhecer novos personagens</string>
     <string name="the_chronicle_awaits">A Crônica Aguarda</string>
     <string name="read_volume">Ler Volume %s</string>
     <string name="read_next_volume">Ler próximo volume</string>

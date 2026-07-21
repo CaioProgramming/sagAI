@@ -207,6 +207,12 @@
     <string name="saga_detail_no_events_placeholder">No events recorded</string>
     <string name="saga_detail_no_wiki_info_placeholder">No information saved</string>
     <string name="saga_detail_delete_saga_button">Delete Saga</string>
+    <string name="saga_detail_ended_tag">Journey Complete</string>
+    <string name="saga_detail_about_title">About %1$s</string>
+    <string name="saga_detail_about_more">See more</string>
+    <string name="saga_detail_about_playtime">Playtime</string>
+    <string name="saga_detail_about_created">Created</string>
+    <string name="saga_detail_about_theme">Theme</string>
     <string name="saga_detail_read_story_title">Read your story</string>
     <string name="saga_detail_read_story_subtitle">Read the story from the start until now</string>
     <string name="saga_detail_manage_story">Manage Story</string>
@@ -801,6 +807,14 @@
     <string name="error_retry_align">Try Aligning Again</string>
     <string name="read_chronicles">Read Chronicles</string>
     <string name="the_chronicles">The Chronicles</string>
+    <string name="saga_detail_latest_chapter_label">Latest Chapter</string>
+    <string name="saga_detail_acts_no_acts_title">Keep the story going</string>
+    <string name="saga_detail_acts_no_acts_subtitle">Complete an act to unlock your chronicles</string>
+    <string name="saga_detail_acts_no_books_title">No book yet</string>
+    <string name="saga_detail_acts_no_books_subtitle">You already have enough acts — time to create your first book</string>
+    <string name="saga_detail_acts_create_first_book_cta">Create first book</string>
+    <string name="saga_detail_characters_empty_title">No characters yet</string>
+    <string name="saga_detail_characters_empty_subtitle">Keep playing to meet new characters</string>
     <string name="the_chronicle_awaits">The Chronicle Awaits</string>
     <string name="read_volume">Read Volume %s</string>
     <string name="read_next_volume">Read next volume</string>

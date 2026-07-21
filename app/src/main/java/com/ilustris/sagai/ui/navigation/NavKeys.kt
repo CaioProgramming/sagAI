@@ -66,6 +66,11 @@ data class SagaBrainKey(
 ) : NavKey
 
 @Serializable
+data class SagaEmotionalProfileKey(
+    val sagaId: String,
+) : NavKey
+
+@Serializable
 data class CharacterBrainKey(
     val sagaId: String,
     val characterId: Int,
@@ -110,6 +115,8 @@ fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
         this is SagaBrainKey && other is SagaBrainKey -> {
             sagaId == other.sagaId
         }
+
+        this is SagaEmotionalProfileKey && other is SagaEmotionalProfileKey -> sagaId == other.sagaId
 
         this is CharacterBrainKey && other is CharacterBrainKey -> {
             sagaId == other.sagaId && characterId == other.characterId
