@@ -487,14 +487,6 @@ fun sagaHeaderComponent(
 
             Box(
                 Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .background(fadeGradientTop(adaptiveColor)),
-            )
-
-            Box(
-                Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .height(100.dp)

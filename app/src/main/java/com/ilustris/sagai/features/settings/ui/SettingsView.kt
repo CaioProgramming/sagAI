@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -137,6 +138,14 @@ fun SettingsView(
     var showBackupSheet by remember { mutableStateOf(false) }
     var showBackups by remember { mutableStateOf(true) }
     var showPremiumSheet by remember { mutableStateOf(false) }
+    var showStarryLoaderPreview by remember { mutableStateOf(false) }
+
+    LaunchedEffect(showStarryLoaderPreview) {
+        if (showStarryLoaderPreview) {
+            kotlinx.coroutines.delay(10_000)
+            showStarryLoaderPreview = false
+        }
+    }
 
     val exportLauncher =
         PermissionService.rememberDatabaseExportLauncher { uri ->
@@ -754,6 +763,28 @@ fun SettingsView(
                 }
 
                 item {
+                    Button(
+                        onClick = { showStarryLoaderPreview = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                        shape = RoundedCornerShape(15.dp),
+                    ) {
+                        Text(
+                            "Testar Starry Loader",
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                            textAlign = TextAlign.Start,
+                        )
+                    }
+                }
+
+                item {
                     var showIslandMenu by remember { mutableStateOf(false) }
                     Box(Modifier.fillMaxWidth()) {
                         Button(
@@ -924,6 +955,14 @@ fun SettingsView(
     }
 
     StarryLoader(isWiping, loadingMessage)
+
+    if (com.ilustris.sagai.BuildConfig.DEBUG) {
+        StarryLoader(
+            showStarryLoaderPreview,
+            "Tecendo o próximo capítulo…",
+            subtitle = "Isso pode levar alguns segundos",
+        )
+    }
 
     PermissionComponent(requestedPermission, {
         openAppSettings(context)

@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
@@ -94,6 +95,8 @@ import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.shimmerize
+import com.ilustris.sagai.ui.theme.themePainter
+import com.ilustris.sagai.ui.theme.themeVfx
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -279,10 +282,23 @@ private fun CharacterDetailsLoaded(
                                                     progressiveBlurRadius = 160f,
                                                     progressiveBlurRange = 0.55f to 0.95f,
                                                     enableSelectiveHighlight = true,
-                                                ).graphicsLayer(
-                                                    translationY = 100f,
                                                 ),
-                                    ) {}
+                                    ) {
+                                        Icon(
+                                            themePainter(),
+                                            null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier =
+                                                Modifier
+                                                    .alpha(0.4f)
+                                                    .align(Alignment.TopCenter)
+                                                    .statusBarsPadding()
+                                                    .padding(32.dp)
+                                                    .size(100.dp)
+                                                    .themeVfx()
+                                                    .reactiveShimmer(true, repeatMode = RepeatMode.Restart),
+                                        )
+                                    }
 
                                     Box(
                                         Modifier
