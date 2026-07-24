@@ -22,6 +22,9 @@ data object NewSagaKey : NavKey
 data object AuditLogsKey : NavKey
 
 @Serializable
+data object DesignSystemPreviewKey : NavKey
+
+@Serializable
 data object PlaythroughKey : NavKey
 
 @Serializable

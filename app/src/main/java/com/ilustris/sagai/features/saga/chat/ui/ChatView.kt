@@ -137,13 +137,13 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatUiAction
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDialog
 import com.ilustris.sagai.features.saga.chat.ui.components.MessageOptionsSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
-import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
@@ -651,10 +651,11 @@ fun ChatContent(
                 // NarrativeMilestoneIslandContent) — chat input just needs to stay out of the way
                 // while one is active, not render a second copy of the same content. NewCharacter
                 // is deliberately excluded: it has no island reveal wired yet, so blocking input
-                // for it would strand the user with nothing to interact with.
+                // for it would strand the user with nothing to interact with. Introduction is also
+                // excluded: entering a saga and seeing its intro on the island shouldn't strand the
+                // user with no way to type while it's up.
                 val milestoneBlocksInput =
                     activeMilestone is SagaMilestone.Loading ||
-                        activeMilestone is SagaMilestone.Introduction ||
                         activeMilestone is SagaMilestone.NewEvent ||
                         activeMilestone is SagaMilestone.ChapterFinished ||
                         activeMilestone is SagaMilestone.ActFinished

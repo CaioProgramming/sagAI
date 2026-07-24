@@ -30,6 +30,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
@@ -67,14 +70,22 @@ import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSe
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.rememberPermissionLauncher
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.formatFileSize
+import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.components.island.AdvanceIslandContent
+import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
+import com.ilustris.sagai.ui.components.island.ImageGenerationIslandContent
+import com.ilustris.sagai.ui.components.island.ObjectiveIslandContent
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -88,6 +99,7 @@ fun SettingsView(
     navToAuditLogs: () -> Unit = {},
     navToPlaythrough: () -> Unit = {},
     navToPlayerProfile: () -> Unit = {},
+    navToDesignSystemPreview: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -716,6 +728,170 @@ fun SettingsView(
                                     .padding(vertical = 8.dp),
                             textAlign = TextAlign.Start,
                         )
+                    }
+                }
+
+                item {
+                    Button(
+                        onClick = { navToDesignSystemPreview() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                        shape = RoundedCornerShape(15.dp),
+                    ) {
+                        Text(
+                            stringResource(R.string.design_system_preview_title),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                            textAlign = TextAlign.Start,
+                        )
+                    }
+                }
+
+                item {
+                    var showIslandMenu by remember { mutableStateOf(false) }
+                    Box(Modifier.fillMaxWidth()) {
+                        Button(
+                            onClick = { showIslandMenu = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                ),
+                            shape = RoundedCornerShape(15.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.settings_test_global_island),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                textAlign = TextAlign.Start,
+                            )
+                        }
+
+                        DropdownMenu(
+                            showIslandMenu,
+                            onDismissRequest = { showIslandMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.island_test_objective)) },
+                                onClick = {
+                                    showIslandMenu = false
+                                    viewModel.testIsland(
+                                        ObjectiveIslandContent(
+                                            titleRes = R.string.current_objective,
+                                            objective = "Encontrar o artefato perdido",
+                                            genre = Genre.FANTASY,
+                                            progress = 0.4f,
+                                        ),
+                                    )
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.island_test_advance_idle)) },
+                                onClick = {
+                                    showIslandMenu = false
+                                    viewModel.testIsland(
+                                        AdvanceIslandContent(
+                                            action = NarrativeAction.CreateAct,
+                                            reasoning = null,
+                                            isProcessing = false,
+                                            genre = Genre.FANTASY,
+                                            onAction = {},
+                                        ),
+                                    )
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.island_test_advance_processing)) },
+                                onClick = {
+                                    showIslandMenu = false
+                                    viewModel.testIsland(
+                                        AdvanceIslandContent(
+                                            action = NarrativeAction.CreateAct,
+                                            reasoning = "Tecendo o próximo capítulo…",
+                                            isProcessing = true,
+                                            genre = Genre.FANTASY,
+                                            onAction = {},
+                                        ),
+                                    )
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.island_test_book_generation)) },
+                                onClick = {
+                                    showIslandMenu = false
+                                    viewModel.testIsland(
+                                        BookGenerationIslandContent(
+                                            BookGenerationUiState.Generating(
+                                                sagaId = 1,
+                                                sagaTitle = "Saga de teste",
+                                                actId = 1,
+                                                actTitle = "Ato II — A Queda",
+                                                genre = Genre.FANTASY,
+                                                reasoning = "Escrevendo a prosa…",
+                                            ),
+                                        ),
+                                    )
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.island_test_image_generation)) },
+                                onClick = {
+                                    showIslandMenu = false
+                                    viewModel.testIsland(
+                                        ImageGenerationIslandContent(
+                                            state =
+                                                ImageGenerationUiState.Generating(
+                                                    label = "Retrato de Mascari",
+                                                    reasoning = "Renderizando…",
+                                                    imageType = ImageType.ICON,
+                                                ),
+                                            debugImageFallbackService = viewModel.debugImageFallbackService,
+                                            onCancel = {},
+                                            onDismissReveal = {},
+                                        ),
+                                    )
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.island_test_manual_image_fallback)) },
+                                onClick = {
+                                    showIslandMenu = false
+                                    viewModel.testIsland(
+                                        ImageGenerationIslandContent(
+                                            state =
+                                                ImageGenerationUiState.AwaitingManualFallback(
+                                                    prompt = "Um guerreiro cyberpunk sob luz neon, retrato de busto",
+                                                ),
+                                            debugImageFallbackService = viewModel.debugImageFallbackService,
+                                            onCancel = {},
+                                            onDismissReveal = {},
+                                        ),
+                                    )
+                                },
+                            )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(R.string.island_test_dismiss),
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                },
+                                onClick = {
+                                    showIslandMenu = false
+                                    viewModel.testIsland(null)
+                                },
+                            )
+                        }
                     }
                 }
             }

@@ -622,6 +622,21 @@
 
     <!-- Logs de Auditoria de IA -->
     <string name="audit_logs_title">Logs de Auditoria de IA</string>
+    <string name="design_system_preview_title">Design System Preview</string>
+    <string name="design_system_preview_header_font_label">Fonte de título (remota, com fallback enquanto resolve)</string>
+    <string name="design_system_preview_bubble_label">Formato do balão de chat</string>
+    <string name="design_system_preview_bubble_sample_text">Uma saga fala com a voz de %1$s.</string>
+    <string name="design_system_preview_glow_label">Borda com brilho</string>
+    <string name="design_system_preview_rotating_stroke_label">Traço rotativo de "IA gerando"</string>
+    <string name="design_system_preview_shader_label">Parâmetros do shader turbinados (grão/vinheta/aberração cromática/rim)</string>
+    <string name="settings_test_global_island">Testar ilha global</string>
+    <string name="island_test_objective">Objetivo</string>
+    <string name="island_test_advance_idle">Avançar (ocioso)</string>
+    <string name="island_test_advance_processing">Avançar (processando)</string>
+    <string name="island_test_book_generation">Geração de livro</string>
+    <string name="island_test_image_generation">Geração de imagem</string>
+    <string name="island_test_manual_image_fallback">Fallback manual de imagem</string>
+    <string name="island_test_dismiss">Encerrar ilha</string>
     <string name="audit_logs_all">Todos</string>
     <string name="audit_logs_success">Sucesso</string>
     <string name="audit_logs_error">Erro</string>

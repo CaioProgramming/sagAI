@@ -748,6 +748,21 @@
 
     <!-- AI Audit Logs -->
     <string name="audit_logs_title">AI Audit Logs</string>
+    <string name="design_system_preview_title">Design System Preview</string>
+    <string name="design_system_preview_header_font_label">Header font (remote, falls back while resolving)</string>
+    <string name="design_system_preview_bubble_label">Chat bubble shape</string>
+    <string name="design_system_preview_bubble_sample_text">A saga speaks in %1$s\'s voice.</string>
+    <string name="design_system_preview_glow_label">Glow border</string>
+    <string name="design_system_preview_rotating_stroke_label">Rotating "AI is generating" stroke</string>
+    <string name="design_system_preview_shader_label">Boosted shader params (grain/vignette/chromatic/rim)</string>
+    <string name="settings_test_global_island">Test global island</string>
+    <string name="island_test_objective">Objective</string>
+    <string name="island_test_advance_idle">Advance (idle)</string>
+    <string name="island_test_advance_processing">Advance (processing)</string>
+    <string name="island_test_book_generation">Book generation</string>
+    <string name="island_test_image_generation">Image generation</string>
+    <string name="island_test_manual_image_fallback">Manual image fallback</string>
+    <string name="island_test_dismiss">Dismiss island</string>
     <string name="audit_logs_all">All</string>
     <string name="audit_logs_success">Success</string>
     <string name="audit_logs_error">Error</string>

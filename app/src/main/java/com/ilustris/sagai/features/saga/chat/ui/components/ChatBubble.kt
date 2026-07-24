@@ -1,8 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 import MessageStatus
 import ai.atick.material.MaterialColor
-import android.graphics.Matrix
-import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -12,13 +10,8 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -67,15 +60,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -111,6 +99,8 @@ import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
+import com.ilustris.sagai.ui.theme.rememberRotatingBorderAngle
+import com.ilustris.sagai.ui.theme.rotatingGradientBorder
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.toEasing
 import java.io.File
@@ -204,12 +194,7 @@ fun ChatBubble(
     }
 
     val animationsActive = rememberLifecycleAnimationsActive()
-    val rotationValue =
-        if (animationsActive) {
-            rememberChatBubbleBorderRotation()
-        } else {
-            0f
-        }
+    val rotationValue = rememberRotatingBorderAngle(isAnimating = animationsActive)
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -278,7 +263,8 @@ fun ChatBubble(
                                                 ),
                                             )
                                         }
-                                    }.size(avatarSize),
+                                    }
+                                    .size(avatarSize),
                             ) {
                                 avatarCharacter?.let { character ->
                                     AnimatedContent(
@@ -300,7 +286,8 @@ fun ChatBubble(
                                                     .sharedElement(
                                                         rememberSharedContentState(key = "character_${character.id}_icon"),
                                                         animatedVisibilityScope,
-                                                    ).padding(8.dp)
+                                                    )
+                                                    .padding(8.dp)
                                                     .fillMaxSize(),
                                         )
                                     }
@@ -346,7 +333,8 @@ fun ChatBubble(
                                                         message,
                                                     ),
                                                 )
-                                            }.size(24.dp)
+                                            }
+                                            .size(24.dp)
                                             .gradientFill(genre.gradient()),
                                     )
                                 }
@@ -366,40 +354,13 @@ fun ChatBubble(
                                             .emotionalEntrance(
                                                 message.emotionalTone,
                                                 messageEffectsEnabled,
-                                            ).wrapContentSize()
-                                            .drawWithContent {
-                                                drawContent()
-                                                val outline =
-                                                    bubbleShape.createOutline(
-                                                        size,
-                                                        layoutDirection,
-                                                        this,
-                                                    )
-                                                val brush =
-                                                    object : ShaderBrush() {
-                                                        override fun createShader(size: Size): Shader {
-                                                            val shader =
-                                                                (
-                                                                    sweepGradient(
-                                                                        palette,
-                                                                    ) as ShaderBrush
-                                                                ).createShader(size)
-                                                            val matrix = Matrix()
-                                                            matrix.setRotate(
-                                                                rotationValue,
-                                                                size.width / 2,
-                                                                size.height / 2,
-                                                            )
-                                                            shader.setLocalMatrix(matrix)
-                                                            return shader
-                                                        }
-                                                    }
-                                                drawOutline(
-                                                    outline = outline,
-                                                    brush = brush,
-                                                    style = Stroke(width = 1.dp.toPx()),
-                                                )
-                                            }.background(
+                                            )
+                                            .wrapContentSize()
+                                            .rotatingGradientBorder(
+                                                shape = bubbleShape,
+                                                colors = palette,
+                                                rotationDegrees = rotationValue,
+                                            ).background(
                                                 MaterialTheme.colorScheme.surfaceContainer.copy(
                                                     alpha = .3f,
                                                 ),
@@ -431,10 +392,12 @@ fun ChatBubble(
                                                                 )
                                                             }
                                                         },
-                                                    ).emotionalEntrance(
+                                                    )
+                                                    .emotionalEntrance(
                                                         message.emotionalTone,
                                                         messageEffectsEnabled,
-                                                    ).wrapContentSize()
+                                                    )
+                                                    .wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
@@ -466,14 +429,17 @@ fun ChatBubble(
                                                                     )
                                                                 }
                                                             },
-                                                        ).emotionalEntrance(
+                                                        )
+                                                        .emotionalEntrance(
                                                             message.emotionalTone,
                                                             messageEffectsEnabled,
-                                                        ).wrapContentSize()
+                                                        )
+                                                        .wrapContentSize()
                                                         .background(
                                                             bubbleStyle.backgroundColor,
                                                             bubbleShape,
-                                                        ).background(
+                                                        )
+                                                        .background(
                                                             MaterialTheme.colorScheme.surfaceContainer
                                                                 .copy(
                                                                     alpha = .5f,
@@ -504,10 +470,12 @@ fun ChatBubble(
                                                                     )
                                                                 }
                                                             },
-                                                        ).emotionalEntrance(
+                                                        )
+                                                        .emotionalEntrance(
                                                             message.emotionalTone,
                                                             messageEffectsEnabled,
-                                                        ).wrapContentSize()
+                                                        )
+                                                        .wrapContentSize()
                                                         .background(
                                                             bubbleStyle.backgroundColor,
                                                             bubbleShape,
@@ -573,11 +541,13 @@ fun ChatBubble(
                                                 .graphicsLayer {
                                                     scaleX = finalScale
                                                     scaleY = finalScale
-                                                }.border(
+                                                }
+                                                .border(
                                                     2.dp,
                                                     borderColorAnimation,
                                                     bubbleShape,
-                                                ).padding(paddingAnimation)
+                                                )
+                                                .padding(paddingAnimation)
                                                 .clip(bubbleShape)
                                                 .padding(vertical = 4.dp)
                                                 .animateContentSize(),
@@ -823,7 +793,8 @@ fun ChatBubble(
                                 .emotionalEntrance(
                                     message.emotionalTone,
                                     messageEffectsEnabled,
-                                ).padding(16.dp)
+                                )
+                                .padding(16.dp)
                                 .fillMaxWidth(),
                     ) {
                         Column(
@@ -1043,20 +1014,4 @@ data class BubbleStyle(
             canAnimate,
         )
     }
-}
-
-@Composable
-private fun rememberChatBubbleBorderRotation(): Float {
-    val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(3000, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "rotation",
-    )
-    return rotation
 }

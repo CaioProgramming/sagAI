@@ -13,6 +13,7 @@ import com.ilustris.sagai.features.brain.ui.SagaBrainView
 import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
 import com.ilustris.sagai.features.characters.ui.SagaCharactersView
+import com.ilustris.sagai.features.debug.ui.DesignSystemPreviewView
 import com.ilustris.sagai.features.debug.ui.LoreDebugView
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileView
 import com.ilustris.sagai.features.faq.ui.FAQView
@@ -51,9 +52,14 @@ fun createSagaEntryProvider(
             navToAuditLogs = { navigator.navigate(AuditLogsKey) },
             navToPlaythrough = { navigator.navigate(PlaythroughKey) },
             navToPlayerProfile = { navigator.navigate(PlayerProfileKey) },
+            navToDesignSystemPreview = { navigator.navigate(DesignSystemPreviewKey) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )
+    }
+
+    entry<DesignSystemPreviewKey> {
+        DesignSystemPreviewView(onBack = { navigator.goBack() })
     }
 
     entry<PlaythroughKey> {
