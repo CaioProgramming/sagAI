@@ -280,7 +280,7 @@ private fun CharacterDetailsLoaded(
                                                 .effectForGenre(
                                                     genre = genre,
                                                     progressiveBlurRadius = 160f,
-                                                    progressiveBlurRange = 0.55f to 0.95f,
+                                                    progressiveBlurRange = 0.6f to 0.98f,
                                                     enableSelectiveHighlight = true,
                                                 ),
                                     ) {
@@ -292,7 +292,6 @@ private fun CharacterDetailsLoaded(
                                                 Modifier
                                                     .alpha(0.4f)
                                                     .align(Alignment.TopCenter)
-                                                    .statusBarsPadding()
                                                     .padding(32.dp)
                                                     .size(100.dp)
                                                     .themeVfx()

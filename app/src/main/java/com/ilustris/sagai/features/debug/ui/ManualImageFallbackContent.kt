@@ -55,7 +55,9 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.file.readUriAsBitmap
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.sagaBrush
 
@@ -161,25 +163,6 @@ fun ManualImageFallbackContent(
             onCopy = if (compact) ::copyPrompt else null,
         )
 
-        val geminiButton: @Composable (Modifier) -> Unit = { buttonModifier ->
-            Button(
-                onClick = { openGeminiWeb(context) },
-                modifier =
-                    buttonModifier
-                        .clip(MaterialTheme.shapes.medium),
-                shape = MaterialTheme.shapes.medium,
-                colors =
-                    ButtonDefaults.buttonColors().copy(
-                        containerColor = Color.Transparent,
-                    ),
-            ) {
-                Text(
-                    text = stringResource(R.string.debug_image_fallback_open_gemini),
-                    maxLines = 2,
-                )
-            }
-        }
-
         val geminiBrush = sagaBrush()
 
         Row(
@@ -188,28 +171,23 @@ fun ManualImageFallbackContent(
                     .fillMaxWidth()
                     .dropShadow(MaterialTheme.shapes.medium) {
                         brush = geminiBrush
-                        radius = 10f
+                        radius = 15f
                         spread = 1f
-                    }.border(1.dp, sagaBrush(), MaterialTheme.shapes.medium)
+                    }.border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .1f), MaterialTheme.shapes.medium)
                     .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .background(MaterialTheme.colorScheme.background)
+                    .background(fadeGradientBottom(MaterialTheme.colorScheme.primary))
                     .clickable {
                         openGeminiWeb(context)
-                    }.padding(16.dp)
-                    .gradientFill(geminiBrush),
+                    }.padding(16.dp),
             horizontalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                painterResource(R.drawable.ic_spark),
-                null,
-                modifier = Modifier.size(24.dp).padding(horizontal = 8.dp),
-                tint = MaterialTheme.colorScheme.onBackground,
-            )
-
             Text(
                 text = stringResource(R.string.debug_image_fallback_open_gemini),
                 maxLines = 1,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelLarge,
             )
         }
 

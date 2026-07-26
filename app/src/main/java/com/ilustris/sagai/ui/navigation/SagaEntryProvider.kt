@@ -59,7 +59,11 @@ fun createSagaEntryProvider(
     }
 
     entry<DesignSystemPreviewKey> {
-        DesignSystemPreviewView(onBack = { navigator.goBack() })
+        DesignSystemPreviewView(
+            onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
     }
 
     entry<PlaythroughKey> {

@@ -471,6 +471,9 @@ fun PaletteTheme(
     val paletteColorScheme =
         MaterialTheme.colorScheme.copy(
             background = animatedBackground,
+            primaryContainer = animatedBackground,
+            primary = imagePalette?.vibrant ?: MaterialTheme.colorScheme.primary,
+            onPrimary = imagePalette?.onVibrant ?: MaterialTheme.colorScheme.onPrimary,
             onBackground = animatedOnBackground,
             surface = animatedBackground,
             onSurface = animatedOnBackground,

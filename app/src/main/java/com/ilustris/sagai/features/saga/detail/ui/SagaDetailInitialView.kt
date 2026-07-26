@@ -418,8 +418,8 @@ fun sagaHeaderComponent(
 ) {
     val genre = saga.genre
     // Already palette-animated by the enclosing PaletteTheme — plain reads stay smooth for free.
-    val adaptiveColor = MaterialTheme.colorScheme.background
-    val adaptiveTextColor = MaterialTheme.colorScheme.onBackground
+    val adaptiveColor = MaterialTheme.colorScheme.primaryContainer
+    val adaptiveTextColor = MaterialTheme.colorScheme.onPrimary
     val accentColor by animateColorAsState(
         targetValue = imagePalette?.vibrant ?: imagePalette?.dominant ?: MaterialTheme.colorScheme.primary,
         animationSpec = tween(1000),
@@ -479,7 +479,7 @@ fun sagaHeaderComponent(
                         .effectForGenre(
                             genre = genre,
                             progressiveBlurRadius = 160f,
-                            progressiveBlurRange = 0.55f to 0.95f,
+                            progressiveBlurRange = 0.6f to 0.98f,
                             enableSelectiveHighlight = true,
                         ),
                 contentScale = ContentScale.Crop,

@@ -36,6 +36,9 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.morphingGradient
+import com.ilustris.sagai.ui.theme.rememberRotatingBorderAngle
+import com.ilustris.sagai.ui.theme.rotatingGradientBorder
+import com.ilustris.sagai.ui.theme.themeBrushColors
 
 private val IslandFadeTween = tween<Float>(durationMillis = 220, easing = EaseInOut)
 
@@ -162,8 +165,17 @@ private fun IslandBody(
                         spread = shadowAlpha
                         alpha = cardAlpha
                     }.clip(shape)
-                    .border(1.dp, borderBrush, shape)
-                    .background(baseColor.copy(alpha = cardAlpha), shape),
+                    .then(
+                        if (content.compact.isLoading) {
+                            Modifier.rotatingGradientBorder(
+                                shape,
+                                themeBrushColors(),
+                                rememberRotatingBorderAngle(),
+                            )
+                        } else {
+                            Modifier.border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .1f), shape)
+                        },
+                    ).background(baseColor.copy(alpha = cardAlpha), shape),
         ) {
             Column(
                 modifier = Modifier.wrapContentSize().animateContentSize(),

@@ -622,7 +622,7 @@
 
     <!-- Logs de Auditoria de IA -->
     <string name="audit_logs_title">Logs de Auditoria de IA</string>
-    <string name="design_system_preview_title">Design System Preview</string>
+    <string name="design_system_preview_title">Design System</string>
     <string name="design_system_preview_header_font_label">Fonte de título (remota, com fallback enquanto resolve)</string>
     <string name="design_system_preview_bubble_label">Formato do balão de chat</string>
     <string name="design_system_preview_bubble_sample_text">Uma saga fala com a voz de %1$s.</string>
@@ -728,6 +728,22 @@
     <string name="settings_export_database_loading">Exportando banco de dados…</string>
     <string name="settings_export_database_success">Banco de dados exportado com sucesso!</string>
     <string name="settings_export_database_failed">Falha ao exportar banco de dados.</string>
+    <string name="settings_debug_section">Depuração</string>
+    <string name="settings_audit_logs_subtitle">Inspecionar requisições de IA</string>
+    <string name="settings_design_system_subtitle">Validar o design system</string>
+    <string name="settings_test_starry_loader">Testar Starry Loader</string>
+    <string name="settings_test_starry_loader_message">Tecendo o próximo capítulo…</string>
+    <string name="settings_test_starry_loader_subtitle">Isso pode levar alguns segundos</string>
+
+    <!-- Island Test Samples -->
+    <string name="island_test_objective_sample">Encontrar o artefato perdido</string>
+    <string name="island_test_advance_processing_sample">Tecendo o próximo capítulo…</string>
+    <string name="island_test_book_generation_saga_title">Saga de teste</string>
+    <string name="island_test_book_generation_act_title">Ato II — A Queda</string>
+    <string name="island_test_book_generation_reasoning">Escrevendo a prosa…</string>
+    <string name="island_test_image_generation_label">Retrato de Mascari</string>
+    <string name="island_test_image_generation_reasoning">Renderizando…</string>
+    <string name="island_test_image_fallback_prompt">Um guerreiro cyberpunk sob luz neon, retrato de busto</string>
 
     <string name="restore_database_title">Backups de banco de dados</string>
     <string name="restore_database_description">Selecione um backup para restaurar suas histórias</string>

@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -24,7 +25,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.shimmerize
+import com.ilustris.sagai.ui.theme.solidGradient
 import kotlin.time.Duration.Companion.seconds
 
 /** Reference height of a "full" compact row (icon + text + indicator). Icon-/text-only rows are shorter. */
@@ -65,7 +70,8 @@ fun CompactIslandLayout(
                 modifier
                     .padding(12.dp)
                     .fillMaxWidth(pillFill)
-                    .reactiveShimmer(data.isLoading, repeatMode = RepeatMode.Restart),
+                    .gradientFill(if (data.isLoading) sagaBrush() else MaterialTheme.colorScheme.onBackground.solidGradient())
+                    .reactiveShimmer(data.isLoading, repeatMode = RepeatMode.Restart, shimmerColors = Color.White.shimmerize()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -100,8 +106,8 @@ fun CompactIslandLayout(
                 Icon(
                     painter = painterResource(data.actionIconRes!!),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(24.dp),
                 )
             }
         }
@@ -115,6 +121,7 @@ private fun CompactIslandIndicator(data: CompactIslandData) {
         modifier =
             Modifier
                 .size(20.dp)
+                .gradientFill(sagaBrush())
                 .reactiveShimmer(
                     data.isLoading,
                     duration = 5.seconds,

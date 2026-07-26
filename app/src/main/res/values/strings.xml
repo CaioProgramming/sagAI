@@ -533,6 +533,22 @@
     <string name="settings_export_database_loading">Exporting database…</string>
     <string name="settings_export_database_success">Database exported successfully!</string>
     <string name="settings_export_database_failed">Failed to export database.</string>
+    <string name="settings_debug_section">Debug</string>
+    <string name="settings_audit_logs_subtitle">Inspect AI requests</string>
+    <string name="settings_design_system_subtitle">Validate design system</string>
+    <string name="settings_test_starry_loader">Test Starry Loader</string>
+    <string name="settings_test_starry_loader_message">Weaving the next chapter…</string>
+    <string name="settings_test_starry_loader_subtitle">This may take a few seconds</string>
+
+    <!-- Island Test Samples -->
+    <string name="island_test_objective_sample">Find the lost artifact</string>
+    <string name="island_test_advance_processing_sample">Weaving the next chapter…</string>
+    <string name="island_test_book_generation_saga_title">Test Saga</string>
+    <string name="island_test_book_generation_act_title">Act II — The Fall</string>
+    <string name="island_test_book_generation_reasoning">Writing the prose…</string>
+    <string name="island_test_image_generation_label">Portrait of Mascari</string>
+    <string name="island_test_image_generation_reasoning">Rendering…</string>
+    <string name="island_test_image_fallback_prompt">A cyberpunk warrior under neon lights, bust portrait</string>
 
     <!-- Conversation Snippet Sharing -->
     <string name="messages_selected">%1$d of %2$d messages selected</string>
@@ -748,7 +764,7 @@
 
     <!-- AI Audit Logs -->
     <string name="audit_logs_title">AI Audit Logs</string>
-    <string name="design_system_preview_title">Design System Preview</string>
+    <string name="design_system_preview_title">Design System</string>
     <string name="design_system_preview_header_font_label">Header font (remote, falls back while resolving)</string>
     <string name="design_system_preview_bubble_label">Chat bubble shape</string>
     <string name="design_system_preview_bubble_sample_text">A saga speaks in %1$s\'s voice.</string>

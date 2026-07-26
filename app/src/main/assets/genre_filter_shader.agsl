@@ -322,6 +322,12 @@ half4 main(float2 fragCoord) {
     vec3 color = blurredSample.rgb;
     float alpha = blurredSample.a;
 
+    // Force clip to content bounds when using progressive blur to prevent bleeding
+    // outside the image area (e.g. into text sections).
+    if (u_progressiveBlurRadius > 0.1) {
+        alpha *= originalSample.a;
+    }
+
     if (abs(u_saturation - 1.0) > 0.01) {
         float satBoost = 1.0 + progressiveWeight * 0.25;
         color = mix(vec3(getLuminance(color)), color, u_saturation * satBoost);
