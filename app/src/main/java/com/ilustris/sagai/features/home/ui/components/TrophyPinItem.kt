@@ -78,6 +78,10 @@ internal fun TrophyPinVisual(
                 } else {
                     Brush.verticalGradient(MaterialTheme.colorScheme.primary.darkerPalette())
                 }
+            // dropShadow reallocates its shadow layer whenever brush/color changes, so it stays
+            // on the fixed, non-morphing brush regardless of focus — the animated highlight stays
+            // on the border stroke, a cheap draw with no shadow layer behind it.
+            val shadowBrush = Brush.verticalGradient(MaterialTheme.colorScheme.primary.darkerPalette())
 
             Box(
                 contentAlignment = Alignment.Center,
@@ -86,7 +90,7 @@ internal fun TrophyPinVisual(
                         .levitate(isPlaying = levitateEnabled, yOffset = 5f)
                         .size(avatarSize)
                         .dropShadow(CircleShape) {
-                            brush = highlightBrush
+                            brush = shadowBrush
                             radius = 25f
                             spread = .5f
                             alpha = shadowAlpha

@@ -9,6 +9,10 @@ sealed class HomeUiAction {
         val saga: Saga,
     ) : HomeUiAction()
 
+    data class SaveName(
+        val name: String,
+    ) : HomeUiAction()
+
     data object OpenPremium : HomeUiAction()
 
     data object RecoverSagas : HomeUiAction()

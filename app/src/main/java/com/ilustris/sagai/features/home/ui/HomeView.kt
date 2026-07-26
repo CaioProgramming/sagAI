@@ -15,25 +15,24 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -79,32 +78,23 @@ import com.ilustris.sagai.features.characters.ui.components.buildMessagePreviewA
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaSummary
-import com.ilustris.sagai.features.home.ui.components.DynamicPromptShellContent
 import com.ilustris.sagai.features.home.ui.components.HomeSplashLoader
 import com.ilustris.sagai.features.home.ui.components.PersonalizedHomeHeader
-import com.ilustris.sagai.features.home.ui.components.PremiumShellContent
 import com.ilustris.sagai.features.home.ui.components.TrophyShelf
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.features.player.domain.UserIdentityUseCase
-import com.ilustris.sagai.features.premium.PremiumTitle
+import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.components.taskshell.TaskShellExpansion
-import com.ilustris.sagai.ui.components.taskshell.TaskShellLayout
-import com.ilustris.sagai.ui.components.taskshell.TaskShellSlotState
 import com.ilustris.sagai.ui.theme.SAGA_THEME_TRANSITION_MS
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.fadeGradientTop
-import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.iridescentGradient
 import com.ilustris.sagai.ui.theme.sagaBrush
-import com.ilustris.sagai.ui.theme.themeBrushColors
 import java.util.Calendar
 
 /** Theme and ambient audio are owned by [com.ilustris.sagai.MainActivity] + [com.ilustris.sagai.core.theme.SagaThemeManager], not this screen. */
@@ -201,8 +191,8 @@ fun HomeView(
     OnboardingDialog(type = OnboardingType.APP_INTRO)
 
     if (showNamePrompt) {
-        com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog(
-            userIdentityUseCase = viewModel.userIdentityUseCase,
+        UserNamePromptDialog(
+            onSaveName = { viewModel.handleAction(HomeUiAction.SaveName(it)) },
             onDismiss = { showNamePrompt = false },
         )
     }
@@ -221,87 +211,21 @@ private fun HomeContent(
     openSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var topExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
-    var bottomExpansion by remember { mutableStateOf(TaskShellExpansion.Collapsed) }
     val lazyListState = rememberLazyListState()
 
-    LaunchedEffect(state.showPremiumOnboarding) {
-        if (state.showPremiumOnboarding) {
-            bottomExpansion = TaskShellExpansion.Full
-        } else if (bottomExpansion == TaskShellExpansion.Full) {
-            bottomExpansion = TaskShellExpansion.Collapsed
-        }
-    }
-
-    val bottomSlot =
-        if (!state.isPremium) {
-            TaskShellSlotState(
-                content =
-                    PremiumShellContent(
-                        onDismissPremium = { onAction(HomeUiAction.DismissPremiumOnboarding) },
-                    ),
-                expansion = bottomExpansion,
-                onExpansionChange = { expansion ->
-                    bottomExpansion = expansion
-                    when (expansion) {
-                        TaskShellExpansion.Full -> {
-                            onAction(HomeUiAction.OpenPremium)
-                        }
-
-                        TaskShellExpansion.Collapsed -> {
-                            if (state.showPremiumOnboarding) {
-                                onAction(HomeUiAction.DismissPremiumOnboarding)
-                            }
-                        }
-
-                        else -> {
-                            Unit
-                        }
-                    }
-                },
-            )
-        } else {
-            null
-        }
-
-    Column(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
-        PersonalizedHomeHeader(
-            userName = userName,
-            currentGenre = state.dynamicNewSagaTexts?.genre,
-            scrollState = lazyListState,
-        )
-
-        TaskShellLayout(
-            modifier = Modifier.fillMaxSize(),
-            topSlot = null,
-            bottomSlot = bottomSlot,
-            background = { top, bottom ->
-                SagAITheme(state.dynamicNewSagaTexts?.genre) {
-                    val backgroundColor by animateColorAsState(
-                        MaterialTheme.colorScheme.background,
-                    )
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(.25f)
-                            .background(fadeGradientTop(backgroundColor)),
-                    )
-                }
-            },
-        ) {
-            ChatList(
-                state = state,
-                onAction = onAction,
-                padding = padding,
-                lazyListState = lazyListState,
-                sharedTransitionScope = sharedTransitionScope,
-                splashAnimatedContentScope = splashAnimatedContentScope,
-                navAnimatedVisibilityScope = navAnimatedVisibilityScope,
-                openSettings = openSettings,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-    }
+    // TODO: Move premium upsell to DynamicBottomIsland via global effect
+    ChatList(
+        state = state,
+        onAction = onAction,
+        padding = padding,
+        userName = userName,
+        lazyListState = lazyListState,
+        sharedTransitionScope = sharedTransitionScope,
+        splashAnimatedContentScope = splashAnimatedContentScope,
+        navAnimatedVisibilityScope = navAnimatedVisibilityScope,
+        openSettings = openSettings,
+        modifier = Modifier.fillMaxSize(),
+    )
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
@@ -310,7 +234,9 @@ private fun ChatList(
     state: HomeUiState,
     onAction: (HomeUiAction) -> Unit,
     padding: PaddingValues = PaddingValues(0.dp),
-    lazyListState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
+    userName: String? = null,
+    dynamicPrompt: DynamicSagaPrompt? = null,
+    lazyListState: LazyListState = rememberLazyListState(),
     sharedTransitionScope: SharedTransitionScope,
     splashAnimatedContentScope: AnimatedContentScope,
     navAnimatedVisibilityScope: AnimatedContentScope,
@@ -326,66 +252,75 @@ private fun ChatList(
                     .padding(padding),
         ) {
             stickyHeader {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier =
+                with(sharedTransitionScope) {
+                    Box(
                         Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.background),
-                ) {
-                    Box(Modifier.size(24.dp))
-                    AnimatedContent(
-                        state.isPremium,
-                        modifier =
-                            Modifier
-                                .align(Alignment.CenterVertically)
-                                .weight(1f),
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .fillMaxWidth(),
                     ) {
-                        if (it) {
-                            PremiumTitle(
-                                modifier =
+                        AnimatedContent(lazyListState.canScrollBackward.not(), transitionSpec = {
+                            slideInVertically { it } togetherWith slideOutVertically { it / 2 }
+                        }) {
+                            if (it) {
+                                Row(
                                     Modifier
-                                        .clickable(
-                                            indication = null,
-                                            interactionSource = remember { MutableInteractionSource() },
-                                        ) {
-                                            onAction(HomeUiAction.OpenPremium)
-                                        }.wrapContentWidth()
-                                        .align(Alignment.CenterVertically),
-                                iconModifier =
-                                    Modifier.sharedElement(
-                                        rememberSharedContentState("spark_icon"),
-                                        splashAnimatedContentScope,
-                                    ),
-                                titleStyle =
-                                    MaterialTheme.typography.titleLarge,
-                                brush = Brush.linearGradient(themeBrushColors()),
-                            )
-                        } else {
-                            SagaTitle(
-                                iconModifier =
-                                    Modifier.sharedElement(
-                                        rememberSharedContentState("spark_icon"),
-                                        splashAnimatedContentScope,
-                                    ),
-                            )
+                                        .align(Alignment.TopStart)
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_spark),
+                                        null,
+                                        modifier =
+                                            Modifier
+                                                .sharedElement(
+                                                    rememberSharedContentState("spark_icon"),
+                                                    splashAnimatedContentScope,
+                                                ).size(32.dp),
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                    )
+                                    Spacer(Modifier.weight(1f))
+
+                                    IconButton(onClick = openSettings) {
+                                        Icon(
+                                            painterResource(R.drawable.ic_settings),
+                                            null,
+                                            modifier = Modifier.size(32.dp),
+                                            tint = MaterialTheme.colorScheme.onBackground,
+                                        )
+                                    }
+                                }
+                            } else {
+                                Row(
+                                    Modifier
+                                        .align(Alignment.TopStart)
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Spacer(Modifier.weight(1f))
+                                    SagaTitle(
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    IconButton(openSettings) {
+                                        Icon(
+                                            painterResource(R.drawable.ic_settings),
+                                            null,
+                                            modifier = Modifier.size(32.dp),
+                                            tint = MaterialTheme.colorScheme.onBackground,
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
+                }
+            }
 
-                    IconButton(
-                        onClick = {
-                            openSettings()
-                        },
-                        modifier = Modifier.size(32.dp),
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.ic_settings),
-                            contentDescription = stringResource(R.string.settings_title),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
+            item {
+                PersonalizedHomeHeader(
+                    dynamicContent = state.dynamicNewSagaTexts,
+                ) {
+                    onAction(HomeUiAction.CreateNewSaga)
                 }
             }
 

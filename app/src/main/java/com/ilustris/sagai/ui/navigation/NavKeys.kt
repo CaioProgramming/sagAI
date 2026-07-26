@@ -10,6 +10,9 @@ data object HomeKey : NavKey
 data object SettingsKey : NavKey
 
 @Serializable
+data object PlayerProfileKey : NavKey
+
+@Serializable
 data object FAQKey : NavKey
 
 @Serializable
@@ -185,6 +188,18 @@ fun String.findNavKey(): NavKey? {
 
         this.startsWith("saga://saga_chapters/") -> {
             SagaChaptersKey(this.removePrefix("saga://saga_chapters/"))
+        }
+
+        this.startsWith("saga://saga_wiki/") -> {
+            SagaWikiKey(this.removePrefix("saga://saga_wiki/"))
+        }
+
+        this.startsWith("saga://saga_events/") -> {
+            SagaEventsKey(this.removePrefix("saga://saga_events/"))
+        }
+
+        this.startsWith("saga://saga_characters/") -> {
+            SagaCharactersKey(this.removePrefix("saga://saga_characters/"))
         }
 
         this.startsWith("saga://lore_debug/") -> {

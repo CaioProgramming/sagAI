@@ -52,7 +52,6 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -70,6 +69,7 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.formatFileSize
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
@@ -79,6 +79,7 @@ import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
 
 @Composable
 fun SettingsView(
@@ -86,6 +87,7 @@ fun SettingsView(
     navToFAQ: () -> Unit = {},
     navToAuditLogs: () -> Unit = {},
     navToPlaythrough: () -> Unit = {},
+    navToPlayerProfile: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -108,6 +110,7 @@ fun SettingsView(
     val isUserPro by viewModel.isUserPro.collectAsState(false)
     val storageInfo by viewModel.sagaStorageInfo.collectAsStateWithLifecycle(emptyList())
     val breakdown by viewModel.storageBreakdown.collectAsStateWithLifecycle()
+    val totalPlaytime by viewModel.totalPlaytime.collectAsStateWithLifecycle()
 
     var showClearDialog by remember { mutableStateOf(false) }
     val isWiping by viewModel.isLoading.collectAsStateWithLifecycle()
@@ -198,57 +201,7 @@ fun SettingsView(
             }
 
             item {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .dropShadow(
-                                RoundedCornerShape(15.dp),
-                                Shadow(
-                                    5.dp,
-                                    Brush.verticalGradient(holographicGradient),
-                                ),
-                            )
-                            .clip(RoundedCornerShape(15.dp))
-                            .border(
-                                1.dp,
-                                Brush.verticalGradient(holographicGradient),
-                                RoundedCornerShape(15.dp),
-                            )
-                            .background(
-                                MaterialTheme.colorScheme.surfaceContainer,
-                                RoundedCornerShape(15.dp),
-                            )
-                            .clickable {
-                                navToPlaythrough()
-                            }
-                            .padding(16.dp),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.ic_spark),
-                            contentDescription = null,
-                            modifier =
-                                Modifier
-                                    .size(32.dp)
-                                    .gradientFill(Brush.verticalGradient(holographicGradient)),
-                        )
-                        Column {
-                            Text(
-                                text = stringResource(R.string.your_playthrough_title),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            )
-                            Text(
-                                text = stringResource(R.string.your_playthrough_subtitle),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.alpha(0.7f),
-                            )
-                        }
-                    }
-                }
+                ProfileCard(totalPlaytime, navToPlayerProfile)
             }
 
             item {
@@ -259,8 +212,7 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            )
-                            .padding(12.dp),
+                            ).padding(12.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.memory_usage),
@@ -302,11 +254,9 @@ fun SettingsView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     RoundedCornerShape(15.dp),
-                                )
-                                .clickable {
+                                ).clickable {
                                     viewModel.clearCache()
-                                }
-                                .padding(16.dp),
+                                }.padding(16.dp),
                     ) {
                         Text(
                             stringResource(R.string.clear_cache),
@@ -354,8 +304,7 @@ fun SettingsView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     RoundedCornerShape(15.dp),
-                                )
-                                .padding(16.dp),
+                                ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         storageInfo.forEach { info ->
@@ -436,8 +385,7 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .padding(8.dp),
+                        ).padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     PreferencesContainer(
@@ -630,8 +578,25 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            )
-                            .padding(8.dp),
+                            ).padding(8.dp),
+                )
+            }
+
+            item {
+                PreferencesContainer(
+                    stringResource(R.string.player_profile_title),
+                    stringResource(R.string.player_profile_empty),
+                    true,
+                    showSwitch = false,
+                    onClickSwitch = {
+                        navToPlayerProfile()
+                    },
+                    modifier =
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                RoundedCornerShape(15.dp),
+                            ).padding(8.dp),
                 )
             }
 
@@ -800,6 +765,64 @@ fun SettingsView(
             type = OnboardingType.PREMIUM_GUIDE,
             force = true,
             onDismiss = { showPremiumSheet = false },
+        )
+    }
+}
+
+@Composable
+private fun ProfileCard(
+    totalPlaytime: Long,
+    navToPlayerProfile: () -> Unit,
+) {
+    val brush = sagaBrush()
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .dropShadow(RoundedCornerShape(15.dp)) {
+                    this.brush = brush
+                    this.radius = 15f
+                    this.spread = 1f
+                }.border(
+                    1.dp,
+                    Brush.verticalGradient(holographicGradient),
+                    RoundedCornerShape(15.dp),
+                ).clip(RoundedCornerShape(15.dp))
+                .background(
+                    MaterialTheme.colorScheme.surfaceContainer,
+                    RoundedCornerShape(15.dp),
+                ).clickable {
+                    navToPlayerProfile()
+                }.padding(16.dp),
+    ) {
+        Icon(
+            painterResource(R.drawable.ic_spark),
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .size(32.dp)
+                    .gradientFill(Brush.verticalGradient(holographicGradient)),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.your_playthrough_title),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            )
+            Text(
+                text = stringResource(R.string.your_playthrough_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.alpha(0.7f),
+            )
+        }
+
+        AnimatedPlaytimeCounter(
+            playtimeMs = totalPlaytime,
+            label = stringResource(R.string.total_playtime_label),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+            labelStyle = MaterialTheme.typography.labelSmall,
+            horizontalAlignment = Alignment.End,
         )
     }
 }

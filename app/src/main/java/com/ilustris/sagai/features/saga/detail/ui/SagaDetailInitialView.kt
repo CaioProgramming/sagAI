@@ -82,6 +82,7 @@ import com.ilustris.sagai.ui.theme.sagaShader
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.themeIcon
 import com.ilustris.sagai.ui.theme.themePainter
+import com.ilustris.sagai.ui.theme.themeVfx
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -124,7 +125,8 @@ fun SagaDetailInitialContent(
                                 } else {
                                     Modifier
                                 },
-                            ).fillMaxWidth()
+                            )
+                            .fillMaxWidth()
                             .align(Alignment.Center)
                             .reactiveShimmer(true)
                             .padding(8.dp),
@@ -284,7 +286,8 @@ fun SagaDetailInitialContent(
                                         modifier =
                                             Modifier
                                                 .fillMaxSize()
-                                                .effectForGenre(genre),
+                                                .effectForGenre(genre)
+                                                .themeVfx(),
                                         contentScale = ContentScale.Crop,
                                     )
                                 } else {

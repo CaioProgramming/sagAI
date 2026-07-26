@@ -16,6 +16,7 @@ import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.player.domain.UserIdentityUseCase
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
@@ -38,6 +39,7 @@ class HomeUseCaseImpl
         private val genreConfigService: GenreConfigService,
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val billingService: BillingService,
+        private val userIdentityUseCase: UserIdentityUseCase,
     ) : HomeUseCase {
         override val billingState = billingService.state
 
@@ -51,31 +53,42 @@ class HomeUseCaseImpl
         override suspend fun requestDynamicCall(): RequestResult<DynamicSagaPrompt> =
             executeRequest {
                 Timber.d("Fetching new dynamic saga texts...")
+                val userName = userIdentityUseCase.getNameNow()
                 try {
                     val prompt =
                         HomePrompts.dynamicSagaCreationPrompt(
                             promptService,
-                            selectedTheme = genreConfigService.getRandomGenreAesthetic(),
+                            genreAesthetic = genreConfigService.getRandomGenreAesthetic(),
+                            userName = userName,
                         )
                     val result =
                         gemmaClient.generate<DynamicSagaPrompt>(
                             promptSplit = prompt,
                             requirement = ModelRequirement.MINIMAL,
                         )
-                    result ?: useFallback()
+                    result ?: useFallback(userName)
                 } catch (e: Exception) {
                     Timber.e(e, "Failed to generate dynamic prompt, using fallback")
-                    useFallback()
+                    useFallback(userName)
                 }
             }
 
-        private suspend fun useFallback(): DynamicSagaPrompt {
+        private suspend fun useFallback(userName: String): DynamicSagaPrompt {
             val fallbacks =
                 remoteConfig.getJsonList("dynamic_saga_prompt_fallbacks", DynamicSagaPrompt::class.java)
-            return fallbacks?.randomOrNull() ?: DynamicSagaPrompt(
+            val eligibleFallbacks =
+                if (userName.isBlank()) {
+                    fallbacks?.filterNot { it.title.contains("{userName}") }
+                } else {
+                    fallbacks
+                }
+            val selected = eligibleFallbacks?.randomOrNull() ?: fallbacks?.randomOrNull()
+            return selected?.let {
+                it.copy(title = it.title.replace("{userName}", userName))
+            } ?: DynamicSagaPrompt(
                 title = "SYSTEM RESONANCE DETECTED",
                 subtitle = "A new narrative rift is opening. The library awaits your presence.",
-                genre = null,
+                genre = Genre.entries.random(),
             )
         }
 

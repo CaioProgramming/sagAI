@@ -1,21 +1,15 @@
 package com.ilustris.sagai.features.player.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class PlayerProfileData(
-    val confirmedTraits: List<ConfirmedTrait> = emptyList(),
-    val candidateTraits: List<CandidateTrait> = emptyList(),
+    @SerializedName("candidate")
+    val userName: String = "",
+    val topics: List<ProfileTopic> = emptyList(),
 )
 
-data class ConfirmedTrait(
-    val trait: String = "",
-    val evidenceSummary: String = "",
-    val genreScope: String = "",
-    val lastReinforcedAt: Long = 0L,
+data class ProfileTopic(
+    val title: String = "",
+    val content: String = "",
+    val comment: String? = null,
 )
-
-data class CandidateTrait(
-    val trait: String = "",
-    val firstSeenAt: Long = 0L,
-    val sagaId: Int = 0,
-    val actId: Int = 0,
-)
-

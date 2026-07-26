@@ -43,9 +43,13 @@ class HomeViewModel
         private val backupService: BackupService,
         private val stringResourceHelper: StringResourceHelper,
         private val appLifecycleManager: AppLifecycleManager,
+        private val _userIdentityUseCase: com.ilustris.sagai.features.player.domain.UserIdentityUseCase,
     ) : ViewModel() {
         private val stateManager = HomeStateManager()
         val uiState = stateManager.uiState
+        val userName = _userIdentityUseCase.observeName()
+        val userIdentityUseCase: com.ilustris.sagai.features.player.domain.UserIdentityUseCase
+            get() = _userIdentityUseCase
 
         private val sagas = MutableStateFlow<List<SagaSummary>>(emptyList())
         private val debugEnabled = MutableStateFlow(false)
@@ -95,8 +99,17 @@ class HomeViewModel
                 HomeUiAction.DismissPremiumOnboarding -> stateManager.setShowPremiumOnboarding(false)
                 HomeUiAction.DismissBackupSheet -> stateManager.setShowBackupSheet(false)
                 HomeUiAction.CreateFakeSaga -> createFakeSaga()
+                is HomeUiAction.SaveName -> saveName(action.name)
             }
         }
+
+        private fun saveName(name: String) {
+            viewModelScope.launch {
+                _userIdentityUseCase.setName(name)
+            }
+        }
+
+        suspend fun shouldPromptName(): Boolean = userIdentityUseCase.shouldPromptName()
 
         private fun onCreateNewSaga() {
             val activeCount = sagas.value.count { !it.data.isEnded }
@@ -128,9 +141,9 @@ class HomeViewModel
                     delay(200)
                 }
                 val elapsed = System.currentTimeMillis() - startedAt
-            val minRemaining = (SPLASH_MIN_DURATION_MS - elapsed).coerceAtLeast(0)
-            delay(minRemaining)
-            delay(SPLASH_SPARK_FINALE_MS)
+                val minRemaining = (SPLASH_MIN_DURATION_MS - elapsed).coerceAtLeast(0)
+                delay(minRemaining)
+                delay(SPLASH_SPARK_FINALE_MS)
                 stateManager.setScreen(HomeScreen.Content)
             }
         }

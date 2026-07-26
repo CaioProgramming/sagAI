@@ -96,6 +96,12 @@ import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
 import com.ilustris.sagai.features.onboarding.data.OnboardingStateMapper
 import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
 import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCaseImpl
+import com.ilustris.sagai.features.player.data.repository.PlayerProfileRepository
+import com.ilustris.sagai.features.player.data.repository.PlayerProfileRepositoryImpl
+import com.ilustris.sagai.features.player.domain.PlayerProfileUseCase
+import com.ilustris.sagai.features.player.domain.PlayerProfileUseCaseImpl
+import com.ilustris.sagai.features.player.domain.UserIdentityUseCase
+import com.ilustris.sagai.features.player.domain.UserIdentityUseCaseImpl
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
@@ -633,6 +639,12 @@ abstract class UseCaseModule {
     abstract fun providesAIAuditLogUseCase(
         aiAuditLogUseCaseImpl: AIAuditLogUseCaseImpl,
     ): com.ilustris.sagai.features.settings.domain.audit.usecase.AIAuditLogUseCase
+
+    @Binds
+    abstract fun providesUserIdentityUseCase(userIdentityUseCaseImpl: UserIdentityUseCaseImpl): UserIdentityUseCase
+
+    @Binds
+    abstract fun providesPlayerProfileUseCase(playerProfileUseCaseImpl: PlayerProfileUseCaseImpl): PlayerProfileUseCase
 }
 
 @InstallIn(SingletonComponent::class)
@@ -677,4 +689,7 @@ abstract class RepositoryModule {
     abstract fun bindsAIAuditLogRepository(
         aiAuditLogRepositoryImpl: com.ilustris.sagai.features.settings.domain.audit.repository.AIAuditLogRepositoryImpl,
     ): com.ilustris.sagai.features.settings.domain.audit.repository.AIAuditLogRepository
+
+    @Binds
+    abstract fun bindsPlayerProfileRepository(playerProfileRepositoryImpl: PlayerProfileRepositoryImpl): PlayerProfileRepository
 }

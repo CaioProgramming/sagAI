@@ -2,17 +2,13 @@ package com.ilustris.sagai.features.saga.chat.presentation.model
 
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
-import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionMode
-import com.ilustris.sagai.features.saga.chat.domain.manager.executionMode
 
 data class NarrativeActionUi(
     val titleRes: Int?,
     val holdingTextRes: Int,
-    val executionMode: NarrativeExecutionMode,
 )
 
 fun NarrativeAction.toUi(): NarrativeActionUi {
-    val mode = executionMode()
     val (titleRes, holdingTextRes) =
         when (this) {
             is NarrativeAction.EvolveTimeline -> {
@@ -55,5 +51,5 @@ fun NarrativeAction.toUi(): NarrativeActionUi {
                 R.string.advance_close_scene to R.string.releasing_close_scene
             }
         }
-    return NarrativeActionUi(titleRes, holdingTextRes, mode)
+    return NarrativeActionUi(titleRes, holdingTextRes)
 }

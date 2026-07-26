@@ -14,10 +14,12 @@ import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaEnding
 import com.ilustris.sagai.features.home.data.model.inheritSceneSummaryForChapter
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.player.domain.PlayerProfileUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
+import com.ilustris.sagai.features.saga.chat.domain.manager.TIMELINE_ALREADY_ACTIVE_MESSAGE
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationCoordinator
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -40,6 +42,7 @@ class NarrativeActionExecutorImpl
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val messageDao: MessageDao,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
+        private val playerProfileUseCase: PlayerProfileUseCase,
     ) : NarrativeActionExecutor {
         override suspend fun execute(
             action: NarrativeAction,
@@ -289,7 +292,7 @@ class NarrativeActionExecutorImpl
                         currentEventId = lastTimeline.data.id,
                     ),
                 )
-                throw IllegalArgumentException("Timeline already set at this chapter")
+                throw IllegalArgumentException(TIMELINE_ALREADY_ACTIVE_MESSAGE)
             }
 
             val sagaContent = environment.getSagaContent() ?: error("Saga not available")
@@ -384,6 +387,10 @@ class NarrativeActionExecutorImpl
                         is StreamingState.Success -> {
                             generated = state.data
                             environment.onReasoningChunk(null)
+                            // Record player profile insight
+                            generated?.data?.let { actData ->
+                                playerProfileUseCase.recordActInsight(fullSaga, actData)
+                            }
                         }
 
                         is StreamingState.Error -> {

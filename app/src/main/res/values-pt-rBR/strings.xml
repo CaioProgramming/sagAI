@@ -208,6 +208,8 @@
     <string name="continue_to_saga">Ver saga</string>
     <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
     <string name="continue_text">continuar</string>
+    <string name="milestone_characters_created">Personagens Criados</string>
+    <string name="milestone_wikis_created">Wikis Criadas</string>
     <string name="notification_title">Nova mensagem em %s</string>
     <string name="notification_open_chat">Abrir</string>
     <string name="notification_playing_act">Jogando volume %s</string>
@@ -855,4 +857,28 @@
     <string name="milestone_action_open_events">Ver eventos</string>
     <string name="milestone_action_open_characters">Ver personagens</string>
     <string name="world_state">Status do mundo</string>
+
+    <!-- Player Profile -->
+    <string name="player_profile_title">Seu Perfil</string>
+    <string name="player_profile_empty">Seu perfil se formará conforme você joga</string>
+    <string name="player_profile_name_section">Como te chamamos</string>
+    <string name="player_profile_traits_section">Traços Confirmados</string>
+    <string name="player_profile_candidates_section">Em Observação</string>
+
+    <!-- Home Header -->
+    <string name="home_greeting_prefix">Eai, </string>
+    <string name="home_greeting_default">Jogador</string>
+    <string name="home_prompt_subtitle">Que história vamos criar hoje?</string>
+    <string name="sagas_title">Sagas</string>
+
+    <!-- Player Name Onboarding -->
+    <string name="player_name_prompt_title">Como devo te chamar?</string>
+    <string name="player_name_prompt_subtitle">Digite seu nome para que eu possa personalizar sua experiência</string>
+    <string name="player_name_hint">Seu nome...</string>
+    <string name="player_name_save">Salvar</string>
+    <string name="player_name_skip">Pular</string>
 </resources>
+
+
+
+
