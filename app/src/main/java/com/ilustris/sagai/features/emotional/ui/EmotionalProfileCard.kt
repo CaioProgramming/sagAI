@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.ilustris.sagai.features.emotional.ui
 
 import androidx.compose.foundation.background
@@ -11,17 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +28,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.sagaShape
@@ -45,6 +37,7 @@ import com.ilustris.sagai.ui.theme.zoomAnimation
 fun EmotionalProfileCard(
     saga: Saga,
     modifier: Modifier,
+    onClick: () -> Unit = {},
     viewModel: EmotionalProfileViewModel = hiltViewModel(),
 ) {
     val emotionalIconUrl by viewModel.emotionalIconUrl.collectAsState()
@@ -54,7 +47,6 @@ fun EmotionalProfileCard(
     }
 
     val genre = saga.genre
-    var showEmotionalReview by remember { mutableStateOf(false) }
     Box(
         modifier
             .clip(
@@ -68,9 +60,7 @@ fun EmotionalProfileCard(
                 sagaShape(),
             ).fillMaxWidth()
             .height(200.dp)
-            .clickable {
-                showEmotionalReview = true
-            },
+            .clickable(onClick = onClick),
     ) {
         AsyncImage(
             emotionalIconUrl,
@@ -112,19 +102,6 @@ fun EmotionalProfileCard(
                 style =
                     MaterialTheme.typography.bodySmall.copy(),
             )
-        }
-    }
-
-    if (showEmotionalReview) {
-        ModalBottomSheet(
-            onDismissRequest = { showEmotionalReview = false },
-            containerColor = MaterialTheme.colorScheme.background,
-            shape = sagaShape(),
-            dragHandle = {},
-        ) {
-            EmotionalSheet(saga, onDismiss = {
-                showEmotionalReview = false
-            })
         }
     }
 }

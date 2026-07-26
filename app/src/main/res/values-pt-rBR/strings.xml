@@ -178,6 +178,12 @@
     <string name="saga_detail_no_events_placeholder">Nenhum evento registrado</string>
     <string name="saga_detail_no_wiki_info_placeholder">Nenhuma informação salva</string>
     <string name="saga_detail_delete_saga_button">Excluir Saga</string>
+    <string name="saga_detail_ended_tag">Jornada Concluída</string>
+    <string name="saga_detail_about_title">Sobre %1$s</string>
+    <string name="saga_detail_about_more">Ver mais</string>
+    <string name="saga_detail_about_playtime">Tempo de jogo</string>
+    <string name="saga_detail_about_created">Criada em</string>
+    <string name="saga_detail_about_theme">Tema</string>
     <string name="saga_detail_read_story_title">Ler sua história</string>
     <string name="saga_detail_read_story_subtitle">Leia a história do começo até agora</string>
     <string name="saga_detail_manage_story">Gerenciar história</string>
@@ -616,6 +622,21 @@
 
     <!-- Logs de Auditoria de IA -->
     <string name="audit_logs_title">Logs de Auditoria de IA</string>
+    <string name="design_system_preview_title">Design System</string>
+    <string name="design_system_preview_header_font_label">Fonte de título (remota, com fallback enquanto resolve)</string>
+    <string name="design_system_preview_bubble_label">Formato do balão de chat</string>
+    <string name="design_system_preview_bubble_sample_text">Uma saga fala com a voz de %1$s.</string>
+    <string name="design_system_preview_glow_label">Borda com brilho</string>
+    <string name="design_system_preview_rotating_stroke_label">Traço rotativo de "IA gerando"</string>
+    <string name="design_system_preview_shader_label">Parâmetros do shader turbinados (grão/vinheta/aberração cromática/rim)</string>
+    <string name="settings_test_global_island">Testar ilha global</string>
+    <string name="island_test_objective">Objetivo</string>
+    <string name="island_test_advance_idle">Avançar (ocioso)</string>
+    <string name="island_test_advance_processing">Avançar (processando)</string>
+    <string name="island_test_book_generation">Geração de livro</string>
+    <string name="island_test_image_generation">Geração de imagem</string>
+    <string name="island_test_manual_image_fallback">Fallback manual de imagem</string>
+    <string name="island_test_dismiss">Encerrar ilha</string>
     <string name="audit_logs_all">Todos</string>
     <string name="audit_logs_success">Sucesso</string>
     <string name="audit_logs_error">Erro</string>
@@ -707,6 +728,22 @@
     <string name="settings_export_database_loading">Exportando banco de dados…</string>
     <string name="settings_export_database_success">Banco de dados exportado com sucesso!</string>
     <string name="settings_export_database_failed">Falha ao exportar banco de dados.</string>
+    <string name="settings_debug_section">Depuração</string>
+    <string name="settings_audit_logs_subtitle">Inspecionar requisições de IA</string>
+    <string name="settings_design_system_subtitle">Validar o design system</string>
+    <string name="settings_test_starry_loader">Testar Starry Loader</string>
+    <string name="settings_test_starry_loader_message">Tecendo o próximo capítulo…</string>
+    <string name="settings_test_starry_loader_subtitle">Isso pode levar alguns segundos</string>
+
+    <!-- Island Test Samples -->
+    <string name="island_test_objective_sample">Encontrar o artefato perdido</string>
+    <string name="island_test_advance_processing_sample">Tecendo o próximo capítulo…</string>
+    <string name="island_test_book_generation_saga_title">Saga de teste</string>
+    <string name="island_test_book_generation_act_title">Ato II — A Queda</string>
+    <string name="island_test_book_generation_reasoning">Escrevendo a prosa…</string>
+    <string name="island_test_image_generation_label">Retrato de Mascari</string>
+    <string name="island_test_image_generation_reasoning">Renderizando…</string>
+    <string name="island_test_image_fallback_prompt">Um guerreiro cyberpunk sob luz neon, retrato de busto</string>
 
     <string name="restore_database_title">Backups de banco de dados</string>
     <string name="restore_database_description">Selecione um backup para restaurar suas histórias</string>
@@ -791,6 +828,14 @@
     <string name="error_retry_align">Tentar Alinhar Novamente</string>
     <string name="read_chronicles">Ler Crônicas</string>
     <string name="the_chronicles">As Crônicas</string>
+    <string name="saga_detail_latest_chapter_label">Último Capítulo</string>
+    <string name="saga_detail_acts_no_acts_title">Continue a história</string>
+    <string name="saga_detail_acts_no_acts_subtitle">Complete um ato para desbloquear suas crônicas</string>
+    <string name="saga_detail_acts_no_books_title">Nenhum livro ainda</string>
+    <string name="saga_detail_acts_no_books_subtitle">Você já tem atos suficientes — hora de criar seu primeiro livro</string>
+    <string name="saga_detail_acts_create_first_book_cta">Criar primeiro livro</string>
+    <string name="saga_detail_characters_empty_title">Nenhum personagem ainda</string>
+    <string name="saga_detail_characters_empty_subtitle">Continue jogando para conhecer novos personagens</string>
     <string name="the_chronicle_awaits">A Crônica Aguarda</string>
     <string name="read_volume">Ler Volume %s</string>
     <string name="read_next_volume">Ler próximo volume</string>

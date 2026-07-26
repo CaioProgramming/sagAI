@@ -22,6 +22,9 @@ data object NewSagaKey : NavKey
 data object AuditLogsKey : NavKey
 
 @Serializable
+data object DesignSystemPreviewKey : NavKey
+
+@Serializable
 data object PlaythroughKey : NavKey
 
 @Serializable
@@ -62,6 +65,11 @@ data class SagaStoryReaderKey(
 
 @Serializable
 data class SagaBrainKey(
+    val sagaId: String,
+) : NavKey
+
+@Serializable
+data class SagaEmotionalProfileKey(
     val sagaId: String,
 ) : NavKey
 
@@ -110,6 +118,8 @@ fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
         this is SagaBrainKey && other is SagaBrainKey -> {
             sagaId == other.sagaId
         }
+
+        this is SagaEmotionalProfileKey && other is SagaEmotionalProfileKey -> sagaId == other.sagaId
 
         this is CharacterBrainKey && other is CharacterBrainKey -> {
             sagaId == other.sagaId && characterId == other.characterId

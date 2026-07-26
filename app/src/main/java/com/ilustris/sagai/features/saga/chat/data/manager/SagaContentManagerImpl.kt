@@ -212,7 +212,7 @@ class SagaContentManagerImpl
         }
 
         override suspend fun completeGameplayOnboarding(saga: SagaMetadata?) {
-            requestNarrativeProgression(isRetry = false, fallbackSaga = saga, force = false)
+            requestNarrativeProgression(isRetry = false, fallbackSaga = saga)
             isOnboardingVisible.value = false
             if (narrativeCoordinator.uiState.value.pendingAction == NarrativeAction.CreateAct) {
                 advanceNarrative()
@@ -281,7 +281,7 @@ class SagaContentManagerImpl
                     is NarrativeExecutionResult.Success -> {
                         handlePostAction(sagaMetadata, action, result.value)
                         awaitMilestoneDismissalIfNeeded()
-                        requestNarrativeProgression(isRetry = false, force = true)
+                        requestNarrativeProgression(isRetry = false)
                     }
 
                     is NarrativeExecutionResult.Failure -> {
@@ -815,7 +815,6 @@ class SagaContentManagerImpl
         private suspend fun requestNarrativeProgression(
             isRetry: Boolean = false,
             fallbackSaga: SagaMetadata? = null,
-            force: Boolean = false,
         ) {
             if (progressionMutex.isLocked) {
                 Timber.i("requestNarrativeProgression: already in progress, queueing reevaluation.")
@@ -830,12 +829,6 @@ class SagaContentManagerImpl
             var shouldReevaluateAgain = false
             progressionMutex.withLock {
                 val currentSaga = content.value ?: fallbackSaga ?: return@withLock
-
-                if (!force && isProcessingNarrative.get()) {
-                    Timber.i("requestNarrativeProgression: narrative processing, queueing reevaluation.")
-                    narrativeCoordinator.schedulePendingReevaluation()
-                    return@withLock
-                }
 
                 Timber.d("Starting narrative progression check #${++progressionCounter}")
 

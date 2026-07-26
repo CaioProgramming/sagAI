@@ -1,0 +1,765 @@
+package com.ilustris.sagai.features.debug.ui
+
+import MessageStatus
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
+import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
+import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
+import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
+import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
+import com.ilustris.sagai.ui.animations.comicExtrude
+import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.components.WordArtText
+import com.ilustris.sagai.ui.components.island.AdvanceIslandContent
+import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
+import com.ilustris.sagai.ui.components.island.ImageGenerationIslandContent
+import com.ilustris.sagai.ui.components.island.ObjectiveIslandContent
+import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.fadeGradientTop
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
+import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.rememberRotatingBorderAngle
+import com.ilustris.sagai.ui.theme.rememberVectorShape
+import com.ilustris.sagai.ui.theme.rotatingGradientBorder
+import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.sagaShape
+import com.ilustris.sagai.ui.theme.themeVfx
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
+
+/**
+ * Dev-only sandbox to validate design-system primitives and layouts in a realistic context.
+ * Features a genre pager, live theme updates, realistic headers, mini-chat previews,
+ * and access to global UI debug tools like the Island and Starry Loader.
+ */
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun DesignSystemPreviewView(
+    onBack: () -> Unit = {},
+    viewModel: DesignSystemViewModel = hiltViewModel(),
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
+) {
+    val pagerState = rememberPagerState { Genre.entries.size }
+    val genre = Genre.entries[pagerState.currentPage]
+    var showStarryLoaderPreview by remember { mutableStateOf(false) }
+
+    LaunchedEffect(showStarryLoaderPreview) {
+        if (showStarryLoaderPreview) {
+            delay(10.seconds)
+            showStarryLoaderPreview = false
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        AnimatedContent(genre, transitionSpec = {
+            fadeIn(tween(300)) togetherWith fadeOut(tween(800))
+        }) {
+            SagAITheme(genre = it) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding()
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        // Genre Pager
+
+                        // Realistic Saga Header
+                        val config = LocalGenreVisualConfig.current
+                        val mockSaga =
+                            remember(genre, config) {
+                                DesignSystemMocks.mockSaga(genre, config?.imageUrl ?: "")
+                            }
+                        sagaHeaderComponent(
+                            saga = mockSaga,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp),
+                            onAction = {},
+                        )
+
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(24.dp),
+                        ) {
+                            // Mini Chat Preview
+                            MiniChatPreview(genre, sharedTransitionScope, animatedVisibilityScope)
+
+                            // Advance Button Simulation
+                            AdvanceSimulation()
+
+                            // Chat Input Preview
+                            ChatInputPreview(genre)
+
+                            // Config Info Box
+                            VisualConfigInfo()
+
+                            HorizontalDivider(Modifier.padding(vertical = 16.dp))
+
+                            // Legacy Samples (kept for detailed primitive validation)
+                            SampleLabel("PRIMITIVES VALIDATION")
+                            HeaderFontSample(genre)
+                            BubbleShapeSample(genre)
+                            GlowBorderSample(genre)
+                            RotatingStrokeSample(genre)
+                            ShaderFilterSample(genre)
+
+                            Spacer(Modifier.height(48.dp))
+                        }
+                    }
+
+                    StarryLoader(
+                        showStarryLoaderPreview,
+                        stringResource(R.string.settings_test_starry_loader_message),
+                        subtitle = stringResource(R.string.settings_test_starry_loader_subtitle),
+                    )
+                }
+            }
+        }
+
+        GenrePager(pagerState)
+
+        Row(
+            Modifier
+                .align(Alignment.TopCenter)
+                .background(fadeGradientTop())
+                .statusBarsPadding()
+                .padding(vertical = 8.dp)
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = {
+                    onBack()
+                },
+                modifier =
+                    Modifier
+                        .background(
+                            MaterialTheme.colorScheme.background.copy(alpha = .3f),
+                            CircleShape,
+                        ).size(24.dp)
+                        .padding(4.dp),
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_back_left),
+                    contentDescription = stringResource(R.string.back_button_description),
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
+            Text(
+                stringResource(R.string.design_system_preview_title),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+            )
+
+            IconButton(
+                onClick = {
+                    showStarryLoaderPreview = true
+                },
+                modifier =
+                    Modifier
+                        .background(
+                            MaterialTheme.colorScheme.background.copy(alpha = .3f),
+                            CircleShape,
+                        ).size(24.dp)
+                        .padding(4.dp),
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_full_spark),
+                    null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
+            IslandTestIconButton(viewModel, genre)
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.GenrePager(pagerState: androidx.compose.foundation.pager.PagerState) {
+    HorizontalPager(
+        state = pagerState,
+        modifier =
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(100.dp),
+    ) { page ->
+        val g = Genre.entries[page]
+        val isSelected = pagerState.currentPage == page
+        val title = stringResource(g.title)
+        val shadowAlpha by animateFloatAsState(
+            if (isSelected) 0.2f else 0.05f,
+            label = "",
+        )
+        SagAITheme(g) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    painterResource(g.icon),
+                    title,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier =
+                        Modifier
+                            .size(32.dp)
+                            .gradientFill(
+                                sagaBrush(),
+                            ).reactiveShimmer(isSelected)
+                            .themeVfx(isSelected),
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+private fun MiniChatPreview(
+    genre: Genre,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
+) {
+    val config = LocalGenreVisualConfig.current
+    val mockMetadata =
+        remember(genre, config) {
+            DesignSystemMocks.mockSagaMetadata(genre, config?.imageUrl ?: "")
+        }
+    val npc = mockMetadata.characters.first()
+    val messages =
+        remember(genre) {
+            listOf(
+                DesignSystemMocks.mockMessageContent(
+                    1,
+                    "Welcome to the sandbox. Here you can see how components behave in different themes.",
+                    SenderType.CHARACTER,
+                ),
+                DesignSystemMocks.mockMessageContent(
+                    2,
+                    "This looks really smooth. The colors and shapes update instantly!",
+                    SenderType.USER,
+                ),
+                DesignSystemMocks.mockMessageContent(
+                    3,
+                    "Exactly. Try switching genres using the pager above.",
+                    SenderType.CHARACTER,
+                    npc,
+                ),
+                DesignSystemMocks.mockMessageContent(
+                    4,
+                    "This message shows the rotating border!",
+                    SenderType.CHARACTER,
+                    npc,
+                    MessageStatus.LOADING,
+                ),
+            )
+        }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SampleLabel("CHAT PREVIEW")
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.3f))
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            messages.forEach { msg ->
+                ChatBubble(
+                    messageContent = msg,
+                    mainCharacter = null,
+                    characters = mockMetadata.characters,
+                    wikis = emptyList(),
+                    genre = genre,
+                    flatEvents = emptyList(),
+                    canAnimate = false,
+                    messageEffectsEnabled = true,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdvanceSimulation() {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SampleLabel("ADVANCE TRIGGER PREVIEW")
+        NarrativeBackgroundBanner(
+            task = BackgroundTask.ClosingScene,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun ChatInputPreview(genre: Genre) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SampleLabel("CHAT INPUT PREVIEW")
+        val config = LocalGenreVisualConfig.current
+        val mockMetadata =
+            remember(genre, config) {
+                DesignSystemMocks.mockSagaMetadata(genre, config?.imageUrl ?: "")
+            }
+        ChatInputView(
+            content = mockMetadata,
+            characters = mockMetadata.characters,
+            isGenerating = false,
+            modifier = Modifier.fillMaxWidth(),
+            inputField = TextFieldValue("Exploring the design system..."),
+            sendType = SenderType.USER,
+            onSendMessage = {},
+            onUpdateInput = {},
+            onUpdateSender = {},
+            onSelectCharacter = {},
+            onRequestAudio = {},
+            onStopGeneration = {},
+            suggestions = emptyList(),
+            typoFix = null,
+        )
+    }
+}
+
+@Composable
+private fun VisualConfigInfo() {
+    val config = LocalGenreVisualConfig.current ?: return
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SampleLabel("REMOTE VISUAL CONFIG")
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                ConfigRow("Primary", config.primaryColor)
+                ConfigRow("Icon", config.iconColor)
+                ConfigRow("Corner Size", "${config.cornerSizeDp}dp")
+                ConfigRow(
+                    "Vibration",
+                    if (config.vibrationPattern.isEmpty()) "Default" else "Custom (${config.vibrationPattern.size} steps)",
+                )
+                ConfigRow(
+                    "Selective Highlight",
+                    if (config.selectiveHighlight != null) "Active" else "Off",
+                )
+                ConfigRow("Shader Effects", if (config.shaderParams != null) "Active" else "Off")
+                ConfigRow("Custom Font", if (config.headerFontUrl.isNotEmpty()) "Active" else "Off")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConfigRow(
+    label: String,
+    value: String,
+) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.labelMedium, modifier = Modifier.alpha(0.6f))
+        Text(value, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+    }
+}
+
+@Composable
+private fun IslandTestIconButton(
+    viewModel: DesignSystemViewModel,
+    genre: Genre,
+) {
+    var showIslandMenu by remember { mutableStateOf(false) }
+    val objectiveSample = stringResource(R.string.island_test_objective_sample)
+    val processingSample = stringResource(R.string.island_test_advance_processing_sample)
+    val bookSagaTitle = stringResource(R.string.island_test_book_generation_saga_title)
+    val bookActTitle = stringResource(R.string.island_test_book_generation_act_title)
+    val bookReasoning = stringResource(R.string.island_test_book_generation_reasoning)
+    val imageLabel = stringResource(R.string.island_test_image_generation_label)
+    val imageReasoning = stringResource(R.string.island_test_image_generation_reasoning)
+    val imageFallbackPrompt = stringResource(R.string.island_test_image_fallback_prompt)
+
+    Box {
+        IconButton(
+            onClick = { showIslandMenu = true },
+            modifier =
+                Modifier
+                    .background(
+                        MaterialTheme.colorScheme.background.copy(alpha = .3f),
+                        CircleShape,
+                    ).size(24.dp)
+                    .padding(4.dp),
+        ) {
+            Icon(painterResource(R.drawable.ic_cosmos), "Test Island")
+        }
+
+        DropdownMenu(
+            showIslandMenu,
+            onDismissRequest = { showIslandMenu = false },
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.island_test_objective)) },
+                onClick = {
+                    showIslandMenu = false
+                    viewModel.testIsland(
+                        ObjectiveIslandContent(
+                            titleRes = R.string.current_objective,
+                            objective = objectiveSample,
+                            genre = genre,
+                            progress = 0.4f,
+                        ),
+                    )
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.island_test_advance_idle)) },
+                onClick = {
+                    showIslandMenu = false
+                    viewModel.testIsland(
+                        AdvanceIslandContent(
+                            action = NarrativeAction.CreateAct,
+                            reasoning = null,
+                            isProcessing = false,
+                            genre = genre,
+                            onAction = {},
+                        ),
+                    )
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.island_test_advance_processing)) },
+                onClick = {
+                    showIslandMenu = false
+                    viewModel.testIsland(
+                        AdvanceIslandContent(
+                            action = NarrativeAction.CreateAct,
+                            reasoning = processingSample,
+                            isProcessing = true,
+                            genre = genre,
+                            onAction = {},
+                        ),
+                    )
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.island_test_book_generation)) },
+                onClick = {
+                    showIslandMenu = false
+                    viewModel.testIsland(
+                        BookGenerationIslandContent(
+                            BookGenerationUiState.Generating(
+                                sagaId = 1,
+                                sagaTitle = bookSagaTitle,
+                                actId = 1,
+                                actTitle = bookActTitle,
+                                genre = genre,
+                                reasoning = bookReasoning,
+                            ),
+                        ),
+                    )
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.island_test_image_generation)) },
+                onClick = {
+                    showIslandMenu = false
+                    viewModel.testIsland(
+                        ImageGenerationIslandContent(
+                            state =
+                                ImageGenerationUiState.Generating(
+                                    label = imageLabel,
+                                    reasoning = imageReasoning,
+                                    imageType = ImageType.ICON,
+                                ),
+                            debugImageFallbackService = viewModel.debugImageFallbackService,
+                            onCancel = {},
+                            onDismissReveal = {},
+                        ),
+                    )
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.island_test_manual_image_fallback)) },
+                onClick = {
+                    showIslandMenu = false
+                    viewModel.testIsland(
+                        ImageGenerationIslandContent(
+                            state =
+                                ImageGenerationUiState.AwaitingManualFallback(
+                                    prompt = imageFallbackPrompt,
+                                ),
+                            debugImageFallbackService = viewModel.debugImageFallbackService,
+                            onCancel = {},
+                            onDismissReveal = {},
+                        ),
+                    )
+                },
+            )
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(R.string.island_test_dismiss),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                },
+                onClick = {
+                    showIslandMenu = false
+                    viewModel.testIsland(null)
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SampleLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+    )
+}
+
+@Composable
+private fun HeaderFontSample(genre: Genre) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SampleLabel("HEADER FONT")
+        genre.stylisedText(
+            stringResource(genre.title).uppercase(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun BubbleShapeSample(genre: Genre) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SampleLabel("BUBBLE SHAPE")
+        Text(
+            stringResource(
+                R.string.design_system_preview_bubble_sample_text,
+                stringResource(genre.title),
+            ),
+            color = Color.White,
+            modifier =
+                Modifier
+                    .clip(genre.bubble())
+                    .background(genre.color)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+        )
+    }
+}
+
+@Composable
+private fun GlowBorderSample(genre: Genre) {
+    val shape = RoundedCornerShape(50)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SampleLabel("GLOW BORDER")
+        Text(
+            stringResource(R.string.home_create_new_saga_title).uppercase(),
+            style =
+                MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Black,
+                    color = Color.White,
+                ),
+            modifier =
+                Modifier
+                    .dropShadow(shape, Shadow(10.dp, Brush.verticalGradient(genre.colorPalette())))
+                    .border(1.dp, Brush.verticalGradient(genre.colorPalette()), shape)
+                    .background(Color.Black, shape)
+                    .padding(horizontal = 32.dp, vertical = 16.dp),
+        )
+    }
+}
+
+/**
+ * Same [rememberRotatingBorderAngle]/[Modifier.rotatingGradientBorder] primitive used on a
+ * generating [ChatBubble]'s border — not a simplified stand-in, so this preview validates the
+ * exact thing that ships, just applied to a different [shape].
+ */
+@Composable
+private fun RotatingStrokeSample(genre: Genre) {
+    val rotationValue = rememberRotatingBorderAngle()
+    val shape = RoundedCornerShape(16.dp)
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SampleLabel("ROTATING STROKE (GENERATING STATE)")
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .background(MaterialTheme.colorScheme.surfaceContainer, shape)
+                .rotatingGradientBorder(
+                    shape = shape,
+                    colors = genre.colorPalette(),
+                    rotationDegrees = rotationValue,
+                ),
+        )
+    }
+}
+
+@Composable
+private fun ShaderFilterSample(genre: Genre) {
+    var boosted by remember { mutableStateOf(true) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Switch(checked = boosted, onCheckedChange = { boosted = it })
+            SampleLabel("SHADER EFFECTS")
+        }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .clip(sagaShape())
+                .background(Brush.linearGradient(genre.colorPalette()))
+                .let { if (boosted) it.effectForGenre(genre) else it },
+        )
+    }
+}
+
+@Composable
+private fun ComicExtrudeSample(genre: Genre) {
+    var playing by remember { mutableStateOf(true) }
+    val palette = genre.colorPalette()
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Switch(checked = playing, onCheckedChange = { playing = it })
+            SampleLabel("COMIC EXTRUDE (TEXT vs ICON)")
+        }
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceContainer, sagaShape())
+                    .padding(24.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "POW",
+                style =
+                    MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Black,
+                        color = palette.first(),
+                    ),
+                modifier =
+                    Modifier
+                        .comicExtrude(
+                            isPlaying = playing,
+                            extrudeColor = palette.last(),
+                            outlineColor = MaterialTheme.colorScheme.primary,
+                            extrusionSteps = 5,
+                            maxDepth = 10.dp,
+                        ),
+            )
+            Icon(
+                painterResource(genre.icon),
+                null,
+                tint = palette.first(),
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .comicExtrude(
+                            isPlaying = playing,
+                            extrudeColor = palette.last(),
+                            outlineColor = Color.White,
+                        ),
+            )
+        }
+    }
+}

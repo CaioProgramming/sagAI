@@ -76,7 +76,7 @@ fun TimelineContentViewCard(
                 .fillMaxWidth()
                 .border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), sagaShape())
                 .clip(sagaShape())
-                .background(MaterialTheme.colorScheme.surfaceContainer, sagaShape())
+                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f), sagaShape())
                 .clickable {
                     expanded = true
                 }.padding(16.dp),

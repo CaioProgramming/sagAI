@@ -5,6 +5,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.MaterialTheme
@@ -35,9 +36,11 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.filters.ultimateEnergyShader
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.lighter
@@ -487,8 +490,7 @@ fun Modifier.vhs(isPlaying: Boolean = true): Modifier =
 
                 // 3. Main content on top
                 drawContent()
-            }
-            .graphicsLayer {
+            }.graphicsLayer {
                 // Wavy scale/rotation from Horror for that unstable feeling
                 val time = ticker * 2 * kotlin.math.PI.toFloat()
                 scaleX = 1f + kotlin.math.sin(time * 2f).toFloat() * 0.02f
@@ -1761,6 +1763,8 @@ fun Modifier.sakuraWind(
 fun Modifier.lightningStorm(
     isPlaying: Boolean = true,
     lightningColor: Color = Color.Cyan,
+    boltCount: Int = 1,
+    lengthScale: Float = 1f,
 ): Modifier =
     composed {
         if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
@@ -1802,9 +1806,13 @@ fun Modifier.lightningStorm(
             // Draw content first
             drawContent()
 
-            // Only draw lightning during active phases
+            // Only draw lightning during active phases - each bolt gets its own phase-offset
+            // progress and seed, so multiple bolts flicker independently instead of striking
+            // in unison.
+            repeat(boltCount) { boltIndex ->
+            val progress = (progress + boltIndex.toFloat() / boltCount).let { if (it >= 1f) it - 1f else it }
             if (progress < dischargeEnd) {
-                val random = Random(seed.intValue)
+                val random = Random(seed.intValue + boltIndex * 7919)
 
                 // --- 3-Zone Path Generation ---
                 val path =
@@ -1828,25 +1836,33 @@ fun Modifier.lightningStorm(
                     0 -> { // LEFT ZONE (Vertical/Diagonal Strike)
                         // Start: Strictly inside left 10%
                         startX = random.nextFloat() * w * 0.1f
-                        startY = -h * 0.1f
+                        // Random-centered vertical span instead of edge-to-edge, so lengthScale
+                        // cuts the bolt shorter without pinning it to top/bottom.
+                        val centerY = random.nextFloat() * h
+                        val halfSpan = h * 0.6f * lengthScale
+                        startY = centerY - halfSpan
                         // End: Strictly inside left 10%
                         endX = random.nextFloat() * w * 0.1f
-                        endY = h * 1.1f
+                        endY = centerY + halfSpan
                     }
 
                     2 -> { // RIGHT ZONE (Vertical/Diagonal Strike)
                         // Start: Strictly inside right 10%
                         startX = w * 0.9f + random.nextFloat() * w * 0.1f
-                        startY = -h * 0.1f
+                        val centerY = random.nextFloat() * h
+                        val halfSpan = h * 0.6f * lengthScale
+                        startY = centerY - halfSpan
                         // End: Strictly inside right 10%
                         endX = w * 0.9f + random.nextFloat() * w * 0.1f
-                        endY = h * 1.1f
+                        endY = centerY + halfSpan
                     }
 
                     else -> { // CENTER ZONE (Horizontal Strike Behind)
-                        // Start/End clamped to near-bounds
-                        startX = -w * 0.1f
-                        endX = w * 1.1f
+                        // Random-centered horizontal span instead of edge-to-edge.
+                        val centerX = random.nextFloat() * w
+                        val halfSpan = w * 0.6f * lengthScale
+                        startX = centerX - halfSpan
+                        endX = centerX + halfSpan
 
                         // Vertical Position: Top 25% or Bottom 25%
                         val isHigh = random.nextBoolean()
@@ -2257,6 +2273,7 @@ fun Modifier.lightningStorm(
                     }
                 }
             }
+            }
         }
     }
 
@@ -2313,12 +2330,12 @@ fun Modifier.genreVfx(
         }
 
         Genre.HEROES -> {
+            // Icons already go through gradientFill/tint upstream - an effect that clones the
+            // content in layers (like comicExtrude) fights with that. Keep this to position and
+            // overlay-only moves, same family as glitch/vhs/levitate.
             this
-                .levitate(yOffset = 10f)
-                .ultimateEnergyShader(
-                    energyColor = Color(0xFF8CE8FF),
-                    outerColor = finalPrimary.lighter(0.4f),
-                )
+                .levitate(yOffset = 5f)
+                .lightningStorm(boltCount = 3, lengthScale = 0.5f)
         }
 
         Genre.SPACE_OPERA -> {
@@ -2339,3 +2356,219 @@ fun Modifier.genreVfx(
         }
     }
 }
+
+/**
+ * Cuphead/comic-book isometric extrude: a FLAT (non-gradient) solid-color block trailing the
+ * content along a diagonal axis, wrapped in a thick 8-direction "dilated" outline, punching out
+ * and retracting on a loop. Works on any content (Text, Icon, etc.) since it only tints/offsets
+ * the rasterized draw output via saveLayer+SrcIn, never the content itself.
+ */
+fun Modifier.comicExtrude(
+    isPlaying: Boolean = true,
+    extrudeColor: Color = Color(0xFF8C3400),
+    outlineColor: Color = Color.White,
+    outlineWidth: androidx.compose.ui.unit.Dp = 3.dp,
+    maxDepth: androidx.compose.ui.unit.Dp = 14.dp,
+    extrusionSteps: Int = 10,
+    angleDegrees: Float = 55f,
+): Modifier =
+    composed {
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
+
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val maxDepthPx = with(density) { maxDepth.toPx() }
+        val outlineWidthPx = with(density) { outlineWidth.toPx() }
+
+        val infiniteTransition = rememberInfiniteTransition(label = "comicExtrude")
+        // Punch out, hold, retract - not a smooth sine wobble.
+        val depthProgress by infiniteTransition.animateFloat(
+            initialValue = 0.7f,
+            targetValue = 0.7f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation =
+                        keyframes {
+                            durationMillis = 1800
+                            0.7f at 0
+                            1f at 450 using FastOutSlowInEasing
+                            1f at 1250
+                            0.7f at 1750 using FastOutSlowInEasing
+                        },
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "comicExtrudeDepth",
+        )
+
+        val radians = Math.toRadians(angleDegrees.toDouble())
+        val axisX = kotlin.math.cos(radians).toFloat()
+        val axisY = kotlin.math.sin(radians).toFloat()
+
+        val ringOffsets =
+            listOf(
+                0f to -1f,
+                0.707f to -0.707f,
+                1f to 0f,
+                0.707f to 0.707f,
+                0f to 1f,
+                -0.707f to 0.707f,
+                -1f to 0f,
+                -0.707f to -0.707f,
+            )
+
+        this
+            .graphicsLayer {
+                val pop = 1f + 0.04f * depthProgress
+                scaleX = pop
+                scaleY = pop
+            }.drawWithContent {
+                fun drawSolidGhost(
+                    dx: Float,
+                    dy: Float,
+                    tint: Color,
+                ) {
+                    drawIntoCanvas { canvas ->
+                        val paint =
+                            androidx.compose.ui.graphics
+                                .Paint()
+                        canvas.saveLayer(
+                            androidx.compose.ui.geometry
+                                .Rect(0f, 0f, size.width, size.height),
+                            paint,
+                        )
+                        canvas.translate(dx, dy)
+                        drawContent()
+                        drawRect(color = tint, blendMode = BlendMode.SrcIn)
+                        canvas.restore()
+                    }
+                }
+
+                // Clamp to a fraction of the content's own size, so a small icon gets a
+                // proportionally small extrude instead of a fixed-dp blob swallowing it whole.
+                val cappedDepthPx = kotlin.math.min(maxDepthPx, size.minDimension * 0.18f)
+                val cappedOutlinePx = kotlin.math.min(outlineWidthPx, size.minDimension * 0.05f)
+                val depth = cappedDepthPx * depthProgress
+
+                // Flat solid extrusion body - one color, no gradient, so it reads as a chunky block.
+                if (depth > 0.5f) {
+                    for (i in extrusionSteps downTo 1) {
+                        val t = i / extrusionSteps.toFloat()
+                        drawSolidGhost(axisX * depth * t, axisY * depth * t, extrudeColor)
+                    }
+                }
+
+                // Thick outline "cap" at the back of the extrusion.
+                if (depth > 0.5f) {
+                    ringOffsets.forEach { (rx, ry) ->
+                        drawSolidGhost(
+                            axisX * depth + rx * cappedOutlinePx,
+                            axisY * depth + ry * cappedOutlinePx,
+                            outlineColor,
+                        )
+                    }
+                }
+
+                // Thick outline hugging the front face.
+                ringOffsets.forEach { (rx, ry) ->
+                    drawSolidGhost(rx * cappedOutlinePx, ry * cappedOutlinePx, outlineColor)
+                }
+
+                drawContent()
+            }
+    }
+
+/**
+ * Small flickering arcs that crawl around the content's perimeter (reusing lightningStorm's
+ * jittery segment-walk feel, just miniaturized and multiplied) instead of one big strike.
+ * Drawn purely on top of the content via drawContent() first - never clones or redraws it, so
+ * it's safe to stack after modifiers that already transform the content (gradientFill, tint,
+ * etc.) without the layering artifacts a content-cloning effect like [comicExtrude] causes on
+ * small/complex shapes.
+ */
+@Composable
+fun Modifier.electricSparks(
+    isPlaying: Boolean = true,
+    sparkCount: Int = 4,
+    color: Color = Color(0xFF8CE8FF),
+): Modifier =
+    composed {
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
+        val infiniteTransition = rememberInfiniteTransition(label = "electricSparks")
+        val ticker by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(4000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "sparkTicker",
+        )
+
+        this.drawWithContent {
+            drawContent()
+            val w = size.width
+            val h = size.height
+            val minDim = size.minDimension
+
+            repeat(sparkCount) { i ->
+                // Stable per-spark anchor, placed on one of the content's four edges.
+                val posRandom = Random(100 + i * 17)
+                val edge = posRandom.nextInt(4)
+                val edgeT = posRandom.nextFloat()
+                val anchorX = if (edge == 1) w else if (edge == 3) 0f else edgeT * w
+                val anchorY = if (edge == 0) 0f else if (edge == 2) h else edgeT * h
+                val baseAngle = posRandom.nextFloat() * 2f * kotlin.math.PI.toFloat()
+
+                val individualSpeed = 0.5f + (i % 3) * 0.2f
+                val phase = i * 0.31f
+                val rawPulse =
+                    (
+                        kotlin.math
+                            .sin((ticker * individualSpeed + phase) * 2 * kotlin.math.PI)
+                            .toFloat() + 1f
+                    ) / 2f
+                // Narrow window so arcs mostly stay invisible, then flicker on briefly.
+                val pulse = kotlin.math.max(0f, (rawPulse - 0.55f) / 0.45f)
+
+                if (pulse > 0f) {
+                    // Reseeds every ~130ms while visible, giving the arc a jittery "electric" crawl.
+                    val jagRandom = Random(((ticker * 8000).toInt() / 130) + i * 37)
+                    val boltLength = minDim * (0.16f + (i % 3) * 0.05f) * pulse
+                    val segments = 4
+                    val segLen = boltLength / segments
+
+                    var curX = anchorX
+                    var curY = anchorY
+                    val path =
+                        androidx.compose.ui.graphics
+                            .Path()
+                    path.moveTo(curX, curY)
+                    repeat(segments) {
+                        val jitterAngle = baseAngle + (jagRandom.nextFloat() - 0.5f) * 1.6f
+                        curX += kotlin.math.cos(jitterAngle).toFloat() * segLen
+                        curY += kotlin.math.sin(jitterAngle).toFloat() * segLen
+                        path.lineTo(curX, curY)
+                    }
+
+                    drawPath(
+                        path = path,
+                        color = color.copy(alpha = pulse),
+                        style =
+                            androidx.compose.ui.graphics.drawscope
+                                .Stroke(
+                                    width = 1.5f + pulse,
+                                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                                    join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                                ),
+                    )
+
+                    drawCircle(
+                        color = color.copy(alpha = pulse * 0.6f),
+                        radius = 3f * pulse,
+                        center = Offset(anchorX, anchorY),
+                        blendMode = BlendMode.Screen,
+                    )
+                }
+            }
+        }
+    }
