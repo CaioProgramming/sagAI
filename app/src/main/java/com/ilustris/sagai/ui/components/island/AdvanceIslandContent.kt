@@ -14,20 +14,29 @@ import com.ilustris.sagai.features.saga.chat.presentation.model.toUi
  * processing, it shows the streaming reasoning (marquee-scrolling if long) with the trailing
  * arrow swapped for the loading spinner — the same "reasoning lives in the compact pill, no
  * separate expanded body" pattern used for image generation.
+ *
+ * [action] is null for the "continue past milestone" fallback (a blocking milestone reveal with
+ * no resolved narrative action yet) — in that case the pill just shows a generic continue label
+ * instead of an action-specific one.
  */
 class AdvanceIslandContent(
-    private val action: NarrativeAction,
+    private val action: NarrativeAction?,
     private val reasoning: String?,
     private val isProcessing: Boolean,
     private val genre: Genre?,
     override val onAction: () -> Unit,
 ) : IslandContent {
-    private val actionUi = action.toUi()
+    private val actionUi = action?.toUi()
 
     override val compact: CompactIslandData =
         CompactIslandData(
             label = if (isProcessing) reasoning else null,
-            labelRes = if (isProcessing) actionUi.holdingTextRes else (actionUi.titleRes ?: R.string.continue_text),
+            labelRes =
+                if (isProcessing) {
+                    actionUi?.holdingTextRes ?: R.string.continue_text
+                } else {
+                    actionUi?.titleRes ?: R.string.continue_text
+                },
             iconRes = genre?.icon,
             isLoading = isProcessing,
             actionIconRes = if (isProcessing) null else R.drawable.round_arrow_forward_ios_24,
