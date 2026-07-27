@@ -785,9 +785,23 @@ class SagaContentManagerImpl
             val showAdvance =
                 narrativeState.showAdvanceTrigger && advanceAction != null && !advanceSuppressed
 
+            // A NewEvent/ChapterFinished/ActFinished/Introduction reveal blocks narrative
+            // reevaluation until the user taps its own in-content continue button (buried in the
+            // top island's expanded body), otherwise nothing ever progresses. Surface the same
+            // continue affordance as a persistent bottom pill too, so the user always has an
+            // obvious way forward — tapping it just runs the same reset continueMilestone() would.
+            val milestoneAwaitingContinue =
+                !advanceSuppressed &&
+                    (
+                        milestone is SagaMilestone.NewEvent ||
+                            milestone is SagaMilestone.ChapterFinished ||
+                            milestone is SagaMilestone.ActFinished ||
+                            milestone is SagaMilestone.Introduction
+                    )
+
             val bottomContent: IslandContent? =
                 when {
-                    showAdvance && advanceAction != null ->
+                    showAdvance ->
                         AdvanceIslandContent(
                             action = advanceAction,
                             reasoning = reasoning,
@@ -796,6 +810,15 @@ class SagaContentManagerImpl
                             onAction = {
                                 if (!isProcessing) managerScope.launch { advanceNarrative() }
                             },
+                        )
+
+                    milestoneAwaitingContinue ->
+                        AdvanceIslandContent(
+                            action = null,
+                            reasoning = reasoning,
+                            isProcessing = false,
+                            genre = genre,
+                            onAction = { managerScope.launch { continueMilestone() } },
                         )
 
                     else -> null
