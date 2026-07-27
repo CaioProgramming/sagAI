@@ -494,14 +494,18 @@ class ChatViewModel
 
         /**
          * Forwards gating the manager can't see on its own (onboarding overlays, message-selection
-         * mode, chat-reply generation) into the advance-trigger island's suppression flag — the
-         * chat screen just relays its own state, the manager owns everything else about when/what
-         * island to publish.
+         * mode) into the advance-trigger island's suppression flag — the chat screen just relays
+         * its own state, the manager owns everything else about when/what island to publish.
+         *
+         * Chat-reply generation is deliberately NOT a suppression reason: tapping advance while a
+         * reply is still streaming is safe, since the AI client already serializes requests behind
+         * its own per-model mutex (see GeminiGenerationEngine's requestMutexes), so an advance
+         * action queued mid-generation simply waits its turn instead of racing it.
          */
         private fun observeAdvanceTriggerSuppression() =
             viewModelScope.launch(Dispatchers.IO) {
                 uiState
-                    .map { it.onboardingType != null || it.selectionState.isSelectionMode || it.isGenerating }
+                    .map { it.onboardingType != null || it.selectionState.isSelectionMode }
                     .distinctUntilChanged()
                     .collect { suppressed -> sagaContentManager.setAdvanceTriggerSuppressed(suppressed) }
             }
