@@ -6,6 +6,9 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperience
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewNavigationStyle
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.features.saga.detail.review.ui.coverImageSource
+import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSource
+import com.ilustris.sagai.features.saga.detail.review.ui.topCharacterImageSource
 
 /**
  * Fantasy's SagaReview presented as a storybook: serif type on parchment,
@@ -24,6 +27,8 @@ class BookReviewExperience(
             val review = content.data.review ?: return emptyList()
 
             return buildList {
+                content.coverImageSource()?.let { add(BookCoverPage(content, it)) }
+
                 review.introduction?.let { stage ->
                     stage.hook?.let { add(BookTextPage(content, it, ReviewPageType.INTRO, isEpigraph = true)) }
                     stage.content?.let { add(BookTextPage(content, it, ReviewPageType.INTRO)) }
@@ -54,6 +59,10 @@ class BookReviewExperience(
                     add(BookCharactersPage(content, stage))
                 }
 
+                content.topCharacterImageSource()?.let {
+                    add(BookIllustrationPage(content, it, ReviewPageType.CHARACTERS))
+                }
+
                 review.actsInsight?.let { stage ->
                     stage.hook?.let {
                         add(BookTextPage(content, it, ReviewPageType.JOURNEY, isEpigraph = true))
@@ -61,6 +70,10 @@ class BookReviewExperience(
                     stage.content?.let {
                         add(BookTextPage(content, it, ReviewPageType.JOURNEY))
                     }
+                }
+
+                content.notableChapterImageSource()?.let {
+                    add(BookIllustrationPage(content, it, ReviewPageType.JOURNEY))
                 }
 
                 review.conclusion?.let { stage ->

@@ -6,6 +6,9 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperience
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewNavigationStyle
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.features.saga.detail.review.ui.coverImageSource
+import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSource
+import com.ilustris.sagai.features.saga.detail.review.ui.topCharacterImageSource
 
 /**
  * Cyberpunk's SagaReview presented as a computer terminal: monospace text typed
@@ -24,8 +27,12 @@ class TerminalReviewExperience(
             val review = content.data.review ?: return emptyList()
 
             return buildList {
+                content.coverImageSource()?.let {
+                    add(TerminalDecodePage(content, it, "boot", ReviewPageType.INTRO))
+                }
+
                 review.introduction?.let { stage ->
-                    stage.hook?.let { add(TerminalTextPage(content, it, ReviewPageType.INTRO, "boot")) }
+                    stage.hook?.let { add(TerminalTextPage(content, it, ReviewPageType.INTRO, "init")) }
                     stage.content?.let { add(TerminalTextPage(content, it, ReviewPageType.INTRO, "log")) }
                 }
 
@@ -54,6 +61,10 @@ class TerminalReviewExperience(
                     add(TerminalCharactersPage(content, stage))
                 }
 
+                content.topCharacterImageSource()?.let {
+                    add(TerminalDecodePage(content, it, "decrypt", ReviewPageType.CHARACTERS))
+                }
+
                 review.actsInsight?.let { stage ->
                     stage.hook?.let {
                         add(TerminalTextPage(content, it, ReviewPageType.JOURNEY, "history"))
@@ -61,6 +72,10 @@ class TerminalReviewExperience(
                     stage.content?.let {
                         add(TerminalTextPage(content, it, ReviewPageType.JOURNEY, "log"))
                     }
+                }
+
+                content.notableChapterImageSource()?.let {
+                    add(TerminalDecodePage(content, it, "render", ReviewPageType.JOURNEY))
                 }
 
                 review.conclusion?.let { stage ->
