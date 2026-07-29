@@ -15,6 +15,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import com.ilustris.sagai.features.saga.detail.data.model.Farewell
 import com.ilustris.sagai.features.saga.detail.data.model.FarewellSet
 import com.ilustris.sagai.features.saga.detail.data.model.Review
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
@@ -142,7 +143,13 @@ class SagaReviewUseCaseImpl
                                 requirement = step.requirement,
                             ) ?: error("Failed to generate review step: ${step.name}")
 
-                        val partialReview = (existingReview ?: Review()).copy(farewells = result.farewells)
+                        // Zip by position, not by an AI-echoed id: the model was only asked for
+                        // messages in the same order the characters were listed in the prompt.
+                        val farewells =
+                            topCharacters.zip(result.messages) { character, message ->
+                                Farewell(character.data.id, message)
+                            }
+                        val partialReview = (existingReview ?: Review()).copy(farewells = farewells)
                         val updatedSaga = content.data.copy(review = partialReview)
                         sagaRepository.updateSaga(updatedSaga)
                         emit(ReviewState.StepComplete(step, updatedSaga))

@@ -51,9 +51,16 @@ data class Farewell(
     val message: String = "",
 )
 
-/** AI response wrapper for the farewells step — mirrors [com.ilustris.sagai.features.saga.chat.data.model.SuggestionGen]. */
+/**
+ * AI response wrapper for the farewells step — mirrors
+ * [com.ilustris.sagai.features.saga.chat.data.model.SuggestionGen]. Deliberately just a flat
+ * list of strings, not [Farewell]: the model is asked for one message per character in the
+ * exact order they were listed in the prompt, and [SagaReviewUseCaseImpl.generateStep] zips
+ * that order back onto the real character ids in code — asking the model to echo back a
+ * numeric `characterId` itself would be a needless source of mismatches.
+ */
 data class FarewellSet(
-    val farewells: List<Farewell> = emptyList(),
+    val messages: List<String> = emptyList(),
 )
 
 fun Review?.isComplete(): Boolean {
