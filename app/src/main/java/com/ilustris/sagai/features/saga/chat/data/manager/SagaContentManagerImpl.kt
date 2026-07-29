@@ -845,7 +845,6 @@ class SagaContentManagerImpl
                 return
             }
 
-            var hydrated: NarrativeAction? = null
             // Whether another reevaluation was queued *while we held the lock*. Consumed here but
             // acted on below, outside withLock — recursing from inside it would always see the
             // mutex as locked (by ourselves) and just re-queue forever without ever re-checking.
@@ -875,7 +874,7 @@ class SagaContentManagerImpl
                 // it — same underlying race as the duplicate-timeline guard, just cosmetic instead
                 // of thrown.
                 val intent = NarrativeCheck.validateProgressionMetadata(sagaContent.toNarrativeMetadata(), rules)
-                hydrated =
+                val hydrated =
                     intent?.let { NarrativeActionMaterializer.materialize(it, sagaContent) }
                 if (intent != null && hydrated == null) {
                     Timber.w(
@@ -892,12 +891,24 @@ class SagaContentManagerImpl
                     isAutomatic = isAutomatic,
                 )
 
+                // Automatic actions (e.g. CreateTimeline) run right here, still holding the lock,
+                // instead of after releasing it. Several reactive triggers (milestone dismissal,
+                // loading state, the explicit continue call) can each independently ask for a
+                // progression check around the same time; running the resolved action outside the
+                // lock let two of them resolve the *same* automatic action off snapshots that
+                // hadn't caught up with each other's write yet, occasionally creating the next
+                // timeline twice. A nested requestNarrativeProgression() call triggered from inside
+                // execution (e.g. its Success branch) just sees the mutex still locked and defers
+                // via schedulePendingReevaluation() instead of recursing — consumed below once this
+                // section releases the lock, so nothing gets lost, it just resolves off fresh data.
+                if (hydrated != null && isAutomatic) {
+                    executeNarrativeAction(hydrated, isRetry = false)
+                }
+
                 shouldReevaluateAgain = narrativeCoordinator.consumePendingReevaluation()
             }
 
-            if (hydrated != null && hydrated.executionMode() == NarrativeExecutionMode.Automatic) {
-                executeNarrativeAction(hydrated, isRetry = false)
-            } else if (shouldReevaluateAgain) {
+            if (shouldReevaluateAgain) {
                 requestNarrativeProgression(isRetry = false)
             }
         }
