@@ -4,6 +4,20 @@ import com.ilustris.sagai.features.share.domain.model.ShareType
 
 interface ReviewExperience {
     val pages: List<ReviewPage>
+
+    /** How this experience is navigated/rendered. Defaults to today's vertical story pager. */
+    val navigationStyle: ReviewNavigationStyle get() = ReviewNavigationStyle.VerticalSwipe
+}
+
+sealed class ReviewNavigationStyle {
+    /** Instagram/Spotify-Wrapped style vertical swipe — the current Default behavior. */
+    data object VerticalSwipe : ReviewNavigationStyle()
+
+    /** Tap-anywhere-to-continue, no swipe gesture — used by the Terminal template. */
+    data object TapToAdvance : ReviewNavigationStyle()
+
+    /** Horizontal page-turn — used by the Book template. */
+    data object HorizontalPageFlip : ReviewNavigationStyle()
 }
 
 sealed class ReviewAction {
