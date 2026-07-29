@@ -72,6 +72,10 @@ class TerminalReviewExperience(
                     }
                 }
 
+                review.farewells
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { add(TerminalFarewellsPage(content, it)) }
+
                 if (review.isComplete()) {
                     add(TerminalSummaryPage(content))
                 }

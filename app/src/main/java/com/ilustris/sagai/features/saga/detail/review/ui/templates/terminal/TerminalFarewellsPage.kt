@@ -1,0 +1,91 @@
+package com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
+import com.ilustris.sagai.features.saga.detail.data.model.Farewell
+import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
+import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
+import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.theme.SimpleTypewriterText
+import kotlin.time.Duration.Companion.milliseconds
+
+/** `tail ./farewells.log` — every important character's last message before disconnecting. */
+class TerminalFarewellsPage(
+    override val content: SagaContent,
+    private val farewells: List<Farewell>,
+) : ReviewPage {
+    override val pageType: ReviewPageType = ReviewPageType.FAREWELLS
+
+    @Composable
+    override fun Show(
+        modifier: Modifier,
+        canAnimate: Boolean,
+        onAction: (ReviewAction) -> Unit,
+    ) {
+        val accent = content.data.genre.compiledColorPalette().getOrElse(1) { MaterialTheme.colorScheme.primary }
+        val speakers =
+            remember(farewells) {
+                farewells.mapNotNull { farewell ->
+                    content.characters
+                        .find { it.data.id == farewell.characterId }
+                        ?.let { it.data.name to farewell.message }
+                }
+            }
+        var revealedCount by remember { mutableIntStateOf(if (canAnimate) 0 else speakers.size) }
+
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+            Column(
+                Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Text(
+                    text = "guest@sagai:~$ tail ./farewells.log",
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = accent,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+
+                speakers.forEachIndexed { index, (name, message) ->
+                    if (index <= revealedCount) {
+                        SimpleTypewriterText(
+                            text = "> $name: $message",
+                            style =
+                                MaterialTheme.typography.bodyLarge.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    color = accent.copy(alpha = 0.9f),
+                                ),
+                            isAnimated = canAnimate && index == revealedCount,
+                            duration = 1200.milliseconds,
+                            onAnimationFinished = {
+                                if (index == revealedCount) revealedCount++
+                            },
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    override fun Background(modifier: Modifier) {
+        TerminalBackground(content.data.genre, modifier)
+    }
+}

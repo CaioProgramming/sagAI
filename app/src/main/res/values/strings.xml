@@ -724,6 +724,7 @@
     <string name="review_stage_journey_subtitle_default">The path we took</string>
     <string name="review_stage_conclusion_title">The Legacy</string>
     <string name="review_stage_conclusion_subtitle_default">What remains</string>
+    <string name="review_farewells_title">The Send-Off</string>
 
     <!-- Onboarding -->
     <string name="onboarding_skip">Skip</string>

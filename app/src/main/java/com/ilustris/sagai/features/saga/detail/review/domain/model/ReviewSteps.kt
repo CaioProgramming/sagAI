@@ -44,6 +44,19 @@ enum class ReviewSteps(
         ReviewPrompts.REVIEW_CONCLUSION_BLUEPRINT,
         ModelRequirement.MEDIUM,
     ),
+
+    /**
+     * The Send-Off — a farewell message per top character. Unlike every other step,
+     * its AI response is a [com.ilustris.sagai.features.saga.detail.data.model.FarewellSet]
+     * (a list), not a single [ReviewStage], so [SagaReviewUseCaseImpl.generateStep]
+     * special-cases it before reaching the generic `ReviewStage` path — this step's
+     * branches below ([isPresentIn] aside) are never actually exercised, but must exist
+     * for these `when` blocks to stay exhaustive.
+     */
+    FAREWELLS(
+        ReviewPrompts.REVIEW_FAREWELLS_BLUEPRINT,
+        ModelRequirement.MEDIUM,
+    ),
 }
 
 fun ReviewSteps.isPresentIn(review: Review?): Boolean =
@@ -54,6 +67,7 @@ fun ReviewSteps.isPresentIn(review: Review?): Boolean =
         ReviewSteps.CHARACTERS_STEP -> review?.topCharacters != null
         ReviewSteps.ACTS_INSIGHT -> review?.actsInsight != null
         ReviewSteps.CONCLUSION -> review?.conclusion != null
+        ReviewSteps.FAREWELLS -> review?.farewells != null
     }
 
 fun Review.withStep(
@@ -68,6 +82,9 @@ fun Review.withStep(
         ReviewSteps.CHARACTERS_STEP -> base.copy(topCharacters = stage)
         ReviewSteps.ACTS_INSIGHT -> base.copy(actsInsight = stage)
         ReviewSteps.CONCLUSION -> base.copy(conclusion = stage)
+        // Farewells persists its own FarewellSet directly in SagaReviewUseCaseImpl.generateStep;
+        // this branch is unreachable.
+        ReviewSteps.FAREWELLS -> base
     }
 }
 
@@ -135,5 +152,9 @@ suspend fun ReviewSteps.buildArgs(saga: SagaContent): Map<String, String> {
                 put("endMessage", saga.data.endMessage)
             }
         }
+
+        // Farewells builds its own args (top character context) directly in
+        // SagaReviewUseCaseImpl.generateStep; this branch is unreachable.
+        ReviewSteps.FAREWELLS -> emptyMap()
     }
 }

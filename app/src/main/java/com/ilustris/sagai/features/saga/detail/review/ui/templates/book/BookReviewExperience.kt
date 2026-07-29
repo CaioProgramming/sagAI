@@ -72,6 +72,10 @@ class BookReviewExperience(
                     }
                 }
 
+                review.farewells
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { add(BookFarewellsPage(content, it)) }
+
                 if (review.isComplete()) {
                     add(BookSummaryPage(content))
                 }
