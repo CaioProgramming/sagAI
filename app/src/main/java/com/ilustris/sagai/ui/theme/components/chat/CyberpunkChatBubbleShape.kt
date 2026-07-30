@@ -14,6 +14,7 @@ class CyberpunkChatBubbleShape(
     private val tailWidth: Dp = 12.dp,
     private val tailHeight: Dp = 12.dp,
     private val tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
+    private val drawTail: Boolean = true,
 ) : Shape {
     override fun createOutline(
         size: Size,
@@ -25,7 +26,8 @@ class CyberpunkChatBubbleShape(
         val tailHeightPx = with(density) { tailHeight.toPx() }
         val path = Path()
 
-        val bodyHeight = size.height - tailHeightPx
+        // Without a tail the body simply fills the whole box — no height needs reserving.
+        val bodyHeight = if (drawTail) size.height - tailHeightPx else size.height
         // A small flat area at the bottom of the tail to avoid a needle-sharp point,
         // giving it a more "manufactured" look.
         val tailTipPx = tailWidthPx * 0.25f
@@ -39,14 +41,19 @@ class CyberpunkChatBubbleShape(
                 path.lineTo(size.width - cutSizePx, 0f)
                 path.lineTo(size.width, cutSizePx)
 
-                // Right Edge (Vertical down to bottom of tail)
-                path.lineTo(size.width, size.height)
+                // Right Edge (Vertical down to body level)
+                path.lineTo(size.width, bodyHeight)
 
-                // Tail Bottom (Small flat tip)
-                path.lineTo(size.width - tailTipPx, size.height)
+                if (drawTail) {
+                    // Right Edge continues down to the tail
+                    path.lineTo(size.width, size.height)
 
-                // Tail Diagonal (Up and Left to body)
-                path.lineTo(size.width - tailWidthPx, bodyHeight)
+                    // Tail Bottom (Small flat tip)
+                    path.lineTo(size.width - tailTipPx, size.height)
+
+                    // Tail Diagonal (Up and Left to body)
+                    path.lineTo(size.width - tailWidthPx, bodyHeight)
+                }
 
                 // Bottom Edge
                 path.lineTo(cutSizePx, bodyHeight)
@@ -75,16 +82,21 @@ class CyberpunkChatBubbleShape(
                 // Bottom-Right: Cut
                 path.lineTo(size.width - cutSizePx, bodyHeight)
 
-                // Bottom Edge to Tail
-                path.lineTo(tailWidthPx, bodyHeight)
+                if (drawTail) {
+                    // Bottom Edge to Tail
+                    path.lineTo(tailWidthPx, bodyHeight)
 
-                // Tail Diagonal (Down and Left to tip)
-                path.lineTo(tailTipPx, size.height)
+                    // Tail Diagonal (Down and Left to tip)
+                    path.lineTo(tailTipPx, size.height)
 
-                // Tail Bottom (Small flat tip)
-                path.lineTo(0f, size.height)
+                    // Tail Bottom (Small flat tip)
+                    path.lineTo(0f, size.height)
+                } else {
+                    // Bottom Edge straight across (no tail to reserve room for)
+                    path.lineTo(0f, bodyHeight)
+                }
 
-                // Left Edge (Vertical up from bottom of tail)
+                // Left Edge (Vertical up from bottom of tail/body)
                 path.lineTo(0f, cutSizePx)
 
                 path.close()

@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -53,6 +54,7 @@ fun CharacterAvatar(
     isLoading: Boolean = false,
     useFallback: Boolean = false,
     modifier: Modifier = Modifier,
+    shape: Shape = CircleShape,
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
     pixelation: Float? = null,
@@ -77,12 +79,12 @@ fun CharacterAvatar(
             .border(
                 borderSize,
                 borderBrush,
-                CircleShape,
-            ).clip(CircleShape)
+                shape,
+            ).clip(shape)
             .padding(innerPadding)
             .background(
                 Brush.verticalGradient(characterColor.darkerPalette(factor = .35f)),
-                CircleShape,
+                shape,
             ),
     ) {
         val skipGenreEffect = maxWidth < GenreEffectMaxSize && maxHeight < GenreEffectMaxSize
@@ -133,7 +135,7 @@ fun CharacterAvatar(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .clip(CircleShape)
+                    .clip(shape)
                     .then(
                         if (!skipGenreEffect) {
                             Modifier.effectForGenre(
