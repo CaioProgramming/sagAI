@@ -12,6 +12,7 @@ import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 interface SagaContentManager {
@@ -25,6 +26,14 @@ interface SagaContentManager {
     val milestoneUpdate: MutableStateFlow<SagaMilestone?>
     val showObjectiveOverlay: StateFlow<Boolean>
     val isOnboardingVisible: MutableStateFlow<Boolean>
+
+    /**
+     * One-shot signal (sagaId), emitted once per rising edge into
+     * [com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase.AwaitingAdvance] — a
+     * narrative chain step is ready and waiting. The only consumer should be the single
+     * navigation collector that opens the Milestone screen; nothing else should react to this.
+     */
+    val milestoneChainReady: SharedFlow<Int>
 
     suspend fun advanceNarrative()
 

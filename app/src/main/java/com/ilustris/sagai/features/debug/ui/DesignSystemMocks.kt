@@ -1,6 +1,8 @@
 package com.ilustris.sagai.features.debug.ui
 
 import MessageStatus
+import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Abilities
 import com.ilustris.sagai.features.characters.data.model.BodyFeatures
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -10,11 +12,14 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.data.model.FacialFeatures
 import com.ilustris.sagai.features.characters.data.model.PhysicalTraits
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
@@ -98,5 +103,36 @@ object DesignSystemMocks {
         TimelineContent(
             data = Timeline(id = 1, chapterId = 1),
             messages = emptyList(),
+        )
+
+    fun mockSagaContent(genre: Genre) = SagaContent(data = mockSaga(genre))
+
+    fun mockNewEventMilestone(genre: Genre) =
+        SagaMilestone.NewEvent(
+            timeline = Timeline(id = 1, chapterId = 1, title = "The Signal in the Static"),
+            emotionalMascot = null,
+            messageText = "The static clears just long enough for you to make out a single word before the signal dies again.",
+            sagaContent = mockSagaContent(genre),
+        )
+
+    fun mockChapterFinishedMilestone(genre: Genre) =
+        SagaMilestone.ChapterFinished(
+            chapter = Chapter(id = 1, actId = 1, title = "Ashes of the Old Guard"),
+            messageText = "Every thread from this chapter converges here — nothing that happened was wasted.",
+            sagaContent = mockSagaContent(genre),
+        )
+
+    fun mockActFinishedMilestone() =
+        SagaMilestone.ActFinished(
+            act = Act(id = 1, title = "The Fracture"),
+            messageText = "The dust settles on everything you fought for in this act.",
+        )
+
+    fun mockIntroductionMilestone() =
+        SagaMilestone.Introduction(
+            type = IntroductionType.CHAPTER,
+            titleText = "Ashes of the Old Guard",
+            introduction = "The city has not forgiven you yet — and it may never get the chance to.",
+            number = "Chapter - II",
         )
 }

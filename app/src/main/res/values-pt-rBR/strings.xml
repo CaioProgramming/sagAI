@@ -512,6 +512,7 @@
     <string name="milestone_encouragement">Parabéns! Continue assim!</string>
     <string name="continue_button">Continuar</string>
     <string name="introduction_milestone">Introdução</string>
+    <string name="milestone_loading_default">Moldando o que vem a seguir…</string>
     <string name="create_character">Ver personagem</string>
 
     <string name="saga_intro_fallback">Bem-vindo! Vamos começar a criar sua saga épica. Que tipo de história você quer contar\?</string>

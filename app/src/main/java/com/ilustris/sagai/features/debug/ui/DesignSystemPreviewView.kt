@@ -42,6 +42,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,6 +66,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.ImageType
@@ -81,6 +84,10 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
 import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
+import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
+import com.ilustris.sagai.features.saga.milestone.ui.MilestoneClosureContent
+import com.ilustris.sagai.features.saga.milestone.ui.MilestoneIntroductionContent
+import com.ilustris.sagai.features.saga.milestone.ui.MilestoneLoadingContent
 import com.ilustris.sagai.ui.animations.comicExtrude
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.WordArtText
@@ -119,6 +126,7 @@ fun DesignSystemPreviewView(
     val pagerState = rememberPagerState { Genre.entries.size }
     val genre = Genre.entries[pagerState.currentPage]
     var showStarryLoaderPreview by remember { mutableStateOf(false) }
+    var milestonePreviewKind by remember { mutableStateOf<MilestonePreviewKind?>(null) }
 
     LaunchedEffect(showStarryLoaderPreview) {
         if (showStarryLoaderPreview) {
@@ -197,6 +205,104 @@ fun DesignSystemPreviewView(
                         stringResource(R.string.settings_test_starry_loader_message),
                         subtitle = stringResource(R.string.settings_test_starry_loader_subtitle),
                     )
+
+                    // Lets you flip through the Milestone screen's states with mock content —
+                    // no need to actually play a saga up to a real milestone to see how it looks.
+                    // A Dialog (not an inline overlay) so it gets its own solid background and an
+                    // easy way out — it's a preview, it shouldn't lock the screen like the real one.
+                    milestonePreviewKind?.let { kind ->
+                        Dialog(
+                            onDismissRequest = { milestonePreviewKind = null },
+                            properties = DialogProperties(usePlatformDefaultWidth = false),
+                        ) {
+                            Surface(
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colorScheme.background,
+                            ) {
+                                Box(Modifier.fillMaxSize()) {
+                                    when (kind) {
+                                        // MilestoneLoadingContent has no button on purpose — in
+                                        // the real screen it advances on its own once generation
+                                        // finishes. The preview has nothing driving that, so it
+                                        // gets its own "Next" affordance here instead, without
+                                        // touching the production composable's contract.
+                                        MilestonePreviewKind.LOADING -> {
+                                            Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp)) {
+                                                Box(Modifier.fillMaxWidth().weight(1f)) {
+                                                    MilestoneLoadingContent(
+                                                        reasoning = "Weaving the next thread of your story...",
+                                                    )
+                                                }
+                                                Button(
+                                                    onClick = { milestonePreviewKind = MilestonePreviewKind.EVENT },
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                ) {
+                                                    Text("Next")
+                                                }
+                                            }
+                                        }
+
+                                        MilestonePreviewKind.EVENT -> {
+                                            MilestoneClosureContent(
+                                                state =
+                                                    MilestoneUiState.ClosureStep(
+                                                        DesignSystemMocks.mockNewEventMilestone(genre),
+                                                        stepIndex = 1,
+                                                        stepTotal = 3,
+                                                    ),
+                                                onContinue = { milestonePreviewKind = MilestonePreviewKind.CHAPTER },
+                                            )
+                                        }
+
+                                        MilestonePreviewKind.CHAPTER -> {
+                                            MilestoneClosureContent(
+                                                state =
+                                                    MilestoneUiState.ClosureStep(
+                                                        DesignSystemMocks.mockChapterFinishedMilestone(genre),
+                                                        stepIndex = 2,
+                                                        stepTotal = 3,
+                                                    ),
+                                                onContinue = { milestonePreviewKind = MilestonePreviewKind.ACT },
+                                            )
+                                        }
+
+                                        MilestonePreviewKind.ACT -> {
+                                            MilestoneClosureContent(
+                                                state =
+                                                    MilestoneUiState.ClosureStep(
+                                                        DesignSystemMocks.mockActFinishedMilestone(),
+                                                        stepIndex = 3,
+                                                        stepTotal = 3,
+                                                    ),
+                                                onContinue = { milestonePreviewKind = MilestonePreviewKind.INTRO },
+                                            )
+                                        }
+
+                                        MilestonePreviewKind.INTRO -> {
+                                            MilestoneIntroductionContent(
+                                                milestone = DesignSystemMocks.mockIntroductionMilestone(),
+                                                onContinue = { milestonePreviewKind = null },
+                                            )
+                                        }
+                                    }
+                                    IconButton(
+                                        onClick = { milestonePreviewKind = null },
+                                        modifier =
+                                            Modifier
+                                                .align(Alignment.TopStart)
+                                                .statusBarsPadding()
+                                                .padding(16.dp),
+                                    ) {
+                                        Text(
+                                            "✕",
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -261,10 +367,30 @@ fun DesignSystemPreviewView(
                 )
             }
 
+            IconButton(
+                onClick = { milestonePreviewKind = MilestonePreviewKind.LOADING },
+                modifier =
+                    Modifier
+                        .background(
+                            MaterialTheme.colorScheme.background.copy(alpha = .3f),
+                            CircleShape,
+                        ).size(24.dp)
+                        .padding(4.dp),
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_spark),
+                    contentDescription = "Preview Milestone screens",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
             IslandTestIconButton(viewModel, genre)
         }
     }
 }
+
+private enum class MilestonePreviewKind { LOADING, EVENT, CHAPTER, ACT, INTRO }
 
 @Composable
 private fun BoxScope.GenrePager(pagerState: androidx.compose.foundation.pager.PagerState) {

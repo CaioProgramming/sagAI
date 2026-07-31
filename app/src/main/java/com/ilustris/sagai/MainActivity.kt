@@ -70,6 +70,7 @@ import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.globalshell.ImageGenerationWorkEffect
 import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.core.navigation.SagaNavigationTracker
+import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.SideEffectService
@@ -101,6 +102,7 @@ import com.ilustris.sagai.ui.navigation.AuditLogsKey
 import com.ilustris.sagai.ui.navigation.ChatKey
 import com.ilustris.sagai.ui.navigation.FAQKey
 import com.ilustris.sagai.ui.navigation.HomeKey
+import com.ilustris.sagai.ui.navigation.MilestoneKey
 import com.ilustris.sagai.ui.navigation.Navigator
 import com.ilustris.sagai.ui.navigation.NewSagaKey
 import com.ilustris.sagai.ui.navigation.PlaythroughKey
@@ -116,6 +118,7 @@ import com.ilustris.sagai.ui.theme.sagaShape
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -146,6 +149,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var sagaNavigationTracker: SagaNavigationTracker
+
+    @Inject
+    lateinit var sagaContentManager: SagaContentManager
 
     @Inject
     lateinit var globalShellService: GlobalShellService
@@ -204,6 +210,29 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(currentKey) {
                 sagaNavigationTracker.update(currentKey)
+            }
+
+            // The single place that turns "a narrative chain step is ready" into navigation.
+            // Only opens the Milestone screen while the user is already on that saga's chat —
+            // otherwise the existing GlobalShellEffect notification (posted from
+            // SagaContentManagerImpl.postMilestoneEffect) covers it passively. No other screen
+            // should react to this signal.
+            //
+            // Also waits out any in-flight chat reply for that saga first: hitting the message
+            // limit is usually the very message still being replied to, so without this the
+            // Milestone screen could open on a bare loading state while that reply is still
+            // streaming in the background. This gating can't live in SagaContentManagerImpl
+            // itself — ChatGenerationService transitively depends back on SagaContentManager (via
+            // MessageUseCase), so injecting it there is a Dagger dependency cycle; MainActivity
+            // can see both without one.
+            LaunchedEffect(Unit) {
+                sagaContentManager.milestoneChainReady.collect { sagaId ->
+                    if (!sagaNavigationTracker.isOnChatForSaga(sagaId)) return@collect
+                    chatGenerationService.activeGenerations.first { it[sagaId] == null }
+                    if (sagaNavigationTracker.isOnChatForSaga(sagaId)) {
+                        navigator.navigate(MilestoneKey(sagaId))
+                    }
+                }
             }
 
             SagAITheme(genre = themeGenre) {
