@@ -59,7 +59,10 @@ que há pra comunicar no ciclo atual, não um slot vazio pra preencher.
 
 Se o "recurso do app" de um item ainda não existe (feature em `feature_ideas`, não implementada),
 marque o item como bloqueado até a feature sair, em vez de propor conteúdo sobre algo que não
-funciona ainda.
+funciona ainda. Se o bloqueio é uma ideia de premium ainda não validada tecnicamente, não estime
+prazo nem trate como certa — aponte que ela deve passar pelo `feature_planning_agent.md` e siga
+para `docs/feature_planning/roadmap.md` como candidata a decisão do time. Só volte a colocar essa
+peça no cronograma quando o status no roadmap sair de "Proposto" para algo decidido.
 
 ## Hierarquia de gancho (quando a campanha começa do zero)
 

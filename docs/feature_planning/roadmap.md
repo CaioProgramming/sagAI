@@ -15,6 +15,17 @@ own dedicated folder containing detailed tasks and implementation plans.
 * **Reason**: Latency was too high and compromising the experience, we rollback to the previous one
   shot prompt.
 
+### 23. Saga Wrapped — Renderização Temática 💡 (Signature)
+
+* **Status**: Proposto 💡 — aguardando decisão do time, não priorizado
+* **Folder**: `wrapped_themed_render/`
+* **Plan**: `wrapped_themed_render/task.md`
+* **Descrição**: Versão do Saga Wrapped com renderização temática por gênero (terminal pro
+  cyberpunk, livro pro fantasy) para assinantes Signature, mantendo o Wrapped atual 100% free.
+* **Origem**: achado de Premium do `product_agent.md`, planejado pelo `feature_planning_agent.md`.
+* **Bloqueio**: nenhuma capacidade de vídeo existe hoje no projeto — recomendação é um spike técnico
+  (Media3 Transformer, 1 gênero, prova de conceito) antes de qualquer estimativa de prazo real.
+
 ### 22. Books — Act Chronicles 📖
 
 * **Status**: Parked ⏸️ — Blocked on #21

@@ -48,8 +48,10 @@ Agente de Marketing** e sem transformar a experiência free em algo picotado par
 5. Nunca sugira refatorar o free em etapas pagas. Se encontrar um ponto onde o free "entrega demais"
    de graça, a resposta é criar uma versão premium melhor ao lado — não remover o que já existe.
 6. Se uma oportunidade de premium exigir capacidade técnica que não existe hoje (ex: renderizar vídeo
-   com animações e música de fundo do tema), marque como "ideia para o PO validar viabilidade" em vez
-   de tratar como pronta para entrar no cronograma de marketing.
+   com animações e música de fundo do tema), marque como "precisa de validação técnica" em vez de
+   tratar como pronta para entrar no cronograma de marketing — isso é o gatilho para rodar o
+   `feature_planning_agent.md`, que investiga viabilidade de verdade e abre o item no backlog
+   (`docs/feature_planning/roadmap.md`) para o time decidir.
 
 ## Fontes de verdade
 
