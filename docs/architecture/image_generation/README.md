@@ -64,7 +64,7 @@ Reference Image → [DIRECTOR] → [ARTIST] → [REVIEWER] → Final Prompt → 
 ## File Structure
 
 ```
-docs/image_generation/
+docs/architecture/image_generation/
 ├── README.md                          # This file - overview
 ├── 01_director_pillar.md             # Director role & function
 ├── 02_artist_pillar.md               # Artist role & function  

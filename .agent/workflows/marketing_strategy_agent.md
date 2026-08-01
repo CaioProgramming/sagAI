@@ -10,19 +10,17 @@ Montar o **Canvas de Marketing** do Sagas: um plano vivo que conecta o produto r
 de conteúdo/campanha, respondendo pra cada peça **o quê**, **por quê**, **pra quem (alvo)**, **onde
 (plataforma)** e **o que precisamos capturar/gerar do app** para executar.
 
-## Antes de gerar — desconsidere o material antigo
+## Antes de gerar — não herde o material antigo
 
-`docs/marketing/marketing_plan.md`, `docs/marketing/content_calendar.md` e os workflows
-`marketing_monday_agent.md` / `marketing_wednesday_agent.md` / `marketing_friday_agent.md` são de uma
-fase anterior do projeto (lançamento inicial, agentes fixos por dia da semana) e **não devem ser
-usados como fonte de verdade**. Não reaproveite temas, calendário ou cadência de lá. Se algo daquele
-material ainda for genuinamente relevante, ele deve ser reintroduzido pelo Canvas novo, não herdado
-automaticamente.
+O sistema anterior (calendário fixo seg/qua/sex + agentes diários) foi desativado e está arquivado
+em `docs/archive/marketing_v1/` (histórico apenas — não é fonte de verdade). Não reaproveite temas,
+calendário ou cadência de lá. Se algo genuinamente relevante estiver lá, ele deve ser reintroduzido
+pelo Canvas novo, não herdado automaticamente.
 
 ## Fontes de verdade reais
 
-- `docs/features/*` e `docs/current_objective_milestone_simplified.md` — o que já foi entregue e
-  como funciona de fato hoje.
+- `docs/features/*` (inclui `milestone_navigation.md`) — o que já foi entregue e como funciona de
+  fato hoje.
 - `docs/feature_ideas/*` — o que está no radar (não anuncie como pronto).
 - Saída do `product_agent.md` — lista de "Oportunidade de Premium" com a narrativa de venda de 1
   frase, para qualquer item do cronograma que envolva o Signature.
@@ -97,6 +95,5 @@ para o mesmo público, ou como conteúdo dirigido a quem já é usuário ativo.
 
 ## Onde salvar
 
-Persistir em `docs/marketing/marketing_canvas.md`. Esse arquivo passa a ser a fonte de verdade de
-marketing a partir de agora — `marketing_plan.md` e `content_calendar.md` ficam como histórico, não
-como referência ativa.
+Persistir em `docs/marketing/marketing_canvas.md`. Esse arquivo é a fonte de verdade de marketing —
+o sistema anterior está em `docs/archive/marketing_v1/` apenas como histórico.

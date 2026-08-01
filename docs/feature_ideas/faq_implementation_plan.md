@@ -83,7 +83,7 @@ The FAQ content must be derived from two sources:
 1. **Branching:**
     * Create a new branch: `feature/faq-system`.
 2. **Data Generation:**
-    * Generate `docs/faq_data_en.json` and `docs/faq_data_pt.json` using the content strategy above.
+    * Generate `docs/faq/faq_data_en.json` and `docs/faq/faq_data_pt.json` using the content strategy above.
 3. **Implementation:**
     * `Routes.kt`: Add route.
     * `SettingsView.kt`: Add entry point card.

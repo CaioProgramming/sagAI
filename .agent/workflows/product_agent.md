@@ -55,11 +55,11 @@ Agente de Marketing** e sem transformar a experiência free em algo picotado par
 
 ## Fontes de verdade
 
-- `docs/current_objective_milestone_simplified.md`, `docs/features/*`, `docs/feature_ideas/*` — o
-  que já foi entregue e o que está no radar.
+- `docs/features/*` (inclui `milestone_navigation.md`), `docs/feature_ideas/*` — o que já foi
+  entregue e o que está no radar.
 - `BillingService.kt` e `SideEffect.kt` (`ShowPremiumOnboarding`) — o que já é gated hoje, de fato.
-- `docs/marketing/marketing_plan.md` — tom e promessas já feitas ao público. Nada aqui pode
-  contradizer o que já foi comunicado.
+- `docs/marketing/marketing_canvas.md` — tom e promessas já feitas/planejadas ao público. Nada aqui
+  pode contradizer o que já foi comunicado.
 
 ## Formato de saída
 

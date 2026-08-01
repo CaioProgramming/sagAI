@@ -427,7 +427,7 @@ if (featuredReaction.data.thought?.isNotBlank() == true) {
 ## Notes
 
 - **Scope**: This is a Pirates theme-specific feature for now
-- **Location**: Placed in `docs/ideas/` as it's not immediately scheduled for implementation
+- **Location**: Placed in `docs/feature_ideas/` as it's not immediately scheduled for implementation
 - **Inspiration**: Instagram Stories reaction animations
 - **Priority**: Low/Medium - Polish feature for enhanced UX
 - **Estimated Effort**: 2-3 days for full implementation and testing
