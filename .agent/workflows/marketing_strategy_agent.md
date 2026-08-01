@@ -28,6 +28,10 @@ automaticamente.
   frase, para qualquer item do cronograma que envolva o Signature.
 - Princípio compartilhado com o Produto: a experiência free de hoje é o baseline vendável; premium é
   enriquecimento (imagem, áudio), nunca é enquadrado como "o que falta pra jogar de verdade".
+- O Saga Wrapped é **intencionalmente free** — decisão do time pra maximizar compartilhamento
+  orgânico entre amigos. O que é cogitado como premium são versões "refinadas" do Wrapped com
+  renderização temática por gênero (ex: terminal pro cyberpunk, página de livro pro fantasy), ainda
+  não implementadas. Não trate o Wrapped em si como algo que vai virar pago.
 
 ## Estrutura do Canvas
 
@@ -56,6 +60,25 @@ que há pra comunicar no ciclo atual, não um slot vazio pra preencher.
 Se o "recurso do app" de um item ainda não existe (feature em `feature_ideas`, não implementada),
 marque o item como bloqueado até a feature sair, em vez de propor conteúdo sobre algo que não
 funciona ainda.
+
+## Hierarquia de gancho (quando a campanha começa do zero)
+
+Quando não há awareness prévia, a ordem de profundidade do gancho importa. De fora pra dentro:
+
+- **Camada 0 — universal, zero curva de aprendizado**: o usuário escreve **qualquer coisa em texto
+  livre** (uma frase, uma ação, um pensamento) e a IA reage de forma vívida e específica. É a
+  promessa central do app ("você escreve os turnos, o mundo responde") e não exige entender tags,
+  menções ou milestones. **Este é sempre o gancho de Dia 0** para quem nunca viu o app — é o que vai
+  no primeiro conteúdo de uma campanha do zero.
+- **Camada 1 — mecânica rica**: tags `<action>/<think>/<narrator>`, menções `@personagem` e
+  `/wiki`. Isso é aprofundamento pra quem já instalou e já mandou a primeira mensagem — não é
+  material de primeiro contato, é conteúdo educacional pra quem já está dentro.
+- **Camada 2 — progressão/retenção**: milestones, capítulos, atos, a sensação de que a história
+  cresce sozinha.
+- **Camada 3 — identidade/conversão**: Saga Wrapped, retrospectiva, Signature.
+
+Nunca abra uma campanha do zero pela Camada 1 em diante. Ela só entra depois que a Camada 0 já rodou
+para o mesmo público, ou como conteúdo dirigido a quem já é usuário ativo.
 
 ## Como trabalhar
 

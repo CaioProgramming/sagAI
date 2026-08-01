@@ -22,6 +22,14 @@ Agente de Marketing** e sem transformar a experiência free em algo picotado par
 - Se em algum momento a análise apontar para um gate no core loop (chat, criação de saga,
   progressão de milestone, retrospectiva), isso é sinalizado como contradição com a estratégia — não
   vira sugestão de implementação. Escale para validação humana em vez de propor.
+- O Saga Wrapped (retrospectiva de fim de saga) é **intencionalmente free** — decisão do time pra
+  maximizar compartilhamento orgânico entre amigos, o que ajuda a trazer usuários novos. Não é um
+  ponto de gate a resolver. O que é cogitado como premium são versões "refinadas" do Wrapped, com
+  renderização temática por gênero (ex: terminal pro cyberpunk, página de livro pro fantasy) — ainda
+  não implementadas.
+- Milestones (`SagaMilestone.NewEvent/ChapterFinished/ActFinished` etc.) já são 100% geradas por IA
+  hoje, com texto dinâmico ligado à Timeline/Chapter/Act reais (ver `SagaContentManagerImpl.kt`,
+  `emitMilestone`). Não trate isso como algo estático a melhorar — já está implementado.
 
 ## Como trabalhar
 
@@ -39,6 +47,9 @@ Agente de Marketing** e sem transformar a experiência free em algo picotado par
    insumo que o Agente de Marketing usa depois, sem precisar reinterpretar a ideia.
 5. Nunca sugira refatorar o free em etapas pagas. Se encontrar um ponto onde o free "entrega demais"
    de graça, a resposta é criar uma versão premium melhor ao lado — não remover o que já existe.
+6. Se uma oportunidade de premium exigir capacidade técnica que não existe hoje (ex: renderizar vídeo
+   com animações e música de fundo do tema), marque como "ideia para o PO validar viabilidade" em vez
+   de tratar como pronta para entrar no cronograma de marketing.
 
 ## Fontes de verdade
 
