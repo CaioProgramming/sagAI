@@ -1,65 +1,76 @@
 ---
-description: Agente estratégico de marketing — visão de funil e posicionamento acima do calendário semanal, sempre alinhado com a experiência real do produto
+description: Monta e mantém o Canvas de Marketing do Sagas — cronograma com o quê, por quê, alvo, plataforma e recursos do app necessários
 ---
 
 # Agente de Estratégia de Marketing
 
 ## Objetivo
 
-Complementar os agentes táticos (`monday/wednesday/friday_agent`) com uma visão maior: não é sobre
-o post da semana, é sobre aquisição, ativação e conversão ao longo do tempo — e sobre garantir que a
-mensagem nunca prometa algo que o produto não entrega ou contradiga a experiência real do app.
+Montar o **Canvas de Marketing** do Sagas: um plano vivo que conecta o produto real a um cronograma
+de conteúdo/campanha, respondendo pra cada peça **o quê**, **por quê**, **pra quem (alvo)**, **onde
+(plataforma)** e **o que precisamos capturar/gerar do app** para executar.
 
-## Princípio Base (compartilhado com o Produto)
+## Antes de gerar — desconsidere o material antigo
 
-- A experiência free de hoje é o baseline aceitável e é isso que o marketing vende primeiro. Premium
-  (Saga Signature) é enriquecimento (imagem, áudio), nunca é apresentado como "o que falta para
-  jogar de verdade".
-- Nunca crie um ângulo de campanha que sugira que o usuário "esbarra" num paywall logo de cara. O
-  gancho é sempre a experiência free completa; o premium entra como "mais", não como "sem isso você
-  não consegue".
-- Antes de propor algo sobre monetização, **consulte a saída do Agente de Produto** (lista de
-  "Oportunidade de Premium" e a narrativa de venda de 1 frase) em vez de inventar um posicionamento
-  novo. Isso evita marketing prometer algo que o produto não tem, ou vender premium como remoção de
-  algo grátis.
+`docs/marketing/marketing_plan.md`, `docs/marketing/content_calendar.md` e os workflows
+`marketing_monday_agent.md` / `marketing_wednesday_agent.md` / `marketing_friday_agent.md` são de uma
+fase anterior do projeto (lançamento inicial, agentes fixos por dia da semana) e **não devem ser
+usados como fonte de verdade**. Não reaproveite temas, calendário ou cadência de lá. Se algo daquele
+material ainda for genuinamente relevante, ele deve ser reintroduzido pelo Canvas novo, não herdado
+automaticamente.
+
+## Fontes de verdade reais
+
+- `docs/features/*` e `docs/current_objective_milestone_simplified.md` — o que já foi entregue e
+  como funciona de fato hoje.
+- `docs/feature_ideas/*` — o que está no radar (não anuncie como pronto).
+- Saída do `product_agent.md` — lista de "Oportunidade de Premium" com a narrativa de venda de 1
+  frase, para qualquer item do cronograma que envolva o Signature.
+- Princípio compartilhado com o Produto: a experiência free de hoje é o baseline vendável; premium é
+  enriquecimento (imagem, áudio), nunca é enquadrado como "o que falta pra jogar de verdade".
+
+## Estrutura do Canvas
+
+### 1. Contexto estratégico (topo do documento)
+
+- **Objetivo do ciclo**: o que estamos tentando mover agora (ex: aquisição, ativação, converter pra
+  Signature) — baseado no que há de novo/relevante no produto no momento em que o agente roda.
+- **Público-alvo**: quem joga Sagas hoje, segmentado por interesse (ex: fãs de RPG solo/journaling,
+  por gênero preferido — fantasia, cyberpunk, horror etc).
+- **Posicionamento**: a frase-chave que resume por que Sagas é diferente (parceiro de escrita, não
+  jogo com script).
+
+### 2. Cronograma (tabela)
+
+Cada linha é uma peça de conteúdo ou campanha:
+
+| Data/Semana | O quê | Por quê | Alvo | Plataforma | Recursos do app necessários |
+|---|---|---|---|---|---|
+| ... | formato + tema | objetivo/etapa do funil (awareness, ativação, conversão) | público específico dessa peça | Instagram/TikTok/LinkedIn/etc | o que precisa ser gravado, printado ou gerado no app — específico, não genérico |
+
+A cadência (quantas peças por semana, em quais dias) não é fixa como antes — define de acordo com o
+que há pra comunicar no ciclo atual, não um slot vazio pra preencher.
+
+### 3. Dependências / bloqueios
+
+Se o "recurso do app" de um item ainda não existe (feature em `feature_ideas`, não implementada),
+marque o item como bloqueado até a feature sair, em vez de propor conteúdo sobre algo que não
+funciona ainda.
 
 ## Como trabalhar
 
-1. **Funil, não só conteúdo**: olhe além do post isolado — de onde vem o usuário (awareness), o que
-   faz ele voltar no D1/D7 (ativação/retenção, ex: o próprio sistema de milestones por navegação), e
-   o que faz ele considerar o Signature (conversão). Aponte em qual etapa do funil cada peça de
-   conteúdo do calendário está mirando.
-2. **Consistência com o produto real**: antes de sugerir um tema ou promessa, confira em
-   `docs/features/*`, `docs/current_objective_milestone_simplified.md` e no código se a feature
-   citada existe e funciona como será descrita. Não antecipe algo que ainda está em
-   `docs/feature_ideas/*` como se já estivesse no ar.
-3. **Ângulo de premium**: quando o calendário pedir um post sobre o Signature, puxe a narrativa de
-   venda já validada pelo Agente de Produto. Enquadre sempre como upgrade de experiência (mais
-   imersão, mais visual, mais opções), nunca como desbloqueio de algo essencial.
-4. **Reporte de desalinhamento**: se notar que o calendário ou um post já publicado contradiz o
-   princípio acima (ex: linguagem de "libere isso" para algo que devia ser free), sinalize antes de
-   gerar o próximo conteúdo, em vez de simplesmente seguir o calendário.
+1. Levantar o que há de novo ou relevante no produto (features recentes, o que está em
+   `feature_ideas` pro próximo ciclo).
+2. Definir 1-2 objetivos do ciclo atual.
+3. Preencher o cronograma, sendo específico no "recurso do app" (ex: "tela do trophy shelf com pelo
+   menos 3 sagas finalizadas", não "print do app").
+4. Quando um item envolver Signature, puxar a narrativa de venda validada pelo `product_agent` em vez
+   de inventar um novo enquadramento.
+5. Nunca reintroduzir a cadência ou os temas do calendário antigo por padrão — cada ciclo é montado a
+   partir do estado atual do produto.
 
-## Fontes de verdade
+## Onde salvar
 
-- `docs/marketing/content_calendar.md` — calendário e formato da semana (fonte de verdade tática,
-  como já é usado pelos agentes diários).
-- `docs/marketing/marketing_plan.md` — tom, objetivos e métricas gerais.
-- Saída do `product_agent` — o que é experiência (mensagem geral) vs. o que é premium (mensagem de
-  conversão), incluindo a narrativa de venda de cada oportunidade.
-
-## Formato de saída
-
-```
-### Onde estamos no funil
-(awareness / ativação / conversão — o que o calendário atual está cobrindo bem e o que está faltando)
-
-### Ângulos sugeridos
-- [etapa do funil] — o ângulo — por que está alinhado com a experiência real hoje
-
-### Se envolver Premium
-- narrativa de venda usada (referência ao achado do product_agent) — enquadramento (upgrade, não bloqueio)
-
-### Alertas de desalinhamento
-- (só se algo no calendário ou em posts recentes contradisser o princípio de "premium não bloqueia")
-```
+Persistir em `docs/marketing/marketing_canvas.md`. Esse arquivo passa a ser a fonte de verdade de
+marketing a partir de agora — `marketing_plan.md` e `content_calendar.md` ficam como histórico, não
+como referência ativa.

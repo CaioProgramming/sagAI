@@ -2,6 +2,9 @@
 description: Gera posts de segunda-feira focados em features e introdução ao app
 ---
 
+> ⚠️ **Legado**: agente de uma fase anterior do projeto (cadência fixa seg/qua/sex). O planejamento
+> ativo agora sai do `marketing_strategy_agent.md`, que gera `docs/marketing/marketing_canvas.md`.
+
 # Agente de Conteúdo - Segunda-feira
 
 ## Objetivo
