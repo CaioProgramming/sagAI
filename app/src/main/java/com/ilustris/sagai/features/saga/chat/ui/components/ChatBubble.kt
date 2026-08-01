@@ -1096,17 +1096,17 @@ data class BubbleStyle(
 ) {
     companion object {
         /**
-         * Space Opera's "holographic CRT" bubble overlay (see `SpaceOperaBubbleOverlay` in
-         * `ChatBubbleDecoration.kt`) relies on the fill being translucent so the `dropShadow` glow
-         * behind the shape shows *through* it, reading as projected glass instead of solid
-         * plastic. Every other genre keeps a fully opaque fill.
+         * Space Opera used to force a translucent fill here so the (now-removed) `dropShadow`
+         * glow behind the shape would show through it. That's gone now (2026-07-30) — the
+         * "holographic" identity comes entirely from the two overlapping stars in
+         * `SpaceOperaOverlay` instead, so the fill goes back to fully opaque like every other
+         * genre.
          */
         private fun Genre.resolveFill(
             default: Color,
             isUser: Boolean,
         ): Color =
             when (this) {
-                Genre.SPACE_OPERA -> default.copy(alpha = .55f)
                 Genre.HEROES -> if (!isUser) default.copy(alpha = 0.75f) else default
                 else -> default
             }

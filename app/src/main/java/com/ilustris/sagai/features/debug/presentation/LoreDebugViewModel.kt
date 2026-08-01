@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -105,27 +106,27 @@ class LoreDebugViewModel
             }
         }
 
-        fun regenerateActIntroduction(act: ActMetadata) {
+        fun regenerateActIntroduction(act: Act) {
             val sagaMetadata = _uiState.value.sagaMetadata ?: return
-            val sectionId = "act_intro_${act.data.id}"
+            val sectionId = "act_intro_${act.id}"
             viewModelScope.launch {
                 startGenerating(sectionId)
                 actUseCase
-                    .generateActIntroductionStream(sagaMetadata, act.data)
+                    .generateActIntroductionStream(sagaMetadata, act)
                     .collectLatest { state ->
                         handleStreamingState(state)
                     }
             }
         }
 
-        fun regenerateActConclusion(act: ActMetadata) {
+        fun regenerateActConclusion(act: Act) {
             val sagaMetadata = _uiState.value.sagaMetadata ?: return
-            val sectionId = "act_conclusion_${act.data.id}"
+            val sectionId = "act_conclusion_${act.id}"
             viewModelScope.launch {
                 startGenerating(sectionId)
                 val fullSaga =
                     sagaUseCase.getSagaById(sagaMetadata.data.id).first() ?: return@launch
-                fullSaga.findAct(act.data.id)?.let {
+                fullSaga.findAct(act.id)?.let {
                     actUseCase.synthesizeActEvolutionStream(fullSaga, it).collectLatest { state ->
                         handleStreamingState(state)
                     }
@@ -396,7 +397,7 @@ class LoreDebugViewModel
                     )
                 }
                 when (content) {
-                    is ActMetadata -> {
+                    is Act -> {
                         if (section == DebugSection.ACT_INTRODUCTION) {
                             regenerateActIntroduction(content)
                         } else {
@@ -414,6 +415,10 @@ class LoreDebugViewModel
 
                     is TimelineMetadata -> {
                         regenerateTimeline(content)
+                    }
+
+                    else -> {
+                        stopGenerating()
                     }
                 }
             }

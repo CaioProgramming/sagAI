@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -93,20 +94,8 @@ fun Genre.chatBubbleDecorationOverlay(
     isUser: Boolean,
 ): (@Composable BoxScope.() -> Unit)? =
     when (this) {
-        Genre.CYBERPUNK -> {
-            { CyberpunkBubbleOverlay(shape) }
-        }
-
-        Genre.SPACE_OPERA -> {
-            { SpaceOperaBubbleOverlay(shape) }
-        }
-
         Genre.HEROES -> {
             { HeroesInkOutline(shape, isUser) }
-        }
-
-        Genre.PUNK_ROCK -> {
-            { PunkRockBubbleOverlay() }
         }
 
         else -> {
@@ -164,6 +153,26 @@ fun Genre.chatBubbleConstraintDecorationOverlay(
 
         Genre.SHINOBI -> {
             { content -> ShinobiBlossomOverlay(content, isUser) }
+        }
+
+        Genre.FANTASY -> {
+            { content -> FantasyDragonOverlay(content, shape, isUser) }
+        }
+
+        Genre.PUNK_ROCK -> {
+            { content -> PunkRockOverlay(content) }
+        }
+
+        Genre.COWBOY -> {
+            { content -> CowboyOverlay(content, isUser) }
+        }
+
+        Genre.CYBERPUNK -> {
+            { content -> CyberpunkOverlay(content, shape, isUser) }
+        }
+
+        Genre.SPACE_OPERA -> {
+            { content -> SpaceOperaOverlay(content, shape, isUser) }
         }
 
         else -> {
@@ -258,6 +267,95 @@ private fun BoxScope.CyberpunkBubbleOverlay(shape: Shape) {
 }
 
 /**
+ * A small icon with a flat, hard-edged outline behind it — 4 tinted duplicates offset a couple of
+ * px in each direction, then the real tinted icon drawn on top. Gives roughly the same "icon pops
+ * off the background" read as a stroke/glow would, without touching [dropShadow] or any other
+ * RenderEffect-based API (see [SpaceOperaBubbleOverlay]'s doc for why that's banned inside chat
+ * bubble decorations — it crashed the app after sustained recomposition). Same idea as
+ * [HeroesFlatShadow], just wrapping the icon itself instead of the whole bubble shape.
+ */
+@Composable
+private fun FlatStrokedIcon(
+    painter: Painter,
+    tint: Color,
+    strokeColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier) {
+        listOf(
+            (-1.4).dp to 0.dp,
+            1.4.dp to 0.dp,
+            0.dp to (-1.4).dp,
+            0.dp to 1.4.dp,
+        ).forEach { (dx, dy) ->
+            Image(
+                painter,
+                null,
+                colorFilter = ColorFilter.tint(strokeColor),
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .offset(dx, dy),
+            )
+        }
+        Image(
+            painter,
+            null,
+            colorFilter = ColorFilter.tint(tint),
+            modifier = Modifier.matchParentSize(),
+        )
+    }
+}
+
+/**
+ * Rendered IN FRONT of the bubble (the [chatBubbleConstraintDecorationOverlay] slot) — wraps the
+ * existing [CyberpunkBubbleOverlay] (crisp outline, unchanged) inside a `Box` constrained to fill
+ * [content] exactly, then adds a small "signal bars" icon at a bottom corner, straddling the
+ * bubble's edge slightly and mirrored by [isUser]. Needed on `ConstraintLayout` (not the plain
+ * `Box` slot) specifically because the bars now hang past the bubble's own bounds — see the
+ * project notes (2026-07-30) for the Punk Rock clipping bug this exact pattern fixes.
+ */
+@Composable
+private fun ConstraintLayoutScope.CyberpunkOverlay(
+    content: ConstrainedLayoutReference,
+    shape: Shape,
+    isUser: Boolean,
+) {
+    val accent = MaterialTheme.colorScheme.primary
+    val outlineOverlay = createRef()
+    Box(
+        Modifier.constrainAs(outlineOverlay) {
+            top.linkTo(content.top)
+            start.linkTo(content.start)
+            end.linkTo(content.end)
+            bottom.linkTo(content.bottom)
+            width = Dimension.fillToConstraints
+            height = Dimension.fillToConstraints
+        },
+    ) {
+        CyberpunkBubbleOverlay(shape)
+    }
+
+    val bars = createRef()
+    FlatStrokedIcon(
+        painter = painterResource(R.drawable.ic_cyberpunk_bars),
+        tint = accent,
+        strokeColor = MaterialTheme.colorScheme.background,
+        modifier =
+            Modifier.constrainAs(bars) {
+                bottom.linkTo(content.bottom, margin = 16.dp)
+                if (isUser) {
+                    end.linkTo(content.end, margin = (-10).dp)
+                } else {
+                    start.linkTo(content.start, margin = (-10).dp)
+                }
+                width = Dimension.value(34.dp)
+                height = Dimension.value(26.dp)
+            },
+    )
+}
+
+/**
  * Reuses [CyberpunkChatBubbleShape] with `drawTail = false` for the tag background — the same
  * chamfered-corner language as the bubble and the avatar (see [[avatarShape]]), instead of a
  * generic rounded rect, so the whole message row reads as one panel system.
@@ -318,6 +416,79 @@ private fun BoxScope.SpaceOperaBubbleOverlay(shape: Shape) {
                     brush = accent.gradientFade(),
                     style = Stroke(width = 1.5.dp.toPx()),
                 )
+            },
+    )
+}
+
+/**
+ * Rendered IN FRONT of the bubble — wraps the existing [SpaceOperaBubbleOverlay] (gradient
+ * outline, unchanged) the same way [CyberpunkOverlay] wraps [CyberpunkBubbleOverlay], then adds a
+ * decorative star straddling a top corner so it visually "breaks" the outline (roughly half
+ * inside, half outside — a reference "screenshot frame with a sparkle poking through the corner"
+ * template), mirrored by [isUser]. The star gets [FlatStrokedIcon]'s flat offset-duplicate outline
+ * instead of a real stroke/shadow API, for the same crash-avoidance reason documented on
+ * [SpaceOperaBubbleOverlay].
+ */
+@Composable
+private fun ConstraintLayoutScope.SpaceOperaOverlay(
+    content: ConstrainedLayoutReference,
+    shape: Shape,
+    isUser: Boolean,
+) {
+    val accent = MaterialTheme.colorScheme.primary
+    val outlineOverlay = createRef()
+    Box(
+        Modifier.constrainAs(outlineOverlay) {
+            top.linkTo(content.top)
+            start.linkTo(content.start)
+            end.linkTo(content.end)
+            bottom.linkTo(content.bottom)
+            width = Dimension.fillToConstraints
+            height = Dimension.fillToConstraints
+        },
+    ) {
+        SpaceOperaBubbleOverlay(shape)
+    }
+
+    val starPainter = painterResource(R.drawable.ic_space_star)
+
+    // Top corner star — deeply overlapping into the bubble now, reading as part of the panel
+    // itself rather than a decoration "breaking" the outline from outside.
+    val starTop = createRef()
+    FlatStrokedIcon(
+        painter = starPainter,
+        tint = accent,
+        strokeColor = MaterialTheme.colorScheme.background,
+        modifier =
+            Modifier.constrainAs(starTop) {
+                bottom.linkTo(content.top, margin = (-18).dp)
+                if (isUser) {
+                    end.linkTo(content.end, margin = (-10).dp)
+                } else {
+                    start.linkTo(content.start, margin = (-10).dp)
+                }
+                width = Dimension.value(26.dp)
+                height = Dimension.value(32.dp)
+            },
+    )
+
+    // Second star at the exact opposite (diagonal) corner — same overlap treatment, mirrored on
+    // both axes so it lands bottom-opposite-side from the top star.
+    val starBottom = createRef()
+    FlatStrokedIcon(
+        painter = starPainter,
+        tint = accent,
+        strokeColor = MaterialTheme.colorScheme.background,
+        modifier =
+            Modifier.constrainAs(starBottom) {
+                bottom.linkTo(content.bottom, margin = 18.dp)
+                if (isUser) {
+                    start.linkTo(content.start, margin = (-10).dp)
+                } else {
+                    end.linkTo(content.end, margin = (-10).dp)
+                }
+                width = Dimension.value(26.dp)
+                height = Dimension.value(32.dp)
             },
     )
 }
@@ -402,47 +573,120 @@ private fun BoxScope.HeroesInkOutline(
  * Three hand-drawn-style icons (lightning bolt, skull, stars — user-sourced Noun Project SVGs,
  * mechanically converted, sketchy/imperfect linework already fits Punk Rock's ink aesthetic as-is)
  * scattered at the bubble's corners, entirely outside the shape's own bounds — "ao redor da
- * bubble sem sobrepor" was the explicit brief, so unlike Horror/Shinobi/Fantasy this genre's
- * decoration never overlaps the bubble at all. Plain `Box`+`align`+`offset` positioning is enough
- * here (no `ConstraintLayout` needed) since nothing needs the container to expand around an
- * overflowing element.
+ * bubble sem sobrepor" was the explicit brief, so unlike the dragon (Fantasy) or moon/cloud
+ * (Horror) nothing here overlaps the bubble on purpose.
+ *
+ * Uses the `ConstraintLayout` slot (not plain `Box`+`align`+`offset`) even though nothing
+ * overlaps — a `Box`-positioned child that hangs outside its parent's bounds via `offset()`
+ * doesn't grow that parent, so the surrounding layout was clipping these icons down to slivers.
+ * `ConstraintLayout` actually reserves the space these need, same reason Horror/Shinobi/Fantasy
+ * use it. See project notes (2026-07-30) for this exact bug.
  */
 @Composable
-private fun BoxScope.PunkRockBubbleOverlay() {
+private fun ConstraintLayoutScope.PunkRockOverlay(content: ConstrainedLayoutReference) {
     val accent = MaterialTheme.colorScheme.primary
 
+    val bolt = createRef()
     Image(
         painterResource(R.drawable.ic_lightning_bolt),
         null,
         colorFilter = ColorFilter.tint(accent),
         modifier =
             Modifier
-                .gradientFill(sagaBrush())
-                .align(Alignment.TopStart)
-                .offset((-10).dp, 0.dp)
-                .size(16.dp),
+                .constrainAs(bolt) {
+                    bottom.linkTo(content.top, margin = 4.dp)
+                    start.linkTo(content.start, margin = (-6).dp)
+                    width = Dimension.value(16.dp)
+                    height = Dimension.value(20.dp)
+                }
+                .gradientFill(sagaBrush()),
     )
+
+    val stars = createRef()
     Image(
         painterResource(R.drawable.ic_punk_stars),
         null,
         colorFilter = ColorFilter.tint(accent),
         modifier =
             Modifier
-                .gradientFill(sagaBrush())
-                .align(Alignment.TopEnd)
-                .offset(8.dp, 0.dp)
-                .size(14.dp),
+                .constrainAs(stars) {
+                    bottom.linkTo(content.top, margin = 2.dp)
+                    end.linkTo(content.end, margin = (-6).dp)
+                    width = Dimension.value(14.dp)
+                    height = Dimension.value(17.dp)
+                }
+                .gradientFill(sagaBrush()),
     )
+
+    val skull = createRef()
     Image(
         painterResource(R.drawable.ic_punk_skull),
         null,
         colorFilter = ColorFilter.tint(accent),
         modifier =
             Modifier
-                .align(Alignment.BottomEnd)
-                .gradientFill(sagaBrush())
-                .offset(10.dp, 10.dp)
-                .size(18.dp),
+                .constrainAs(skull) {
+                    top.linkTo(content.bottom, margin = 4.dp)
+                    end.linkTo(content.end, margin = (-8).dp)
+                    width = Dimension.value(18.dp)
+                    height = Dimension.value(22.dp)
+                }
+                .gradientFill(sagaBrush()),
+    )
+}
+
+/**
+ * A cowboy hat perched above one top corner and a running horse below the opposite... actually the
+ * *same* side, one top one bottom — "como se a bubble estivesse com um chapeuzinho" (the bubble
+ * "wearing" a little hat) up top, and the horse below, both floating just outside the bubble with
+ * a small gap rather than integrating into it like [FantasyDragonOverlay] or
+ * [ShinobiBranchBackground] do — explicit brief: "não vão se integrar... ambos vão ficar acima"
+ * (sit above/outside, not blended in). Mirrors by [isUser] the same side for both (end for the
+ * player's own bubble, start for NPC), so hat+horse read as a matched pair near one corner rather
+ * than scattered on opposite sides. Plain neutral silhouette color (`onBackground`), not a genre
+ * accent — a hat/horse silhouette doesn't need to be "themed", it's just an icon.
+ */
+@Composable
+private fun ConstraintLayoutScope.CowboyOverlay(
+    content: ConstrainedLayoutReference,
+    isUser: Boolean,
+) {
+    val silhouette = MaterialTheme.colorScheme.onBackground
+
+    val hat = createRef()
+    Image(
+        painterResource(R.drawable.ic_cowboy_hat),
+        null,
+        colorFilter = ColorFilter.tint(silhouette),
+        modifier =
+            Modifier.constrainAs(hat) {
+                bottom.linkTo(content.top, margin = 4.dp)
+                if (isUser) {
+                    end.linkTo(content.end, margin = (-6).dp)
+                } else {
+                    start.linkTo(content.start, margin = (-6).dp)
+                }
+                width = Dimension.value(30.dp)
+                height = Dimension.value(24.dp)
+            },
+    )
+
+    val horse = createRef()
+    Image(
+        painterResource(R.drawable.ic_cowboy_horse),
+        null,
+        colorFilter = ColorFilter.tint(silhouette),
+        modifier =
+            Modifier.constrainAs(horse) {
+                top.linkTo(content.bottom, margin = 4.dp)
+                if (isUser) {
+                    end.linkTo(content.end, margin = (-8).dp)
+                } else {
+                    start.linkTo(content.start, margin = (-8).dp)
+                }
+                width = Dimension.value(28.dp)
+                height = Dimension.value(22.dp)
+            },
     )
 }
 

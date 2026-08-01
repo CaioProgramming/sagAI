@@ -1,8 +1,10 @@
 package com.ilustris.sagai.features.sos.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.database.backup.BackupMetadata
 import com.ilustris.sagai.core.database.backup.DatabaseBackupService
 import com.ilustris.sagai.core.file.BackupService
@@ -10,6 +12,8 @@ import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -33,6 +37,8 @@ class SOSViewModel
         private val backupService: BackupService,
         private val sagaBackupService: SagaBackupService,
         private val stringResourceHelper: StringResourceHelper,
+        private val database: SagaDatabase,
+        @ApplicationContext private val context: Context,
     ) : ViewModel() {
         private val _state = MutableStateFlow(SOSState())
         val state = _state.asStateFlow()
@@ -136,6 +142,43 @@ class SOSViewModel
                         it.copy(
                             isLoading = false,
                             error = stringResourceHelper.getString(R.string.sos_error_clear_database),
+                        )
+                    }
+                }
+            }
+        }
+
+        fun exportDatabase(destinationUri: Uri) {
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(
+                        isLoading = true,
+                        loadingMessage = stringResourceHelper.getString(R.string.settings_export_database_loading),
+                    )
+                }
+                try {
+                    database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)")
+
+                    val dbFile = context.getDatabasePath(SagaDatabase.NAME)
+                    if (!dbFile.exists()) error("Database file not found")
+
+                    context.contentResolver.openOutputStream(destinationUri, "w")?.use { output ->
+                        dbFile.inputStream().use { input ->
+                            input.copyTo(output)
+                        }
+                    } ?: error("Could not open output stream for destination URI")
+
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            loadingMessage = stringResourceHelper.getString(R.string.settings_export_database_success),
+                        )
+                    }
+                } catch (e: Exception) {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            error = stringResourceHelper.getString(R.string.settings_export_database_failed),
                         )
                     }
                 }

@@ -13,6 +13,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
@@ -71,8 +72,6 @@ class TimelineUseCaseImpl
                     promptService = promptService,
                     narrativeRules = narrativeRules,
                     sagaContent = fullSaga,
-                    currentTimeline = fullSaga.findTimeline(timeline.id)!!,
-                    conversationDirective = emptyString(),
                 )
 
             val unifiedLore =
@@ -156,8 +155,6 @@ class TimelineUseCaseImpl
                         promptService = promptService,
                         narrativeRules = narrativeRules,
                         sagaContent = fullSaga,
-                        currentTimeline = TimelineContent(timeline, emptyList()),
-                        conversationDirective = emptyString(),
                     )
 
                 reasoningSynthesizerService
@@ -276,8 +273,6 @@ class TimelineUseCaseImpl
                         promptService = promptService,
                         narrativeRules = narrativeRules,
                         sagaContent = fullSaga,
-                        currentTimeline = TimelineContent(currentTimeline, emptyList()),
-                        conversationDirective = emptyString(),
                     )
                 gemmaClient
                     .generateStreaming<GeneratedContent<Timeline>>(

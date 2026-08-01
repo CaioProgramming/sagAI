@@ -399,8 +399,7 @@ class ChapterUseCaseImpl
                 ChapterPrompts.chapterIntroductionPrompt(
                     promptService = promptService,
                     sagaContent = saga,
-                    currentChapter = chapterContent,
-                    conversationDirective = emptyString(),
+                    narrativeRules = remoteConfigService.getNarrativeRules(),
                 )
             val intro =
                 gemmaClient.generate<GeneratedContent<String>>(
@@ -426,8 +425,7 @@ class ChapterUseCaseImpl
                         ChapterPrompts.chapterIntroductionPrompt(
                             promptService = promptService,
                             sagaContent = saga,
-                            currentChapter = chapterContent,
-                            conversationDirective = emptyString(),
+                            remoteConfigService.getNarrativeRules(),
                         )
 
                     reasoningSynthesizerService
