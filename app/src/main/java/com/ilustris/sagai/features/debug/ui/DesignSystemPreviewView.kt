@@ -250,6 +250,7 @@ fun DesignSystemPreviewView(
                                                         stepIndex = 1,
                                                         stepTotal = 3,
                                                     ),
+                                                sagaId = 1,
                                                 onContinue = { milestonePreviewKind = MilestonePreviewKind.CHAPTER },
                                             )
                                         }
@@ -262,6 +263,8 @@ fun DesignSystemPreviewView(
                                                         stepIndex = 2,
                                                         stepTotal = 3,
                                                     ),
+                                                sagaId = 1,
+                                                coverImage = "https://i.pinimg.com/564x/0a/92/7d/0a927df0b8a6a12a5276e03882775739.jpg",
                                                 onContinue = { milestonePreviewKind = MilestonePreviewKind.ACT },
                                             )
                                         }
@@ -274,6 +277,7 @@ fun DesignSystemPreviewView(
                                                         stepIndex = 3,
                                                         stepTotal = 3,
                                                     ),
+                                                sagaId = 1,
                                                 onContinue = { milestonePreviewKind = MilestonePreviewKind.INTRO },
                                             )
                                         }

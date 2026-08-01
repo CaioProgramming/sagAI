@@ -109,7 +109,13 @@ object DesignSystemMocks {
 
     fun mockNewEventMilestone(genre: Genre) =
         SagaMilestone.NewEvent(
-            timeline = Timeline(id = 1, chapterId = 1, title = "The Signal in the Static"),
+            timeline =
+                Timeline(
+                    id = 1,
+                    chapterId = 1,
+                    title = "The Signal in the Static",
+                    emotionalReview = "The Traveler's excitement curdles into dread the moment the static clears — this is the first real crack in their confidence all saga.",
+                ),
             emotionalMascot = null,
             messageText = "The static clears just long enough for you to make out a single word before the signal dies again.",
             sagaContent = mockSagaContent(genre),
@@ -117,14 +123,25 @@ object DesignSystemMocks {
 
     fun mockChapterFinishedMilestone(genre: Genre) =
         SagaMilestone.ChapterFinished(
-            chapter = Chapter(id = 1, actId = 1, title = "Ashes of the Old Guard"),
+            chapter =
+                Chapter(
+                    id = 1,
+                    actId = 1,
+                    title = "Ashes of the Old Guard",
+                    emotionalReview = "A chapter defined by loss dressed up as victory — every choice here cost more than it looked like at the time.",
+                ),
             messageText = "Every thread from this chapter converges here — nothing that happened was wasted.",
             sagaContent = mockSagaContent(genre),
         )
 
     fun mockActFinishedMilestone() =
         SagaMilestone.ActFinished(
-            act = Act(id = 1, title = "The Fracture"),
+            act =
+                Act(
+                    id = 1,
+                    title = "The Fracture",
+                    emotionalReview = "This act asked what loyalty actually costs, and the Traveler paid every price without flinching once.",
+                ),
             messageText = "The dust settles on everything you fought for in this act.",
         )
 

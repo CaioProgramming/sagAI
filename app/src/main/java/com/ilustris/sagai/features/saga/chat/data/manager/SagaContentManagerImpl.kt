@@ -147,7 +147,6 @@ class SagaContentManagerImpl
         override val milestoneChainReady: SharedFlow<Int> = _milestoneChainReady
         private val _showObjectiveOverlay = MutableStateFlow(false)
         override val showObjectiveOverlay: StateFlow<Boolean> = _showObjectiveOverlay.asStateFlow()
-        override val isOnboardingVisible = MutableStateFlow(false)
 
         // Advance-trigger bottom island gating that's purely a UI concern (onboarding overlays,
         // message-selection mode, chat-reply generation) — forwarded by the chat screen via
@@ -209,15 +208,17 @@ class SagaContentManagerImpl
             val action = narrativeCoordinator.uiState.value.pendingAction ?: return
             Timber.d("Manually advancing narrative: ${action.javaClass.simpleName}")
             narrativeCoordinator.onUserAdvanceRequested(action)
-            executeNarrativeAction(action, isRetry = false)
-        }
-
-        override suspend fun completeGameplayOnboarding(saga: SagaMetadata?) {
-            requestNarrativeProgression(isRetry = false, fallbackSaga = saga)
-            isOnboardingVisible.value = false
-            if (narrativeCoordinator.uiState.value.pendingAction == NarrativeAction.CreateAct) {
-                advanceNarrative()
-            }
+            // Detached onto managerScope (then joined) rather than run straight on the caller's
+            // coroutine — MilestoneViewModel's auto-advance effect calls this from its own
+            // viewModelScope, and if that scope dies mid-generation (screen torn down,
+            // backgrounded and trimmed) before executeNarrativeAction reaches
+            // onActionCompleted(), narrativeCoordinator's phase gets stuck at Processing(action)
+            // forever — every later reevaluate() early-returns on a Processing phase, so nothing
+            // ever progresses again until the process restarts. managerScope is @Singleton-scoped
+            // (mirrors ChatGenerationService/BookGenerationService's own reasoning for why their
+            // generation is singleton-scoped, not screen-scoped) so it keeps running to a real
+            // completion regardless of what happens to the caller.
+            managerScope.launch { executeNarrativeAction(action, isRetry = false) }.join()
         }
 
         private fun handleNarrativeActionFailure(
@@ -381,7 +382,6 @@ class SagaContentManagerImpl
             isMilestoneActive.value = false
             milestoneUpdate.value = null
             _showObjectiveOverlay.value = false
-            isOnboardingVisible.value = false
             content.value = null
             lastObservedMessageCount = -1
         }
@@ -412,13 +412,6 @@ class SagaContentManagerImpl
                         }
                         if (islandObserverJob == null || islandObserverJob?.isActive == false) {
                             islandObserverJob = observeIslands()
-                        }
-                        managerScope.launch {
-                            isOnboardingVisible.collect { isVisible ->
-                                if (!isVisible) {
-                                    checkNarrativeProgression(content.value)
-                                }
-                            }
                         }
                         sagaHistoryUseCase
                             .getSagaMetadata(sagaId.toInt())
@@ -894,7 +887,16 @@ class SagaContentManagerImpl
             when (milestone) {
                 is SagaMilestone.Introduction,
                 -> {
-                    doNothing()
+                    // Unlike the other milestone types, an Introduction never goes through
+                    // executeNarrativeAction — the "welcome back" RESUME case in particular is
+                    // emitted directly from loadSaga(), so nothing else re-checks progression
+                    // after it's dismissed. Without this, dismissing it while the message limit
+                    // was already hit before the saga even opened just silently drops back to
+                    // chat instead of continuing into the pending EvolveTimeline. Detached onto
+                    // managerScope for the same reason as advanceNarrative() above — this can
+                    // tail into an automatic CreateTimeline execution, and that shouldn't get cut
+                    // short just because the caller's screen went away mid-call.
+                    managerScope.launch { requestNarrativeProgression(isRetry = false, fallbackSaga = saga) }.join()
                 }
 
                 is SagaMilestone.NewEvent -> {

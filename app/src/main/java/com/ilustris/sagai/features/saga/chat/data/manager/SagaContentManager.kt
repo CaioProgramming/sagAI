@@ -25,7 +25,6 @@ interface SagaContentManager {
 
     val milestoneUpdate: MutableStateFlow<SagaMilestone?>
     val showObjectiveOverlay: StateFlow<Boolean>
-    val isOnboardingVisible: MutableStateFlow<Boolean>
 
     /**
      * One-shot signal (sagaId), emitted once per rising edge into
@@ -36,8 +35,6 @@ interface SagaContentManager {
     val milestoneChainReady: SharedFlow<Int>
 
     suspend fun advanceNarrative()
-
-    suspend fun completeGameplayOnboarding(saga: com.ilustris.sagai.features.home.data.model.SagaMetadata?)
 
     suspend fun loadSaga(sagaId: String)
 

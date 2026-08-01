@@ -130,6 +130,7 @@ fun createSagaEntryProvider(
         MilestoneScreen(
             sagaId = key.sagaId,
             onFinished = { navigator.goBack() },
+            onNavigate = { navigator.navigate(it) },
         )
     }
 

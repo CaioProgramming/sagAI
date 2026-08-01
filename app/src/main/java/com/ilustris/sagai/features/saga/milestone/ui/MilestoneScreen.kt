@@ -4,25 +4,35 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,10 +43,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,22 +55,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.NavKey
+import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneViewModel
+import com.ilustris.sagai.ui.navigation.SagaActsKey
+import com.ilustris.sagai.ui.navigation.SagaChaptersKey
+import com.ilustris.sagai.ui.navigation.SagaEventsKey
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
-import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.morphingColor
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.rememberVectorShape
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.shimmerize
 import com.ilustris.sagai.ui.theme.themeBrushColors
-import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
 import com.ilustris.sagai.ui.theme.themeVfx
 import kotlinx.coroutines.delay
@@ -76,6 +91,7 @@ import kotlin.time.Duration.Companion.seconds
 fun MilestoneScreen(
     sagaId: Int,
     onFinished: () -> Unit,
+    onNavigate: (NavKey) -> Unit = {},
     viewModel: MilestoneViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(sagaId) { viewModel.start(sagaId) }
@@ -86,6 +102,10 @@ fun MilestoneScreen(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val genre by viewModel.genre.collectAsStateWithLifecycle()
+    val sagaData by viewModel.sagaData.collectAsStateWithLifecycle()
+    val chapterCoverImage by viewModel.chapterCoverImage.collectAsStateWithLifecycle()
+    val bookGenerationState by viewModel.bookGenerationState.collectAsStateWithLifecycle()
+    val showOnboarding by viewModel.showOnboarding.collectAsStateWithLifecycle()
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         AnimatedContent(
@@ -99,13 +119,33 @@ fun MilestoneScreen(
                 }
 
                 is MilestoneUiState.ClosureStep -> {
-                    MilestoneClosureContent(state = state, onContinue = viewModel::onContinue)
+                    MilestoneClosureContent(
+                        state = state,
+                        sagaId = sagaId,
+                        coverImage = chapterCoverImage,
+                        bookGenerationState = bookGenerationState,
+                        onContinue = viewModel::onContinue,
+                        onNavigate = onNavigate,
+                        onGenerateBook = viewModel::generateBook,
+                    )
                 }
 
                 is MilestoneUiState.IntroductionStep -> {
                     MilestoneIntroductionContent(milestone = state.milestone, onContinue = viewModel::onContinue)
                 }
             }
+        }
+
+        // Only ever true for a brand-new saga's first act, tutorials on — overlaps with that
+        // act's introduction generating underneath instead of gating it (see
+        // MilestoneViewModel.showOnboarding / ChatViewModel's progression check).
+        if (showOnboarding) {
+            OnboardingDialog(
+                type = OnboardingType.GAMEPLAY_GUIDE,
+                genre = genre,
+                saga = sagaData,
+                onDismiss = viewModel::dismissOnboarding,
+            )
         }
     }
 }
@@ -157,7 +197,12 @@ internal fun MilestoneLoadingContent(reasoning: String?) {
 @Composable
 internal fun MilestoneClosureContent(
     state: MilestoneUiState.ClosureStep,
+    sagaId: Int,
     onContinue: () -> Unit,
+    coverImage: String? = null,
+    bookGenerationState: BookGenerationUiState = BookGenerationUiState.Idle,
+    onNavigate: (NavKey) -> Unit = {},
+    onGenerateBook: (Act) -> Unit = {},
 ) {
     val milestone = state.milestone
     Column(
@@ -171,50 +216,88 @@ internal fun MilestoneClosureContent(
             StepIndicator(stepIndex = state.stepIndex, stepTotal = state.stepTotal)
         }
 
+        // Reset (and re-fire) per milestone instance — event -> chapter -> act each get their
+        // own fade+pop entrance instead of just materializing flat, without stepping on the
+        // outer AnimatedContent's own cross-fade between whole ui-state types.
+        var contentVisible by remember(milestone) { mutableStateOf(false) }
+        LaunchedEffect(milestone) { contentVisible = true }
+
         Column(
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            val themeBrush = sagaBrush()
-            Icon(
-                painter = themePainter(),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier =
-                    Modifier.size(50.dp).gradientFill(Brush.verticalGradient(morphingGradient())).themeVfx(true).reactiveShimmer(
-                        true,
-                        shimmerColors = Color.White.shimmerize(),
-                        repeatMode = RepeatMode.Restart,
-                        duration = 10.seconds,
-                    ),
-            )
-            Text(
-                text = stringResource(milestone.title).lowercase(),
-                style = MaterialTheme.typography.labelLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 24.dp).alpha(.5f),
-            )
-            Text(
-                text = milestone.subtitle,
-                style =
-                    MaterialTheme.typography.headlineLarge.copy(
-                        letterSpacing = 0.5.sp,
-                        shadow = Shadow(MaterialTheme.colorScheme.primary, blurRadius = 15f),
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-            milestone.message?.takeIf { it.isNotBlank() }?.let { message ->
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 16.dp),
-                )
+            AnimatedVisibility(
+                visible = contentVisible,
+                enter = fadeIn(tween(400)) + scaleIn(initialScale = 0.92f, animationSpec = tween(400)),
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        painter = themePainter(),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier =
+                            Modifier.size(50.dp).gradientFill(Brush.verticalGradient(morphingGradient())).themeVfx(true).reactiveShimmer(
+                                true,
+                                shimmerColors = Color.White.shimmerize(),
+                                repeatMode = RepeatMode.Restart,
+                                duration = 10.seconds,
+                            ),
+                    )
+                    Text(
+                        text = stringResource(milestone.title).lowercase(),
+                        style = MaterialTheme.typography.labelLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 24.dp).alpha(.5f),
+                    )
+                    Text(
+                        text = milestone.subtitle,
+                        style =
+                            MaterialTheme.typography.headlineLarge.copy(
+                                letterSpacing = 0.5.sp,
+                                shadow = Shadow(MaterialTheme.colorScheme.primary, blurRadius = 15f),
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    milestone.message?.takeIf { it.isNotBlank() }?.let { message ->
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 16.dp),
+                        )
+                    }
+
+                    if (milestone is SagaMilestone.ChapterFinished) {
+                        ChapterCoverCard(coverImage = coverImage, modifier = Modifier.padding(top = 16.dp))
+                    }
+
+                    milestone.emotionalReviewText?.takeIf { it.isNotBlank() }?.let { review ->
+                        EmotionalReviewNote(text = review, modifier = Modifier.padding(top = 16.dp))
+                    }
+                }
             }
+        }
+
+        milestone.detailDestination(sagaId)?.let { destination ->
+            TextButton(onClick = { onNavigate(destination) }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.milestone_view_details))
+            }
+        }
+
+        if (milestone is SagaMilestone.ActFinished) {
+            GenerateBookAction(
+                act = milestone.act,
+                bookGenerationState = bookGenerationState,
+                onGenerateBook = onGenerateBook,
+            )
         }
 
         Button(onClick = onContinue, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
@@ -222,6 +305,105 @@ internal fun MilestoneClosureContent(
         }
     }
 }
+
+/** Not ready the instant ChapterFinished shows — cover generation runs fire-and-forget in the
+ * background right after the chapter closes (see ChapterUseCaseImpl.generateChapterCover). Fades
+ * and pops in on its own once [MilestoneViewModel.chapterCoverImage] catches up. */
+@Composable
+private fun ChapterCoverCard(
+    coverImage: String?,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = coverImage != null,
+        enter = fadeIn(tween(500)) + scaleIn(initialScale = 0.94f, animationSpec = tween(500)),
+        modifier = modifier,
+    ) {
+        coverImage?.let {
+            AsyncImage(
+                model = it,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(MaterialTheme.shapes.large),
+            )
+        }
+    }
+}
+
+/** Styled like a community note — a quiet, neutrally-bordered aside, deliberately not competing
+ * with the narrative title/message above it. This is the AI's own reflection on the emotional
+ * arc, a distinct voice from the story itself. */
+@Composable
+private fun EmotionalReviewNote(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)
+                .padding(12.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.milestone_emotional_note_label),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun GenerateBookAction(
+    act: Act,
+    bookGenerationState: BookGenerationUiState,
+    onGenerateBook: (Act) -> Unit,
+) {
+    val isGeneratingThisAct = (bookGenerationState as? BookGenerationUiState.Generating)?.actId == act.id
+    TextButton(
+        onClick = { if (!isGeneratingThisAct) onGenerateBook(act) },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        if (isGeneratingThisAct) {
+            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.milestone_generating_book))
+        } else {
+            Text(stringResource(R.string.milestone_generate_book))
+        }
+    }
+}
+
+private val SagaMilestone.emotionalReviewText: String?
+    get() =
+        when (this) {
+            is SagaMilestone.NewEvent -> timeline.emotionalReview
+            is SagaMilestone.ChapterFinished -> chapter.emotionalReview
+            is SagaMilestone.ActFinished -> act.emotionalReview
+            else -> null
+        }
+
+/** Pushed on top of the Milestone screen, not replacing it — the chain keeps waiting on its own
+ * continueMilestone()/advanceNarrative() calls regardless of what's on screen, so "peeking" at
+ * the list and coming back leaves the reveal exactly where the user left it. */
+private fun SagaMilestone.detailDestination(sagaId: Int): NavKey? =
+    when (this) {
+        is SagaMilestone.NewEvent -> SagaEventsKey(sagaId.toString())
+        is SagaMilestone.ChapterFinished -> SagaChaptersKey(sagaId.toString())
+        is SagaMilestone.ActFinished -> SagaActsKey(sagaId.toString())
+        else -> null
+    }
 
 @Composable
 internal fun MilestoneIntroductionContent(

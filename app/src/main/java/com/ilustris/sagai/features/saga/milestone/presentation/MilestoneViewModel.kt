@@ -4,13 +4,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.features.act.BookGenerationService
+import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
+import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -18,6 +24,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -42,6 +49,8 @@ class MilestoneViewModel
     constructor(
         private val sagaContentManager: SagaContentManager,
         private val remoteConfigService: RemoteConfigService,
+        private val bookGenerationService: BookGenerationService,
+        private val settingsUseCase: SettingsUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<MilestoneUiState>(MilestoneUiState.Loading())
         val uiState: StateFlow<MilestoneUiState> = _uiState.asStateFlow()
@@ -50,6 +59,39 @@ class MilestoneViewModel
             sagaContentManager.content
                 .map { it?.data?.genre }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+        val sagaData: StateFlow<Saga?> =
+            sagaContentManager.content
+                .map { it?.data }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+        /** True only for a brand-new saga's very first act, with tutorials on — checked once at
+         * [start] against the saga state as it stood before anything in this chain executed, so
+         * a later, unrelated act closing mid-session can never accidentally re-trigger it. Chat
+         * no longer gates generation on this being dismissed (see ChatViewModel) — it now
+         * overlaps with the first act's introduction generating underneath instead. */
+        private val _showOnboarding = MutableStateFlow(false)
+        val showOnboarding: StateFlow<Boolean> = _showOnboarding.asStateFlow()
+
+        /** Populated by ChapterUseCaseImpl.generateChapterCover() fire-and-forget in the
+         * background right after the chapter itself closes — not ready the instant the
+         * ChapterFinished reveal shows. Re-derived off the same [SagaContentManager.content]
+         * Room-backed flow everything else here already reacts to, so the card just fades in
+         * once the DB write lands, no separate polling needed. */
+        val chapterCoverImage: StateFlow<String?> =
+            combine(uiState, sagaContentManager.content) { state, saga ->
+                val chapterId = ((state as? MilestoneUiState.ClosureStep)?.milestone as? SagaMilestone.ChapterFinished)?.chapter?.id
+                    ?: return@combine null
+                saga
+                    ?.acts
+                    ?.flatMap { it.chapters }
+                    ?.find { it.data.id == chapterId }
+                    ?.data
+                    ?.coverImage
+                    ?.takeIf { it.isNotBlank() }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+        val bookGenerationState: StateFlow<BookGenerationUiState> = bookGenerationService.uiState
 
         private val _finished = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
         val finished: SharedFlow<Unit> = _finished
@@ -66,11 +108,16 @@ class MilestoneViewModel
             chainStepTotal = 0
             chainStepIndex = 0
             _uiState.value = MilestoneUiState.Loading()
+            _showOnboarding.value = false
 
             driveJob =
                 viewModelScope.launch {
-                    sagaContentManager.content.value?.let { saga ->
-                        chainStepTotal = NarrativeCheck.computeClosureChainLength(saga, remoteConfigService.getNarrativeRules())
+                    val saga = sagaContentManager.content.value
+                    saga?.let {
+                        chainStepTotal = NarrativeCheck.computeClosureChainLength(it, remoteConfigService.getNarrativeRules())
+                    }
+                    if (saga?.acts?.isEmpty() == true && settingsUseCase.getShowTutorials().first()) {
+                        _showOnboarding.value = true
                     }
 
                     var hasEngaged = false
@@ -116,7 +163,21 @@ class MilestoneViewModel
                                 }
 
                                 phase is NarrativePhase.Playing && hasEngaged -> {
-                                    _finished.emit(Unit)
+                                    // Don't trust a single Playing tick — continueMilestone()'s
+                                    // Introduction branch re-checks progression in a separate
+                                    // coroutine (dismissMilestone() and that re-check aren't
+                                    // atomic together), so this collector could observe a
+                                    // transient "nothing pending yet" moment right before the
+                                    // real answer lands. Settle briefly and confirm against the
+                                    // live flows before actually leaving.
+                                    viewModelScope.launch {
+                                        delay(400)
+                                        if (sagaContentManager.narrativeUiState.value.phase is NarrativePhase.Playing &&
+                                            sagaContentManager.milestoneUpdate.value == null
+                                        ) {
+                                            _finished.emit(Unit)
+                                        }
+                                    }
                                 }
 
                                 else -> {
@@ -129,5 +190,17 @@ class MilestoneViewModel
 
         fun onContinue() {
             viewModelScope.launch { sagaContentManager.continueMilestone() }
+        }
+
+        fun dismissOnboarding() {
+            _showOnboarding.value = false
+        }
+
+        fun generateBook(act: Act) {
+            viewModelScope.launch {
+                val sagaContent = sagaContentManager.getSagaContent() ?: return@launch
+                val actContent = sagaContent.acts.find { it.data.id == act.id } ?: return@launch
+                bookGenerationService.generate(sagaContent, actContent)
+            }
         }
     }
