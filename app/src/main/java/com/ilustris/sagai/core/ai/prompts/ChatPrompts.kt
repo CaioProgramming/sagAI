@@ -107,6 +107,7 @@ object ChatPrompts {
         listOf(
             "id",
             "icon",
+            "artwork",
             "review",
             "createdAt",
             "endedAt",
@@ -198,6 +199,9 @@ object ChatPrompts {
                         "messageSender",
                         buildMap {
                             putAll(messageSender.data.asMap())
+                            messageSender.data.details.physicalTraits.age
+                                .takeIf { age -> age > 0 }
+                                ?.let { age -> put("age", age) }
                             val storyArcs = characterArcsById[it.data.id]
                             storyArcs?.let {
                                 put(
@@ -327,6 +331,9 @@ object ChatPrompts {
                                 "messageSender",
                                 buildMap {
                                     putAll(messageSender.data.asMap())
+                                    messageSender.data.details.physicalTraits.age
+                                        .takeIf { age -> age > 0 }
+                                        ?.let { age -> put("age", age) }
                                     put(
                                         "LatestCharacterEvents",
                                         it.events.takeLast(3).normalizetoAIItems(),
@@ -370,6 +377,9 @@ object ChatPrompts {
                 }
                 saga.mainCharacter?.let {
                     put("mainCharacter", it.data.toAINormalize(CHARACTER_EXCLUSIONS))
+                    it.data.details.physicalTraits.age
+                        .takeIf { age -> age > 0 }
+                        ?.let { age -> put("mainCharacterAge", age) }
                 }
                 put(
                     "storyCharacters",

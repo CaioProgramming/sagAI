@@ -31,6 +31,9 @@ fun CharacterStats(
             if (traits.gender.isNotBlank()) {
                 add(traits.gender to R.string.character_form_title_gender)
             }
+            if (traits.age > 0) {
+                add(traits.age.toString() to R.string.character_stat_age)
+            }
             if (traits.height > 0) {
                 val heightValue =
                     if (traits.height < 3.0) {

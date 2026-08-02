@@ -166,8 +166,19 @@ class SagaRepositoryImpl
                     ),
                 )
                 appendLine()
-                appendLine("Story context: ")
-                appendLine(saga.description)
+
+                val artwork = saga.artwork?.takeIf { it.isNotBlank() }
+                if (artwork != null) {
+                    appendLine("### CONCEPT ART DIRECTION")
+                    appendLine(
+                        "This is the saga's key-art concept. Ground the composition in this, not in the full story description:",
+                    )
+                    appendLine(artwork)
+                } else {
+                    appendLine("Story context: ")
+                    appendLine(saga.description)
+                }
+                appendLine()
                 appendLine(
                     "FINAL MANDATE: Create a balanced composition with the main character are clearly visible and integrated.",
                 )
