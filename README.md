@@ -50,5 +50,4 @@ emulator.
 
 ### Docs
 
-- Split system instructions architecture:
-  `app/src/main/docs/feature_planning/split_system_instructions_architecture.md`
+Start at [`docs/README.md`](docs/README.md) for the full documentation map.

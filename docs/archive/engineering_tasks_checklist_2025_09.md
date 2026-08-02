@@ -4,7 +4,8 @@ Date: 2025-09-02 11:01
 
 Note: Each item is actionable and ordered from architectural/high-level to code-level and tooling. Check off items as they are completed.
 
-Related: For user-experience focused feature ideas and roadmap, see docs/feature_ideas.md.
+Related: For user-experience focused feature ideas and roadmap, see the companion
+`ux_feature_wishlist_2025_09.md` in this same archive folder (both superseded — see archive/README.md).
 
 1. [ ] Establish and document the project architecture overview (layers, modules, data flow, AI clients, Room, Remote Config, Hilt). Include a simple C4 or diagram in docs/. 
 2. [ ] Define clear module boundaries and package-by-feature conventions (core, features, data/domain/ui). Create/adjust Gradle modules if needed or document rationale for single-module. 

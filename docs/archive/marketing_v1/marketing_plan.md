@@ -1,3 +1,7 @@
+> ⚠️ **Histórico**: este plano é de uma fase anterior do projeto e não é mais a fonte de verdade de
+> marketing. O plano ativo é gerado pelo `.agent/workflows/marketing_strategy_agent.md` em
+> `docs/marketing/marketing_canvas.md`.
+
 # Plano de Marketing - sagAI
 
 ## 📱 Visão Geral
