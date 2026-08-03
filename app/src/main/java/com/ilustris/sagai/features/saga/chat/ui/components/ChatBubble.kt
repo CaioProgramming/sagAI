@@ -17,7 +17,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -167,7 +166,11 @@ fun ChatBubble(
     val decorationOverlay = genre.chatBubbleDecorationOverlay(bubbleShape, isUser)
     val decorationBackground = genre.chatBubbleBackgroundDecoration(bubbleShape, isUser)
     val constraintDecorationOverlay =
-        genre.chatBubbleConstraintDecorationOverlay(bubbleShape, isUser)
+        genre.chatBubbleConstraintDecorationOverlay(
+            bubbleShape,
+            isUser,
+            bubbleStyle.backgroundColor,
+        )
     val constraintDecorationBackground =
         genre.chatBubbleConstraintBackgroundDecoration(bubbleShape, isUser)
     val nameTagContent =
@@ -286,30 +289,23 @@ fun ChatBubble(
                                     }.size(avatarSize),
                             ) {
                                 avatarCharacter?.let { character ->
-                                    AnimatedContent(
-                                        targetState = character.image to character.id,
-                                        transitionSpec = {
-                                            fadeIn() + scaleIn() togetherWith scaleOut()
-                                        },
-                                        label = "ChatBubbleAvatar",
-                                    ) {
-                                        CharacterAvatar(
-                                            character,
-                                            isLoading = isLoading,
-                                            genre = genre,
-                                            borderSize = 1.dp,
-                                            shape = avatarShape,
-                                            pixelation = 0f,
-                                            grainRadius = 0f,
-                                            modifier =
-                                                Modifier
-                                                    .sharedElement(
-                                                        rememberSharedContentState(key = "character_${character.id}_icon"),
-                                                        animatedVisibilityScope,
-                                                    ).padding(8.dp)
-                                                    .fillMaxSize(),
-                                        )
-                                    }
+                                    CharacterAvatar(
+                                        character,
+                                        isLoading = isLoading,
+                                        genre = genre,
+                                        borderSize = 1.dp,
+                                        innerPadding = 1.dp,
+                                        shape = avatarShape,
+                                        pixelation = 0f,
+                                        grainRadius = 0f,
+                                        modifier =
+                                            Modifier
+                                                .sharedElement(
+                                                    rememberSharedContentState(key = "character_${character.id}_icon"),
+                                                    animatedVisibilityScope,
+                                                ).padding(8.dp)
+                                                .fillMaxSize(),
+                                    )
 
                                     val relationWithMainCharacter =
                                         mainCharacter
@@ -372,14 +368,12 @@ fun ChatBubble(
                                             .emotionalEntrance(
                                                 message.emotionalTone,
                                                 messageEffectsEnabled,
-                                            )
-                                            .wrapContentSize()
+                                            ).wrapContentSize()
                                             .rotatingGradientBorder(
                                                 shape = bubbleShape,
                                                 colors = palette,
                                                 rotationDegrees = rotationValue,
-                                            )
-                                            .background(
+                                            ).background(
                                                 MaterialTheme.colorScheme.surfaceContainer.copy(
                                                     alpha = .3f,
                                                 ),
@@ -411,12 +405,10 @@ fun ChatBubble(
                                                                 )
                                                             }
                                                         },
-                                                    )
-                                                    .emotionalEntrance(
+                                                    ).emotionalEntrance(
                                                         message.emotionalTone,
                                                         messageEffectsEnabled,
-                                                    )
-                                                    .wrapContentSize()
+                                                    ).wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
@@ -449,12 +441,10 @@ fun ChatBubble(
                                                                     )
                                                                 }
                                                             },
-                                                        )
-                                                        .emotionalEntrance(
+                                                        ).emotionalEntrance(
                                                             message.emotionalTone,
                                                             messageEffectsEnabled,
-                                                        )
-                                                        .wrapContentSize()
+                                                        ).wrapContentSize()
                                                         .background(
                                                             bubbleStyle.backgroundColor,
                                                             bubbleShape,
@@ -484,12 +474,10 @@ fun ChatBubble(
                                                                     )
                                                                 }
                                                             },
-                                                        )
-                                                        .emotionalEntrance(
+                                                        ).emotionalEntrance(
                                                             message.emotionalTone,
                                                             messageEffectsEnabled,
-                                                        )
-                                                        .wrapContentSize()
+                                                        ).wrapContentSize()
                                                         .background(
                                                             bubbleStyle.backgroundColor,
                                                             bubbleShape,

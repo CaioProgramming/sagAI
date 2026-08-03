@@ -500,11 +500,13 @@ class SagaContentManagerImpl
                                                         it.quote
                                                             ?: emptyString(),
                                                     number =
-                                                        saga
-                                                            .chapterNumber(
-                                                                saga.currentChapterInfo?.data?.id
-                                                                    ?: -1,
-                                                            ).toRoman(),
+                                                        stringResourceHelper.getString(
+                                                            R.string.chapter_number_label,
+                                                            saga
+                                                                .chapterNumber(
+                                                                    saga.currentChapterInfo?.data?.id,
+                                                                ).toRoman(),
+                                                        ),
                                                     sceneSummary = it,
                                                 ),
                                             )
@@ -640,7 +642,10 @@ class SagaContentManagerImpl
                     .distinctUntilChanged()
                     .collectLatest { ready ->
                         if (ready) {
-                            content.value?.data?.id?.let { _milestoneChainReady.emit(it) }
+                            content.value
+                                ?.data
+                                ?.id
+                                ?.let { _milestoneChainReady.emit(it) }
                         }
                     }
             }
@@ -681,8 +686,8 @@ class SagaContentManagerImpl
          * visible screen, unlike the old per-Composable host's DisposableEffect(onDispose), this
          * reacts to navigation itself rather than the chat leaving composition.
          */
-        private fun observeIslands(): kotlinx.coroutines.Job {
-            return managerScope.launch {
+        private fun observeIslands(): kotlinx.coroutines.Job =
+            managerScope.launch {
                 combine(
                     content,
                     milestoneUpdate,
@@ -708,7 +713,6 @@ class SagaContentManagerImpl
                         }
                     }
             }
-        }
 
         /** Same `messages / loreUpdateLimit` fraction the chat's own progress ring used to
          * compute — now feeding the objective island's compact progress ring instead. */
@@ -742,8 +746,9 @@ class SagaContentManagerImpl
 
             val topContent: IslandContent? =
                 when {
-                    milestone is SagaMilestone.Loading ->
+                    milestone is SagaMilestone.Loading -> {
                         LoadingIslandContent(reasoning = reasoning, genre = genre)
+                    }
 
                     else -> {
                         val objectiveText = saga.getCurrentTimeLine()?.data?.displayObjective()

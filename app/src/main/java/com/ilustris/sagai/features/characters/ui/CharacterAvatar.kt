@@ -1,5 +1,9 @@
 package com.ilustris.sagai.features.characters.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -80,7 +84,8 @@ fun CharacterAvatar(
                 borderSize,
                 borderBrush,
                 shape,
-            ).clip(shape)
+            )
+            .clip(shape)
             .padding(innerPadding)
             .background(
                 Brush.verticalGradient(characterColor.darkerPalette(factor = .35f)),
@@ -106,49 +111,53 @@ fun CharacterAvatar(
             )
         }
 
-        AsyncImage(
-            model =
-                ImageRequest
-                    .Builder(LocalContext.current)
-                    .data(imagePath.takeIf { it.isNotBlank() })
-                    .apply {
-                        if (imagePath.isNotBlank()) {
-                            memoryCacheKey("${character.id}:$imagePath")
-                            diskCacheKey("${character.id}:$imagePath")
+        AnimatedContent(imagePath, transitionSpec = {
+            scaleIn() togetherWith scaleOut()
+        }) {
+            AsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(LocalContext.current)
+                        .data(it)
+                        .apply {
+                            if (imagePath.isNotBlank()) {
+                                memoryCacheKey("${character.id}:$imagePath")
+                                diskCacheKey("${character.id}:$imagePath")
+                            }
+                        }.crossfade(true)
+                        .build(),
+                contentDescription = character.name,
+                contentScale = ContentScale.Crop,
+                onState = { state ->
+                    imageLoadFailed =
+                        when (state) {
+                            is AsyncImagePainter.State.Error,
+                            is AsyncImagePainter.State.Empty,
+                            -> true
+
+                            is AsyncImagePainter.State.Success -> false
+
+                            else -> imageLoadFailed
                         }
-                    }.crossfade(true)
-                    .build(),
-            contentDescription = character.name,
-            contentScale = ContentScale.Crop,
-            onState = { state ->
-                imageLoadFailed =
-                    when (state) {
-                        is AsyncImagePainter.State.Error,
-                        is AsyncImagePainter.State.Empty,
-                        -> true
-
-                        is AsyncImagePainter.State.Success -> false
-
-                        else -> imageLoadFailed
-                    }
-            },
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .clip(shape)
-                    .then(
-                        if (!skipGenreEffect) {
-                            Modifier.effectForGenre(
-                                genre,
-                                useFallBack = useFallback,
-                                focusRadius = softFocusRadius,
-                                customGrain = grainRadius,
-                                pixelSize = pixelation,
-                            )
-                        } else {
-                            Modifier
-                        },
-                    ),
-        )
+                },
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .clip(shape)
+                        .then(
+                            if (!skipGenreEffect) {
+                                Modifier.effectForGenre(
+                                    genre,
+                                    useFallBack = useFallback,
+                                    focusRadius = softFocusRadius,
+                                    customGrain = grainRadius,
+                                    pixelSize = pixelation,
+                                )
+                            } else {
+                                Modifier
+                            },
+                        ),
+            )
+        }
     }
 }

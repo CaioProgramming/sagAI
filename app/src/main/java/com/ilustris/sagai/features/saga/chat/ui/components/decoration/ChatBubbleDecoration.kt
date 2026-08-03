@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -47,6 +46,7 @@ import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.solidGradient
 
 /**
  * Picks the most vivid (saturation × brightness) stop out of the live
@@ -145,6 +145,7 @@ fun Genre.chatBubbleBackgroundDecoration(
 fun Genre.chatBubbleConstraintDecorationOverlay(
     shape: Shape,
     isUser: Boolean,
+    bubbleColor: Color,
 ): (@Composable ConstraintLayoutScope.(ConstrainedLayoutReference) -> Unit)? =
     when (this) {
         Genre.HORROR -> {
@@ -172,7 +173,7 @@ fun Genre.chatBubbleConstraintDecorationOverlay(
         }
 
         Genre.SPACE_OPERA -> {
-            { content -> SpaceOperaOverlay(content, shape, isUser) }
+            { content -> SpaceOperaOverlay(content, shape, isUser, bubbleColor) }
         }
 
         else -> {
@@ -403,9 +404,10 @@ private fun CyberpunkNameTag(name: String) {
  * recomposed composable like a chat bubble.
  */
 @Composable
-private fun BoxScope.SpaceOperaBubbleOverlay(shape: Shape) {
-    val accent = MaterialTheme.colorScheme.primary
-
+private fun BoxScope.SpaceOperaBubbleOverlay(
+    shape: Shape,
+    bubbleColor: Color,
+) {
     Box(
         Modifier
             .matchParentSize()
@@ -413,8 +415,8 @@ private fun BoxScope.SpaceOperaBubbleOverlay(shape: Shape) {
                 drawContent()
                 drawOutline(
                     outline = shape.createOutline(size, layoutDirection, this),
-                    brush = accent.gradientFade(),
-                    style = Stroke(width = 1.5.dp.toPx()),
+                    brush = bubbleColor.solidGradient(),
+                    style = Stroke(width = 2.dp.toPx()),
                 )
             },
     )
@@ -434,8 +436,9 @@ private fun ConstraintLayoutScope.SpaceOperaOverlay(
     content: ConstrainedLayoutReference,
     shape: Shape,
     isUser: Boolean,
+    bubbleColor: Color,
 ) {
-    val accent = MaterialTheme.colorScheme.primary
+    val accent = bubbleColor
     val outlineOverlay = createRef()
     Box(
         Modifier.constrainAs(outlineOverlay) {
@@ -447,7 +450,7 @@ private fun ConstraintLayoutScope.SpaceOperaOverlay(
             height = Dimension.fillToConstraints
         },
     ) {
-        SpaceOperaBubbleOverlay(shape)
+        SpaceOperaBubbleOverlay(shape, accent)
     }
 
     val starPainter = painterResource(R.drawable.ic_space_star)
@@ -461,11 +464,11 @@ private fun ConstraintLayoutScope.SpaceOperaOverlay(
         strokeColor = MaterialTheme.colorScheme.background,
         modifier =
             Modifier.constrainAs(starTop) {
-                bottom.linkTo(content.top, margin = (-18).dp)
+                bottom.linkTo(content.top, margin = (-16).dp)
                 if (isUser) {
-                    end.linkTo(content.end, margin = (-10).dp)
+                    end.linkTo(content.end, margin = (-16).dp)
                 } else {
-                    start.linkTo(content.start, margin = (-10).dp)
+                    start.linkTo(content.start, margin = (-16).dp)
                 }
                 width = Dimension.value(26.dp)
                 height = Dimension.value(32.dp)
@@ -481,13 +484,13 @@ private fun ConstraintLayoutScope.SpaceOperaOverlay(
         strokeColor = MaterialTheme.colorScheme.background,
         modifier =
             Modifier.constrainAs(starBottom) {
-                bottom.linkTo(content.bottom, margin = 18.dp)
+                bottom.linkTo(content.bottom, (-16).dp)
                 if (isUser) {
-                    start.linkTo(content.start, margin = (-10).dp)
+                    start.linkTo(content.start, (-16).dp)
                 } else {
-                    end.linkTo(content.end, margin = (-10).dp)
+                    end.linkTo(content.end, (-16).dp)
                 }
-                width = Dimension.value(26.dp)
+                width = Dimension.value(32.dp)
                 height = Dimension.value(32.dp)
             },
     )
@@ -598,8 +601,7 @@ private fun ConstraintLayoutScope.PunkRockOverlay(content: ConstrainedLayoutRefe
                     start.linkTo(content.start, margin = (-6).dp)
                     width = Dimension.value(16.dp)
                     height = Dimension.value(20.dp)
-                }
-                .gradientFill(sagaBrush()),
+                }.gradientFill(sagaBrush()),
     )
 
     val stars = createRef()
@@ -614,8 +616,7 @@ private fun ConstraintLayoutScope.PunkRockOverlay(content: ConstrainedLayoutRefe
                     end.linkTo(content.end, margin = (-6).dp)
                     width = Dimension.value(14.dp)
                     height = Dimension.value(17.dp)
-                }
-                .gradientFill(sagaBrush()),
+                }.gradientFill(sagaBrush()),
     )
 
     val skull = createRef()
@@ -630,8 +631,7 @@ private fun ConstraintLayoutScope.PunkRockOverlay(content: ConstrainedLayoutRefe
                     end.linkTo(content.end, margin = (-8).dp)
                     width = Dimension.value(18.dp)
                     height = Dimension.value(22.dp)
-                }
-                .gradientFill(sagaBrush()),
+                }.gradientFill(sagaBrush()),
     )
 }
 
@@ -889,7 +889,11 @@ private fun FantasyNameTag(name: String) {
                                 startY + 14.dp.toPx(),
                             )
                         }
-                    drawPath(vine, color = gold.copy(alpha = .75f), style = Stroke(width = 1.3.dp.toPx()))
+                    drawPath(
+                        vine,
+                        color = gold.copy(alpha = .75f),
+                        style = Stroke(width = 1.3.dp.toPx()),
+                    )
                 },
     ) {
         Row(
@@ -1005,8 +1009,10 @@ private fun ShinobiNameTag(name: String) {
         modifier =
             Modifier
                 .padding(start = 4.dp, bottom = 4.dp)
-                .background(MaterialTheme.colorScheme.primary.darker(.3f), MaterialTheme.shapes.small)
-                .border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)
+                .background(
+                    MaterialTheme.colorScheme.primary.darker(.3f),
+                    MaterialTheme.shapes.small,
+                ).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)
                 .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
         Image(
