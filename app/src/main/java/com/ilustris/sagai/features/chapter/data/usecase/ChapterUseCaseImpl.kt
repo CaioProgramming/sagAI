@@ -8,7 +8,6 @@ import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.model.mergeInstructions
-import com.ilustris.sagai.core.ai.prompts.ArtworkPrompts
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -99,7 +98,6 @@ class ChapterUseCaseImpl
                             promptSplit =
                                 prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
-                                    ArtworkPrompts.ARTWORK_DIRECTION_INSTRUCTIONS,
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -146,7 +144,6 @@ class ChapterUseCaseImpl
                             promptSplit =
                                 prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
-                                    ArtworkPrompts.ARTWORK_DIRECTION_INSTRUCTIONS,
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -503,7 +500,6 @@ class ChapterUseCaseImpl
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                             actContext.renderInstructions(),
-                                            ArtworkPrompts.ARTWORK_DIRECTION_INSTRUCTIONS,
                                         ),
                                     requirement = ModelRequirement.HIGH,
                                 ),

@@ -4,7 +4,6 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.mergeInstructions
-import com.ilustris.sagai.core.ai.prompts.ArtworkPrompts
 import com.ilustris.sagai.core.ai.prompts.CosmicLibraryArgs
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
@@ -78,10 +77,7 @@ class SagaIdeationService
                         sagaDraft,
                         characterInfo,
                         themeStyle = genreConfigService.aesthetic(sagaDraft.genre),
-                    ).mergeInstructions(
-                        genreConfigService.conversationInstructions(sagaDraft.genre),
-                        ArtworkPrompts.ARTWORK_DIRECTION_INSTRUCTIONS,
-                    )
+                    ).mergeInstructions(genreConfigService.conversationInstructions(sagaDraft.genre))
             return gemmaClient.generateStreaming<SacredContract>(
                 promptSplit = splitPrompt,
                 requirement = ModelRequirement.HIGH,
