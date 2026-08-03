@@ -133,6 +133,7 @@ object ChatPrompts {
             "smartZoom",
             "events",
             "relationships",
+            "artwork",
         )
 
     @Suppress("ktlint:standard:max-line-length")

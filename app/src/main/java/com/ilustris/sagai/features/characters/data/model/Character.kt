@@ -62,6 +62,8 @@ data class Character(
     val smartZoom: SmartZoom? = null,
     @ColumnInfo(defaultValue = "")
     val voice: String? = null,
+    @ColumnInfo(defaultValue = "")
+    val artwork: String? = null,
 )
 
 data class Abilities(

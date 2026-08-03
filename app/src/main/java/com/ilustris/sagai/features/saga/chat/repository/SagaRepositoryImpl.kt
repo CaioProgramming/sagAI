@@ -157,6 +157,7 @@ class SagaRepositoryImpl
                             "id",
                             "emojified",
                             "smartZoom",
+                            "artwork",
                         ),
                     ),
                 )

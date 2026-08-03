@@ -182,6 +182,12 @@ class CharacterUseCaseImpl
 
         private fun characterImageContext(character: Character): String =
             buildString {
+                character.artwork?.takeIf { it.isNotBlank() }?.let {
+                    appendLine("### CONCEPT ART DIRECTION")
+                    appendLine(it)
+                    appendLine()
+                }
+                appendLine("### CHARACTER")
                 appendLine(
                     character.toAINormalize(
                         listOf(
@@ -194,6 +200,7 @@ class CharacterUseCaseImpl
                             "firstSceneId",
                             "emojified",
                             "hexColor",
+                            "artwork",
                         ),
                     ),
                 )

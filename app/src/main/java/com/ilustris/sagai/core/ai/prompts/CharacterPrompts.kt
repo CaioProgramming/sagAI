@@ -175,6 +175,7 @@ object CharacterPrompts {
                     "firstSceneId",
                     "emojified",
                     "smartZoom",
+                    "artwork",
                 )
             appendLine("CURRENT SAGA CAST OVERVIEW:")
             characters.forEach { character ->
