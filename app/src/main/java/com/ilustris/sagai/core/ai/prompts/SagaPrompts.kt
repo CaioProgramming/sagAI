@@ -109,6 +109,7 @@ object SagaPrompts {
         listOf(
             "id",
             "icon",
+            "artwork",
             "createdAt",
             "mainCharacterId",
             "isDebug",

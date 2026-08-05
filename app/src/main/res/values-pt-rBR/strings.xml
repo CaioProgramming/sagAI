@@ -690,6 +690,7 @@
     <!-- Character stats -->
     <string name="character_stat_height">Altura</string>
     <string name="character_stat_weight">Peso</string>
+    <string name="character_stat_age">Idade</string>
     <string name="character_generating">Gerando %1$s…</string>
     <string name="image_generation_default_label">Gerando imagem…</string>
     <string name="image_generation_awaiting_manual">Aguardando imagem manual</string>

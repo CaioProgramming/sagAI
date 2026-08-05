@@ -490,6 +490,7 @@
     <!-- Character stats -->
     <string name="character_stat_height">Height</string>
     <string name="character_stat_weight">Weight</string>
+    <string name="character_stat_age">Age</string>
     <string name="character_generating">Generating %1$s…</string>
     <string name="image_generation_default_label">Generating image…</string>
     <string name="image_generation_awaiting_manual">Awaiting manual image</string>
