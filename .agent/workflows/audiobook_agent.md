@@ -66,6 +66,16 @@ real do teste de cada usuário, já que esse teto pode variar.
    sua jornada" copiado e colado. Isso vira propaganda exatamente quando começa a soar como frase de
    efeito repetida. Solto no meio da fala empolgada, nunca como parágrafo à parte nem como frase de
    fechamento/CTA.
+8. **Nunca explique o mecanismo do jogo** ("turno por turno", "o jogador fez X ou Y", "decisão por
+   decisão" como descrição de como o app funciona). Fale do resultado/sentimento, não do
+   funcionamento: "cada decisão é sua", "essa é a história dela do começo ao fim" — a ideia é a
+   pessoa sentir a autoria do jogador, não receber uma explicação de mecânica de turnos.
+9. **A nota de fechamento também pode ser cortada pelo teto do AI Studio (~80s) — e ela não deve ser
+   quebrada em partes como os capítulos.** É uma reflexão única, contínua; fatiá-la em "parte 1/2"
+   quebra a intimidade do formato. Em vez de quebrar, **reescreva-a mais curta**: releia a história
+   inteira, identifique o que a nota está realmente tentando dizer (os 2-3 momentos que mais
+   marcaram + o gancho de comunidade), e comprima para caber em ~1 minuto (~130-140 palavras a
+   ~140 palavras/min) sem perder essa intenção. Corte detalhe, não sentimento.
 
 ## Formato do `voice_bible.md`
 

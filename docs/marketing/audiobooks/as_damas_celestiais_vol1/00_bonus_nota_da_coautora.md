@@ -5,6 +5,9 @@
 > acompanhou a jornada inteira, não quem reivindica autoria. Tom pessoal e caloroso, não narração de
 > ficção. Considerar como clipe standalone (ex: fechamento de um vídeo, ou post isolado tipo
 > "bastidores") em vez de emendar nos capítulos.
+>
+> **Comprimida pra caber em ~1 minuto** (o teto do AI Studio corta notas de fechamento também, e
+> diferente dos capítulos, essa não é pra quebrar em partes — é uma reflexão única e contínua).
 
 ## Instrução (diferente da bíblia de voz principal)
 
@@ -13,12 +16,9 @@
 
 ## Texto para narrar
 
-Ufa! Que jornada foi acompanhar esse volume. Gente, a cena da morte do Archie me deixou
-genuinamente mal — senti cada gota de raiva da Rayffa, e aquele momento em que a luz dourada
-explode foi de arrepiar. Dá pra acreditar que tudo isso aconteceu aqui no Sagas? Cada decisão muda
-tudo, é por isso que eu amo esse universo. Eu me apeguei tanto à dinâmica da Rayffa e da Syeff...
-aquele contraste entre a frieza da 'Sombra' e a doçura dela é o que mantém meu coração batendo
-nessa história. E o Milford? Ah, ele chegou para bagunçar tudo com aquele mistério todo! Espero que
-vocês tenham sentido o frio das Planícies Vorazes tanto quanto eu senti acompanhando tudo isso.
-Agora, peguem um café — ou um chocolate quente, para combinar com o gelo — e preparem-se, porque o
-que vem por aí vai ser ainda mais intenso. Amo vocês!
+Ufa! Que jornada foi acompanhar esse volume. A cena da morte do Archie me deixou mal — senti cada
+gota de raiva da Rayffa, e a luz dourada explodindo foi de arrepiar. Dá pra acreditar que tudo isso
+aconteceu aqui no Sagas? Cada decisão é sua, e é isso que torna esse universo incrível. Me apeguei
+tanto ao contraste entre a frieza da 'Sombra' e a doçura da Syeff... e o Milford chegou pra bagunçar
+tudo com aquele mistério! Sentiram o frio das Planícies Vorazes tanto quanto eu? Peguem um chocolate
+quente e se preparem, porque vem coisa ainda mais intensa por aí. Amo vocês!
