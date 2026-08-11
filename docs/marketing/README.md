@@ -17,9 +17,9 @@ Fonte de verdade: [`marketing_canvas.md`](marketing_canvas.md), gerado e mantido
     - [`audiobooks/`](audiobooks/) — bíblias de voz + texto de cada capítulo prontos pra narrar,
       gerados pelo workflow `.agent/workflows/audiobook_agent.md` a partir de um livro/PDF exportado
       do app. Frente de comunidade/UGC (histórias de jogadores), não depende de feature nova — o
-      export de PDF já existe hoje. Destino padrão: ElevenLabs Studio (testando o trial de 2 meses
-      do plano Starter, $6/mês) — sobe o capítulo inteiro, sem fatiar. Google AI Studio é o fallback
-      gratuito, mas exige fatiar em pedaços menores (arquivos `_partes.md`) por causa do teto de
+      export de PDF já existe hoje. Destino padrão: ElevenLabs Studio (Starter anual, ~$60/ano) —
+      sobe o capítulo inteiro, sem fatiar. Google AI Studio é o fallback gratuito, mas exige fatiar
+      em pedaços menores (arquivos `_partes.md`) por causa do teto de
       geração da plataforma.
 
 ## Princípio fixo

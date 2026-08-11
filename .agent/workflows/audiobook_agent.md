@@ -15,10 +15,10 @@ ElevenLabs Studio, ou colar no AI Studio) e a pessoa junta os arquivos de áudio
 
 ## Destino da narração — escolha primeiro
 
-- **ElevenLabs Studio (padrão enquanto durar o trial de 2 meses do plano Starter, $6/mês)**: sobe o
-  manuscrito inteiro de uma vez, o Studio quebra e junta sozinho mantendo a voz consistente — não
-  precisa fatiar nada na mão. Cota de ~30 mil caracteres/mês no Starter (~1 livro inteiro por mês,
-  tipo os pilotos que já rodamos — controlar uso se a cadência subir). **Produza um `.md` por
+- **ElevenLabs Studio (padrão — Starter anual, ~$60/ano cobrados de uma vez, efetivo ~$5/mês)**:
+  sobe o manuscrito inteiro de uma vez, o Studio quebra e junta sozinho mantendo a voz consistente —
+  não precisa fatiar nada na mão. Cota de ~30 mil caracteres/mês no Starter (~1 livro inteiro por
+  mês, tipo os pilotos que já rodamos — controlar uso se a cadência subir). **Produza um `.md` por
   capítulo com o texto inteiro**, sem fragmentar.
 - **Google AI Studio (fallback gratuito, sem cota mensal, mas com teto de geração curto por
   chamada)**: medido em teste real, um capítulo de ~900 palavras foi cortado em 81,5s de áudio (só
@@ -28,12 +28,17 @@ ElevenLabs Studio, ou colar no AI Studio) e a pessoa junta os arquivos de áudio
 - Produza sempre o `.md` de capítulo inteiro primeiro (é o formato do ElevenLabs e também serve de
   fonte pra fatiar depois, se precisar do fallback).
 
-## Checkpoint do trial
+## Checkpoint do investimento
 
-Ao final dos 2 meses grátis do Starter, decidir se vale assinar o Creator (~$22/mês, mais cota +
-clonagem de voz profissional) com base no que foi entregue/no engajamento gerado — não decidir no
-escuro. Registrar essa decisão como dependência em `docs/marketing/marketing_canvas.md` quando o
-canvas for atualizado.
+**Não é trial grátis** — "2 meses grátis" é o desconto do plano anual (paga 10 meses, leva 12): o
+Starter anual sai em ~$60/ano (~$5/mês efetivo) cobrados de uma vez, contra $6/mês sem compromisso
+no plano mensal. Já é um investimento real, não uma avaliação sem risco.
+
+Dado isso, vale reavaliar em ~2 meses de uso (não porque o trial "acabou", mas porque é um prazo
+razoável pra já ter dado pra ver resultado) se vale seguir no Starter, subir pro Creator (~$22/mês,
+mais cota + clonagem de voz profissional), ou voltar pro fallback gratuito do AI Studio. Basear a
+decisão no que foi entregue/no engajamento gerado, não decidir no escuro. Registrar essa decisão
+como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for atualizado.
 
 ## Como trabalhar
 
