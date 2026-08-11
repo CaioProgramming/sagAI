@@ -34,7 +34,9 @@ sliders (Estabilidade, Velocidade, Similaridade) ao lado. A "Instrução-base" d
 não é pra colar em lugar nenhum aí — ela vira a seção **"Configuração no ElevenLabs"** dentro do
 próprio `voice_bible.md`: qual tipo de voz escolher (pelo preview, não só pelo nome), pra que lado
 ajustar os sliders, e se vale usar tags de emoção inline (`[cansado]`, `[sussurrando]`) do modelo
-v3. Só o texto limpo do capítulo é colado no box.
+v3. Só o texto limpo do capítulo é colado no box — por isso cada capítulo também sai em formato
+`_texto_puro.txt` (ver seção "Formato do texto puro" abaixo): o `.md` anotado é material de
+preparo/referência, o `.txt` é o que realmente é selecionado e colado no ElevenLabs.
 
 ## Checkpoint do investimento
 
@@ -71,6 +73,11 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
 4. **Se o destino for o AI Studio do Google**, gerar também a versão `_partes.md`: mesmo capítulo
    fatiado em cenas internas (~90-110 palavras cada), numeradas pra remontagem, cada pedaço com sua
    própria nota de ênfase pontual.
+4b. **Gerar também `NN_slug_texto_puro.txt`** (um por capítulo, e um pra nota de fechamento se
+   houver): só a prosa, sem título, sem nota de ênfase, sem citação de bloco — nada que precise ser
+   removido antes de colar. É o formato padrão pro ElevenLabs (Text to Speech ou Studio, que não têm
+   campo de instrução separado); o `.md` anotado continua existindo como documento de preparo/
+   referência, não como o que é colado.
 5. Se o livro tiver uma nota de fechamento fora do universo da ficção, trate como peça separada e
    opcional — registro tem outro tom (pessoal, primeira pessoa) e não deve seguir a bíblia de voz da
    narrativa.
@@ -135,9 +142,15 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
 (texto limpo, pronto pra colar)
 ```
 
+## Formato do texto puro (`NN_slug_texto_puro.txt`)
+
+Só a prosa, nada mais — sem título, sem seção, sem nota de ênfase, sem marcação de bloco. A pessoa
+seleciona tudo e cola direto no box do ElevenLabs. Nenhuma linha deveria precisar ser apagada antes
+de colar.
+
 ## Onde salvar
 
 `docs/marketing/audiobooks/<slug-do-livro>/` — `voice_bible.md` + um `.md` por capítulo (texto
-inteiro) + `_partes.md` só se o destino for o AI Studio. Não precisa passar pelo
-`feature_planning_agent`: isso é produção de conteúdo externa ao app, não exige nenhuma feature nova
-(o export de PDF já existe hoje).
+inteiro, anotado) + `_texto_puro.txt` por capítulo (pronto pra colar) + `_partes.md` só se o destino
+for o AI Studio. Não precisa passar pelo `feature_planning_agent`: isso é produção de conteúdo
+externa ao app, não exige nenhuma feature nova (o export de PDF já existe hoje).
