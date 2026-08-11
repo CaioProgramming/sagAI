@@ -1,14 +1,34 @@
 # Vozes por Gênero — Voice Design (ElevenLabs)
 
 Prompts prontos pra colar em **Voices → My Voices → Add a new voice → Voice Design** (Realistic
-Voices) do ElevenLabs — um feminino e um masculino por gênero do app. Gera 3 opções por prompt,
-escolha a melhor e salve com um nome tipo `Sagas — Fantasy — F`.
+Voices) do ElevenLabs — um feminino e um masculino por gênero do app.
 
-**Prompt em inglês, de propósito.** A documentação do ElevenLabs recomenda escrever o prompt do
-Voice Design em inglês mesmo quando a voz vai narrar em outro idioma — o modelo entende descrição de
-estilo melhor em inglês, e pra não haver "drift" de idioma cada prompt já declara explícito na
-primeira frase que a voz fala português do Brasil. A `Essência` de cada gênero abaixo fica em
-português só como contexto pra você — não precisa colar isso, só o bloco `Prompt`.
+**Um prompt por vez.** Cada geração do Voice Design produz 3 variações de **uma única voz** — não dá
+pra colar dois prompts juntos e sair com duas vozes distintas na mesma rodada. O fluxo é: cola 1
+prompt → gera 3 opções → escolhe a melhor → salva com nome (`Sagas — Fantasy — F`) → limpa o campo →
+cola o próximo. São 18 rodadas sequenciais no total (9 gêneros × 2). Vale começar só com **Fantasy e
+Crime** (os dois já validados nos pilotos) antes de gerar os outros 7 — confirma que o resultado bate
+com o esperado antes de gastar crédito nos 14 restantes.
+
+**Formato do prompt**: segue o formato recomendado pela própria documentação do ElevenLabs:
+
+```
+Native <Language>. <Gender>, <Age range>. <Quality level>.
+Persona: <2–5 words>. Emotion: <2–3 adjectives>.
+<1–2 sentences about timbre, pacing, delivery>
+```
+
+- Prompt em inglês, de propósito: o Voice Design entende descrição de estilo melhor em inglês, mesmo
+  pra uma voz que vai narrar em outro idioma — por isso cada prompt abre com `Native Portuguese,
+  Brazilian Portuguese (pt-BR)` pra travar o idioma/dialeto e evitar drift.
+- **Evite a palavra "accent"** no prompt — o ElevenLabs avisa que isso pode disparar troca de sotaque
+  regional sem querer; descreva entonação/estilo em vez disso (por isso os prompts abaixo dizem
+  "understated"/"theatrical" em vez de "sem sotaque").
+- **Evite palavras de efeito** tipo "reverb", "echo", "phone", "tape" — pioram a qualidade do áudio
+  gerado.
+
+A `Essência` de cada gênero abaixo fica em português só como contexto pra você — não precisa colar
+isso, só o bloco `Prompt`.
 
 **Isso é infraestrutura de gênero, não de livro.** Roda uma vez por gênero/sexo (custa só o crédito
 do preview) e a voz salva fica reutilizável em todo audiolivro daquele gênero — não precisa desenhar
@@ -33,14 +53,14 @@ dramática no conteúdo, mas nunca soar produzida demais.
 Brutalidade e beleza são a mesma matéria. A voz reflete o que essa pessoa já pagou pra chegar aqui,
 não performance.
 
-- **Feminino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Woman in her 30s-45s, low and weary
-  voice, controlled — sounds like someone who survived something real and no longer needs to prove
-  it. Slow pacing, real silences between weighted sentences, slight natural roughness. No studio
-  polish — sounds like someone telling a story late at night, not a professional voice actress.*
-- **Masculino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Man in his 40s-55s, deep and raspy
-  voice, authority earned through cost, not performance. Speaks slowly, holds silence before heavy
-  sentences. Slight natural imperfection — sounds like a real person narrating at home, not an epic
-  trailer narrator.*
+- **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 30-45. Ok
+  quality. Persona: weary survivor, quietly guarded. Emotion: restrained, tired, resolute. Low,
+  rough timbre with slow pacing and real pauses between weighted sentences; unpolished, homemade
+  delivery, not a professional voice actress.*
+- **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 40-55. Ok quality.
+  Persona: hardened elder, quiet authority. Emotion: grave, weary, resolute. Deep, raspy timbre with
+  slow pacing and long pauses before heavy sentences; slightly imperfect, homemade delivery, not an
+  epic trailer narrator.*
 
 ## Cyberpunk · *Neon & Tech*
 
@@ -48,28 +68,26 @@ não performance.
 sarcástico de sobrevivência e o contemplativo/melancólico por baixo. A tristeza nunca é anunciada,
 só se acumula.
 
-- **Feminino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Woman in her 20s-30s, raspy and dry
-  voice, tired but sharp — sounds like someone who watched the city swallow people and kept going
-  anyway. Slightly ironic tone, dark humor underneath, sentences sometimes cut off mid-thought. Raw,
-  unproduced delivery — like someone recording at home late at night, not an advertisement voice.*
-- **Masculino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Man in his 30s-40s, raspy voice,
-  clipped rhythm — short sentences, doesn't over-explain. Contained melancholy underneath the
-  sarcasm. Slightly imperfect, no polish — sounds real, not a produced narration.*
+- **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 25-35. Ok
+  quality. Persona: streetwise survivor, dry wit. Emotion: tired, sharp, sardonic. Raspy timbre,
+  clipped pacing that cuts off mid-thought, dark humor undertone; raw, homemade delivery, not an
+  advertisement voice.*
+- **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 30-40. Ok quality.
+  Persona: street-hardened loner. Emotion: sarcastic, guarded, melancholic. Raspy timbre, clipped
+  short sentences, contained sadness beneath the sarcasm; slightly imperfect, homemade delivery.*
 
 ## Horror · *Shadows & Fear*
 
 **Essência**: peso psicológico e isolamento sufocante. O silêncio estica até doer. Nunca grita — a
 calma controlada é mais perturbadora que qualquer grito.
 
-- **Feminino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Woman in her 30s-45s, low and
-  restrained voice, almost whispered — speaks slowly, letting silence stretch until it becomes
-  uncomfortable. Contained tension, never shouted. Slightly raspy and imperfect, no cliché
-  horror-studio narration — sounds like a real person telling something disturbing quietly in the
-  dark.*
-- **Masculino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Man in his 30s-50s, deep and
-  controlled voice, almost no inflection — the kind of calm that's more frightening than a scream.
-  Long pauses, claustrophobic pacing. Raw, unproduced delivery — like a real whisper, not studio
-  narration.*
+- **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 30-45. Ok
+  quality. Persona: quiet witness to dread. Emotion: restrained, unsettled, controlled. Low,
+  near-whispered timbre with slow pacing and long uncomfortable silences; raw, homemade delivery,
+  not studio horror narration.*
+- **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 30-50. Ok quality.
+  Persona: calm harbinger of dread. Emotion: controlled, ominous, still. Deep, flat timbre with
+  almost no inflection, long claustrophobic pauses; raw, homemade delivery, not studio narration.*
 
 ## Heroes · *Artifacts & Powers*
 
@@ -77,14 +95,14 @@ calma controlada é mais perturbadora que qualquer grito.
 registro do "Veterano" (esparso, preciso, já não se surpreende com nada) é a base mais estável pra
 narrar um livro inteiro.
 
-- **Feminino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Woman in her mid-30s to mid-40s, firm
-  and economical voice, almost no emotion on the surface — sounds like someone who has seen too much
-  to be surprised by anything anymore, including herself. Short sentences, measured tone. Natural
-  and slightly raw delivery, not superhero-dubbing narration — sounds real.*
-- **Masculino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Man in his 40s-55s, firm and dry
-  voice, economical — the precision of someone who stopped being impressed long ago. Restrained
-  pacing, almost deliberately monotone. Slightly imperfect, no hero-trailer grandiosity — sounds
-  like a real person narrating.*
+- **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 35-45. Ok
+  quality. Persona: unshakeable veteran. Emotion: measured, weary, resolute. Firm, economical timbre
+  with short sentences and even pacing; natural, slightly raw delivery, not superhero-dubbing
+  narration.*
+- **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 40-55. Ok quality.
+  Persona: seasoned veteran, unimpressed. Emotion: dry, measured, restrained. Firm timbre with
+  deliberately restrained, near-monotone pacing; slightly imperfect delivery, no hero-trailer
+  grandiosity.*
 
 ## Crime · *Blood & Noir*
 
@@ -92,28 +110,27 @@ narrar um livro inteiro.
 perguntado depois. Fascínio mórbido pela crueldade calculada, nunca julgamento moral explícito.
 (Já validado no piloto de "A Morte de Bianca".)
 
-- **Feminino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Woman in her late 20s to late 30s,
-  confident and sharp voice, slightly seductive — narrates like someone fascinated by the elegance
-  of what she's describing. Agile pacing most of the time, slowing only in rare moments of real
-  emotional collapse. Natural, slightly raw delivery — like someone recording a homemade true-crime
-  podcast, not a produced documentary voiceover.*
-- **Masculino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Man in his early 30s to early 40s,
-  confident and cutting voice, agile rhythm — sounds fascinated by the calculated power he's
-  describing. Sentences that cut like the characters' own lines. Imperfect and natural delivery, no
-  professional-narration polish.*
+- **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 28-40. Ok
+  quality. Persona: fascinated elite narrator. Emotion: confident, sharp, seductive. Agile pacing
+  that slows only for real emotional collapse, smooth timbre; natural, slightly raw delivery, like a
+  homemade true-crime podcast, not a produced documentary voiceover.*
+- **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 30-42. Ok quality.
+  Persona: fascinated observer of power. Emotion: confident, cutting, intrigued. Sharp timbre, agile
+  pacing with cutting short sentences; imperfect, natural delivery, no professional-narration
+  polish.*
 
 ## Shinobi · *Blades & Honor*
 
 **Essência**: minimalista até o osso. O que não é dito pesa mais que o que é dito. Silêncio é arma,
 não vazio.
 
-- **Feminino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Woman in her 30s-45s, low and
-  extremely restrained voice — speaks little, every word weighted, as if saying more would reveal
-  too much. Long pauses before and after short sentences. Raw, almost whispered delivery, no
-  anime-dub theatrics — sounds real and minimalist.*
-- **Masculino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Man in his mid-30s to 50s, deep and
-  minimal voice — silence is part of the speech. Short, definitive sentences, never over-explaining.
-  Breath-before-the-strike rhythm: quiet, quiet, then precise. Natural, imperfect delivery, no
+- **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 30-45. Ok
+  quality. Persona: restrained, minimalist warrior. Emotion: still, contained, precise. Low timbre,
+  extremely sparse delivery with long pauses around short sentences; raw, near-whispered, no
+  anime-dub theatrics.*
+- **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 35-50. Ok quality.
+  Persona: silent, disciplined warrior. Emotion: still, precise, restrained. Deep, minimal timbre
+  with breath-before-the-strike pacing — quiet, quiet, then precise; natural, imperfect delivery, no
   grandiosity.*
 
 ## Space Opera · *Stars & War*
@@ -121,28 +138,27 @@ não vazio.
 **Essência**: a galáxia não é palco de impérios, é acúmulo de tudo que aconteceu sem ninguém prestar
 atenção. Melancolia silenciosa de encontros passageiros — nunca dramatizada, só acumulada.
 
-- **Feminino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Woman in her 30s-45s, calm and
-  slightly distant voice, carrying a melancholy that's never announced — sounds like someone who has
-  said goodbye to many people and places and learned to carry it quietly. Soft pacing. Natural and
-  slightly imperfect delivery — not grand cinematic space-opera narration, more like a real person
-  reflecting.*
-- **Masculino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Man in his mid-30s to 50s, deep and
-  serene voice, slow pacing — carries a quiet sadness underneath the calm, never explained directly.
-  Raw delivery, no sci-fi trailer grandiloquence — sounds like a real person narrating at night.*
+- **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 30-45. Ok
+  quality. Persona: wandering, reflective traveler. Emotion: calm, distant, quietly melancholic.
+  Soft timbre with gentle pacing and unannounced sadness; natural, slightly imperfect delivery, more
+  like a person reflecting than cinematic narration.*
+- **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 35-50. Ok quality.
+  Persona: weary cosmic wanderer. Emotion: serene, quietly sad, calm. Deep timbre with slow pacing
+  and understated sorrow beneath the calm; raw delivery, no sci-fi trailer grandiloquence.*
 
 ## Cowboy · *Guns & Sand*
 
 **Essência**: a dureza nunca é o ponto — o que está embaixo dela é. Sentem tudo, mostram quase nada.
 Silêncio é uma forma de diálogo que essas pessoas dominaram por necessidade.
 
-- **Feminino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Woman in her 30s-50s, dry and firm
-  voice, economical with words — feels everything but shows little, out of habit and necessity.
-  Slow pacing, silences that say more than the words. Natural, rustic delivery, no cartoonish
-  western accent — sounds real, tired and true.*
-- **Masculino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Man in his 40s-55s, deep and rough
-  voice, speaks little and slowly — the weight is in what's left unsaid. Slow pacing, long pauses.
-  Raw and imperfect delivery, no cowboy-movie dramatization — sounds like a real person telling a
-  story around a campfire.*
+- **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 35-50. Ok
+  quality. Persona: guarded frontier survivor. Emotion: restrained, weary, sincere. Dry, firm timbre
+  with slow pacing and meaningful silences; natural, rustic delivery, understated rather than
+  theatrical.*
+- **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 40-55. Ok quality.
+  Persona: quiet frontier elder. Emotion: restrained, weary, sincere. Deep, rough timbre with slow
+  pacing, long pauses, weight carried in what's unsaid; raw delivery, understated rather than
+  theatrical.*
 
 ## Punk Rock · *Anarchy & Riots*
 
@@ -150,15 +166,14 @@ Silêncio é uma forma de diálogo que essas pessoas dominaram por necessidade.
 de fim de jogo, um show ruim parece morte pública. A voz que narra também é seu próprio personagem,
 com atitude própria.
 
-- **Feminino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Woman in her early-to-mid 20s, raw
-  and slightly impatient voice, full of attitude — talks fast when excited, freezes up when real
-  feelings come up. Energy of someone pretending not to care, but caring too much. Very natural and
-  imperfect delivery, like someone recording a voice message for friends in their bedroom, not a
-  produced narration.*
-- **Masculino** — Prompt: *Speaks Brazilian Portuguese (pt-BR). Man in his early-to-mid 20s, slightly
-  raspy and uneven voice, attitude in the delivery but zero polish — speeds up when excited, freezes
-  when things get real. Slightly chaotic, real, like he's recording off-the-cuff, not performing a
-  role.*
+- **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 20-28. Ok
+  quality. Persona: restless young scene kid. Emotion: impatient, defensive, attached. Raw timbre,
+  fast pacing when excited that freezes up on real feelings; very natural, imperfect delivery, like
+  a voice message recorded for friends, not produced narration.*
+- **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 20-28. Ok quality.
+  Persona: restless young scene kid. Emotion: excitable, guarded, attached. Slightly raspy, uneven
+  timbre, fast pacing when excited that freezes on real feelings; slightly chaotic, off-the-cuff
+  delivery, not a performed role.*
 
 ---
 
