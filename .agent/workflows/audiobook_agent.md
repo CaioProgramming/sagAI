@@ -17,10 +17,18 @@ Studio, colando cada `.md` e juntando os arquivos de áudio depois num editor.
 ## Por que quebrar por capítulo, não por frase/parágrafo
 
 Modelos de TTS ajustam ritmo e ênfase com base no contexto da passagem — pedaço curto demais some
-com a "respiração" natural do texto e a costura entre os áudios fica robótica. A unidade certa é o
-**capítulo já existente no livro** (cada um já é uma cena com arco próprio, geralmente uns 800-900
-palavras / 5-6 min de áudio). Só desça pra quebra por cena interna (os parágrafos maiores dentro do
-capítulo) se o AI Studio recusar ou truncar um capítulo inteiro numa geração.
+com a "respiração" natural do texto e a costura entre os áudios fica robótica. Em teoria a unidade
+ideal é o **capítulo já existente no livro** (geralmente 800-900 palavras / 5-6 min de áudio), mas
+**na prática o player de "Generate Speech" do AI Studio tem um teto de geração bem mais curto que
+isso** — medido em teste real: um capítulo de ~900 palavras foi cortado em 81,5s de áudio (só ~190
+palavras faladas). Não existe opção na interface pra estender esse teto (é limite da própria
+plataforma, não do modelo — a API do Gemini aguenta bem mais, mas só chamando ela direto, fora do
+AI Studio).
+
+**Comece direto pela quebra em cenas internas** (parágrafos/blocos de diálogo dentro do capítulo,
+mirando ~90-110 palavras / ~35-45s cada — margem confortável abaixo do teto observado), em vez de
+tentar o capítulo inteiro primeiro e descobrir que corta. Ajuste o tamanho do pedaço pelo resultado
+real do teste de cada usuário, já que esse teto pode variar.
 
 ## Como trabalhar
 
