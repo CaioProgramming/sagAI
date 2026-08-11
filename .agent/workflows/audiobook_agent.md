@@ -56,6 +56,12 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
    cenas internas de cada capítulo (útil como pontos de corte de reserva, caso o destino seja AI
    Studio).
 2. **Montar a bíblia de voz** (`voice_bible.md`), uma vez por livro/saga:
+    - **Primeiro, cheque `docs/marketing/audiobooks/genre_voice_design.md`.** Esse arquivo já tem,
+      pra cada um dos 9 gêneros do app, uma voz feminina e uma masculina desenhadas via Voice Design
+      do ElevenLabs a partir do `${genero}_conversation_blueprint` real do Remote Config — se o
+      gênero do livro já tiver voz salva na tabela ali, use o `voice_id`/nome salvo em vez de
+      garimpar voz genérica da biblioteca do ElevenLabs. Se ainda não tiver, gere com os prompts do
+      arquivo (uma vez só, a voz fica reutilizável em todo livro daquele gênero).
     - Puxe o tom base do gênero já documentado no design system do app (`docs/architecture/`,
       `docs/features/*`, o guia de mascote/sound design por gênero) como ponto de partida.
     - Mas calibre pelo tom real da prosa daquele livro específico — um fantasy sombrio de vingança
@@ -127,7 +133,9 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
 "..."
 
 ## Configuração no ElevenLabs (sem campo de instrução)
-- Voz: que tipo escolher no preview (grave/ágil/etc, o oposto do que evitar)
+- Voz: use a voz do gênero já desenhada em `docs/marketing/audiobooks/genre_voice_design.md`
+  (Voice Design) se existir; senão, que tipo escolher no preview da biblioteca (grave/ágil/etc, o
+  oposto do que evitar)
 - Estabilidade: pra qual lado
 - Velocidade: pra qual lado
 - Modelo: v2 basta ou vale testar v3 com tags inline?
