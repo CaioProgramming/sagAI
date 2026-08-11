@@ -1,5 +1,13 @@
 # Vozes por Gênero — Voice Design (ElevenLabs)
 
+**Status: plano B, não o caminho padrão.** Testamos essas vozes geradas e o resultado saiu
+dramático/atuado demais — a expressividade fica "de fábrica" na voz e nenhum slider desfaz isso por
+completo. Isso quebra o objetivo de soar casual ("alguém comum lendo o livro", não uma performance).
+**O caminho padrão agora é escolher uma voz pronta da biblioteca do ElevenLabs** (ouça o preview até
+achar uma que combine com a `Essência` de cada gênero abaixo) e colar só o texto puro, sem nada
+gerado sob medida. Guarde este arquivo pra quando nenhuma voz da biblioteca servir pra um gênero
+específico — aí sim vale tentar desenhar uma.
+
 Prompts prontos pra colar em **Voices → My Voices → Add a new voice → Voice Design** (Realistic
 Voices) do ElevenLabs — um feminino e um masculino por gênero do app.
 

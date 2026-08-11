@@ -35,8 +35,12 @@ também é outra: contemporânea, cortante, glamourosa por fora e crua por dentr
 
 ## Configuração no ElevenLabs (Text to Speech / Estúdio — sem campo de instrução)
 
-O ElevenLabs não tem campo de instrução separado — só um box de texto + configurações ao lado. A
-instrução-base acima vira ajuste de interface, e aqui é o oposto do Vol. I de fantasia:
+O ElevenLabs não tem campo de instrução separado — só um box de texto + configurações ao lado. **A
+instrução-base acima nunca vai colada no box de texto** — se colar, o motor narra essas frases
+literalmente, como se fossem parte da história. Ela só existe pra orientar as escolhas abaixo. O
+único texto que vai no box é `01_texto_puro.txt`, nada mais. Testamos voz desenhada no Voice Design
+(`docs/marketing/audiobooks/genre_voice_design.md`) e saiu dramática/atuada demais — prefira uma voz
+pronta da biblioteca, aqui é o oposto do Vol. I de fantasia:
 
 - **Voz**: escolha uma com descrição tipo "confident", "sharp", "sleek" — nada "warm"/"cozy"/"easygoing"
   (a voz padrão sugerida no ElevenLabs costuma ser desse tipo confortável, não serve aqui). Prefira

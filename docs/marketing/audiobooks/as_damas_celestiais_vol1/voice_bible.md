@@ -38,8 +38,12 @@ isso, não o fantasy "nobre e arejado" genérico.
 
 ## Configuração no ElevenLabs (Text to Speech / Estúdio — sem campo de instrução)
 
-O ElevenLabs não tem campo de instrução separado — só um box de texto + configurações ao lado. A
-instrução-base acima vira ajuste de interface:
+O ElevenLabs não tem campo de instrução separado — só um box de texto + configurações ao lado. **A
+instrução-base acima nunca vai colada no box de texto** — se colar, o motor narra essas frases
+literalmente, como se fossem parte da história. Ela só existe pra orientar as escolhas abaixo. O
+único texto que vai no box é `01_texto_puro.txt`/`02_...`/`03_...`, nada mais. Testamos voz
+desenhada no Voice Design (`docs/marketing/audiobooks/genre_voice_design.md`) e saiu dramática/
+atuada demais — prefira uma voz pronta da biblioteca, como abaixo:
 
 - **Voz**: escolha uma com descrição tipo "calm", "deep", "weary", "grave" — evite as rotuladas
   "upbeat"/"bright"/"energetic" (a voz padrão sugerida geralmente é desse tipo, não serve aqui).

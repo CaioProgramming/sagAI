@@ -30,13 +30,21 @@ ElevenLabs Studio, ou colar no AI Studio) e a pessoa junta os arquivos de áudio
 
 **Importante sobre a interface do ElevenLabs**: nem "Text to Speech" nem "Estúdio" têm um campo de
 instrução separado tipo o do AI Studio — é só um box de texto pra colar a narração, com voz/modelo/
-sliders (Estabilidade, Velocidade, Similaridade) ao lado. A "Instrução-base" do `voice_bible.md`
-não é pra colar em lugar nenhum aí — ela vira a seção **"Configuração no ElevenLabs"** dentro do
-próprio `voice_bible.md`: qual tipo de voz escolher (pelo preview, não só pelo nome), pra que lado
-ajustar os sliders, e se vale usar tags de emoção inline (`[cansado]`, `[sussurrando]`) do modelo
-v3. Só o texto limpo do capítulo é colado no box — por isso cada capítulo também sai em formato
-`_texto_puro.txt` (ver seção "Formato do texto puro" abaixo): o `.md` anotado é material de
-preparo/referência, o `.txt` é o que realmente é selecionado e colado no ElevenLabs.
+sliders (Estabilidade, Velocidade, Similaridade) ao lado. **NUNCA cole a "Instrução-base" (ou
+qualquer texto de direção/estilo) nesse box — o motor vai narrar essas frases literalmente, como se
+fossem parte da história.** A instrução-base do `voice_bible.md` não vai colada em lugar nenhum da
+interface — ela só existe pra orientar a seção **"Configuração no ElevenLabs"** do próprio
+`voice_bible.md`: qual tipo de voz escolher (pelo preview, não só pelo nome) e pra que lado ajustar
+os sliders. O único texto que entra no box é o conteúdo de `_texto_puro.txt` (ver seção "Formato do
+texto puro" abaixo) — nada além disso, nunca.
+
+**Voz: prefira uma voz pronta da biblioteca a desenhar uma nova no Voice Design.** Testamos Voice
+Design (`docs/marketing/audiobooks/genre_voice_design.md`) e o resultado saiu dramático/atuado
+demais — a expressividade fica meio que "de fábrica" na voz gerada, e nenhum slider desfaz isso por
+completo. Uma voz pronta da biblioteca, ouvida por preview até encontrar uma que combine com a
+`Essência` do gênero, mais o texto puro sem nenhuma instrução colada, tende a soar mais como "alguém
+comum lendo o livro" — que é exatamente o efeito casual que queremos, não uma performance. Trate o
+Voice Design como plano B, só se nenhuma voz da biblioteca servir.
 
 ## Checkpoint do investimento
 
