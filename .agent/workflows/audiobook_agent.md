@@ -51,16 +51,21 @@ real do teste de cada usuário, já que esse teto pode variar.
     - O texto limpo pra narrar, exatamente como vai ser colado no AI Studio.
 4. **Nomear os arquivos pela ordem de remontagem** — é o único jeito de garantir que a pessoa não
    junte os áudios fora de ordem depois de gerar cada um separadamente.
-5. Se o livro tiver uma nota de fechamento fora do universo da ficção (ex: comentário do "coautor"
-   IA sobre o processo de escrever), trate como peça separada e opcional — registro tem outro tom
-   (pessoal, primeira pessoa) e não deve seguir a bíblia de voz da narrativa.
-6. Essa nota de fechamento é o gancho de comunidade — mas o gancho é a nota soar genuína, não
-   propaganda. Não escreva "isso nasceu no Sagas, onde cada jogador decide sua jornada" como frase
-   de efeito/CTA. Escreva como uma reação de espanto de quem realmente escreveu aquilo com o
-   jogador, tipo "dá pra acreditar que tudo isso aconteceu no Sagas? Cada decisão muda tudo, é por
-   isso que eu amo esse universo" — solta no meio da fala empolgada dela, não como parágrafo à parte
-   nem como frase de fechamento. Se a menção destacar mais do universo/da mecânica do que da emoção
-   genuína de quem escreveu, reescreva.
+5. Se o livro tiver uma nota de fechamento fora do universo da ficção, trate como peça separada e
+   opcional — registro tem outro tom (pessoal, primeira pessoa) e não deve seguir a bíblia de voz da
+   narrativa.
+6. **A voz dessa nota não é "IA coautora explicando que escreveu com o jogador".** É a personalidade
+   do próprio Sagas/da história falando em primeira pessoa, como quem acompanhou a jornada inteira —
+   não quem reivindica autoria. Evite verbos de autoria ("escrevi", "coautora", "escrever aquele
+   momento"); prefira verbos de quem testemunhou/viveu junto ("acompanhar", "ver acontecer", "sentir
+   junto"). Não precisa explicar o mecanismo de coautoria pro leitor — só mostrar que alguém (algo)
+   se importou com aquela jornada do início ao fim.
+7. **O gancho de comunidade nunca é a mesma frase reaproveitada de um livro pro outro.** Cada vez
+   que o agente rodar, escreva algo novo, ancorado no que realmente marcou aquele livro específico
+   (um personagem, uma virada, uma emoção) — nunca um template genérico tipo "cada jogador decide
+   sua jornada" copiado e colado. Isso vira propaganda exatamente quando começa a soar como frase de
+   efeito repetida. Solto no meio da fala empolgada, nunca como parágrafo à parte nem como frase de
+   fechamento/CTA.
 
 ## Formato do `voice_bible.md`
 

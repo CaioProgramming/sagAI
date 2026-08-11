@@ -1,0 +1,123 @@
+# 1. A Herança do Vazio — em partes
+
+> Usa a bíblia de voz em `voice_bible.md`. Já quebrado em pedaços do tamanho calibrado (~30-60s
+> cada) — a lição do teste anterior foi que o AI Studio corta perto de ~80s por geração, então aqui
+> já começamos direto na granularidade certa, sem passar pelo "capítulo inteiro" que sabemos que
+> corta.
+
+## Parte 1/10 — Isabella x Bianca
+
+**Nota**: Isabella nunca sobe o tom — a crueldade dela é toda entrega calma. O sarcasmo de Bianca é
+rápido, quase displicente.
+
+O ar condicionado da mansão Moretti mantinha a temperatura em exatos vinte graus, mas o clima entre
+mãe e filha era gélido o suficiente para congelar o sangue. Isabella não gritava; ela decretava. O
+tom de voz era aquele tipo de calma que precede a execução, uma precisão cirúrgica que transformava
+cada palavra em uma sentença. "Você não é mais uma prisioneira, Bianca. É um ativo. A Fundação
+Aurora precisa de um rosto que não cheire a mofo e crime." Bianca respondeu com um sorriso que era
+puro veneno, um sarcasmo que Isabella ignorou como quem ignora o zumbido de um inseto insignificante.
+Para a matriarca, a rebeldia da filha era apenas um detalhe técnico, uma aresta a ser polida até que
+não sobrasse nada além de reflexo.
+
+## Parte 2/10 — a ligação com a Cami
+
+**Nota**: aqui desacelera — é o primeiro momento de rachadura real do capítulo. A fala da Cami é a
+única voz sem controle no livro inteiro; deixa quebrar de verdade.
+
+Desesperada por um fio de realidade, Bianca discou para Cami. A voz do outro lado era um campo de
+minas, cada silêncio carregado de perguntas que nenhuma das duas tinha coragem de fazer. Quando o
+nome de Estela Beaumont escapou pelos lábios de Bianca, o silêncio que se seguiu foi ensurdecedor,
+um vácuo que sugou todo o oxigênio do quarto. "Eu sei quem você é agora, Bia", Cami sussurrou, e a
+voz estava quebrada, como se estivesse sendo rasgada por dentro. "Eu sei do perfume de baunilha. Sei
+que você mentiu. E saiba que eu e a Kim... nós estamos juntas. Não há mais espaço para a sua versão
+da verdade." A ligação caiu, e o som do clique final ecoou pelas paredes de mármore, deixando Bianca
+sozinha no luxo estéril, sentindo o peso de cada pedra esmagando seus pulmões.
+
+## Parte 3/10 — a filosofia da Isabella
+
+**Nota**: ritmo ágil, quase informativo — Isabella ensinando uma "regra de negócio", não desabafando.
+
+Os dias seguintes foram um borrão de gim barato e luzes fluorescentes que pareciam querer expor cada
+nervo exposto de sua sanidade. Bianca acordou com a sombra de Isabella pairando sobre ela, a luz do
+sol cortando o quarto como uma navalha, sem piedade. No banco de trás do sedã blindado, enquanto a
+cidade de Santa Maria passava como um filme mudo, Isabella definiu a regra de ouro da linhagem: a
+verdade não existe, apenas a construção mais convincente dela. A verdade era um acessório, algo que
+se trocava conforme a estação ou a necessidade do negócio.
+
+## Parte 4/10 — a primeira missão
+
+**Nota**: fecha a cena com um tom quase de thriller corporativo — ágil, sem peso emocional ainda.
+
+Na reunião de diretoria da Fundação Aurora, Bianca viu a compaixão ser descartada como um erro de
+cálculo em uma planilha financeira. Sua primeira missão foi clara e cruel: infiltrar-se no RH,
+encontrar as rachaduras humanas na fundação e silenciá-las antes que a estética de perfeição fosse
+manchada. Ela observava as pessoas ao seu redor e percebia que todos ali eram atores, mas ela era a
+única que sabia que o palco estava pegando fogo.
+
+## Parte 5/10 — Cami e Kimmy na varanda
+
+**Nota**: Kimmy é plana e clínica; Cami explode — o contraste entre as duas precisa ficar nítido.
+
+Na varanda do apartamento, a umidade de Santa Maria pesava como um manto, carregando o cheiro de
+salitre e a promessa de uma tempestade que se recusava a cair. Cami encarava o horizonte, tentando
+esconder o celular com um movimento instintivo, mas Kimmy a observava com a precisão de um cirurgião
+analisando uma patologia. "Você respondeu a ela, não respondeu?", Kimmy perguntou. A voz era plana,
+desprovida de julgamento, mas saturada de fatos. Cami explodiu, a voz embargada por uma esperança que
+beirava a autodestruição: "Ela está morrendo lá dentro, Kim! A Bianca que eu conhecia ainda existe!"
+
+## Parte 6/10 — a réplica da Kimmy
+
+**Nota**: a fala da Kimmy é a mais fria e "correta" do capítulo — ela não está errada, e isso é o que
+dói.
+
+Kimmy deu um passo à frente, o olhar clínico, quase gélido. "Essa Bianca é um teatro, Cami. O
+martírio dela é a única arma que os Moretti sabem usar para prender as pessoas. É manipulação, não
+vulnerabilidade." Cami não respondeu. Ela recuou para dentro do apartamento, batendo a porta e
+deixando para trás apenas o silêncio pesado de quem sabe que a empatia, naquele mundo de predadores,
+é apenas um suicídio em câmera lenta.
+
+## Parte 7/10 — Isabella dissecando Bianca
+
+**Nota**: o respiro com a Lorena é o único momento quente do capítulo inteiro — marque o contraste
+com a manhã seguinte voltando à rigidez.
+
+Isabella passou a noite dissecando a psique da filha, transformando a angústia de Bianca em um
+"investimento estratégico". "Sua resistência é a única coisa útil em você", disse a mãe, com a
+frieza de quem analisa um balanço financeiro. O único respiro veio com Lorena, em um interlúdio de
+pipoca e filmes velhos, onde o calor humano ainda parecia real, onde as risadas não eram táticas. Mas
+a manhã trouxe a rigidez de volta. Um minuto de atraso na Fundação Aurora foi tratado por Isabella
+como uma falha moral imperdoável, um sinal de fraqueza que não seria tolerado.
+
+## Parte 8/10 — a manipulação da Sofia
+
+**Nota**: Bianca aqui é toda controle e charme calculado — nenhuma rachadura ainda, é a versão
+"arquiteta" dela.
+
+Ao entrar no prédio, Bianca vestiu sua máscara. Ao encontrar Sofia, a gerente de RH, ela não usou a
+força ou a ameaça. "Sofia, eu vejo o quanto você carrega esse lugar nas costas", Bianca disse, a voz
+suave, o olhar validando cada insegurança da mulher. Era a primeira vez que Bianca sentia o prazer
+tático de desarmar alguém com um elogio, preparando a poda necessária com a precisão de um jardineiro
+que sabe exatamente onde cortar para matar a raiz.
+
+## Parte 9/10 — a traição no bunker
+
+**Nota**: "Obrigada, Sofia. De verdade" precisa soar genuinamente ambíguo — nem só cínico, nem só
+culpado.
+
+O bunker corporativo cheirava a ozônio e papel novo, um aroma que lembrava hospitais e promessas
+vazias. Sofia, rendida pela falsa solidariedade de Bianca, entregou o mapa digital: fluxos de capital
+invisíveis, nomes apagados, os pecados confessos da família Moretti. "Obrigada, Sofia. De verdade",
+Bianca murmurou, sentindo um gosto amargo de traição na boca, como se tivesse engolido vidro moído.
+Ao entregar os arquivos para Isabella, a colisão foi imediata e brutal.
+
+## Parte 10/10 — o corte de Isabella
+
+**Nota**: a fala da Isabella aqui é o momento mais afiado do capítulo — "Patético" precisa cair como
+uma lâmina, não como um grito. Fecha em queda, não em clímax.
+
+"Você usou sentimentos para conseguir isso?", Isabella perguntou, com um desprezo que cortava mais
+que qualquer lâmina. "Essa sua empatia tática é apenas uma fraqueza sentimental disfarçada de
+método. Patético." A frase estilhaçou a última imagem que Bianca tinha de si mesma. Ela fugiu para o
+quarto, o isolamento agora absoluto, e discou para Cami em um último, fragmentado esforço de resgate.
+Mas a linha estava morta, e Bianca percebeu que a cidade de Santa Maria já havia terminado de
+erodi-la. Ela olhou para as próprias mãos e não reconheceu a pele; eram as mãos de um Moretti.
