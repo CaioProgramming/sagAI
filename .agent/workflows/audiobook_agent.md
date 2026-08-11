@@ -97,7 +97,16 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
    decisão" como descrição de como o app funciona). Fale do resultado/sentimento, não do
    funcionamento: "cada decisão é sua", "essa é a história dela do começo ao fim" — a ideia é a
    pessoa sentir a autoria do jogador, não receber uma explicação de mecânica de turnos.
-9. **A nota de fechamento também tem teto no AI Studio (~80s) — e não deve ser quebrada em partes
+9. **O objetivo é soar como alguém amador gravando em casa, não como um estúdio profissional.**
+   Hoje em dia tem bastante desconfiança com conteúdo gerado por IA — uma voz perfeita demais,
+   produzida demais, é exatamente o que ativa esse radar. Na escolha de voz no ElevenLabs, prefira
+   rótulos "conversational" a "narration"/"broadcast" quando existir a opção, mesmo nos capítulos de
+   ficção, e não busque estabilidade no máximo — uma leitura com alguma variação natural soa mais
+   humana que uma perfeitamente uniforme. Isso vale ainda mais pra nota de fechamento (regra 10):
+   ela deve soar como alguém realmente gravando um áudio pros amigos/comunidade — auto-interrupções,
+   reação no calor do momento, frase que não fecha perfeitinha, sem gancho de call-to-action
+   roteirizado ("preparem-se, vem coisa incrível por aí"). Real vale mais que polido.
+10. **A nota de fechamento também tem teto no AI Studio (~80s) — e não deve ser quebrada em partes
    como os capítulos**, mesmo nesse fallback. É uma reflexão única, contínua; fatiá-la em "parte
    1/2" quebra a intimidade do formato. Em vez de quebrar, **reescreva-a mais curta**: releia a
    história inteira, identifique o que a nota está realmente tentando dizer (os 2-3 momentos que

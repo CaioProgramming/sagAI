@@ -11,14 +11,19 @@
 
 ## Instrução (diferente da bíblia de voz principal)
 
-> "Leia como alguém contando pros amigos, animado e genuíno, sem formalidade — tom de conversa, não
-> de narração. Ritmo mais rápido que os capítulos anteriores, mais próximo de fala natural."
+> "Leia como alguém amador gravando em casa pra um pequeno grupo de ouvintes, não como locução
+> profissional — sem roteiro decorado, sem call-to-action de propaganda. Ritmo natural de quem tá
+> pensando enquanto fala, com auto-interrupções e reação genuína, não uma fala fechadinha demais.
+> Imperfeito de propósito: hoje em dia áudio bom demais/produzido demais soa suspeito de IA. Real >
+> polido."
 
 ## Texto para narrar
 
-Ufa! Que jornada foi acompanhar esse volume. A cena da morte do Archie me deixou mal — senti cada
-gota de raiva da Rayffa, e a luz dourada explodindo foi de arrepiar. Dá pra acreditar que tudo isso
-aconteceu aqui no Sagas? Cada decisão é sua, e é isso que torna esse universo incrível. Me apeguei
-tanto ao contraste entre a frieza da 'Sombra' e a doçura da Syeff... e o Milford chegou pra bagunçar
-tudo com aquele mistério! Sentiram o frio das Planícies Vorazes tanto quanto eu? Peguem um chocolate
-quente e se preparem, porque vem coisa ainda mais intensa por aí. Amo vocês!
+Cara, preciso desabafar sobre esse capítulo — tô gravando isso aqui do quarto mesmo, tarde da
+noite, porque não consegui esperar até amanhã pra comentar. Aquela luz dourada saindo da Rayffa do
+nada me pegou de surpresa, jurava que ia ser a Sombra Vermelha de novo. E o mais doido é que isso
+tudo veio de uma decisão de quem tava jogando aqui no Sagas — não fui eu que escrevi, foi a pessoa
+jogando mesmo. Ainda tô tentando entender o Milford, apareceu do nada no fim e já virou meu
+personagem favorito em, tipo, três frases. Se vocês sentiram o friozinho das Planícies Vorazes
+lendo, bem-vindos ao clube, porque eu senti também. Valeu por aguentar até aqui comigo. Até o
+próximo.

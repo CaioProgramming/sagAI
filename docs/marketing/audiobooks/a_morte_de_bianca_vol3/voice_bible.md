@@ -29,7 +29,10 @@ O ElevenLabs não tem campo de instrução separado — só um box de texto + co
 instrução-base acima vira ajuste de interface, e aqui é o oposto do Vol. I de fantasia:
 
 - **Voz**: escolha uma com descrição tipo "confident", "sharp", "sleek" — nada "warm"/"cozy"/"easygoing"
-  (a voz padrão sugerida no ElevenLabs costuma ser desse tipo confortável, não serve aqui).
+  (a voz padrão sugerida no ElevenLabs costuma ser desse tipo confortável, não serve aqui). Prefira
+  "conversational" a "narration"/"broadcast" quando existir a opção — mesmo esse livro sendo mais
+  produzido/glamouroso na trama, a leitura não deve soar locução de estúdio, e sim alguém real e
+  fascinado narrando.
 - **Estabilidade**: pro lado de **"Mais variável"** (ou meio-termo) — esse livro precisa de mais
   nuance emocional entre a frieza calculada e as raras rachaduras reais; estabilidade alta demais
   deixa tudo monótono, o oposto do "fascínio" que a direção de voz pede.

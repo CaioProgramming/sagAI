@@ -30,9 +30,13 @@ instrução-base acima vira ajuste de interface:
 
 - **Voz**: escolha uma com descrição tipo "calm", "deep", "weary", "grave" — evite as rotuladas
   "upbeat"/"bright"/"energetic" (a voz padrão sugerida geralmente é desse tipo, não serve aqui).
-  Ouça o preview antes de bater o olho na descrição.
+  Ouça o preview antes de bater o olho na descrição. Prefira vozes rotuladas "conversational" a
+  "narration"/"broadcast" quando existir a opção — o objetivo não é soar audiolivro profissional de
+  estúdio, é soar alguém real lendo com sentimento contido.
 - **Estabilidade**: pro lado de **"Mais estável"** — leitura mais controlada, menos variação
-  aleatória, sem exagero de performance (é o equivalente ao "sem teatralidade" da instrução).
+  aleatória, sem exagero de performance (é o equivalente ao "sem teatralidade" da instrução). Mas
+  não no máximo: estabilidade 100% soa robótica/perfeita demais, o que hoje em dia é exatamente o
+  que ativa o radar de "isso é IA". Deixe uma pequena variação natural.
 - **Velocidade**: pro lado de **"Mais devagar"** — é o "ritmo pausado, não acelere".
 - **Modelo**: v2 já deve dar conta só com voz + sliders certos. Se quiser mais controle fino, o v3
   aceita tags de emoção dentro do próprio texto colado (ex: `[cansado]`, `[pausa]`) — opcional, teste
