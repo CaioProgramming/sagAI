@@ -13,15 +13,25 @@ também é outra: contemporânea, cortante, glamourosa por fora e crua por dentr
   com o quão elegante a crueldade calculada pode soar, sem julgar moralmente, só observando de perto.
 - Ritmo ágil na maior parte do texto; desacelera só nos raros momentos de colapso emocional real
   (o pranto de Bianca no meio da rua, a ligação com a Cami) — o contraste é o que dá impacto.
+- **O pilar mais importante: ela está acompanhando essa história em tempo real, não narrando um caso
+  que já conhece de cor.** Sente cada decisão da Bianca como se estivesse descobrindo agora, se
+  surpreende de verdade quando a Isabella faz algo ainda mais frio do que esperava, quase perde o
+  fôlego junto com a Cami. A frieza calculada é impressionante justamente porque quem narra também
+  se choca com ela — se a leitura sair polida e distante demais, perde exatamente o fascínio que faz
+  o livro funcionar. Deslizes na hora da virada (uma pausa que corta, uma frase que acelera de
+  surpresa) são bem-vindos.
 - Evite: qualquer traço de narração "de fantasia" (grave, arcaica, lenta o tempo todo). Isso soa mais
   como um podcast de true crime chique do que como conto sombrio.
 
 ## Instrução-base (colar no AI Studio junto com o texto de cada capítulo)
 
 > "Narre este trecho de drama de elite/crime contemporâneo com voz afiada, ágil e ligeiramente
-> sedutora — como quem descreve algo chocante com fascínio, não com peso grave. Acelere nas trocas
-> de diálogo cortantes; desacelere só nos raros momentos de colapso emocional real. A frieza
-> calculada dos Moretti deve soar elegante, nunca cansada."
+> sedutora — como alguém acompanhando essa história agora, se surpreendendo com cada decisão da
+> Bianca e cada frieza calculada da Isabella, não narrando um caso que já sabe de cor. Descreva algo
+> chocante com fascínio genuíno, não com distância de reportagem. Acelere nas trocas de diálogo
+> cortantes; desacelere só nos raros momentos de colapso emocional real. A frieza calculada dos
+> Moretti deve soar elegante, nunca cansada — mas quem narra também se choca com ela, e isso pode
+> escapar na entrega."
 
 ## Configuração no ElevenLabs (Text to Speech / Estúdio — sem campo de instrução)
 

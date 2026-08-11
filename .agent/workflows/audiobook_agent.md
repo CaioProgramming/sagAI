@@ -114,15 +114,18 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
    ela deve soar como alguém realmente gravando um áudio pros amigos/comunidade — auto-interrupções,
    reação no calor do momento, frase que não fecha perfeitinha, sem gancho de call-to-action
    roteirizado ("preparem-se, vem coisa incrível por aí"). Real vale mais que polido.
-9c. **"Contido" não é sinônimo de neutro — a narradora também é leitora, e está apegada à história.**
-   Descoberto testando a voz de Fantasy: um narrador perfeitamente equilibrado o tempo todo soa
-   artificial/perdido, não "cansado e contido" como pretendido. Ela segura a emoção porque se
-   importa, não porque não sente nada — e às vezes essa emoção escapa: um leve tremor num momento
-   pesado, uma pausa que quebra o ritmo, uma frase que sai rápida demais porque ela quer chegar logo
-   no que vem a seguir. Isso vale pra todo gênero, mas exige atenção redobrada nos mais minimalistas/
-   frios (Horror, Shinobi, Cowboy, Heroes), que erram mais fácil pro lado robótico. Na prática:
-   Estabilidade no ElevenLabs não deve ir pro extremo "Mais estável" mesmo em vozes contidas — puxe
-   pro meio-termo, com oscilação real o bastante pra soar como alguém que sente a história.
+9c. **O pilar mais importante de todos: a narradora acompanha a história em tempo real, não recita
+   fatos que já conhece de cor.** Descoberto testando a voz de Fantasy: um narrador perfeitamente
+   equilibrado o tempo todo soa artificial/perdido, não "cansado e contido" como pretendido. Ela não
+   é uma testemunha calma relatando o passado — é alguém lendo agora, sentindo cada decisão das
+   personagens junto com quem ouve, se surpreendendo de verdade com as reviravoltas na hora em que
+   elas acontecem. "Contido" não é sinônimo de neutro: ela segura a emoção porque se importa, não
+   porque não sente nada. Deixe deslizes acontecerem exatamente nos momentos de virada — um leve
+   tremor, uma pausa que quebra o ritmo quando algo surpreende, uma frase que acelera de emoção. Isso
+   vale pra todo gênero, mas exige atenção redobrada nos mais minimalistas/frios (Horror, Shinobi,
+   Cowboy, Heroes), que erram mais fácil pro lado robótico/distante. Na prática: Estabilidade no
+   ElevenLabs não deve ir pro extremo "Mais estável" mesmo em vozes contidas — puxe pro meio-termo,
+   com oscilação real o bastante pra soar como alguém vivendo a história, não recitando.
 10. **A nota de fechamento também tem teto no AI Studio (~80s) — e não deve ser quebrada em partes
    como os capítulos**, mesmo nesse fallback. É uma reflexão única, contínua; fatiá-la em "parte
    1/2" quebra a intimidade do formato. Em vez de quebrar, **reescreva-a mais curta**: releia a

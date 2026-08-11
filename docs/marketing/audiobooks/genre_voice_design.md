@@ -45,12 +45,16 @@ de imperfeição natural — voz real gravando em casa, não locução de estúd
 todos os 9 gêneros, mesmo os mais "grandiosos" na ficção (Heroes, Space Opera): a entrega pode ser
 dramática no conteúdo, mas nunca soar produzida demais.
 
-**Regra da leitora envolvida** (ver `audiobook_agent.md`, regra 9c — descoberta testando a voz de
-Fantasy, que saiu impassível/artificial demais no primeiro teste): "contido"/"restrained" não pode
-virar sinônimo de neutro. A narradora de qualquer gênero também é leitora da própria história, está
-apegada a ela, e às vezes essa emoção escapa — um deslize, um tremor, uma pressa. Nos gêneros mais
-minimalistas/frios (Horror, Shinobi, Cowboy, Heroes) isso é ainda mais fácil de errar pro lado
-robótico — tome cuidado extra ao testar essas vozes.
+**Regra da leitora envolvida — o pilar mais importante de todos** (ver `audiobook_agent.md`, regra
+9c — descoberta testando a voz de Fantasy, que saiu impassível/artificial demais no primeiro teste):
+"contido"/"restrained" não pode virar sinônimo de neutro. A narradora de qualquer gênero está
+acompanhando a história **em tempo real**, não recontando fatos que já conhece de cor — sente cada
+decisão das personagens junto com quem ouve, se surpreende de verdade com as reviravoltas na hora em
+que elas acontecem. Não é uma testemunha calma relatando o passado, é alguém lendo agora e vivendo
+junto. Por isso pequenos deslizes humanos nos momentos de virada (um tremor, uma pausa que quebra o
+ritmo, uma frase que acelera de surpresa) não são defeito — são a prova de que ela também está
+sentindo. Nos gêneros mais minimalistas/frios (Horror, Shinobi, Cowboy, Heroes) isso é ainda mais
+fácil de errar pro lado robótico — tome cuidado extra ao testar essas vozes.
 
 ---
 
@@ -61,17 +65,19 @@ Brutalidade e beleza são a mesma matéria. A voz reflete o que essa pessoa já 
 não performance.
 
 - **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 30-45. Ok
-  quality. Persona: weary survivor, quietly guarded, but genuinely invested in the story — not a
-  neutral reporter. Emotion: restrained, tired, resolute, with real feeling breaking through. Low,
-  rough timbre with slow pacing and real pauses between weighted sentences; unpolished, homemade
-  delivery with occasional natural imperfection — a catch in the voice, a slightly rushed line —
-  never perfectly composed, not a professional voice actress.*
+  quality. Persona: someone reading this story out loud right now, living it in real time — not a
+  narrator who already knows how it ends. Emotion: weary and restrained most of the time, but
+  genuinely caught off guard by plot twists — feeling each character's decision as it happens. Low,
+  rough timbre with slow pacing and real pauses; natural imperfection exactly at turning points — a
+  catch in the voice, a rushed line, a pause that breaks the rhythm when something surprises her —
+  never perfectly composed, not a professional voice actress reciting a script she already knows.*
 - **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 40-55. Ok quality.
-  Persona: hardened elder, quiet authority, but genuinely invested in the story — not a neutral
-  reporter. Emotion: grave, weary, resolute, with real feeling breaking through. Deep, raspy timbre
-  with slow pacing and long pauses before heavy sentences; slightly imperfect, homemade delivery
-  with occasional natural imperfection — a catch in the voice, a slightly rushed line — never
-  perfectly composed, not an epic trailer narrator.*
+  Persona: someone reading this story out loud right now, living it in real time — not a narrator
+  who already knows how it ends. Emotion: grave and weary most of the time, but genuinely caught off
+  guard by plot twists — feeling each character's decision as it happens. Deep, raspy timbre with
+  slow pacing and long pauses; natural imperfection exactly at turning points — a catch in the
+  voice, a rushed line — never perfectly composed, not an epic trailer narrator reciting a script he
+  already knows.*
 
 ## Cyberpunk · *Neon & Tech*
 
@@ -122,13 +128,18 @@ perguntado depois. Fascínio mórbido pela crueldade calculada, nunca julgamento
 (Já validado no piloto de "A Morte de Bianca".)
 
 - **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 28-40. Ok
-  quality. Persona: fascinated elite narrator. Emotion: confident, sharp, seductive. Agile pacing
-  that slows only for real emotional collapse, smooth timbre; natural, slightly raw delivery, like a
-  homemade true-crime podcast, not a produced documentary voiceover.*
+  quality. Persona: someone reading this story out loud right now, hooked and reacting live to it —
+  not a host who already knows the whole case. Emotion: confident and sharp most of the time, but
+  visibly thrown, delighted, or unsettled when a character makes a shocking decision, as if
+  discovering it in the moment. Agile pacing that catches or slows exactly when something genuinely
+  surprises her; smooth timbre with natural imperfection at emotional peaks. Homemade delivery, like
+  someone recording a true-crime podcast for friends, not a produced documentary voiceover.*
 - **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 30-42. Ok quality.
-  Persona: fascinated observer of power. Emotion: confident, cutting, intrigued. Sharp timbre, agile
-  pacing with cutting short sentences; imperfect, natural delivery, no professional-narration
-  polish.*
+  Persona: someone reading this story out loud right now, hooked and reacting live to it — not a
+  host who already knows the whole case. Emotion: confident and cutting most of the time, but
+  visibly thrown or fascinated when a character makes a shocking decision, as if discovering it in
+  the moment. Sharp timbre, agile pacing that catches at turning points; imperfect, natural
+  delivery, no professional-narration polish.*
 
 ## Shinobi · *Blades & Honor*
 

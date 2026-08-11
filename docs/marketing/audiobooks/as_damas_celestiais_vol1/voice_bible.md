@@ -13,26 +13,28 @@ isso, não o fantasy "nobre e arejado" genérico.
 - A emoção mora no timbre, não na performance. Evite qualquer entonação "de apresentador". Rayffa é
   uma personagem que reprime sentimento — a leitura reflete isso: contida por fora, pesada por
   dentro.
-- **A narradora não é neutra — ela também é leitora, e está apegada à história.** "Contida" não é
-  sinônimo de impassível: é alguém segurando a emoção porque se importa, não porque não sente nada.
-  Se a leitura sair perfeitamente equilibrada o tempo todo, ela vira artificial — o oposto do
-  objetivo. Deixe pequenos deslizes humanos acontecerem: uma pausa que quebra o ritmo, um leve
-  tremor na voz num momento pesado, uma frase que sai um pouco apressada porque ela quer chegar logo
-  no que vem a seguir, um instante em que a imparcialidade escorrega e dá pra sentir que ela também
-  torce por essas personagens. Isso não é erro de qualidade — é o que a torna crível como pessoa, não
-  como máquina lendo com sotaque grave.
+- **O pilar mais importante: ela está acompanhando a história em tempo real, não recontando fatos já
+  sabidos.** Nada de "testemunha calma relatando o passado" — é alguém lendo agora, sentindo cada
+  decisão das personagens junto com quem ouve, se surpreendendo com as reviravoltas na hora em que
+  elas acontecem. "Contida" não é sinônimo de impassível: é alguém segurando a emoção porque se
+  importa, não porque não sente nada. Se a leitura sair perfeitamente equilibrada o tempo todo, ela
+  vira artificial — o oposto do objetivo. Deixe pequenos deslizes humanos acontecerem exatamente nos
+  momentos de virada: uma pausa que quebra o ritmo quando algo inesperado acontece, um leve tremor
+  na voz num momento pesado, uma frase que sai um pouco apressada porque ela também quer saber o que
+  vem a seguir. Isso não é erro de qualidade — é o que a torna crível como pessoa lendo e vivendo a
+  história, não como máquina narrando fatos já conhecidos.
 - Evite: voz jovem/brilhante, ritmo acelerado, entonação de conto infantil, qualquer sotaque
   caricato de "fantasia medieval".
 
 ## Instrução-base (colar no AI Studio junto com o texto de cada capítulo)
 
 > "Narre este trecho de fantasia sombria com voz grave e cansada, ritmo pausado (não acelere), como
-> alguém que testemunhou tragédias e agora relata os fatos com peso emocional contido — mas não como
-> uma repórter neutra. Você também é leitora dessa história e está apegada a ela; de vez em quando
-> essa emoção escapa: um leve tremor, uma pausa que quebra o ritmo perfeito, uma frase que sai rápida
-> demais porque você quer chegar logo no que vem a seguir. Sem teatralidade, sem exagero de
-> performance — mas também sem frieza impecável. Um deslize ocasional é bem-vindo, é o que soa
-> humano."
+> alguém lendo essa história agora, pela primeira vez, sentindo cada decisão das personagens e se
+> surpreendendo com as reviravoltas junto com quem ouve — não uma testemunha calma recontando fatos
+> já sabidos. Peso emocional contido, mas nunca frieza impecável: de vez em quando essa emoção
+> escapa, principalmente nos momentos de virada — um leve tremor, uma pausa que quebra o ritmo
+> perfeito, uma frase que sai rápida demais porque você também quer saber o que vem a seguir. Sem
+> teatralidade, sem exagero de performance. Um deslize ocasional é bem-vindo, é o que soa humano."
 
 ## Configuração no ElevenLabs (Text to Speech / Estúdio — sem campo de instrução)
 
