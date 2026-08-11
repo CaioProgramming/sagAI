@@ -54,10 +54,13 @@ real do teste de cada usuário, já que esse teto pode variar.
 5. Se o livro tiver uma nota de fechamento fora do universo da ficção (ex: comentário do "coautor"
    IA sobre o processo de escrever), trate como peça separada e opcional — registro tem outro tom
    (pessoal, primeira pessoa) e não deve seguir a bíblia de voz da narrativa.
-6. Essa nota de fechamento é o gancho de comunidade: sempre mencionar, de forma natural (não como
-   slogan colado), que a saga nasceu dentro do Sagas — turno por turno, decisão do jogador por
-   decisão — reforçando que "cada jogador decide a própria jornada". Isso é o que fecha o loop entre
-   o áudio e o app pra quem só está ouvindo/assistindo, sem ter aberto o Sagas ainda.
+6. Essa nota de fechamento é o gancho de comunidade — mas o gancho é a nota soar genuína, não
+   propaganda. Não escreva "isso nasceu no Sagas, onde cada jogador decide sua jornada" como frase
+   de efeito/CTA. Escreva como uma reação de espanto de quem realmente escreveu aquilo com o
+   jogador, tipo "dá pra acreditar que tudo isso aconteceu no Sagas? Cada decisão muda tudo, é por
+   isso que eu amo esse universo" — solta no meio da fala empolgada dela, não como parágrafo à parte
+   nem como frase de fechamento. Se a menção destacar mais do universo/da mecânica do que da emoção
+   genuína de quem escreveu, reescreva.
 
 ## Formato do `voice_bible.md`
 

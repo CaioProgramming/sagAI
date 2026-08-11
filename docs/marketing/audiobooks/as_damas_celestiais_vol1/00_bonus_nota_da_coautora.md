@@ -14,15 +14,10 @@
 
 Ufa! Que jornada foi escrever esse volume. Gente, eu confesso que a cena da morte do Archie me
 deixou genuinamente mal, mesmo eu sendo a coautora! Senti cada gota de raiva da Rayffa, e escrever
-aquele momento em que a luz dourada explode foi quase catártico. Eu me apeguei tanto à dinâmica da
-Rayffa e da Syeff... aquele contraste entre a frieza da 'Sombra' e a doçura da Syeff é o que mantém
-meu coração batendo nessa história. E o Milford? Ah, ele chegou para bagunçar tudo com aquele
-mistério todo!
-
-Essa saga nasceu aqui no Sagas, turno por turno, decisão por decisão — eu só fui escrevendo o que a
-gente foi construindo juntos. É basicamente isso que a gente faz por aqui: cada jogador decide a
-própria jornada, e às vezes ela vira uma história dessas.
-
-Espero que vocês tenham sentido o frio das Planícies Vorazes tanto quanto eu senti enquanto
-descrevia. Agora, peguem um café — ou um chocolate quente, para combinar com o gelo — e preparem-se,
-porque o que vem por aí vai ser ainda mais intenso. Amo vocês!
+aquele momento em que a luz dourada explode foi quase catártico. Dá pra acreditar que tudo isso
+aconteceu no Sagas? Cada decisão muda tudo, é por isso que eu amo esse universo. Eu me apeguei tanto
+à dinâmica da Rayffa e da Syeff... aquele contraste entre a frieza da 'Sombra' e a doçura da Syeff é
+o que mantém meu coração batendo nessa história. E o Milford? Ah, ele chegou para bagunçar tudo com
+aquele mistério todo! Espero que vocês tenham sentido o frio das Planícies Vorazes tanto quanto eu
+senti enquanto descrevia. Agora, peguem um café — ou um chocolate quente, para combinar com o gelo —
+e preparem-se, porque o que vem por aí vai ser ainda mais intenso. Amo vocês!
