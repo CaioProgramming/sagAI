@@ -23,6 +23,23 @@ isso, não o fantasy "nobre e arejado" genérico.
 > teatralidade, sem pressa. Deixe pausas reais entre frases carregadas. A emoção aparece no timbre,
 > nunca em exagero de performance."
 
+## Configuração no ElevenLabs (Text to Speech / Estúdio — sem campo de instrução)
+
+O ElevenLabs não tem campo de instrução separado — só um box de texto + configurações ao lado. A
+instrução-base acima vira ajuste de interface:
+
+- **Voz**: escolha uma com descrição tipo "calm", "deep", "weary", "grave" — evite as rotuladas
+  "upbeat"/"bright"/"energetic" (a voz padrão sugerida geralmente é desse tipo, não serve aqui).
+  Ouça o preview antes de bater o olho na descrição.
+- **Estabilidade**: pro lado de **"Mais estável"** — leitura mais controlada, menos variação
+  aleatória, sem exagero de performance (é o equivalente ao "sem teatralidade" da instrução).
+- **Velocidade**: pro lado de **"Mais devagar"** — é o "ritmo pausado, não acelere".
+- **Modelo**: v2 já deve dar conta só com voz + sliders certos. Se quiser mais controle fino, o v3
+  aceita tags de emoção dentro do próprio texto colado (ex: `[cansado]`, `[pausa]`) — opcional, teste
+  se o v2 não estiver saindo pesado o suficiente.
+- Fixe a mesma voz + os mesmos sliders pros 3 capítulos — é o que garante consistência sem instrução
+  escrita.
+
 ## Personagens que falam
 
 Um narrador só, sem trocar de voz — module levemente o tom nas falas diretas, sem imitação:

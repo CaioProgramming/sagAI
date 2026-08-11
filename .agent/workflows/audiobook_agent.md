@@ -28,6 +28,14 @@ ElevenLabs Studio, ou colar no AI Studio) e a pessoa junta os arquivos de áudio
 - Produza sempre o `.md` de capítulo inteiro primeiro (é o formato do ElevenLabs e também serve de
   fonte pra fatiar depois, se precisar do fallback).
 
+**Importante sobre a interface do ElevenLabs**: nem "Text to Speech" nem "Estúdio" têm um campo de
+instrução separado tipo o do AI Studio — é só um box de texto pra colar a narração, com voz/modelo/
+sliders (Estabilidade, Velocidade, Similaridade) ao lado. A "Instrução-base" do `voice_bible.md`
+não é pra colar em lugar nenhum aí — ela vira a seção **"Configuração no ElevenLabs"** dentro do
+próprio `voice_bible.md`: qual tipo de voz escolher (pelo preview, não só pelo nome), pra que lado
+ajustar os sliders, e se vale usar tags de emoção inline (`[cansado]`, `[sussurrando]`) do modelo
+v3. Só o texto limpo do capítulo é colado no box.
+
 ## Checkpoint do investimento
 
 **Não é trial grátis** — "2 meses grátis" é o desconto do plano anual (paga 10 meses, leva 12): o
@@ -99,8 +107,14 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
 ## Direção de voz
 (registro, ritmo, o que evitar — específico ao tom real da prosa, não só o gênero genérico)
 
-## Instrução-base (colar junto com o texto)
+## Instrução-base (colar no AI Studio junto com o texto)
 "..."
+
+## Configuração no ElevenLabs (sem campo de instrução)
+- Voz: que tipo escolher no preview (grave/ágil/etc, o oposto do que evitar)
+- Estabilidade: pra qual lado
+- Velocidade: pra qual lado
+- Modelo: v2 basta ou vale testar v3 com tags inline?
 
 ## Personagens que falam
 - <Nome>: como modular sem trocar de narrador

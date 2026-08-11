@@ -23,6 +23,23 @@ também é outra: contemporânea, cortante, glamourosa por fora e crua por dentr
 > de diálogo cortantes; desacelere só nos raros momentos de colapso emocional real. A frieza
 > calculada dos Moretti deve soar elegante, nunca cansada."
 
+## Configuração no ElevenLabs (Text to Speech / Estúdio — sem campo de instrução)
+
+O ElevenLabs não tem campo de instrução separado — só um box de texto + configurações ao lado. A
+instrução-base acima vira ajuste de interface, e aqui é o oposto do Vol. I de fantasia:
+
+- **Voz**: escolha uma com descrição tipo "confident", "sharp", "sleek" — nada "warm"/"cozy"/"easygoing"
+  (a voz padrão sugerida no ElevenLabs costuma ser desse tipo confortável, não serve aqui).
+- **Estabilidade**: pro lado de **"Mais variável"** (ou meio-termo) — esse livro precisa de mais
+  nuance emocional entre a frieza calculada e as raras rachaduras reais; estabilidade alta demais
+  deixa tudo monótono, o oposto do "fascínio" que a direção de voz pede.
+- **Velocidade**: neutro a levemente **"Mais rápido"** — é o "ágil", oposto do ritmo pausado da
+  fantasia.
+- **Modelo**: v3 vale mais a pena aqui do que na fantasia — esse livro tem mais variação de emoção
+  por cena, e tags inline tipo `[frio]`/`[sussurrando]`/`[quebra a voz]` ajudam a marcar o contraste
+  Isabella-fria vs. Cami-descontrolada sem precisar trocar de voz.
+- Fixe a mesma voz + os mesmos sliders pros capítulos do livro — consistência sem instrução escrita.
+
 ## Personagens que falam
 
 Um narrador só — module o tom, não troque de voz:
