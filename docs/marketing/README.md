@@ -14,6 +14,10 @@ Fonte de verdade: [`marketing_canvas.md`](marketing_canvas.md), gerado e mantido
     - [`social_posts/`](social_posts/) — carrosséis/roteiros de Instagram e TikTok.
     - [`linkedin_posts/`](linkedin_posts/) — posts de "Dev Diary" no LinkedIn, gerados pelo workflow
       `.agent/workflows/create_linkedin_post.md`.
+    - [`audiobooks/`](audiobooks/) — bíblias de voz + capítulos numerados prontos pra narrar no AI
+      Studio, gerados pelo workflow `.agent/workflows/audiobook_agent.md` a partir de um livro/PDF
+      exportado do app. Frente de comunidade/UGC (histórias de jogadores), não depende de feature
+      nova — o export de PDF já existe hoje.
 
 ## Princípio fixo
 

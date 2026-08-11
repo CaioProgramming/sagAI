@@ -1,0 +1,67 @@
+# 2. O Eco do Ouro e as Sombras de Lakeland
+
+> Usa a bíblia de voz em `voice_bible.md`. Instrução-base + notas abaixo.
+
+## Notas de ênfase deste capítulo
+
+- Fala do Archie: é o único personagem com um "corte" mais afiado na voz, per a bíblia — zombaria,
+  não fúria.
+- "Rayffa sentia a raiva borbulhar..." até a luz dourada explodir: essa é a virada do capítulo.
+  Comece contido, deixe a tensão crescer palavra por palavra até o parágrafo da luz dourada — não
+  acelere de repente, cresça em peso, não em velocidade.
+- "Quando o silêncio retornou..." — queda abrupta de energia logo depois do clímax. Contraste
+  proposital: da explosão de luz pro horror silencioso de Rayffa olhando pras próprias mãos.
+- Cena da taverna (Syeff tocando a mão dela): o momento mais quente/humano do capítulo — sem perder
+  o peso geral, mas com uma suavização real aqui.
+- Última frase ("O descanso era apenas o prelúdio...") — fecha em tom de aviso, não de alívio.
+
+## Texto para narrar
+
+O céu oscilava entre o carmesim do sangue e o pálido amanhecer, como se a própria natureza estivesse
+em agonia. O santuário, que por um breve momento fora um refúgio, tornou-se o altar onde a inocência
+de Rayffa foi definitivamente sacrificada. Diante dela, o Inquisidor Archie Lindstell era a imagem da
+arrogância da Coroa, sua armadura polida refletindo a luz fria da manhã, enquanto seu sorriso
+carregava o desprezo de quem se julga um deus entre insetos.
+
+— Você luta por fantasmas, Rayffa — zombou Archie, a lâmina de sua espada traçando arcos letais no
+ar. — A Coroa é a única verdade neste mundo. Tudo o mais é apenas a ilusão de quem não tem força para
+se curvar.
+
+Rayffa sentia a raiva borbulhar em suas veias, não mais como um sussurro, mas como um grito. A morte
+de Archie não seria um ato de heroísmo planejado, mas a explosão de anos de fúria reprimida, de cada
+humilhação e cada noite de frio no exílio.
+
+O confronto culminante foi um borrão de aço e respirações ofegantes. No momento em que a lâmina de
+Archie quase alcançou seu coração, algo dentro de Rayffa rompeu-se. Não foi a Sombra Vermelha que
+emergiu, mas algo que ela desconhecia: uma luz dourada, cegante e implacável, que emanou de seu ser
+como um sol nascendo no centro de uma tempestade. A luz não apenas repeliu o ataque, mas consumiu a
+vontade de Archie, transformando seu triunfo em terror puro.
+
+Quando o silêncio retornou, Archie jazia imóvel, e Rayffa olhava para as próprias mãos com horror. A
+luz que a percorreu não fora apenas defesa; fora a manifestação de um poder que anseiava por purgar o
+mundo, e a frieza com que ela aceitara a morte do inimigo a aterrorizou. Ela temia a escuridão da
+Coroa, mas agora, descobria que a luz que a definia poderia ser igualmente devastadora.
+
+A jornada para Lakeland foi feita sob o peso desse novo conhecimento. O grupo movia-se em silêncio, a
+vitória sobre o Inquisidor deixando um gosto amargo de cinzas na boca de Rayffa. Ela se agarrava à
+fragilidade de Syeff e Isis, usando o cuidado com as companheiras para evitar encarar a solidão de
+sua própria alma. A cada quilômetro, a imagem de Archie caindo sob a luz dourada repetia-se em sua
+mente, um lembrete de que ela era agora um instrumento de forças que não compreendia.
+
+Lakeland surgiu no horizonte como um borrão de cores terrosas e telhados de palha, um porto seguro
+que parecia pequeno demais para a magnitude da tempestade que as acompanhava. O cheiro de turfa e
+fumaça de lareira deveria ter sido acolhedor, mas para Rayffa, tudo parecia artificial, uma máscara
+de normalidade sobre um mundo que estava apodrecendo por dentro.
+
+A taverna de Eleanor provou ser menos um porto seguro e mais um espelho de vulnerabilidades. Entre
+canecas de cerveja morna e o calor do fogo, Rayffa observava as pessoas rindo, ignorantes da sombra
+que se alongava sobre Huffington. Ela sentia-se como uma estranha em sua própria terra, uma intrusa
+que carregava a morte em seus dedos e a luz em seu espírito.
+
+— Você está distante, Rayffa — comentou Syeff, tocando suavemente sua mão. O toque era quente,
+humano, e por um instante, a frieza do ouro em sua alma pareceu recuar.
+
+Rayffa forçou um sorriso, mas seus olhos permaneciam fixos na escuridão além da janela. Ela sabia que
+a paz de Lakeland era efêmera. A Coroa não esqueceria a queda de Archie, e o eco daquela luz dourada
+atrairia predadores que não temiam a morte, mas a desejavam. O descanso era apenas o prelúdio de uma
+ascensão ainda mais dolorosa.
