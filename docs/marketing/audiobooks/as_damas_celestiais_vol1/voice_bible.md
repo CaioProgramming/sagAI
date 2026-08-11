@@ -13,15 +13,26 @@ isso, não o fantasy "nobre e arejado" genérico.
 - A emoção mora no timbre, não na performance. Evite qualquer entonação "de apresentador". Rayffa é
   uma personagem que reprime sentimento — a leitura reflete isso: contida por fora, pesada por
   dentro.
+- **A narradora não é neutra — ela também é leitora, e está apegada à história.** "Contida" não é
+  sinônimo de impassível: é alguém segurando a emoção porque se importa, não porque não sente nada.
+  Se a leitura sair perfeitamente equilibrada o tempo todo, ela vira artificial — o oposto do
+  objetivo. Deixe pequenos deslizes humanos acontecerem: uma pausa que quebra o ritmo, um leve
+  tremor na voz num momento pesado, uma frase que sai um pouco apressada porque ela quer chegar logo
+  no que vem a seguir, um instante em que a imparcialidade escorrega e dá pra sentir que ela também
+  torce por essas personagens. Isso não é erro de qualidade — é o que a torna crível como pessoa, não
+  como máquina lendo com sotaque grave.
 - Evite: voz jovem/brilhante, ritmo acelerado, entonação de conto infantil, qualquer sotaque
   caricato de "fantasia medieval".
 
 ## Instrução-base (colar no AI Studio junto com o texto de cada capítulo)
 
 > "Narre este trecho de fantasia sombria com voz grave e cansada, ritmo pausado (não acelere), como
-> alguém que testemunhou tragédias e agora relata os fatos com peso emocional contido — sem
-> teatralidade, sem pressa. Deixe pausas reais entre frases carregadas. A emoção aparece no timbre,
-> nunca em exagero de performance."
+> alguém que testemunhou tragédias e agora relata os fatos com peso emocional contido — mas não como
+> uma repórter neutra. Você também é leitora dessa história e está apegada a ela; de vez em quando
+> essa emoção escapa: um leve tremor, uma pausa que quebra o ritmo perfeito, uma frase que sai rápida
+> demais porque você quer chegar logo no que vem a seguir. Sem teatralidade, sem exagero de
+> performance — mas também sem frieza impecável. Um deslize ocasional é bem-vindo, é o que soa
+> humano."
 
 ## Configuração no ElevenLabs (Text to Speech / Estúdio — sem campo de instrução)
 
@@ -33,10 +44,12 @@ instrução-base acima vira ajuste de interface:
   Ouça o preview antes de bater o olho na descrição. Prefira vozes rotuladas "conversational" a
   "narration"/"broadcast" quando existir a opção — o objetivo não é soar audiolivro profissional de
   estúdio, é soar alguém real lendo com sentimento contido.
-- **Estabilidade**: pro lado de **"Mais estável"** — leitura mais controlada, menos variação
-  aleatória, sem exagero de performance (é o equivalente ao "sem teatralidade" da instrução). Mas
-  não no máximo: estabilidade 100% soa robótica/perfeita demais, o que hoje em dia é exatamente o
-  que ativa o radar de "isso é IA". Deixe uma pequena variação natural.
+- **Estabilidade**: **meio-termo, não "Mais estável"** — testamos no lado mais estável e o resultado
+  saiu artificial/perdido, sem o "vazamento" emocional de uma leitora envolvida (ver nota acima na
+  Direção de voz). Puxe o slider mais pro centro: controle suficiente pra não virar performance
+  teatral, mas com oscilação real o bastante pra soar como alguém que sente a história, não uma voz
+  robótica lendo com sotaque grave. Se ainda sair frio demais, teste um passo a mais em direção a
+  "Mais variável".
 - **Velocidade**: pro lado de **"Mais devagar"** — é o "ritmo pausado, não acelere".
 - **Modelo**: v2 já deve dar conta só com voz + sliders certos. Se quiser mais controle fino, o v3
   aceita tags de emoção dentro do próprio texto colado (ex: `[cansado]`, `[pausa]`) — opcional, teste

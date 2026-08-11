@@ -45,6 +45,13 @@ de imperfeição natural — voz real gravando em casa, não locução de estúd
 todos os 9 gêneros, mesmo os mais "grandiosos" na ficção (Heroes, Space Opera): a entrega pode ser
 dramática no conteúdo, mas nunca soar produzida demais.
 
+**Regra da leitora envolvida** (ver `audiobook_agent.md`, regra 9c — descoberta testando a voz de
+Fantasy, que saiu impassível/artificial demais no primeiro teste): "contido"/"restrained" não pode
+virar sinônimo de neutro. A narradora de qualquer gênero também é leitora da própria história, está
+apegada a ela, e às vezes essa emoção escapa — um deslize, um tremor, uma pressa. Nos gêneros mais
+minimalistas/frios (Horror, Shinobi, Cowboy, Heroes) isso é ainda mais fácil de errar pro lado
+robótico — tome cuidado extra ao testar essas vozes.
+
 ---
 
 ## Fantasy · *Magic & Myth*
@@ -54,13 +61,17 @@ Brutalidade e beleza são a mesma matéria. A voz reflete o que essa pessoa já 
 não performance.
 
 - **Feminino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Female, 30-45. Ok
-  quality. Persona: weary survivor, quietly guarded. Emotion: restrained, tired, resolute. Low,
+  quality. Persona: weary survivor, quietly guarded, but genuinely invested in the story — not a
+  neutral reporter. Emotion: restrained, tired, resolute, with real feeling breaking through. Low,
   rough timbre with slow pacing and real pauses between weighted sentences; unpolished, homemade
-  delivery, not a professional voice actress.*
+  delivery with occasional natural imperfection — a catch in the voice, a slightly rushed line —
+  never perfectly composed, not a professional voice actress.*
 - **Masculino** — Prompt: *Native Portuguese, Brazilian Portuguese (pt-BR). Male, 40-55. Ok quality.
-  Persona: hardened elder, quiet authority. Emotion: grave, weary, resolute. Deep, raspy timbre with
-  slow pacing and long pauses before heavy sentences; slightly imperfect, homemade delivery, not an
-  epic trailer narrator.*
+  Persona: hardened elder, quiet authority, but genuinely invested in the story — not a neutral
+  reporter. Emotion: grave, weary, resolute, with real feeling breaking through. Deep, raspy timbre
+  with slow pacing and long pauses before heavy sentences; slightly imperfect, homemade delivery
+  with occasional natural imperfection — a catch in the voice, a slightly rushed line — never
+  perfectly composed, not an epic trailer narrator.*
 
 ## Cyberpunk · *Neon & Tech*
 
