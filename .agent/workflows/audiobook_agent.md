@@ -54,6 +54,10 @@ real do teste de cada usuário, já que esse teto pode variar.
 5. Se o livro tiver uma nota de fechamento fora do universo da ficção (ex: comentário do "coautor"
    IA sobre o processo de escrever), trate como peça separada e opcional — registro tem outro tom
    (pessoal, primeira pessoa) e não deve seguir a bíblia de voz da narrativa.
+6. Essa nota de fechamento é o gancho de comunidade: sempre mencionar, de forma natural (não como
+   slogan colado), que a saga nasceu dentro do Sagas — turno por turno, decisão do jogador por
+   decisão — reforçando que "cada jogador decide a própria jornada". Isso é o que fecha o loop entre
+   o áudio e o app pra quem só está ouvindo/assistindo, sem ter aberto o Sagas ainda.
 
 ## Formato do `voice_bible.md`
 
