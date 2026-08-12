@@ -244,6 +244,12 @@ de colar.
 
 `docs/marketing/audiobooks/<slug-do-livro>/` — `voice_bible.md` + um `.md` por capítulo (texto
 inteiro, anotado) + `_texto_puro.txt` por capítulo (pronto pra colar) + `_partes.md` só se o destino
-for o AI Studio + `series/` com os cortes de episódio (regra 11) e seu `_serie_notas.md`. Não precisa
-passar pelo `feature_planning_agent`: isso é produção de conteúdo externa ao app, não exige nenhuma
-feature nova (o export de PDF já existe hoje).
+for o AI Studio + `series/` com os cortes de episódio (regra 11) e seu `_serie_notas.md` + um
+`legendas.md` **na raiz da pasta do livro** (não por capítulo): lista única, na ordem real de
+postagem, com a legenda pronta pra copiar de cada episódio de todos os capítulos + a do bônus no
+final, com checkbox pra marcar o que já foi postado. É o arquivo que a pessoa realmente abre na hora
+de postar — o `_serie_notas.md` de cada capítulo continua existindo pra explicar o porquê de cada
+corte/legenda, o `legendas.md` é só a lista de uso prático. Atualize esse arquivo (adicionando a
+seção do capítulo) toda vez que um novo capítulo ganhar corte de série. Não precisa passar pelo
+`feature_planning_agent`: isso é produção de conteúdo externa ao app, não exige nenhuma feature nova
+(o export de PDF já existe hoje).
