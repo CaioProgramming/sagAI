@@ -228,7 +228,7 @@ fun Genre?.cornerSize(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.
         Genre.CYBERPUNK -> 20.dp
         Genre.FANTASY -> 16.dp
         Genre.HORROR -> 4.dp
-        Genre.HEROES -> 14.dp
+        Genre.HEROES -> 22.dp
         Genre.CRIME -> 18.dp
         Genre.SHINOBI -> 10.dp
         Genre.SPACE_OPERA -> 24.dp

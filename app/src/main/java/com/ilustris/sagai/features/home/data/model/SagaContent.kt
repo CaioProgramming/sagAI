@@ -3,7 +3,12 @@ package com.ilustris.sagai.features.home.data.model
 import android.icu.util.Calendar
 import androidx.room.Embedded
 import androidx.room.Relation
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import com.ilustris.sagai.core.ai.prompts.LorePrompts
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -77,6 +82,24 @@ data class SagaContent(
 
     fun completedEvents(narrativeRules: NarrativeRules) = flatEvents().count { it.isComplete(narrativeRules) }
 }
+
+fun SagaContent.buildContextualHistory(narrativeRules: NarrativeRules) =
+    buildMap {
+        put("saga", data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS))
+        put("mainCharacter", mainCharacter?.data?.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS))
+        val mainContinuity = acts.filter { it.isComplete(narrativeRules) }.mapNotNull { it.data.continuitySummary }
+        if (mainContinuity.isNotEmpty()) {
+            put("CriticalFacts", mainContinuity.normalizetoAIItems())
+        }
+        val contextualContinuity = flatChapters().lastOrNull { it.isComplete(narrativeRules) }?.data?.continuitySummary
+        if (contextualContinuity != null) {
+            put("ContextualFacts", listOf(contextualContinuity).normalizetoAIItems())
+        }
+        val latestEvent = flatEvents().lastOrNull { it.isComplete(narrativeRules) }
+        latestEvent?.let {
+            put("LastEvent", it.data.toAINormalize(LorePrompts.TIMELINE_EXCLUDED_FIELDS))
+        }
+    }
 
 fun SagaContent.toSagaInfo() =
     SagaInfo(

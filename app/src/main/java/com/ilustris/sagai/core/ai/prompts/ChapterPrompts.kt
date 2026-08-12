@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.buildContextualHistory
 import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.home.data.model.findChapterAct
 import com.ilustris.sagai.features.home.data.model.flatChapters
@@ -71,74 +72,9 @@ object ChapterPrompts {
     suspend fun chapterIntroductionPrompt(
         promptService: PromptService,
         sagaContent: SagaContent,
-        currentChapter: Chapter,
-        conversationDirective: String,
+        narrativeRules: NarrativeRules,
     ): SplitPrompt {
-        val actIntroduction =
-            sagaContent.acts
-                .lastOrNull()
-                ?.data
-                ?.introduction
-        val lastEvent = sagaContent.flatEvents().lastOrNull()?.data
-        val lastChapter = sagaContent.flatChapters().lastOrNull()?.data
-        val lastAct = sagaContent.acts.lastOrNull { it.data.id != currentChapter.actId }
-        val storyContext =
-            buildMap {
-                put("Saga Context", SagaPrompts.mainContext(sagaContent))
-
-                actIntroduction?.let {
-                    put("Volume introduction", actIntroduction)
-                }
-
-                lastEvent?.let {
-                    put(
-                        "Latest event",
-                        lastEvent.toAINormalize(
-                            LorePrompts.TIMELINE_EXCLUDED_FIELDS,
-                        ),
-                    )
-                }
-
-                lastChapter?.let {
-                    put(
-                        "Latest chapter",
-                        lastChapter.toAINormalize(
-                            CHAPTER_EXCLUSIONS,
-                        ),
-                    )
-                }
-
-                lastAct?.let {
-                    put(
-                        "Latest act",
-                        lastAct.data.toAINormalize(
-                            ActPrompts.ACT_EXCLUSIONS,
-                        ),
-                    )
-                }
-
-                put("Continuity", "This is the story so far.")
-            }
-        val lastState =
-            lastEvent?.let {
-                "The story last drew breath here: ${it.title} - ${it.content}"
-            } ?: "The chapter begins as a direct continuation of the volume's opening."
-
-        val args =
-            ChapterIntroductionArgs(
-                sagaMainContext = SagaPrompts.mainContext(sagaContent),
-                narrativeStyle = conversationDirective,
-                storyHistory = sagaContent.historySummary(),
-                volumeContext =
-                    promptService
-                        .buildSplitBlueprint(
-                            sagaContent.getDirectiveKey(
-                                sagaContent.findAct(currentChapter.actId)?.data,
-                            ),
-                        ).processedTemplate,
-                lastStateContext = lastState,
-                storyContext = storyContext.toAINormalize(),
-            )
+        val storyContext = sagaContent.buildContextualHistory(narrativeRules)
 
         return promptService.buildSplitBlueprint(
             CHAPTER_INTRODUCTION_BLUEPRINT,

@@ -90,10 +90,58 @@ object NarrativeCheck {
         val intent = validateProgressionMetadata(saga.toNarrativeMetadata(), rules) ?: return null
         return NarrativeActionMaterializer.materialize(intent, saga)
     }
+
+    /**
+     * Best-effort projection of how many *reveal-worthy* closures (event -> chapter -> act,
+     * in that strict cascade order) will fire in the current milestone chain run, purely from
+     * counts already in [saga] against [rules] — no execution. Used only to size the milestone
+     * stepper UI; the real chain still walks one step at a time via [validateProgressionMetadata]
+     * regardless of what this returns, so an off-by-one here is a cosmetic risk, not a
+     * correctness one. Excludes silent scaffolding (CreateTimeline/CloseTimeline) and cinematic
+     * introductions (CreateChapter/GenerateChapterIntro/CreateAct/GenerateActIntro) — those never
+     * count toward the stepper.
+     */
+    fun computeClosureChainLength(
+        saga: SagaMetadata,
+        rules: NarrativeRules,
+    ): Int {
+        val currentAct = saga.acts.find { it.data.id == saga.data.currentActId } ?: return 0
+        val currentChapter =
+            currentAct.chapters.find { it.data.id == currentAct.data.currentChapterId } ?: return 0
+        val currentTimeline =
+            currentChapter.data.currentEventId?.let { activeId ->
+                currentChapter.events.find { it.data.id == activeId }
+            } ?: return 0
+
+        val eventAlreadyComplete = currentTimeline.narrativelyCompleteTimeline(rules)
+        val eventClosing = eventAlreadyComplete || currentTimeline.messages.size >= rules.loreUpdateLimit
+        if (!eventClosing) return 0
+
+        var steps = 1 // EvolveTimeline -> NewEvent reveal
+
+        val completeEventsAfter =
+            currentChapter.events.count { it.narrativelyCompleteTimeline(rules) } +
+                if (eventAlreadyComplete) 0 else 1
+        if (completeEventsAfter < rules.chapterUpdateLimit) return steps
+        steps++ // GenerateChapter -> ChapterFinished reveal
+
+        val chapterAlreadyComplete = currentChapter.narrativelyCompleteChapter(rules)
+        val completeChaptersAfter =
+            currentAct.chapters.count { it.narrativelyCompleteChapter(rules) } +
+                if (chapterAlreadyComplete) 0 else 1
+        if (completeChaptersAfter < rules.actUpdateLimit) return steps
+        steps++ // GenerateAct -> ActFinished reveal
+
+        return steps
+    }
 }
 
-/** Matches [TimelineContent.isComplete]: lore full plus non-empty summary fields (no [isBlank] variant). */
-private fun TimelineMetadata.narrativelyCompleteTimeline(rules: NarrativeRules): Boolean =
+/** Matches [TimelineContent.isComplete]: lore full plus non-empty summary fields (no [isBlank]
+ * variant). Not private — also the definition of "valid" a timeline needs to satisfy in
+ * [SagaContentManagerImpl.pruneOrphanTimelines][com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManagerImpl]
+ * (valid = current pointer target OR narrativelyCompleteTimeline; anything else is an orphan),
+ * so both stay in sync with a single source of truth instead of drifting apart. */
+fun TimelineMetadata.narrativelyCompleteTimeline(rules: NarrativeRules): Boolean =
     messages.size >= rules.loreUpdateLimit &&
         data.title.isNotEmpty() &&
         data.content.isNotEmpty()

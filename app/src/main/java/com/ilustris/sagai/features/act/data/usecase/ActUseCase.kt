@@ -1,9 +1,12 @@
 package com.ilustris.sagai.features.act.data.usecase
 
+import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import kotlinx.coroutines.flow.Flow
 
 interface ActUseCase {
@@ -18,27 +21,27 @@ interface ActUseCase {
     suspend fun deleteActsForSaga(sagaId: Int)
 
     suspend fun generateAct(
-        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
+        saga: SagaMetadata,
         actContent: com.ilustris.sagai.features.home.data.model.ActMetadata,
     ): RequestResult<Act>
 
     fun generateActStream(
-        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
+        saga: SagaMetadata,
         actContent: com.ilustris.sagai.features.home.data.model.ActMetadata,
-    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
+    ): Flow<StreamingState<GeneratedContent<Act>>>
 
     suspend fun generateActIntroduction(
-        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
+        saga: SagaMetadata,
         act: Act,
-    ): RequestResult<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>
+    ): RequestResult<GeneratedContent<Act>>
 
     fun generateActIntroductionStream(
-        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
+        saga: SagaMetadata,
         act: Act,
-    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
+    ): Flow<StreamingState<GeneratedContent<Act>>>
 
     fun synthesizeActEvolutionStream(
         saga: SagaContent,
         actContent: ActContent,
-    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
+    ): Flow<StreamingState<GeneratedContent<Act>>>
 }

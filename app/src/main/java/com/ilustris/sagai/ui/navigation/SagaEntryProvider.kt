@@ -18,6 +18,7 @@ import com.ilustris.sagai.features.debug.ui.LoreDebugView
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileView
 import com.ilustris.sagai.features.faq.ui.FAQView
 import com.ilustris.sagai.features.home.ui.HomeView
+import com.ilustris.sagai.features.saga.milestone.ui.MilestoneScreen
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.player.ui.PlayerProfileView
 import com.ilustris.sagai.features.playthrough.PlaythroughView
@@ -122,6 +123,14 @@ fun createSagaEntryProvider(
             onNavigate = { navigator.navigate(it) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    entry<MilestoneKey> { key ->
+        MilestoneScreen(
+            sagaId = key.sagaId,
+            onFinished = { navigator.goBack() },
+            onNavigate = { navigator.navigate(it) },
         )
     }
 

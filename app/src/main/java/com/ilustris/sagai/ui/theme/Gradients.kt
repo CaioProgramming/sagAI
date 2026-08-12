@@ -50,40 +50,29 @@ enum class GradientType {
 
     fun toBrush(
         colors: List<Color>,
-        offsetAnimationValue: Float,
     ): Brush =
         when (this) {
             LINEAR -> {
                 Brush.linearGradient(
-                    colors = colors,
-                    start = Offset(offsetAnimationValue, offsetAnimationValue),
-                    end = Offset(offsetAnimationValue + 500f, offsetAnimationValue + 500f),
-                    tileMode = TileMode.Mirror,
+                    colors = colors
                 )
             }
 
             VERTICAL -> {
                 Brush.verticalGradient(
                     colors = colors,
-                    startY = offsetAnimationValue,
-                    endY = offsetAnimationValue + 500f,
-                    tileMode = TileMode.Mirror,
                 )
             }
 
             RADIAL -> {
                 Brush.radialGradient(
-                    colors = colors,
-                    center = Offset(offsetAnimationValue, offsetAnimationValue),
-                    radius = offsetAnimationValue + 300f,
-                    tileMode = TileMode.Mirror,
+                    colors = colors
                 )
             }
 
             SWEEP -> {
                 Brush.sweepGradient(
-                    colors = colors,
-                    center = Offset(offsetAnimationValue, offsetAnimationValue),
+                    colors = colors
                 )
             }
         }
@@ -99,7 +88,7 @@ fun gradientAnimation(
 ): Brush {
     val animationsActive = rememberLifecycleAnimationsActive()
     if (!isAnimating || !animationsActive) {
-        return gradientType.toBrush(colors, targetValue)
+        return gradientType.toBrush(colors)
     }
     val infiniteTransition = rememberInfiniteTransition(label = "gradientTransition")
     val offsetAnimation =
@@ -118,7 +107,6 @@ fun gradientAnimation(
         )
     return gradientType.toBrush(
         colors = colors,
-        offsetAnimationValue = if (isAnimating) offsetAnimation.value else targetValue,
     )
 }
 
@@ -292,7 +280,6 @@ fun Genre?.gradient(
 } else {
     gradientType.toBrush(
         colors = this?.colorPalette() ?: holographicGradient,
-        offsetAnimationValue = targetValue,
     )
 }
 

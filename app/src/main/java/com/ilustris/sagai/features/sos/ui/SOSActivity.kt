@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.material3.Scaffold
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.sos.presentation.SOSViewModel
@@ -30,7 +31,7 @@ class SOSActivity : ComponentActivity() {
                 Scaffold { _ ->
                     SOSScreen(
                         errorMessage = errorMessage,
-                        isDatabaseError = isDatabaseError,
+                        isDatabaseError = isDatabaseError || BuildConfig.DEBUG,
                         exceptionClass = exceptionClass,
                         viewModel = viewModel,
                         onRestart = {

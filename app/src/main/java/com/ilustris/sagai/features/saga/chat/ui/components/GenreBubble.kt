@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -14,7 +15,7 @@ import com.ilustris.sagai.ui.theme.components.chat.CowboysChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.FantasyChatBubbleShape
-import com.ilustris.sagai.ui.theme.components.chat.HeroesChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.HeroesSpeechBalloonShape
 import com.ilustris.sagai.ui.theme.components.chat.HorrorChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.PunkRockChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.ShinobiChatBubbleShape
@@ -44,15 +45,6 @@ fun Genre?.bubble(
             )
         }
 
-        Genre.HEROES -> {
-            HeroesChatBubbleShape(
-                tailWidth = tailW,
-                tailHeight = tailH,
-                tailAlignment = tailAlignment,
-                skew = cornerSize,
-            )
-        }
-
         Genre.SHINOBI -> {
             RoundedCornerShape(cornerSize)
         }
@@ -60,6 +52,15 @@ fun Genre?.bubble(
         Genre.CRIME -> {
             CurvedChatBubbleShape(
                 cornerRadius = cornerSize,
+                tailWidth = tailW,
+                tailHeight = tailH,
+                tailAlignment = tailAlignment,
+            )
+        }
+
+        Genre.HEROES -> {
+            CurvedChatBubbleShape(
+                cornerRadius = 20.dp,
                 tailWidth = tailW,
                 tailHeight = tailH,
                 tailAlignment = tailAlignment,
@@ -117,5 +118,22 @@ fun Genre?.bubble(
                 tailAlignment = tailAlignment,
             )
         }
+    }
+}
+
+/**
+ * Shape for the small speaker avatar next to a chat bubble. Defaults to [CircleShape] for every
+ * genre — genres that opt in reuse the *same* shape class the bubble itself uses (Cyberpunk with
+ * `drawTail = false`; Space Opera's [SpaceChatBubbleShape] is already tail-less, so it's used
+ * as-is) instead of a separate duplicate shape class, so the avatar and bubble read as one panel
+ * system and any future tweak to the cut-corner geometry only has one place to change.
+ */
+@Composable
+fun Genre?.avatarShape(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current): Shape {
+    val cornerSize = cornerSize(visualConfig)
+    return when (this) {
+        Genre.CYBERPUNK -> CyberpunkChatBubbleShape(cornerRadius = cornerSize, drawTail = false)
+        Genre.SPACE_OPERA -> SpaceChatBubbleShape(cutSize = cornerSize / 2, largeCutSize = cornerSize)
+        else -> CircleShape
     }
 }

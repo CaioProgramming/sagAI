@@ -31,7 +31,6 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.mapper.SagaMetadataUIMapper
@@ -143,6 +142,7 @@ class ChatViewModel
             // Mirrors ChatGenerationService's per-saga state so the reply survives
             // navigation while this screen still reflects it live when it's the one open.
             viewModelScope.launch {
+                var wasGenerating = false
                 chatGenerationService.activeGenerations.collectLatest { generations ->
                     val sagaId =
                         uiState.value.sagaContent
@@ -152,6 +152,16 @@ class ChatViewModel
                     stateManager.updateGenerating(active != null)
                     stateManager.updateLoading(active != null)
                     stateManager.updateState { it.copy(reasoningChunk = active?.reasoning) }
+
+                    // Explicit, timing-safe trigger: check narrative progression the instant a
+                    // reply finishes saving, instead of relying purely on the Room Flow's own
+                    // propagation delay to notice the new message count — that gap was letting
+                    // the user keep sending messages after hitting the limit, since nothing
+                    // re-checked until something else happened to ask again.
+                    if (wasGenerating && active == null) {
+                        sagaContentManager.checkNarrativeProgression(uiState.value.sagaContent)
+                    }
+                    wasGenerating = active != null
                 }
             }
 
@@ -640,13 +650,6 @@ class ChatViewModel
             }
         }
 
-        fun onOnboardingDismissed() {
-            stateManager.updateOnboardingType(null)
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.completeGameplayOnboarding(uiState.value.sagaContent)
-            }
-        }
-
         fun retryAiResponse(message: Message?) {
             val currentSaga = uiState.value.sagaContent ?: return
             viewModelScope.launch(Dispatchers.IO) {
@@ -886,16 +889,13 @@ class ChatViewModel
 
                         sagaContentManager.linkUnlinkedCharacterMessages(sagaContent)
 
-                        // Re-check whenever messages change or there is no active scene (e.g. new saga).
-                        // Defer progression for brand-new sagas until gameplay onboarding is dismissed.
-                        if (sagaContent.acts.isEmpty()) {
-                            if (settingsUseCase.getShowTutorials().first()) {
-                                stateManager.updateOnboardingType(OnboardingType.GAMEPLAY_GUIDE)
-                                sagaContentManager.isOnboardingVisible.value = true
-                            } else {
-                                sagaContentManager.checkNarrativeProgression(sagaContent)
-                            }
-                        } else if (messagesChanged || sagaContent.getCurrentTimeLine() == null) {
+                        // Re-check whenever messages change or there is no active scene (e.g. new
+                        // saga). Progression starts immediately now regardless of the gameplay
+                        // guide — the Milestone screen shows that overlay itself (see
+                        // MilestoneViewModel.showOnboarding) on top of the first act's
+                        // introduction generating underneath, instead of chat gating generation
+                        // on the tutorial being dismissed first.
+                        if (sagaContent.acts.isEmpty() || messagesChanged || sagaContent.getCurrentTimeLine() == null) {
                             sagaContentManager.checkNarrativeProgression(sagaContent)
                         }
 
