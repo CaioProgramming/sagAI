@@ -48,14 +48,22 @@ atuada demais — prefira uma voz pronta da biblioteca, como abaixo:
 - **Voz**: escolha uma com descrição tipo "calm", "deep", "weary", "grave" — evite as rotuladas
   "upbeat"/"bright"/"energetic" (a voz padrão sugerida geralmente é desse tipo, não serve aqui).
   Ouça o preview antes de bater o olho na descrição. Prefira vozes rotuladas "conversational" a
-  "narration"/"broadcast" quando existir a opção — o objetivo não é soar audiolivro profissional de
-  estúdio, é soar alguém real lendo com sentimento contido.
+  "narration"/"broadcast" quando existir a opção. **Mais importante: escolha uma voz que já tenha
+  personalidade própria no preview** — uma inflexão, um jeito de falar reconhecível — não a opção
+  mais "bonita e neutra" da lista. O slider de Style abaixo só amplifica o que a voz já tem; numa voz
+  genérica ele não cria personalidade do nada.
 - **Estabilidade**: **meio-termo, não "Mais estável"** — testamos no lado mais estável e o resultado
   saiu artificial/perdido, sem o "vazamento" emocional de uma leitora envolvida (ver nota acima na
   Direção de voz). Puxe o slider mais pro centro: controle suficiente pra não virar performance
   teatral, mas com oscilação real o bastante pra soar como alguém que sente a história, não uma voz
   robótica lendo com sotaque grave. Se ainda sair frio demais, teste um passo a mais em direção a
   "Mais variável".
+- **Style (Style Exaggeration)** — esse é o slider que resolve "voz bonita lendo neutro" em vez de
+  "amigo contando a história": em 0 ele força leitura plana/profissional; num nível médio ele fica
+  conversacional, caloroso, com a personalidade da voz aparecendo; acima de ~60% costuma distorcer o
+  áudio. **Não deixe em 0/desligado** — suba pro nível médio da faixa disponível. Combinado com uma
+  voz que já tem caráter (ver item Voz acima), é isso que dá a sensação de pessoa contando, não
+  locução lendo.
 - **Velocidade**: pro lado de **"Mais devagar"** — é o "ritmo pausado, não acelere".
 - **Modelo**: v2 já deve dar conta só com voz + sliders certos. Se quiser mais controle fino, o v3
   aceita tags de emoção dentro do próprio texto colado (ex: `[cansado]`, `[pausa]`) — opcional, teste

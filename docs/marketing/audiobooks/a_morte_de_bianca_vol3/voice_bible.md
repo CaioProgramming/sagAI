@@ -46,10 +46,15 @@ pronta da biblioteca, aqui é o oposto do Vol. I de fantasia:
   (a voz padrão sugerida no ElevenLabs costuma ser desse tipo confortável, não serve aqui). Prefira
   "conversational" a "narration"/"broadcast" quando existir a opção — mesmo esse livro sendo mais
   produzido/glamouroso na trama, a leitura não deve soar locução de estúdio, e sim alguém real e
-  fascinado narrando.
+  fascinado narrando. **Escolha uma voz que já tenha personalidade própria no preview** — o slider de
+  Style abaixo amplifica o que a voz já tem, não cria caráter do zero numa voz genérica.
 - **Estabilidade**: pro lado de **"Mais variável"** (ou meio-termo) — esse livro precisa de mais
   nuance emocional entre a frieza calculada e as raras rachaduras reais; estabilidade alta demais
   deixa tudo monótono, o oposto do "fascínio" que a direção de voz pede.
+- **Style (Style Exaggeration)**: nível médio-alto — mais que na fantasia, já que esse livro pede uma
+  narradora fascinada e presente, não uma leitura neutra. Em 0 fica plano/profissional; acima de ~60%
+  costuma distorcer o áudio. É esse slider (não risada/suspiro pontual) que dá a sensação de alguém
+  com opinião contando o caso, e não uma voz bonita só lendo.
 - **Velocidade**: neutro a levemente **"Mais rápido"** — é o "ágil", oposto do ritmo pausado da
   fantasia.
 - **Modelo**: v3 vale mais a pena aqui do que na fantasia — esse livro tem mais variação de emoção

@@ -134,6 +134,14 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
    Cowboy, Heroes), que erram mais fácil pro lado robótico/distante. Na prática: Estabilidade no
    ElevenLabs não deve ir pro extremo "Mais estável" mesmo em vozes contidas — puxe pro meio-termo,
    com oscilação real o bastante pra soar como alguém vivendo a história, não recitando.
+9d. **"Amigo contando a história" não é sobre efeito pontual (risada, suspiro) — é sobre
+   personalidade constante vs. leitura neutra.** O slider que resolve isso é o **Style (Style
+   Exaggeration)**, separado da Estabilidade: em 0 força leitura plana/profissional; em nível médio
+   fica conversacional e caloroso, com a personalidade da voz aparecendo; acima de ~60% costuma
+   distorcer o áudio. Nunca deixe em 0. Mas o Style só *amplifica* o que a voz já tem — por isso a
+   escolha da voz na biblioteca importa mais que o slider: procure uma com personalidade própria já
+   audível no preview, não a opção "mais bonita e neutra" da lista. Voz genérica + Style alto ainda
+   soa artificial; voz com caráter + Style médio é o combo que funciona.
 10. **A nota de fechamento também tem teto no AI Studio (~80s) — e não deve ser quebrada em partes
    como os capítulos**, mesmo nesse fallback. É uma reflexão única, contínua; fatiá-la em "parte
    1/2" quebra a intimidade do formato. Em vez de quebrar, **reescreva-a mais curta**: releia a
@@ -185,12 +193,13 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
 "..."
 
 ## Configuração no ElevenLabs (sem campo de instrução)
-- Voz: use a voz do gênero já desenhada em `docs/marketing/audiobooks/genre_voice_design.md`
-  (Voice Design) se existir; senão, que tipo escolher no preview da biblioteca (grave/ágil/etc, o
-  oposto do que evitar)
-- Estabilidade: pra qual lado
+- Voz: voz pronta da biblioteca com personalidade própria audível no preview (não a mais "bonita e
+  neutra" da lista — regra 9d) — que tipo escolher (grave/ágil/etc, o oposto do que evitar). Voice
+  Design (`docs/marketing/audiobooks/genre_voice_design.md`) só como plano B.
+- Estabilidade: pra qual lado (nunca no extremo "Mais estável" — regra 9c)
+- Style (Style Exaggeration): nível médio, nunca 0 — regra 9d
 - Velocidade: pra qual lado
-- Modelo: v2 basta ou vale testar v3 com tags inline?
+- Modelo: v2 basta ou vale testar v3 com audio tags inline (`[pause]`, `[hesitates]`, etc. — regra 9)?
 
 ## Personagens que falam
 - <Nome>: como modular sem trocar de narrador
