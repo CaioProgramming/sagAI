@@ -142,6 +142,23 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
    ~140 palavras/min) sem perder essa intenção. Corte detalhe, não sentimento. No ElevenLabs Studio
    isso não é estritamente necessário (o Studio aguenta mais), mas o tamanho de ~1 minuto continua
    sendo bom formato pra clipe standalone de qualquer forma.
+11. **Pra postar em Reels/TikTok/Shorts como série, corte cada capítulo em episódios de ~1 minuto
+   (~110-190 palavras, ~25-80s — duração varia, gancho manda) cortados em pontos de tensão real, não
+   em duração fixa.** Isso é diferente do `_partes.md` (regra 4, que existe só por causa do teto
+   técnico do AI Studio): aqui o corte é estratégia de conteúdo, pra virar série que prende — vale
+   mesmo no ElevenLabs Studio, que não tem teto nenhum. **Não reescreva a prosa** — o texto de cada
+   episódio é um recorte exato do capítulo original. O trabalho é só escolher onde cortar:
+   - Parar bem antes de uma personagem nova/misteriosa falar (a prosa geralmente já entrega esse
+     gancho de graça, só precisa parar na hora certa).
+   - Terminar logo depois de uma fala/linha de maior impacto emocional (acusação, revelação, grito
+     de guerra) — nunca no meio de uma ideia, nunca num trecho neutro.
+   - O episódio final do capítulo pode fechar com resolução real — não precisa forçar gancho
+     artificial no encerramento de um arco.
+   Produza também um `_serie_notas.md` junto com os arquivos: uma tabela com cada corte + por que é
+   gancho, e sugestão de legenda de post por episódio (curta, sem spoiler do próximo, nunca
+   explicando mecânica do app — regra 8 vale aqui também). Salvo em `series/` dentro da pasta do
+   livro. Comece só pelo primeiro capítulo de um livro pra validar o formato antes de replicar pros
+   demais.
 
 ## Formato do `voice_bible.md`
 
@@ -191,5 +208,6 @@ de colar.
 
 `docs/marketing/audiobooks/<slug-do-livro>/` — `voice_bible.md` + um `.md` por capítulo (texto
 inteiro, anotado) + `_texto_puro.txt` por capítulo (pronto pra colar) + `_partes.md` só se o destino
-for o AI Studio. Não precisa passar pelo `feature_planning_agent`: isso é produção de conteúdo
-externa ao app, não exige nenhuma feature nova (o export de PDF já existe hoje).
+for o AI Studio + `series/` com os cortes de episódio (regra 11) e seu `_serie_notas.md`. Não precisa
+passar pelo `feature_planning_agent`: isso é produção de conteúdo externa ao app, não exige nenhuma
+feature nova (o export de PDF já existe hoje).
