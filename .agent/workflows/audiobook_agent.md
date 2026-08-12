@@ -142,12 +142,15 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
    ~140 palavras/min) sem perder essa intenção. Corte detalhe, não sentimento. No ElevenLabs Studio
    isso não é estritamente necessário (o Studio aguenta mais), mas o tamanho de ~1 minuto continua
    sendo bom formato pra clipe standalone de qualquer forma.
-11. **Pra postar em Reels/TikTok/Shorts como série, corte cada capítulo em episódios de ~1 minuto
-   (~110-190 palavras, ~25-80s — duração varia, gancho manda) cortados em pontos de tensão real, não
-   em duração fixa.** Isso é diferente do `_partes.md` (regra 4, que existe só por causa do teto
-   técnico do AI Studio): aqui o corte é estratégia de conteúdo, pra virar série que prende — vale
-   mesmo no ElevenLabs Studio, que não tem teto nenhum. **Não reescreva a prosa** — o texto de cada
-   episódio é um recorte exato do capítulo original. O trabalho é só escolher onde cortar:
+11. **Pra postar em Reels/TikTok/Shorts como série, corte cada capítulo em ~3-4 episódios de
+   ~1:30-2min (não ~1min/6 episódios — testamos e era granularidade demais, arriscava virar spam se
+   replicado em todo capítulo/livro) cortados em pontos de tensão real, não em duração fixa.** Isso é
+   diferente do `_partes.md` (regra 4, que existe só por causa do teto técnico do AI Studio): aqui o
+   corte é estratégia de conteúdo, pra virar série que prende sem sobrecarregar o feed — vale mesmo
+   no ElevenLabs Studio, que não tem teto nenhum. Deixe os pontos de tensão reais decidirem o número
+   exato por capítulo (um mais denso pode pedir 4, um mais curto pode caber em 2) em vez de forçar
+   uma contagem fixa. **Não reescreva a prosa** — o texto de cada episódio é um recorte exato do
+   capítulo original. O trabalho é só escolher onde cortar:
    - Parar bem antes de uma personagem nova/misteriosa falar (a prosa geralmente já entrega esse
      gancho de graça, só precisa parar na hora certa).
    - Terminar logo depois de uma fala/linha de maior impacto emocional (acusação, revelação, grito
