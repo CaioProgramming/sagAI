@@ -1,4 +1,8 @@
-# Bíblia de Voz — As Damas Celestiais, Vol. I: O Pacto do Eremita e o Caminho de Espinhos
+# Bíblia de Voz — O Crepúsculo de Huffington, Vol. I: O Pacto do Eremita e o Caminho de Espinhos
+
+**Saga**: O Crepúsculo de Huffington. **Vol. I**: O Pacto do Eremita e o Caminho de Espinhos. "As
+Damas Celestiais" não é o nome da saga nem do livro — é como o trio de protagonistas (Rayffa,
+Lysandra, Isis) é chamado dentro da própria história.
 
 **Gênero**: Fantasia. Paleta visual do app pro gênero é vermelho/dourado, épico — mas a prosa deste
 livro específico não é whimsical, é **fantasy sombrio de exílio e vingança**. A voz precisa refletir

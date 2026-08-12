@@ -22,16 +22,25 @@ saudável pra manter frequência sem cansar quem segue do que os ~19 da primeira
 
 ## Identidade visual: playlist + overlay
 
-- **Playlist/coleção nos apps de vídeo**: nome da saga — **"As Damas Celestiais"**. Agrupa todo
-  vídeo desse universo (se um dia existir Vol. II, III, entra na mesma playlist).
-- **Overlay/thumbnail no vídeo** (texto na tela, não narrado): label pequeno **"VOL I"** em cima do
-  título **"AS DAMAS CELESTIAIS"** em destaque, na paleta/tipografia já usada pro gênero fantasia
-  (teal/dourado, serifado) — inspirado na capa real do livro no app, não uma cópia 1:1 dela. A capa
-  do PDF é uma colagem em grid (`GTAStyleCover`), boa em tela cheia; pra thumbnail pequena de vídeo
-  vertical, uma imagem só de cena (se tiver arte gerada boa) + o título estilizado por cima tende a
-  ler melhor que a colagem. Nada de nome novo/apelido inventado — o título real reforça visualmente
-  "isso é do Sagas" sem precisar narrar isso. Mesma arte em todos os episódios do Cap. 1 (como capa
-  de álbum), com um indicador pequeno "Parte X/3" pra diferenciar sem precisar de arte nova.
+**Hierarquia de nomes corrigida**: a saga se chama **"O Crepúsculo de Huffington"** — é esse o nome
+que vira marca/playlist recorrente entre volumes. "O Pacto do Eremita e o Caminho de Espinhos" é o
+título específico do Vol. I. "As Damas Celestiais" não é nome de saga nem de livro — é o nome do
+trio dentro da própria história (Rayffa, Lysandra e Isis), vem direto do texto ("o encontro das três
+Damas Celestiais..."). Renomear a pasta deste diretório (`as_damas_celestiais_vol1`) não é necessário
+agora — é só um slug interno, não aparece pro usuário final.
+
+- **Playlist/coleção nos apps de vídeo**: nome da saga — **"O Crepúsculo de Huffington"**. Agrupa
+  todo vídeo desse universo (Vol. II, III etc. entram na mesma playlist).
+- **Overlay/thumbnail no vídeo** (texto na tela, não narrado): label pequeno **"VOL. I"** embaixo do
+  título de destaque **"O Crepúsculo de Huffington"** (nome da saga, não o título específico do
+  volume — mais curto, mais reconhecível de volume pra volume), na paleta/tipografia já usada pro
+  gênero fantasia (vermelho/dourado, serifado/gótico) — inspirado na capa real do livro no app, não
+  uma cópia 1:1 dela. A capa do PDF é uma colagem em grid (`GTAStyleCover`), boa em tela cheia; pra
+  thumbnail pequena de vídeo vertical, uma imagem só de cena (se tiver arte gerada boa) + o título
+  estilizado por cima tende a ler melhor que a colagem. Nome real da saga, não um apelido inventado
+  pra rede social — reforça visualmente "isso é do Sagas" sem precisar narrar isso. Mesma arte em
+  todos os episódios do Cap. 1 (como capa de álbum), com um indicador pequeno "Parte X/3" pra
+  diferenciar sem precisar de arte nova.
 - Sem introdução falada antes da história: o áudio entra direto na prosa ("O vento uivava..."), o
   overlay já dá o contexto visualmente nos primeiros segundos sem gastar tempo de narração com isso.
 

@@ -178,11 +178,17 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
    título estilizado tende a ler melhor que a colagem). Nada de introdução falada no início do
    episódio 1 (throat-clearing custa os segundos mais importantes de retenção) — o contexto entra por
    texto na tela, não por narração:
-   - **Playlist/coleção** nos apps de vídeo = nome da saga (ex: "As Damas Celestiais"), agrupando
-     todo vídeo daquele universo.
-   - **Overlay/thumbnail do vídeo** (texto na tela) = "VOL <número>" + título em destaque, na mesma
-     paleta/tipografia do gênero — inspirado na capa real (reforça "isso é do Sagas" sem narrar
-     isso), mas desenhado pro formato vertical pequeno, não reaproveitado 1:1.
+   - **Cuidado com a hierarquia de nomes de uma história**: saga (nome recorrente da franquia, ex:
+     "O Crepúsculo de Huffington") ≠ título do volume específico (ex: "O Pacto do Eremita e o
+     Caminho de Espinhos", só do Vol. I) ≠ termos internos da própria narrativa (ex: "As Damas
+     Celestiais" é como as personagens se chamam dentro da história, não o nome de nada externo).
+     Confirme qual é qual antes de montar overlay/playlist — pergunte se não tiver certeza.
+   - **Playlist/coleção** nos apps de vídeo = nome da saga, agrupando todo vídeo daquele universo
+     entre volumes.
+   - **Overlay/thumbnail do vídeo** (texto na tela) = "VOL <número>" + nome da saga em destaque (não
+     o título específico do volume, que tende a ser mais longo/menos reconhecível de volume pra
+     volume), na paleta/tipografia do gênero — inspirado na capa real (reforça "isso é do Sagas" sem
+     narrar isso), mas desenhado pro formato vertical pequeno, não reaproveitado 1:1.
    - **Mesma arte/capa em todos os episódios de um livro** (como capa de álbum, não por faixa) — cria
      reconhecimento visual entre posts. Um indicador pequeno tipo "Parte 2/3" diferencia sem precisar
      de arte nova por episódio.
