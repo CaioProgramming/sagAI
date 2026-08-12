@@ -170,16 +170,24 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
    explicando mecânica do app — regra 8 vale aqui também). Salvo em `series/` dentro da pasta do
    livro. Comece só pelo primeiro capítulo de um livro pra validar o formato antes de replicar pros
    demais.
-11b. **Identidade visual do vídeo: reaproveita a capa real do livro, não inventa nome novo.** Nada de
-   introdução falada no início do episódio 1 (throat-clearing custa os segundos mais importantes de
-   retenção) — o contexto entra por texto na tela, não por narração:
+11b. **Identidade visual do vídeo: informada pela arte real do app, não uma cópia pixel a pixel
+   dela.** O código/assets do app (cores por gênero, imagens de cena, estrutura de capa como o
+   `GTAStyleCover`) são contexto pra não inventar às cegas — não um contrato pra reproduzir o
+   componente exato. Marketing tem liberdade de simplificar/adaptar pro formato (ex: a capa do PDF é
+   uma colagem em grid, boa em tela cheia; numa thumbnail pequena de vídeo vertical, uma imagem só +
+   título estilizado tende a ler melhor que a colagem). Nada de introdução falada no início do
+   episódio 1 (throat-clearing custa os segundos mais importantes de retenção) — o contexto entra por
+   texto na tela, não por narração:
    - **Playlist/coleção** nos apps de vídeo = nome da saga (ex: "As Damas Celestiais"), agrupando
      todo vídeo daquele universo.
-   - **Overlay do vídeo** (texto na tela) = a mesma estrutura da capa do livro já gerada no app —
-     label pequeno "VOL <número>" em cima do título em destaque, mesma paleta/tipografia do gênero.
-     Reaproveitar a capa real (em vez de um apelido inventado pro social) reforça visualmente "isso é
-     do Sagas" sem precisar narrar isso em nenhum momento.
-   Documente essa definição (nome da playlist + texto do overlay) no `_serie_notas.md` do livro.
+   - **Overlay/thumbnail do vídeo** (texto na tela) = "VOL <número>" + título em destaque, na mesma
+     paleta/tipografia do gênero — inspirado na capa real (reforça "isso é do Sagas" sem narrar
+     isso), mas desenhado pro formato vertical pequeno, não reaproveitado 1:1.
+   - **Mesma arte/capa em todos os episódios de um livro** (como capa de álbum, não por faixa) — cria
+     reconhecimento visual entre posts. Um indicador pequeno tipo "Parte 2/3" diferencia sem precisar
+     de arte nova por episódio.
+   Documente essa definição (nome da playlist + direção visual do overlay/thumbnail) no
+   `_serie_notas.md` do livro.
 
 ## Formato do `voice_bible.md`
 
