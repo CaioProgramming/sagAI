@@ -490,6 +490,7 @@
     <!-- Character stats -->
     <string name="character_stat_height">Height</string>
     <string name="character_stat_weight">Weight</string>
+    <string name="character_stat_age">Age</string>
     <string name="character_generating">Generating %1$s…</string>
     <string name="image_generation_default_label">Generating image…</string>
     <string name="image_generation_awaiting_manual">Awaiting manual image</string>
@@ -642,6 +643,13 @@
     <string name="milestone_encouragement">Congratulations! Keep going!</string>
     <string name="continue_button">Continue</string>
     <string name="introduction_milestone">Introduction</string>
+    <string name="milestone_loading_default">Shaping what happens next…</string>
+    <string name="milestone_adjusting_lore">Adjusting a few things…</string>
+    <string name="milestone_error_title">The story hit a snag</string>
+    <string name="milestone_emotional_note_label">Emotional note</string>
+    <string name="milestone_view_details">View details</string>
+    <string name="milestone_generate_book">Generate book</string>
+    <string name="milestone_generating_book">Generating book…</string>
     <string name="create_character">Continue to character</string>
 
     <string name="saga_intro_fallback">Welcome! Let\'s start creating your epic saga. What kind of story do you want to tell\?</string>

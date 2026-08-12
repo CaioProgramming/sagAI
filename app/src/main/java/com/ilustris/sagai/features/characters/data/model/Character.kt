@@ -62,6 +62,8 @@ data class Character(
     val smartZoom: SmartZoom? = null,
     @ColumnInfo(defaultValue = "")
     val voice: String? = null,
+    @ColumnInfo(defaultValue = "")
+    val artwork: String? = null,
 )
 
 data class Abilities(
@@ -87,6 +89,7 @@ data class PhysicalTraits(
     val race: String = "",
     val gender: String = "",
     val ethnicity: String = "",
+    val age: Int = 0,
     val height: Double = 0.0,
     val weight: Double = 0.0,
     @Embedded

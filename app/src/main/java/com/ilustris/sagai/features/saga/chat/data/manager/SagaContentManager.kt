@@ -12,6 +12,7 @@ import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 interface SagaContentManager {
@@ -24,11 +25,16 @@ interface SagaContentManager {
 
     val milestoneUpdate: MutableStateFlow<SagaMilestone?>
     val showObjectiveOverlay: StateFlow<Boolean>
-    val isOnboardingVisible: MutableStateFlow<Boolean>
+
+    /**
+     * One-shot signal (sagaId), emitted once per rising edge into
+     * [com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase.AwaitingAdvance] — a
+     * narrative chain step is ready and waiting. The only consumer should be the single
+     * navigation collector that opens the Milestone screen; nothing else should react to this.
+     */
+    val milestoneChainReady: SharedFlow<Int>
 
     suspend fun advanceNarrative()
-
-    suspend fun completeGameplayOnboarding(saga: com.ilustris.sagai.features.home.data.model.SagaMetadata?)
 
     suspend fun loadSaga(sagaId: String)
 
@@ -50,6 +56,13 @@ interface SagaContentManager {
         saga: com.ilustris.sagai.features.home.data.model.SagaMetadata?,
         isRetrying: Boolean = false,
     )
+
+    /** Deletes any Timeline row in the current chapter that is neither the chapter's current
+     * pointer target nor properly closed (see [com.ilustris.sagai.features.saga.chat.domain.manager.narrativelyCompleteTimeline])
+     * — a chapter is only ever meant to carry one such row at a time; anything else is a leftover
+     * from a past CreateTimeline race. Safe to call anytime, including redundantly: finds
+     * nothing once a chapter is clean. */
+    suspend fun pruneOrphanTimelines()
 
     suspend fun regenerateTimeline(
         saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,

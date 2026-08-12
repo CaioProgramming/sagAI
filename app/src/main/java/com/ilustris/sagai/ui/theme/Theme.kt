@@ -576,7 +576,7 @@ fun themeBubble() = LocalSagaGenre.current.bubble(isNarrator = true)
 fun sagaBrush(
     animated: Boolean = false,
     gradientType: GradientType = GradientType.LINEAR,
-): Brush = LocalSagaGenre.current.gradient(animated = animated, gradientType = gradientType)
+): Brush = gradientType.toBrush(themeBrushColors())
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

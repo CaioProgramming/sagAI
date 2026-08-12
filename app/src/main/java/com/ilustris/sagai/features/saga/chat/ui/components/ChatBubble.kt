@@ -17,7 +17,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -47,6 +46,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipScope
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -73,6 +73,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.formatHours
@@ -89,6 +91,11 @@ import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
 import com.ilustris.sagai.features.saga.chat.ui.animations.emotionalEntrance
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioMessagePlayer
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
+import com.ilustris.sagai.features.saga.chat.ui.components.decoration.chatBubbleBackgroundDecoration
+import com.ilustris.sagai.features.saga.chat.ui.components.decoration.chatBubbleConstraintBackgroundDecoration
+import com.ilustris.sagai.features.saga.chat.ui.components.decoration.chatBubbleConstraintDecorationOverlay
+import com.ilustris.sagai.features.saga.chat.ui.components.decoration.chatBubbleDecorationOverlay
+import com.ilustris.sagai.features.saga.chat.ui.components.decoration.chatBubbleNameTag
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
@@ -133,8 +140,10 @@ fun ChatBubble(
             characters.find { it.id == embedded.id } ?: embedded
         }
     val sender = message.senderType
-    val resolvedColor = MaterialTheme.colorScheme.primary
-    val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
+    val resolvedColor =
+        if (genre == Genre.HEROES) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.primary
+    val resolvedIconColor =
+        if (genre == Genre.HEROES) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
     val isUser = messageContent.isUser(mainCharacter?.data)
     genre.cornerSize()
     val isAnimated = canAnimate && messageEffectsEnabled.not()
@@ -153,12 +162,27 @@ fun ChatBubble(
         }
     val duration = bubbleStyle.animationDuration
     val bubbleShape = genre.bubble(bubbleStyle.tailAlignment)
+    val avatarShape = genre.avatarShape()
+    val decorationOverlay = genre.chatBubbleDecorationOverlay(bubbleShape, isUser)
+    val decorationBackground = genre.chatBubbleBackgroundDecoration(bubbleShape, isUser)
+    val constraintDecorationOverlay =
+        genre.chatBubbleConstraintDecorationOverlay(
+            bubbleShape,
+            isUser,
+            bubbleStyle.backgroundColor,
+        )
+    val constraintDecorationBackground =
+        genre.chatBubbleConstraintBackgroundDecoration(bubbleShape, isUser, bubbleStyle.backgroundColor)
+    val characterColor = avatarCharacter?.hexColor?.hexToColor() ?: resolvedColor
+    val nameTagContent =
+        avatarCharacter
+            ?.name
+            ?.takeIf { it.isNotBlank() && !isUser }
+            ?.let { genre.chatBubbleNameTag(it, characterColor, bubbleColor = bubbleStyle.backgroundColor) }
     val narratorShape =
         genre.bubble(
             BubbleTailAlignment.BottomRight,
             isNarrator = true,
-            tailHeight = 0.dp,
-            tailWidth = 0.dp,
         )
     var tooltipData by remember { mutableStateOf<Any?>(null) }
 
@@ -253,7 +277,7 @@ fun ChatBubble(
 
                             Box(
                                 Modifier
-                                    .clip(CircleShape)
+                                    .clip(avatarShape)
                                     .clickable {
                                         avatarCharacter?.let { character ->
                                             onAction(
@@ -263,34 +287,26 @@ fun ChatBubble(
                                                 ),
                                             )
                                         }
-                                    }
-                                    .size(avatarSize),
+                                    }.size(avatarSize),
                             ) {
                                 avatarCharacter?.let { character ->
-                                    AnimatedContent(
-                                        targetState = character.image to character.id,
-                                        transitionSpec = {
-                                            fadeIn() + scaleIn() togetherWith scaleOut()
-                                        },
-                                        label = "ChatBubbleAvatar",
-                                    ) {
-                                        CharacterAvatar(
-                                            character,
-                                            isLoading = isLoading,
-                                            genre = genre,
-                                            borderSize = 2.dp,
-                                            pixelation = 0f,
-                                            grainRadius = 0f,
-                                            modifier =
-                                                Modifier
-                                                    .sharedElement(
-                                                        rememberSharedContentState(key = "character_${character.id}_icon"),
-                                                        animatedVisibilityScope,
-                                                    )
-                                                    .padding(8.dp)
-                                                    .fillMaxSize(),
-                                        )
-                                    }
+                                    CharacterAvatar(
+                                        character,
+                                        isLoading = isLoading,
+                                        genre = genre,
+                                        borderSize = 1.dp,
+                                        innerPadding = 1.dp,
+                                        shape = avatarShape,
+                                        pixelation = 0f,
+                                        grainRadius = 0f,
+                                        modifier =
+                                            Modifier
+                                                .sharedElement(
+                                                    rememberSharedContentState(key = "character_${character.id}_icon"),
+                                                    animatedVisibilityScope,
+                                                ).padding(8.dp)
+                                                .fillMaxSize(),
+                                    )
 
                                     val relationWithMainCharacter =
                                         mainCharacter
@@ -333,8 +349,7 @@ fun ChatBubble(
                                                         message,
                                                     ),
                                                 )
-                                            }
-                                            .size(24.dp)
+                                            }.size(24.dp)
                                             .gradientFill(genre.gradient()),
                                     )
                                 }
@@ -354,8 +369,7 @@ fun ChatBubble(
                                             .emotionalEntrance(
                                                 message.emotionalTone,
                                                 messageEffectsEnabled,
-                                            )
-                                            .wrapContentSize()
+                                            ).wrapContentSize()
                                             .rotatingGradientBorder(
                                                 shape = bubbleShape,
                                                 colors = palette,
@@ -392,12 +406,10 @@ fun ChatBubble(
                                                                 )
                                                             }
                                                         },
-                                                    )
-                                                    .emotionalEntrance(
+                                                    ).emotionalEntrance(
                                                         message.emotionalTone,
                                                         messageEffectsEnabled,
-                                                    )
-                                                    .wrapContentSize()
+                                                    ).wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
@@ -407,6 +419,7 @@ fun ChatBubble(
                                             SenderType.CHARACTER -> {
                                                 if (isUser.not()) {
                                                     Modifier
+                                                        .clip(bubbleShape)
                                                         .combinedClickable(
                                                             interactionSource = interactionSource,
                                                             indication = ripple(),
@@ -429,25 +442,17 @@ fun ChatBubble(
                                                                     )
                                                                 }
                                                             },
-                                                        )
-                                                        .emotionalEntrance(
+                                                        ).emotionalEntrance(
                                                             message.emotionalTone,
                                                             messageEffectsEnabled,
-                                                        )
-                                                        .wrapContentSize()
+                                                        ).wrapContentSize()
                                                         .background(
                                                             bubbleStyle.backgroundColor,
                                                             bubbleShape,
                                                         )
-                                                        .background(
-                                                            MaterialTheme.colorScheme.surfaceContainer
-                                                                .copy(
-                                                                    alpha = .5f,
-                                                                ),
-                                                            bubbleShape,
-                                                        )
                                                 } else {
                                                     Modifier
+                                                        .clip(bubbleShape)
                                                         .combinedClickable(
                                                             interactionSource = interactionSource,
                                                             indication = ripple(),
@@ -470,12 +475,10 @@ fun ChatBubble(
                                                                     )
                                                                 }
                                                             },
-                                                        )
-                                                        .emotionalEntrance(
+                                                        ).emotionalEntrance(
                                                             message.emotionalTone,
                                                             messageEffectsEnabled,
-                                                        )
-                                                        .wrapContentSize()
+                                                        ).wrapContentSize()
                                                         .background(
                                                             bubbleStyle.backgroundColor,
                                                             bubbleShape,
@@ -484,28 +487,41 @@ fun ChatBubble(
                                             }
 
                                             else -> {
-                                                Modifier.combinedClickable(
-                                                    interactionSource = interactionSource,
-                                                    indication = ripple(),
-                                                    onClick = {
-                                                        if (isSelectionMode) {
-                                                            onAction(
-                                                                MessageAction.ToggleSelection(
-                                                                    message.id,
-                                                                ),
-                                                            )
-                                                        }
-                                                    },
-                                                    onLongClick = {
-                                                        if (!isSelectionMode) {
-                                                            onAction(
-                                                                MessageAction.LongPress(
-                                                                    message.id,
-                                                                ),
-                                                            )
-                                                        }
-                                                    },
-                                                )
+                                                val baseModifier =
+                                                    Modifier
+                                                        .clip(bubbleShape)
+                                                        .combinedClickable(
+                                                            interactionSource = interactionSource,
+                                                            indication = ripple(),
+                                                            onClick = {
+                                                                if (isSelectionMode) {
+                                                                    onAction(
+                                                                        MessageAction.ToggleSelection(
+                                                                            message.id,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                            },
+                                                            onLongClick = {
+                                                                if (!isSelectionMode) {
+                                                                    onAction(
+                                                                        MessageAction.LongPress(
+                                                                            message.id,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                            },
+                                                        )
+                                                if (genre == Genre.HEROES) {
+                                                    baseModifier
+                                                        .wrapContentSize()
+                                                        .background(
+                                                            bubbleStyle.backgroundColor,
+                                                            bubbleShape,
+                                                        )
+                                                } else {
+                                                    baseModifier
+                                                }
                                             }
                                         }
                                     }
@@ -520,14 +536,28 @@ fun ChatBubble(
                                     )
                                 }
 
+                                if (nameTagContent != null) {
+                                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                        nameTagContent()
+                                    }
+                                }
+
                                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                    TooltipBox(
-                                        positionProvider = tooltipPositionProvider,
-                                        state = reactionToolTipState,
-                                        onDismissRequest = {
-                                            tooltipData = null
-                                        },
-                                        tooltip = {
+                                    val bubbleContentModifier =
+                                        bubbleModifier
+                                            .graphicsLayer {
+                                                scaleX = finalScale
+                                                scaleY = finalScale
+                                            }.border(
+                                                2.dp,
+                                                borderColorAnimation,
+                                                bubbleShape,
+                                            ).padding(paddingAnimation)
+                                            .clip(bubbleShape)
+                                            .padding(vertical = 4.dp)
+                                            .animateContentSize()
+                                    val bubbleTooltipContent: @Composable TooltipScope.() -> Unit =
+                                        {
                                             tooltipData?.let {
                                                 AnnotationTooltip(
                                                     data = it,
@@ -535,23 +565,8 @@ fun ChatBubble(
                                                     shape = narratorShape,
                                                 )
                                             }
-                                        },
-                                        modifier =
-                                            bubbleModifier
-                                                .graphicsLayer {
-                                                    scaleX = finalScale
-                                                    scaleY = finalScale
-                                                }
-                                                .border(
-                                                    2.dp,
-                                                    borderColorAnimation,
-                                                    bubbleShape,
-                                                )
-                                                .padding(paddingAnimation)
-                                                .clip(bubbleShape)
-                                                .padding(vertical = 4.dp)
-                                                .animateContentSize(),
-                                    ) {
+                                        }
+                                    val bubbleTextContent: @Composable () -> Unit = {
                                         Box {
                                             var textAlpha by remember {
                                                 mutableStateOf(
@@ -559,9 +574,9 @@ fun ChatBubble(
                                                 )
                                             }
                                             val textColor =
-                                                when (sender) {
-                                                    SenderType.ACTION -> MaterialColor.Amber400
-                                                    SenderType.THOUGHT -> MaterialTheme.colorScheme.onBackground
+                                                when {
+                                                    sender == SenderType.ACTION -> MaterialColor.Amber400
+                                                    sender == SenderType.THOUGHT -> MaterialTheme.colorScheme.onBackground
                                                     else -> bubbleStyle.textColor
                                                 }
                                             val textAlign = TextAlign.Start
@@ -649,6 +664,68 @@ fun ChatBubble(
                                                 if (BuildConfig.DEBUG) {
                                                     ReasoningView(message.reasoning, genre)
                                                 }
+                                            }
+                                        }
+                                    }
+                                    Box(
+                                        modifier =
+                                            if (genre == Genre.HEROES) {
+                                                Modifier.padding(
+                                                    top = 4.dp,
+                                                    bottom = 12.dp,
+                                                    start = 4.dp,
+                                                    end = 12.dp,
+                                                )
+                                            } else {
+                                                Modifier
+                                            },
+                                    ) {
+                                        if (constraintDecorationOverlay != null || constraintDecorationBackground != null) {
+                                            // ConstraintLayout-backed decoration slot: unlike the plain Box below, this
+                                            // actually expands to include a decoration that hangs past the bubble's
+                                            // edge, instead of just drawing over/under whatever space was already there.
+                                            // TooltipBox is wrapped in a plain Box before being constrained — TooltipBox
+                                            // itself has its own internal tooltip/anchor layout logic that didn't behave
+                                            // as a direct ConstraintLayout child (see project notes, 2026-07-29 crash).
+                                            ConstraintLayout {
+                                                val content = createRef()
+                                                constraintDecorationBackground?.invoke(
+                                                    this,
+                                                    content,
+                                                )
+                                                Box(
+                                                    Modifier.constrainAs(content) {
+                                                        top.linkTo(parent.top)
+                                                        start.linkTo(parent.start)
+                                                        end.linkTo(parent.end)
+                                                        bottom.linkTo(parent.bottom)
+                                                        width = Dimension.wrapContent
+                                                        height = Dimension.wrapContent
+                                                    },
+                                                ) {
+                                                    TooltipBox(
+                                                        positionProvider = tooltipPositionProvider,
+                                                        state = reactionToolTipState,
+                                                        onDismissRequest = { tooltipData = null },
+                                                        tooltip = bubbleTooltipContent,
+                                                        modifier = bubbleContentModifier,
+                                                        content = bubbleTextContent,
+                                                    )
+                                                }
+                                                constraintDecorationOverlay?.invoke(this, content)
+                                            }
+                                        } else {
+                                            Box {
+                                                decorationBackground?.invoke(this)
+                                                TooltipBox(
+                                                    positionProvider = tooltipPositionProvider,
+                                                    state = reactionToolTipState,
+                                                    onDismissRequest = { tooltipData = null },
+                                                    tooltip = bubbleTooltipContent,
+                                                    modifier = bubbleContentModifier,
+                                                    content = bubbleTextContent,
+                                                )
+                                                decorationOverlay?.invoke(this)
                                             }
                                         }
                                     }
@@ -787,16 +864,15 @@ fun ChatBubble(
 
                     AudioGenButton(message, genre, onAction, messageContent, hasValidAudio)
 
-                    Box(
-                        modifier =
-                            modifier
-                                .emotionalEntrance(
-                                    message.emotionalTone,
-                                    messageEffectsEnabled,
-                                )
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                    ) {
+                    val narratorModifier =
+                        modifier
+                            .emotionalEntrance(
+                                message.emotionalTone,
+                                messageEffectsEnabled,
+                            ).padding(16.dp)
+                            .fillMaxWidth()
+
+                    val narratorBubbleContent: @Composable () -> Unit = {
                         Column(
                             Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -807,7 +883,7 @@ fun ChatBubble(
                                     transcription = message.text,
                                     audioPlaybackState = audioPlaybackState?.takeIf { it.messageId == message.id },
                                     genre = genre,
-                                    contentColor = resolvedIconColor,
+                                    contentColor = if (genre == Genre.HEROES) Color.Black else resolvedIconColor,
                                     onPlayPauseClick = {
                                         onAction(MessageAction.PlayAudio(messageContent))
                                     },
@@ -821,7 +897,7 @@ fun ChatBubble(
                                         MaterialTheme.typography.labelLarge.copy(
                                             fontWeight = FontWeight.Normal,
                                             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                            color = resolvedIconColor,
+                                            color = if (genre == Genre.HEROES) MaterialTheme.colorScheme.onSurface else resolvedIconColor,
                                         ),
                                     modifier =
                                         Modifier
@@ -836,6 +912,27 @@ fun ChatBubble(
                                     },
                                 )
                             }
+                        }
+                    }
+
+                    if (genre == Genre.HEROES) {
+                        Box(narratorModifier) {
+                            decorationBackground?.invoke(this)
+                            Box(
+                                Modifier
+                                    .clip(bubbleShape)
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        bubbleShape,
+                                    ),
+                            ) {
+                                narratorBubbleContent()
+                            }
+                            decorationOverlay?.invoke(this)
+                        }
+                    } else {
+                        Box(narratorModifier) {
+                            narratorBubbleContent()
                         }
                     }
 
@@ -987,12 +1084,28 @@ data class BubbleStyle(
     val animationEnabled: Boolean,
 ) {
     companion object {
+        /**
+         * Space Opera used to force a translucent fill here so the (now-removed) `dropShadow`
+         * glow behind the shape would show through it. That's gone now (2026-07-30) — the
+         * "holographic" identity comes entirely from the two overlapping stars in
+         * `SpaceOperaOverlay` instead, so the fill goes back to fully opaque like every other
+         * genre.
+         */
+        private fun Genre.resolveFill(
+            default: Color,
+            isUser: Boolean,
+        ): Color =
+            when (this) {
+                Genre.HEROES -> if (!isUser) default.copy(alpha = 0.75f) else default
+                else -> default
+            }
+
         fun userBubble(
             genre: Genre,
             backgroundColor: Color,
             textColor: Color,
         ) = BubbleStyle(
-            backgroundColor = backgroundColor,
+            backgroundColor = genre.resolveFill(backgroundColor.darker(.15f), true),
             textColor = textColor,
             tailAlignment = BubbleTailAlignment.BottomRight,
             animationDuration = 2.seconds,
@@ -1006,7 +1119,7 @@ data class BubbleStyle(
             backgroundColor: Color,
             textColor: Color,
         ) = BubbleStyle(
-            backgroundColor = backgroundColor,
+            backgroundColor = genre.resolveFill(backgroundColor, false),
             textColor = textColor,
             tailAlignment = BubbleTailAlignment.BottomLeft,
             animationDuration = 3.seconds,

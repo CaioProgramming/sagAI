@@ -104,6 +104,7 @@ class SagaIdeationService
                         "variationId",
                         "image",
                         "emojified",
+                        "emotionalProfile",
                     ),
             )
         }

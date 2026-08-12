@@ -3,24 +3,24 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.utils.asMap
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.buildContextualHistory
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.narrative.domain.buildChatContinuityContext
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
 data class PageGenerationArgs(
     val sagaMainContext: String,
-    val storyContext: String,
     val recentPagesSummary: String,
     val newDialogueBurst: String,
-    val genreInfo: String,
-    val activeCharacters: String,
-    val narrativeStyle: String,
-    val existingWikis: String,
-    val existingRelationships: String,
+    val extraContent: String,
 )
 
 object TimelinePrompts {
@@ -34,62 +34,38 @@ object TimelinePrompts {
         promptService: PromptService,
         narrativeRules: NarrativeRules,
         sagaContent: SagaContent,
-        currentTimeline: TimelineContent,
-        conversationDirective: String,
     ): SplitPrompt {
         val recentEvents =
             sagaContent
                 .flatEvents()
+                .filter { it.isComplete(narrativeRules) && it.data.content.isNotEmpty() }
+                .takeLast(narrativeRules.loreUpdateLimit)
                 .map { it.data }
-                .filter { it.id != currentTimeline.data.id }
-                .takeLast(7)
-
-        fun List<Timeline>.toBulletList(): String {
-            if (this.isEmpty()) return "No recent pages recorded."
-            return this.joinToString(separator = "\n") { t ->
-                "- ${t.title}: ${t.content.take(150).replace('\n', ' ')}"
-            }
-        }
+                .normalizetoAIItems(LorePrompts.TIMELINE_EXCLUDED_FIELDS)
 
         val charactersList =
-            sagaContent.characters.joinToString("\n") {
-                "- ${it.data.name}: ${it.data.backstory.take(100)}"
+            sagaContent.characters.map {
+                buildMap {
+                    putAll(it.data.asMap())
+                    it.summarizeRelationships()
+                }
             }
 
         val args =
             PageGenerationArgs(
-                sagaMainContext =
-                    sagaContent.data.toAINormalize(
-                        listOf(
-                            "id",
-                            "createdAt",
-                            "image",
-                            "userId",
-                        ),
-                    ),
-                storyContext = LorePrompts.storyContext(sagaContent, narrativeRules),
-                recentPagesSummary = recentEvents.toBulletList(),
+                sagaMainContext = sagaContent.buildContextualHistory(narrativeRules).toAINormalize(),
+                recentPagesSummary = recentEvents,
                 newDialogueBurst =
                     sagaContent
                         .flatMessages()
-                        .filter { it.message.timelineId == currentTimeline.data.id }
+                        .takeLast(narrativeRules.loreUpdateLimit)
                         .map { it.message }
-                        .take(narrativeRules.loreUpdateLimit)
                         .normalizetoAIItems(ChatPrompts.messageExclusions),
-                genreInfo = "${sagaContent.data.genre.name}",
-                activeCharacters = charactersList,
-                narrativeStyle = conversationDirective,
-                existingWikis =
-                    sagaContent.wikis.joinToString("\n") {
-                        "- ${it.title} (${it.type?.name}): ${
-                            it.content.take(
-                                100,
-                            )
-                        }..."
-                    },
-                existingRelationships =
-                    sagaContent.mainCharacter?.summarizeRelationships()
-                        ?: "No established relationships.",
+                extraContent =
+                    buildMap {
+                        put("Characters", charactersList)
+                        put("Wiki", sagaContent.wikis.normalizetoAIItems())
+                    }.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
             )
 
         return promptService.buildSplitBlueprint(UNIFIED_LORE_GENERATION_BLUEPRINT, args)
@@ -99,40 +75,38 @@ object TimelinePrompts {
         promptService: PromptService,
         narrativeRules: NarrativeRules,
         sagaContent: SagaContent,
-        currentTimeline: TimelineContent,
-        conversationDirective: String,
     ): SplitPrompt {
         val recentEvents =
             sagaContent
                 .flatEvents()
+                .filter { it.isComplete(narrativeRules) && it.data.content.isNotEmpty() }
+                .takeLast(narrativeRules.loreUpdateLimit)
                 .map { it.data }
-                .filter { it.id != currentTimeline.data.id }
-                .takeLast(5)
+                .normalizetoAIItems(LorePrompts.TIMELINE_EXCLUDED_FIELDS)
 
-        fun List<Timeline>.toBulletList(): String {
-            if (this.isEmpty()) return "No recent pages recorded."
-            return this.joinToString(separator = "\n") { t ->
-                "- ${t.title}: ${t.content.take(150).replace('\n', ' ')}"
+        val charactersList =
+            sagaContent.characters.map {
+                buildMap {
+                    putAll(it.data.asMap())
+                    it.summarizeRelationships()
+                }
             }
-        }
 
         val args =
             PageGenerationArgs(
-                sagaMainContext = SagaPrompts.mainContext(sagaContent),
-                storyContext = LorePrompts.storyContext(sagaContent, narrativeRules),
-                recentPagesSummary = recentEvents.toBulletList(),
+                sagaMainContext = sagaContent.buildContextualHistory(narrativeRules).toAINormalize(),
+                recentPagesSummary = recentEvents,
                 newDialogueBurst =
-                    currentTimeline.messages
+                    sagaContent
+                        .flatMessages()
+                        .takeLast(narrativeRules.loreUpdateLimit)
                         .map { it.message }
-                        .take(narrativeRules.loreUpdateLimit)
                         .normalizetoAIItems(ChatPrompts.messageExclusions),
-                genreInfo = "${sagaContent.data.genre.name} (${sagaContent.data.variationId ?: "Original"})",
-                activeCharacters = sagaContent.mainCharacter?.data?.name ?: "Unknown",
-                narrativeStyle = conversationDirective,
-                existingWikis = sagaContent.wikis.joinToString("\n") { "- ${it.title}" },
-                existingRelationships =
-                    sagaContent.mainCharacter?.summarizeRelationships()
-                        ?: "None.",
+                extraContent =
+                    buildMap {
+                        put("Characters", charactersList)
+                        put("Wiki", sagaContent.wikis.normalizetoAIItems())
+                    }.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
             )
 
         return promptService.buildSplitBlueprint(PAGE_GENERATION_BLUEPRINT, args)

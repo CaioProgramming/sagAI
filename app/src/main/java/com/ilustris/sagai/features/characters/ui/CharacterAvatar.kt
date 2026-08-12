@@ -1,5 +1,9 @@
 package com.ilustris.sagai.features.characters.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,6 +23,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -53,6 +58,7 @@ fun CharacterAvatar(
     isLoading: Boolean = false,
     useFallback: Boolean = false,
     modifier: Modifier = Modifier,
+    shape: Shape = CircleShape,
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
     pixelation: Float? = null,
@@ -77,12 +83,13 @@ fun CharacterAvatar(
             .border(
                 borderSize,
                 borderBrush,
-                CircleShape,
-            ).clip(CircleShape)
+                shape,
+            )
+            .clip(shape)
             .padding(innerPadding)
             .background(
                 Brush.verticalGradient(characterColor.darkerPalette(factor = .35f)),
-                CircleShape,
+                shape,
             ),
     ) {
         val skipGenreEffect = maxWidth < GenreEffectMaxSize && maxHeight < GenreEffectMaxSize
@@ -104,49 +111,53 @@ fun CharacterAvatar(
             )
         }
 
-        AsyncImage(
-            model =
-                ImageRequest
-                    .Builder(LocalContext.current)
-                    .data(imagePath.takeIf { it.isNotBlank() })
-                    .apply {
-                        if (imagePath.isNotBlank()) {
-                            memoryCacheKey("${character.id}:$imagePath")
-                            diskCacheKey("${character.id}:$imagePath")
+        AnimatedContent(imagePath, transitionSpec = {
+            scaleIn() togetherWith scaleOut()
+        }) {
+            AsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(LocalContext.current)
+                        .data(it)
+                        .apply {
+                            if (imagePath.isNotBlank()) {
+                                memoryCacheKey("${character.id}:$imagePath")
+                                diskCacheKey("${character.id}:$imagePath")
+                            }
+                        }.crossfade(true)
+                        .build(),
+                contentDescription = character.name,
+                contentScale = ContentScale.Crop,
+                onState = { state ->
+                    imageLoadFailed =
+                        when (state) {
+                            is AsyncImagePainter.State.Error,
+                            is AsyncImagePainter.State.Empty,
+                            -> true
+
+                            is AsyncImagePainter.State.Success -> false
+
+                            else -> imageLoadFailed
                         }
-                    }.crossfade(true)
-                    .build(),
-            contentDescription = character.name,
-            contentScale = ContentScale.Crop,
-            onState = { state ->
-                imageLoadFailed =
-                    when (state) {
-                        is AsyncImagePainter.State.Error,
-                        is AsyncImagePainter.State.Empty,
-                        -> true
-
-                        is AsyncImagePainter.State.Success -> false
-
-                        else -> imageLoadFailed
-                    }
-            },
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .clip(CircleShape)
-                    .then(
-                        if (!skipGenreEffect) {
-                            Modifier.effectForGenre(
-                                genre,
-                                useFallBack = useFallback,
-                                focusRadius = softFocusRadius,
-                                customGrain = grainRadius,
-                                pixelSize = pixelation,
-                            )
-                        } else {
-                            Modifier
-                        },
-                    ),
-        )
+                },
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .clip(shape)
+                        .then(
+                            if (!skipGenreEffect) {
+                                Modifier.effectForGenre(
+                                    genre,
+                                    useFallBack = useFallback,
+                                    focusRadius = softFocusRadius,
+                                    customGrain = grainRadius,
+                                    pixelSize = pixelation,
+                                )
+                            } else {
+                                Modifier
+                            },
+                        ),
+            )
+        }
     }
 }
