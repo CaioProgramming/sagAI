@@ -20,6 +20,18 @@ foi só escolher *onde* cortar: sempre num ponto de tensão real, nunca no meio 
 Total do livro (3 capítulos + bônus, estimando ~3 episódios por capítulo): **~10 posts**, bem mais
 saudável pra manter frequência sem cansar quem segue do que os ~19 da primeira tentativa.
 
+## Identidade visual: playlist + overlay
+
+- **Playlist/coleção nos apps de vídeo**: nome da saga — **"As Damas Celestiais"**. Agrupa todo
+  vídeo desse universo (se um dia existir Vol. II, III, entra na mesma playlist).
+- **Overlay no vídeo** (texto na tela, não narrado): reaproveita a estrutura real da capa do livro
+  no app — label pequeno **"VOL I"** em cima do título **"AS DAMAS CELESTIAIS"** em destaque, mesma
+  paleta/tipografia já usada pro gênero fantasia (teal/dourado, serifado). Nada de nome novo/apelido
+  inventado pro social — usar o título real da capa deixa mais claro e ainda reforça visualmente
+  "isso é do Sagas" sem precisar narrar isso em nenhum momento.
+- Sem introdução falada antes da história: o áudio entra direto na prosa ("O vento uivava..."), o
+  overlay já dá o contexto visualmente nos primeiros segundos sem gastar tempo de narração com isso.
+
 ## Sugestão de legenda por post (não vai na narração — só no texto do post/vídeo)
 
 Curto, sem spoiler do que vem, sem explicar mecânica do app:

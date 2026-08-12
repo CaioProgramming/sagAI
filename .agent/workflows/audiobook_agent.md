@@ -162,6 +162,16 @@ como dependência em `docs/marketing/marketing_canvas.md` quando o canvas for at
    explicando mecânica do app — regra 8 vale aqui também). Salvo em `series/` dentro da pasta do
    livro. Comece só pelo primeiro capítulo de um livro pra validar o formato antes de replicar pros
    demais.
+11b. **Identidade visual do vídeo: reaproveita a capa real do livro, não inventa nome novo.** Nada de
+   introdução falada no início do episódio 1 (throat-clearing custa os segundos mais importantes de
+   retenção) — o contexto entra por texto na tela, não por narração:
+   - **Playlist/coleção** nos apps de vídeo = nome da saga (ex: "As Damas Celestiais"), agrupando
+     todo vídeo daquele universo.
+   - **Overlay do vídeo** (texto na tela) = a mesma estrutura da capa do livro já gerada no app —
+     label pequeno "VOL <número>" em cima do título em destaque, mesma paleta/tipografia do gênero.
+     Reaproveitar a capa real (em vez de um apelido inventado pro social) reforça visualmente "isso é
+     do Sagas" sem precisar narrar isso em nenhum momento.
+   Documente essa definição (nome da playlist + texto do overlay) no `_serie_notas.md` do livro.
 
 ## Formato do `voice_bible.md`
 
