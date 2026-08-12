@@ -513,6 +513,8 @@
     <string name="continue_button">Continuar</string>
     <string name="introduction_milestone">Introdução</string>
     <string name="milestone_loading_default">Moldando o que vem a seguir…</string>
+    <string name="milestone_adjusting_lore">Ajustando alguns detalhes…</string>
+    <string name="milestone_error_title">A história travou num detalhe</string>
     <string name="milestone_emotional_note_label">Nota emocional</string>
     <string name="milestone_view_details">Ver detalhes</string>
     <string name="milestone_generate_book">Gerar livro</string>

@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,23 +30,26 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstrainedLayoutReference
 import androidx.constraintlayout.compose.ConstraintLayoutScope
 import androidx.constraintlayout.compose.Dimension
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.ui.components.BorderImage
 import com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.HorrorChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.rotate
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.solidGradient
 
@@ -152,12 +157,12 @@ fun Genre.chatBubbleConstraintDecorationOverlay(
             { content -> HorrorCloudOverlay(content, isUser) }
         }
 
-        Genre.SHINOBI -> {
-            { content -> ShinobiBlossomOverlay(content, isUser) }
+        Genre.FANTASY -> {
+            { content -> FantasyFlamesBackground(content, isUser, bubbleColor) }
         }
 
-        Genre.FANTASY -> {
-            { content -> FantasyDragonOverlay(content, shape, isUser) }
+        Genre.SHINOBI -> {
+            { content -> ShinobiBlossomOverlay(content, isUser) }
         }
 
         Genre.PUNK_ROCK -> {
@@ -166,10 +171,6 @@ fun Genre.chatBubbleConstraintDecorationOverlay(
 
         Genre.COWBOY -> {
             { content -> CowboyOverlay(content, isUser) }
-        }
-
-        Genre.CYBERPUNK -> {
-            { content -> CyberpunkOverlay(content, shape, isUser) }
         }
 
         Genre.SPACE_OPERA -> {
@@ -190,6 +191,7 @@ fun Genre.chatBubbleConstraintDecorationOverlay(
 fun Genre.chatBubbleConstraintBackgroundDecoration(
     shape: Shape,
     isUser: Boolean,
+    bubbleColor: Color,
 ): (@Composable ConstraintLayoutScope.(ConstrainedLayoutReference) -> Unit)? =
     when (this) {
         Genre.HORROR -> {
@@ -198,10 +200,6 @@ fun Genre.chatBubbleConstraintBackgroundDecoration(
 
         Genre.SHINOBI -> {
             { content -> ShinobiBranchBackground(content, isUser) }
-        }
-
-        Genre.FANTASY -> {
-            { content -> FantasyFlamesBackground(content, isUser) }
         }
 
         else -> {
@@ -217,22 +215,34 @@ fun Genre.chatBubbleConstraintBackgroundDecoration(
  * Returns null for genres without a decoration yet.
  */
 @Composable
-fun Genre.chatBubbleNameTag(name: String): (@Composable () -> Unit)? =
+fun Genre.chatBubbleNameTag(
+    name: String,
+    characterColor: Color,
+    bubbleColor: Color,
+): (@Composable () -> Unit)? =
     when (this) {
         Genre.CYBERPUNK -> {
-            { CyberpunkNameTag(name) }
+            { CyberpunkNameTag(name, characterColor) }
         }
 
         Genre.FANTASY -> {
-            { FantasyNameTag(name) }
+            { FantasyNameTag(name, characterColor) }
         }
 
         Genre.SHINOBI -> {
-            { ShinobiNameTag(name) }
+            { ShinobiNameTag(name, characterColor) }
         }
 
         Genre.SPACE_OPERA -> {
-            { SpaceOperaNameTag(name) }
+            { SpaceOperaNameTag(name, characterColor, bubbleColor = bubbleColor) }
+        }
+
+        Genre.HORROR -> {
+            { HorrorNameTag(name, characterColor) }
+        }
+
+        Genre.HEROES -> {
+            { HeroesNameTag(name, characterColor) }
         }
 
         else -> {
@@ -241,141 +251,34 @@ fun Genre.chatBubbleNameTag(name: String): (@Composable () -> Unit)? =
     }
 
 /**
- * Outline-only overlay for the Cyberpunk bubble: a single thin, crisp stroke traced along the
- * *existing*
- * [CyberpunkChatBubbleShape][com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape]
- * (reused as-is), tinted `primary`. No glow, no floating corner elements — a reference "Twitch
- * cyberpunk chat widget" template carries its whole identity through a crisp single-color border +
- * chamfered-corner panels, nothing hovering outside them. Corner brackets were tried first and
- * didn't read well at bubble scale; this crisp-outline approach matches the reference directly.
- */
-@Composable
-private fun BoxScope.CyberpunkBubbleOverlay(shape: Shape) {
-    val accent = MaterialTheme.colorScheme.primary
-
-    Box(
-        Modifier
-            .matchParentSize()
-            .drawWithContent {
-                drawContent()
-                drawOutline(
-                    outline = shape.createOutline(size, layoutDirection, this),
-                    color = accent,
-                    style = Stroke(width = 1.2.dp.toPx()),
-                )
-            },
-    )
-}
-
-/**
- * A small icon with a flat, hard-edged outline behind it — 4 tinted duplicates offset a couple of
- * px in each direction, then the real tinted icon drawn on top. Gives roughly the same "icon pops
- * off the background" read as a stroke/glow would, without touching [dropShadow] or any other
- * RenderEffect-based API (see [SpaceOperaBubbleOverlay]'s doc for why that's banned inside chat
- * bubble decorations — it crashed the app after sustained recomposition). Same idea as
- * [HeroesFlatShadow], just wrapping the icon itself instead of the whole bubble shape.
- */
-@Composable
-private fun FlatStrokedIcon(
-    painter: Painter,
-    tint: Color,
-    strokeColor: Color,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier) {
-        listOf(
-            (-1.4).dp to 0.dp,
-            1.4.dp to 0.dp,
-            0.dp to (-1.4).dp,
-            0.dp to 1.4.dp,
-        ).forEach { (dx, dy) ->
-            Image(
-                painter,
-                null,
-                colorFilter = ColorFilter.tint(strokeColor),
-                modifier =
-                    Modifier
-                        .matchParentSize()
-                        .offset(dx, dy),
-            )
-        }
-        Image(
-            painter,
-            null,
-            colorFilter = ColorFilter.tint(tint),
-            modifier = Modifier.matchParentSize(),
-        )
-    }
-}
-
-/**
- * Rendered IN FRONT of the bubble (the [chatBubbleConstraintDecorationOverlay] slot) — wraps the
- * existing [CyberpunkBubbleOverlay] (crisp outline, unchanged) inside a `Box` constrained to fill
- * [content] exactly, then adds a small "signal bars" icon at a bottom corner, straddling the
- * bubble's edge slightly and mirrored by [isUser]. Needed on `ConstraintLayout` (not the plain
- * `Box` slot) specifically because the bars now hang past the bubble's own bounds — see the
- * project notes (2026-07-30) for the Punk Rock clipping bug this exact pattern fixes.
- */
-@Composable
-private fun ConstraintLayoutScope.CyberpunkOverlay(
-    content: ConstrainedLayoutReference,
-    shape: Shape,
-    isUser: Boolean,
-) {
-    val accent = MaterialTheme.colorScheme.primary
-    val outlineOverlay = createRef()
-    Box(
-        Modifier.constrainAs(outlineOverlay) {
-            top.linkTo(content.top)
-            start.linkTo(content.start)
-            end.linkTo(content.end)
-            bottom.linkTo(content.bottom)
-            width = Dimension.fillToConstraints
-            height = Dimension.fillToConstraints
-        },
-    ) {
-        CyberpunkBubbleOverlay(shape)
-    }
-
-    val bars = createRef()
-    FlatStrokedIcon(
-        painter = painterResource(R.drawable.ic_cyberpunk_bars),
-        tint = accent,
-        strokeColor = MaterialTheme.colorScheme.background,
-        modifier =
-            Modifier.constrainAs(bars) {
-                bottom.linkTo(content.bottom, margin = 16.dp)
-                if (isUser) {
-                    end.linkTo(content.end, margin = (-10).dp)
-                } else {
-                    start.linkTo(content.start, margin = (-10).dp)
-                }
-                width = Dimension.value(34.dp)
-                height = Dimension.value(26.dp)
-            },
-    )
-}
-
-/**
  * Reuses [CyberpunkChatBubbleShape] with `drawTail = false` for the tag background — the same
  * chamfered-corner language as the bubble and the avatar (see [[avatarShape]]), instead of a
  * generic rounded rect, so the whole message row reads as one panel system.
+ *
+ * Tinted with [characterColor] (not the genre `primary`) so each speaking character reads as a
+ * distinct color — reference "cyber purple" Twitch widget shows exactly this per-user tinting.
+ * Positioned with a downward [Modifier.offset] so it visually overlaps the bubble's top edge
+ * instead of floating as a fully separate label above it, matching that same reference.
  */
 @Composable
-private fun CyberpunkNameTag(name: String) {
-    val accent = MaterialTheme.colorScheme.primary
+private fun CyberpunkNameTag(
+    name: String,
+    characterColor: Color,
+) {
     val tagShape = remember { CyberpunkChatBubbleShape(cornerRadius = 4.dp, drawTail = false) }
     Row(
         modifier =
             Modifier
-                .padding(start = 4.dp, bottom = 4.dp)
-                .background(accent.darker(.3f), tagShape)
-                .border(1.dp, accent, tagShape)
+                .zIndex(1f)
+                .padding(start = 4.dp)
+                .offset(y = 10.dp)
+                .background(characterColor.darker(.3f), tagShape)
+                .border(1.dp, characterColor, tagShape)
                 .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
         Text(
             name.uppercase(),
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = Color.White,
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
@@ -427,7 +330,7 @@ private fun BoxScope.SpaceOperaBubbleOverlay(
  * outline, unchanged) the same way [CyberpunkOverlay] wraps [CyberpunkBubbleOverlay], then adds a
  * decorative star straddling a top corner so it visually "breaks" the outline (roughly half
  * inside, half outside — a reference "screenshot frame with a sparkle poking through the corner"
- * template), mirrored by [isUser]. The star gets [FlatStrokedIcon]'s flat offset-duplicate outline
+ * template), mirrored by [isUser]. The star gets [com.ilustris.sagai.ui.components.BorderImage]'s flat offset-duplicate outline
  * instead of a real stroke/shadow API, for the same crash-avoidance reason documented on
  * [SpaceOperaBubbleOverlay].
  */
@@ -458,30 +361,30 @@ private fun ConstraintLayoutScope.SpaceOperaOverlay(
     // Top corner star — deeply overlapping into the bubble now, reading as part of the panel
     // itself rather than a decoration "breaking" the outline from outside.
     val starTop = createRef()
-    FlatStrokedIcon(
+    BorderImage(
         painter = starPainter,
         tint = accent,
-        strokeColor = MaterialTheme.colorScheme.background,
+        borderColor = MaterialTheme.colorScheme.background,
+        borderWidth = 2.dp,
         modifier =
-            Modifier.constrainAs(starTop) {
-                bottom.linkTo(content.top, margin = (-16).dp)
-                if (isUser) {
-                    end.linkTo(content.end, margin = (-16).dp)
-                } else {
-                    start.linkTo(content.start, margin = (-16).dp)
-                }
-                width = Dimension.value(26.dp)
-                height = Dimension.value(32.dp)
-            },
+            Modifier
+                .constrainAs(starTop) {
+                    bottom.linkTo(content.top, margin = (-20).dp)
+                    if (isUser) {
+                        end.linkTo(content.end, margin = (-20).dp)
+                    } else {
+                        start.linkTo(content.start, margin = (-20).dp)
+                    }
+                }.size(32.dp),
     )
 
     // Second star at the exact opposite (diagonal) corner — same overlap treatment, mirrored on
     // both axes so it lands bottom-opposite-side from the top star.
     val starBottom = createRef()
-    FlatStrokedIcon(
+    BorderImage(
         painter = starPainter,
         tint = accent,
-        strokeColor = MaterialTheme.colorScheme.background,
+        borderColor = MaterialTheme.colorScheme.background,
         modifier =
             Modifier.constrainAs(starBottom) {
                 bottom.linkTo(content.bottom, (-16).dp)
@@ -499,23 +402,31 @@ private fun ConstraintLayoutScope.SpaceOperaOverlay(
 /**
  * Same reuse pattern as [CyberpunkNameTag]: the bubble's own shape (already tail-less, see
  * [[avatarShape]]) as the tag background instead of a generic rounded rect, with the
- * [Color.gradientFade] border matching [SpaceOperaBubbleOverlay]'s "lit glass" edge.
+ * [Color.gradientFade] border matching [SpaceOperaBubbleOverlay]'s "lit glass" edge. Overlaps the
+ * bubble's top edge via `zIndex` + downward `offset`, same as [CyberpunkNameTag].
  */
 @Composable
-private fun SpaceOperaNameTag(name: String) {
-    val accent = MaterialTheme.colorScheme.primary
+private fun SpaceOperaNameTag(
+    name: String,
+    characterColor: Color,
+    bubbleColor: Color,
+) {
     val tagShape = remember { SpaceChatBubbleShape(cutSize = 2.dp, largeCutSize = 4.dp) }
     Row(
         modifier =
             Modifier
-                .padding(start = 4.dp, bottom = 4.dp)
-                .background(accent.copy(alpha = .55f), tagShape)
-                .border(1.dp, accent.gradientFade(), tagShape)
+                .zIndex(1f)
+                .padding(start = 8.dp)
+                .offset(y = 16.dp)
+                .background(bubbleColor, tagShape)
+                .background(characterColor.copy(alpha = .55f), tagShape)
+                .border(1.dp, MaterialTheme.colorScheme.background, tagShape)
+                .border(1.dp, characterColor, tagShape)
                 .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
         Text(
             name.uppercase(),
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = Color.White,
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
@@ -537,11 +448,11 @@ private fun BoxScope.HeroesFlatShadow(
     shape: Shape,
     @Suppress("UNUSED_PARAMETER") isUser: Boolean,
 ) {
-    val shadowColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+    val shadowColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
     Box(
         Modifier
             .matchParentSize()
-            .offset(6.dp, 6.dp)
+            .offset(4.dp, 4.dp)
             .background(shadowColor, shape),
     )
 }
@@ -566,10 +477,46 @@ private fun BoxScope.HeroesInkOutline(
                 drawOutline(
                     outline = shape.createOutline(size, layoutDirection, this),
                     color = outlineColor,
-                    style = Stroke(width = 2.5.dp.toPx()),
+                    style = Stroke(width = 1.5.dp.toPx()),
                 )
             },
     )
+}
+
+/**
+ * "Persona"-style role pill — a bold rounded pill filled with [characterColor] and a thick black
+ * ink border, matching the reference "Interactive Streaming" chat widget's colored name badges.
+ * Doesn't touch [HeroesSpeechBalloonShape][com.ilustris.sagai.ui.theme.components.chat.HeroesSpeechBalloonShape]
+ * at all — explicit brief was to adapt only the tag's style, not the balloon shape. Overlaps the
+ * balloon's top edge the same way [CyberpunkNameTag] does (`zIndex` + downward `offset`) so the
+ * pill visually sits on top of the panel instead of floating as a separate label above it.
+ */
+@Composable
+private fun HeroesNameTag(
+    name: String,
+    characterColor: Color,
+) {
+    val pillShape = RoundedCornerShape(50)
+    Row(
+        modifier =
+            Modifier
+                .zIndex(1f)
+                .padding(start = 8.dp)
+                .offset(y = 10.dp)
+                .background(characterColor, pillShape)
+                .border(2.5.dp, Color.Black, pillShape)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+    ) {
+        Text(
+            name.uppercase(),
+            color = Color.White,
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                ),
+        )
+    }
 }
 
 /**
@@ -742,97 +689,58 @@ private fun BoxScope.FantasyBubbleOverlay(shape: Shape) {
 }
 
 /**
- * Rendered IN FRONT of the bubble (the [chatBubbleConstraintDecorationOverlay] slot) — the dragon
- * body curling along the bottom of the panel, overlapping up into it like [HorrorCloudOverlay]
- * does. Wraps [FantasyBubbleOverlay] (the outline + stars) inside the same constrained `content`
- * box, since Fantasy switching to the `ConstraintLayout` slot means the old plain-`Box` overlay
- * slot no longer fires for this genre — this is the one place that combined visual now lives.
- *
- * Mirrors by [isUser] the same way [ShinobiBranchBackground] does: which corner it's anchored to
- * AND the artwork itself via a horizontal `scale` flip, since the dragon has a clear directional
- * curl and would read as backwards on the un-mirrored side otherwise.
- */
-@Composable
-private fun ConstraintLayoutScope.FantasyDragonOverlay(
-    content: ConstrainedLayoutReference,
-    shape: Shape,
-    isUser: Boolean,
-) {
-    val gold = fantasyAccentColor()
-
-    val dragon = createRef()
-    Image(
-        painterResource(R.drawable.ic_dragon_body),
-        null,
-        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
-        modifier =
-            Modifier
-                .constrainAs(dragon) {
-                    bottom.linkTo(content.bottom, margin = 6.dp)
-                    if (isUser) {
-                        start.linkTo(content.start, margin = (-14).dp)
-                    } else {
-                        end.linkTo(content.end, margin = (-14).dp)
-                    }
-                }.size(64.dp)
-                .scale(scaleX = if (!isUser) -1f else 1f, scaleY = 1f),
-    )
-}
-
-/**
- * Rendered BEHIND the bubble (the [chatBubbleConstraintBackgroundDecoration] slot) — three small
- * flame tips of varying size peeking up from behind the top edge, like [HorrorMoonBackground]'s
- * overlap technique, scattered across the width so the panel reads as "on fire" rather than
- * having one single flame. Not mirrored by [isUser] (unlike the dragon) — flames scattered across
- * the whole top edge look the same regardless of which side the bubble is aligned to.
+ * Rendered BEHIND the bubble (the [chatBubbleConstraintBackgroundDecoration] slot) — a real flame
+ * illustration (`ic_fantasy_flame`, a user-sourced raster asset trimmed/downscaled into
+ * `drawable-nodpi`) tucked behind each bottom corner instead of the earlier procedural gradient
+ * teardrops (`drawFantasyFireEdge`, removed 2026-08-12): the flat single-tone gradient read as too
+ * weak/subtle against the bubble, so this trades "always matches `bubbleColor` exactly" for "looks
+ * like an actual flame" — deliberately left untinted (the asset's own orange/yellow shading is the
+ * whole point of switching to a real illustration) rather than `ColorFilter.tint`-ed, unlike every
+ * other icon in this file. Each flame's `top` anchors *above* the bubble's own bottom edge (negative
+ * margin, same overlap technique as [HorrorMoonBackground]) so its upper portion tucks behind the
+ * bubble's opaque fill and only the lower lick pokes out below — reads as the flame growing out from
+ * behind the bubble rather than a sticker floating on top of it. The right-side flame is horizontally
+ * flipped so both licks lean inward toward the bubble's center instead of mirroring outward. Not
+ * gated by [isUser] — unlike the dragon below, the fire sits on both lateral corners regardless of
+ * which side the bubble is aligned to. Also still carries the dragon body peeking from behind the
+ * top corner, mirrored by [isUser] the same way [ShinobiBranchBackground] does — corner side *and* a
+ * horizontal `scale` flip on the artwork itself, since the dragon has a clear directional curl.
  */
 @Composable
 private fun ConstraintLayoutScope.FantasyFlamesBackground(
     content: ConstrainedLayoutReference,
     isUser: Boolean,
+    bubbleColor: Color,
 ) {
-    val gold = fantasyAccentColor()
-
-    val flameStart = createRef()
+    val leftFlame = createRef()
     Image(
-        painterResource(R.drawable.ic_fire_flame),
+        painterResource(R.drawable.ic_fantasy_flame),
         null,
-        colorFilter = ColorFilter.tint(gold),
+        colorFilter = ColorFilter.tint(bubbleColor),
         modifier =
-            Modifier.constrainAs(flameStart) {
-                bottom.linkTo(content.top, margin = (-8).dp)
-                start.linkTo(content.start, margin = 10.dp)
-                width = Dimension.value(10.dp)
-                height = Dimension.value(13.dp)
-            },
+            Modifier
+                .constrainAs(leftFlame) {
+                    top.linkTo(content.bottom, margin = (-24).dp)
+                    start.linkTo(content.start, margin = (-6).dp)
+                    width = Dimension.value(15.dp)
+                    height = Dimension.value(24.dp)
+                }.rotate(-60f),
     )
 
-    val flameCenter = createRef()
+    val rightFlame = createRef()
     Image(
-        painterResource(R.drawable.ic_fire_flame),
+        painterResource(R.drawable.ic_fantasy_flame),
         null,
-        colorFilter = ColorFilter.tint(gold),
+        colorFilter = ColorFilter.tint(bubbleColor),
         modifier =
-            Modifier.constrainAs(flameCenter) {
-                bottom.linkTo(content.top, margin = (-12).dp)
-                centerHorizontallyTo(content)
-                width = Dimension.value(13.dp)
-                height = Dimension.value(17.dp)
-            },
-    )
-
-    val flameEnd = createRef()
-    Image(
-        painterResource(R.drawable.ic_fire_flame),
-        null,
-        colorFilter = ColorFilter.tint(gold),
-        modifier =
-            Modifier.constrainAs(flameEnd) {
-                bottom.linkTo(content.top, margin = (-6).dp)
-                end.linkTo(content.end, margin = 14.dp)
-                width = Dimension.value(9.dp)
-                height = Dimension.value(11.dp)
-            },
+            Modifier
+                .constrainAs(rightFlame) {
+                    top.linkTo(content.bottom, margin = (-24).dp)
+                    end.linkTo(content.end, margin = (-6).dp)
+                    width = Dimension.value(13.dp)
+                    height = Dimension.value(21.dp)
+                }.scale(scaleX = -1f, scaleY = 1f)
+                .rotate(-60f),
     )
 }
 
@@ -862,16 +770,20 @@ private val fantasyParchmentTagShape =
 
 /**
  * Name tag styled like a torn parchment strip, with a thin vine tendril curling from its
- * bottom-left edge down toward the bubble below (a decorative line, not a precisely-measured
- * connector between two separate composables — the tag and bubble sit only 4dp apart in the
- * Column, so a short curl reads as "connected" without needing cross-composable position math).
+ * bottom-left edge down toward the bubble below. Overlaps the bubble's top edge via `zIndex` +
+ * downward `offset` — same technique as [CyberpunkNameTag]/[HeroesNameTag] — so the vine now
+ * curls straight into the panel itself instead of dangling in the gap above it.
  */
 @Composable
-private fun FantasyNameTag(name: String) {
-    val gold = fantasyAccentColor()
+private fun FantasyNameTag(
+    name: String,
+    characterColor: Color,
+) {
     Box(
         modifier =
             Modifier
+                .zIndex(1f)
+                .offset(y = 10.dp)
                 .padding(start = 6.dp, bottom = 14.dp)
                 .drawWithContent {
                     drawContent()
@@ -891,7 +803,7 @@ private fun FantasyNameTag(name: String) {
                         }
                     drawPath(
                         vine,
-                        color = gold.copy(alpha = .75f),
+                        color = characterColor.copy(alpha = .75f),
                         style = Stroke(width = 1.3.dp.toPx()),
                     )
                 },
@@ -900,7 +812,7 @@ private fun FantasyNameTag(name: String) {
             modifier =
                 Modifier
                     .background(Color.Black.copy(alpha = .82f), fantasyParchmentTagShape)
-                    .border(1.dp, gold.copy(alpha = .7f), fantasyParchmentTagShape)
+                    .border(1.dp, characterColor.copy(alpha = .7f), fantasyParchmentTagShape)
                     .padding(horizontal = 10.dp, vertical = 4.dp),
         ) {
             Text(
@@ -1001,24 +913,24 @@ private fun ConstraintLayoutScope.ShinobiBlossomOverlay(
  * ink border instead of a glow, and a small blossom as a seal-like prefix next to the name.
  */
 @Composable
-private fun ShinobiNameTag(name: String) {
-    val ink = shinobiAccentColor()
+private fun ShinobiNameTag(
+    name: String,
+    characterColor: Color,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier =
             Modifier
                 .padding(start = 4.dp, bottom = 4.dp)
-                .background(
-                    MaterialTheme.colorScheme.primary.darker(.3f),
-                    MaterialTheme.shapes.small,
-                ).border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)
+                .background(characterColor.darker(.3f), MaterialTheme.shapes.small)
+                .border(1.dp, characterColor, MaterialTheme.shapes.small)
                 .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
         Image(
             painterResource(R.drawable.ic_sakura_blossom),
             null,
-            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary),
+            colorFilter = ColorFilter.tint(Color.White),
             modifier = Modifier.size(10.dp),
         )
         Text(
@@ -1046,6 +958,42 @@ private val HorrorMoonColor = Color(0xFFF4E9C1)
  * it — this sits in front of the bubble, so it needs more contrast than a background element does.
  */
 private val HorrorCloudColor = Color(0xFFEEEEEE)
+
+/**
+ * Retro pixel-chat-widget style tag — reuses [HorrorChatBubbleShape] with `drawTail = false` for
+ * the tag background (same "reuse the bubble's own shape for the tag" pattern as
+ * [CyberpunkNameTag]/[SpaceOperaNameTag]), which already gives it the small stepped-pixel corners
+ * from the reference "Twitch Pixel Chat" template — no separate pixel shape needed. Tinted with
+ * [characterColor] so each speaker reads distinctly, same as every other genre's tag now.
+ * Overlaps the bubble's top edge via `zIndex` + downward `offset`, same as [CyberpunkNameTag].
+ */
+@Composable
+private fun HorrorNameTag(
+    name: String,
+    characterColor: Color,
+) {
+    val tagShape = remember { HorrorChatBubbleShape(pixelSize = 2.dp, drawTail = false) }
+    Row(
+        modifier =
+            Modifier
+                .zIndex(1f)
+                .padding(start = 4.dp)
+                .offset(y = 10.dp)
+                .background(characterColor.darker(.4f), tagShape)
+                .border(1.5.dp, characterColor, tagShape)
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+    ) {
+        Text(
+            name.uppercase(),
+            color = Color.White,
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                ),
+        )
+    }
+}
 
 /**
  * Rendered BEHIND the bubble (see [chatBubbleConstraintBackgroundDecoration]) so the shape's own

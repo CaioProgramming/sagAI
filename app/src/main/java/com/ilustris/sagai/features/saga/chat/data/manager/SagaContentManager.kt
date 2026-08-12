@@ -57,6 +57,13 @@ interface SagaContentManager {
         isRetrying: Boolean = false,
     )
 
+    /** Deletes any Timeline row in the current chapter that is neither the chapter's current
+     * pointer target nor properly closed (see [com.ilustris.sagai.features.saga.chat.domain.manager.narrativelyCompleteTimeline])
+     * — a chapter is only ever meant to carry one such row at a time; anything else is a leftover
+     * from a past CreateTimeline race. Safe to call anytime, including redundantly: finds
+     * nothing once a chapter is clean. */
+    suspend fun pruneOrphanTimelines()
+
     suspend fun regenerateTimeline(
         saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
         timelineContent: com.ilustris.sagai.features.home.data.model.TimelineMetadata,

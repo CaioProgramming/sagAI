@@ -644,6 +644,8 @@
     <string name="continue_button">Continue</string>
     <string name="introduction_milestone">Introduction</string>
     <string name="milestone_loading_default">Shaping what happens next…</string>
+    <string name="milestone_adjusting_lore">Adjusting a few things…</string>
+    <string name="milestone_error_title">The story hit a snag</string>
     <string name="milestone_emotional_note_label">Emotional note</string>
     <string name="milestone_view_details">View details</string>
     <string name="milestone_generate_book">Generate book</string>

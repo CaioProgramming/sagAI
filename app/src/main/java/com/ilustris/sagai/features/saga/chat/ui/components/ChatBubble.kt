@@ -141,7 +141,7 @@ fun ChatBubble(
         }
     val sender = message.senderType
     val resolvedColor =
-        if (genre == Genre.HEROES) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.primary
+        if (genre == Genre.HEROES) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.primary
     val resolvedIconColor =
         if (genre == Genre.HEROES) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
     val isUser = messageContent.isUser(mainCharacter?.data)
@@ -172,12 +172,13 @@ fun ChatBubble(
             bubbleStyle.backgroundColor,
         )
     val constraintDecorationBackground =
-        genre.chatBubbleConstraintBackgroundDecoration(bubbleShape, isUser)
+        genre.chatBubbleConstraintBackgroundDecoration(bubbleShape, isUser, bubbleStyle.backgroundColor)
+    val characterColor = avatarCharacter?.hexColor?.hexToColor() ?: resolvedColor
     val nameTagContent =
         avatarCharacter
             ?.name
             ?.takeIf { it.isNotBlank() && !isUser }
-            ?.let { genre.chatBubbleNameTag(it) }
+            ?.let { genre.chatBubbleNameTag(it, characterColor, bubbleColor = bubbleStyle.backgroundColor) }
     val narratorShape =
         genre.bubble(
             BubbleTailAlignment.BottomRight,

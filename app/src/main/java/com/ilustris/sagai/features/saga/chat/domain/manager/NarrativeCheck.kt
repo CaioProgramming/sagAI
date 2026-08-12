@@ -136,8 +136,12 @@ object NarrativeCheck {
     }
 }
 
-/** Matches [TimelineContent.isComplete]: lore full plus non-empty summary fields (no [isBlank] variant). */
-private fun TimelineMetadata.narrativelyCompleteTimeline(rules: NarrativeRules): Boolean =
+/** Matches [TimelineContent.isComplete]: lore full plus non-empty summary fields (no [isBlank]
+ * variant). Not private — also the definition of "valid" a timeline needs to satisfy in
+ * [SagaContentManagerImpl.pruneOrphanTimelines][com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManagerImpl]
+ * (valid = current pointer target OR narrativelyCompleteTimeline; anything else is an orphan),
+ * so both stay in sync with a single source of truth instead of drifting apart. */
+fun TimelineMetadata.narrativelyCompleteTimeline(rules: NarrativeRules): Boolean =
     messages.size >= rules.loreUpdateLimit &&
         data.title.isNotEmpty() &&
         data.content.isNotEmpty()

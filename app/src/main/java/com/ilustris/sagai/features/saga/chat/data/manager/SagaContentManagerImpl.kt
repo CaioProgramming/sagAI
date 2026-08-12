@@ -73,6 +73,7 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeProcessingG
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.domain.manager.TIMELINE_ALREADY_ACTIVE_MESSAGE
 import com.ilustris.sagai.features.saga.chat.domain.manager.executionMode
+import com.ilustris.sagai.features.saga.chat.domain.manager.narrativelyCompleteTimeline
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.datasource.MessageDao
@@ -248,6 +249,12 @@ class SagaContentManagerImpl
         private suspend fun executeNarrativeAction(
             action: NarrativeAction,
             isRetry: Boolean,
+            // False only when called from inside requestNarrativeProgression()'s own automatic-
+            // action loop (progressionMutex already held on this coroutine) — Mutex.withLock
+            // isn't reentrant, so self-chaining back into requestNarrativeProgression() from
+            // there would deadlock. The loop re-decides the next step itself once this call
+            // returns, so the self-chain would be redundant anyway.
+            chainNext: Boolean = true,
         ) {
             val sagaMetadata = content.value ?: return
             setNarrativeProcessingStatus(true)
@@ -283,7 +290,9 @@ class SagaContentManagerImpl
                     is NarrativeExecutionResult.Success -> {
                         handlePostAction(sagaMetadata, action, result.value)
                         awaitMilestoneDismissalIfNeeded()
-                        requestNarrativeProgression(isRetry = false)
+                        if (chainNext) {
+                            requestNarrativeProgression(isRetry = false)
+                        }
                     }
 
                     is NarrativeExecutionResult.Failure -> {
@@ -307,7 +316,7 @@ class SagaContentManagerImpl
                 // instead. Nothing else proactively consumes that flag once processing actually
                 // clears, so without this the advance trigger can silently never reappear until an
                 // unrelated event (new message, saga reload) happens to ask again.
-                if (narrativeCoordinator.consumePendingReevaluation()) {
+                if (chainNext && narrativeCoordinator.consumePendingReevaluation()) {
                     requestNarrativeProgression(isRetry = false)
                 }
             }
@@ -491,14 +500,24 @@ class SagaContentManagerImpl
 
                                 if (previousSaga == null) {
                                     if (saga.data.isEnded.not()) {
-                                        saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
+                                        // quote is the only thing this milestone has to show (see
+                                        // MilestoneIntroductionContent — titleText is blank for
+                                        // RESUME by design). A null/blank quote used to still
+                                        // reveal the milestone with an empty introduction string,
+                                        // which meant SimpleTypewriterText never rendered, its
+                                        // onAnimationFinished callback that unlocks the Continue
+                                        // button never fired, and the player got stuck on a blank,
+                                        // un-backable screen forever. Skip the reveal entirely
+                                        // instead — same as the already-null-sceneSummary case —
+                                        // and let the player land straight in chat.
+                                        val sceneSummary = saga.getCurrentTimeLine()?.data?.sceneSummary
+                                        val quote = sceneSummary?.quote?.takeIf { it.isNotBlank() }
+                                        if (sceneSummary != null && quote != null) {
                                             emitMilestone(
                                                 SagaMilestone.Introduction(
                                                     type = IntroductionType.RESUME,
                                                     titleText = emptyString(),
-                                                    introduction =
-                                                        it.quote
-                                                            ?: emptyString(),
+                                                    introduction = quote,
                                                     number =
                                                         stringResourceHelper.getString(
                                                             R.string.chapter_number_label,
@@ -507,10 +526,12 @@ class SagaContentManagerImpl
                                                                     saga.currentChapterInfo?.data?.id,
                                                                 ).toRoman(),
                                                         ),
-                                                    sceneSummary = it,
+                                                    sceneSummary = sceneSummary,
                                                 ),
                                             )
-                                        } ?: emitMilestone(null)
+                                        } else {
+                                            emitMilestone(null)
+                                        }
                                     } else {
                                         emitMilestone(null)
                                     }
@@ -777,6 +798,23 @@ class SagaContentManagerImpl
             }
         }
 
+        override suspend fun pruneOrphanTimelines() {
+            val chapter = content.value?.currentChapterInfo ?: return
+            val rules = fetchNarrativeRules()
+            val currentId = chapter.data.currentEventId
+            val orphans =
+                chapter.events.filter { event ->
+                    event.data.id != currentId && !event.narrativelyCompleteTimeline(rules)
+                }
+            if (orphans.isEmpty()) return
+            Timber.w(
+                "pruneOrphanTimelines: chapter ${chapter.data.id} has ${orphans.size} orphaned " +
+                    "timeline(s) (neither current nor closed) — deleting, likely a leftover from a " +
+                    "past CreateTimeline race.",
+            )
+            orphans.forEach { timelineUseCase.deleteTimeline(it.data) }
+        }
+
         private suspend fun requestNarrativeProgression(
             isRetry: Boolean = false,
             fallbackSaga: SagaMetadata? = null,
@@ -787,59 +825,85 @@ class SagaContentManagerImpl
                 return
             }
 
-            var hydrated: NarrativeAction? = null
             // Whether another reevaluation was queued *while we held the lock*. Consumed here but
             // acted on below, outside withLock — recursing from inside it would always see the
             // mutex as locked (by ourselves) and just re-queue forever without ever re-checking.
             var shouldReevaluateAgain = false
             progressionMutex.withLock {
-                val currentSaga = content.value ?: fallbackSaga ?: return@withLock
+                // Automatic actions (currently only CreateTimeline — see NarrativeCoordinator's
+                // executionMode()) are decided AND executed inside this single lock hold, in a
+                // loop, instead of deciding here and executing back in the caller after releasing
+                // the lock like before. That gap used to be a real race: a second concurrent
+                // caller (e.g. ChatViewModel's edge-trigger firing right as this chain's
+                // CloseTimeline finished) could read the exact same "no active timeline" DB
+                // snapshot this call had already decided to act on, and kick off its own
+                // duplicate CreateTimeline — the executor's "timeline already active" guard only
+                // catches the case where the loser's write lands after the winner's; if it lands
+                // first instead, both succeed and one timeline is orphaned (inactive, silently
+                // eating messages nobody reads back). Executing here means no other caller can
+                // ever observe the pre-execution snapshot as "current" again.
+                var automaticStepGuard = 0
+                while (true) {
+                    val currentSaga = content.value ?: fallbackSaga ?: return@withLock
 
-                Timber.d("Starting narrative progression check #${++progressionCounter}")
+                    Timber.d("Starting narrative progression check #${++progressionCounter}")
 
-                if (currentSaga.mainCharacter == null && isDebugModeEnabled) {
-                    generateCharacter("Main Debug Character").onSuccessAsync { newCharacter ->
-                        sagaHistoryUseCase.updateSaga(currentSaga.data.copy(mainCharacterId = newCharacter.id))
+                    if (currentSaga.mainCharacter == null && isDebugModeEnabled) {
+                        generateCharacter("Main Debug Character").onSuccessAsync { newCharacter ->
+                            sagaHistoryUseCase.updateSaga(currentSaga.data.copy(mainCharacterId = newCharacter.id))
+                        }
+                        return@withLock
                     }
-                    return@withLock
-                }
 
-                val sagaContent = getSagaContent() ?: return@withLock
-                val rules = fetchNarrativeRules()
-                messageDao.getMessagesCount(currentSaga.data.id).first()
+                    val sagaContent = getSagaContent() ?: return@withLock
+                    val rules = fetchNarrativeRules()
+                    messageDao.getMessagesCount(currentSaga.data.id).first()
 
-                // sagaContent is a fresh DB read (getSagaContent() above); currentSaga is the
-                // cached content StateFlow, which is fed by a Room Flow and can lag a write from
-                // a sibling coroutine by a beat (e.g. continueMilestone() clearing currentEventId
-                // right before this runs). Deciding off the stale snapshot here is what let a
-                // moment-long CloseTimeline/EvolveTimeline resolve flash the advance pill before
-                // the correct CreateTimeline resolve (from the next, now-caught-up call) replaced
-                // it — same underlying race as the duplicate-timeline guard, just cosmetic instead
-                // of thrown.
-                val intent = NarrativeCheck.validateProgressionMetadata(sagaContent.toNarrativeMetadata(), rules)
-                hydrated =
-                    intent?.let { NarrativeActionMaterializer.materialize(it, sagaContent) }
-                if (intent != null && hydrated == null) {
-                    Timber.w(
-                        "requestNarrativeProgression: metadata implies progression (${intent.javaClass.simpleName}) but SagaContent hydration failed.",
+                    // sagaContent is a fresh DB read (getSagaContent() above); currentSaga is the
+                    // cached content StateFlow, which is fed by a Room Flow and can lag a write
+                    // from a sibling coroutine by a beat (e.g. continueMilestone() clearing
+                    // currentEventId right before this runs). Deciding off the stale snapshot here
+                    // is what let a moment-long CloseTimeline/EvolveTimeline resolve flash the
+                    // advance pill before the correct CreateTimeline resolve (from the next,
+                    // now-caught-up call) replaced it — same underlying race as the
+                    // duplicate-timeline guard, just cosmetic instead of thrown.
+                    val intent = NarrativeCheck.validateProgressionMetadata(sagaContent.toNarrativeMetadata(), rules)
+                    val hydrated = intent?.let { NarrativeActionMaterializer.materialize(it, sagaContent) }
+                    if (intent != null && hydrated == null) {
+                        Timber.w(
+                            "requestNarrativeProgression: metadata implies progression (${intent.javaClass.simpleName}) but SagaContent hydration failed.",
+                        )
+                        narrativeCoordinator.schedulePendingReevaluation()
+                        return@withLock
+                    }
+
+                    val isAutomatic = hydrated?.executionMode() == NarrativeExecutionMode.Automatic
+                    narrativeCoordinator.reevaluate(
+                        nextResolvedAction = hydrated,
+                        context = buildEvaluationContext(),
+                        isAutomatic = isAutomatic,
                     )
-                    narrativeCoordinator.schedulePendingReevaluation()
+                    shouldReevaluateAgain = narrativeCoordinator.consumePendingReevaluation()
+
+                    if (isAutomatic && hydrated != null) {
+                        if (++automaticStepGuard > 10) {
+                            Timber.e(
+                                "requestNarrativeProgression: automatic-action loop exceeded 10 steps " +
+                                    "(likely stuck re-materializing the same action) — bailing to avoid " +
+                                    "hanging progressionMutex forever.",
+                            )
+                            narrativeCoordinator.schedulePendingReevaluation()
+                            return@withLock
+                        }
+                        executeNarrativeAction(hydrated, isRetry = false, chainNext = false)
+                        continue
+                    }
+
                     return@withLock
                 }
-
-                val isAutomatic = hydrated?.executionMode() == NarrativeExecutionMode.Automatic
-                narrativeCoordinator.reevaluate(
-                    nextResolvedAction = hydrated,
-                    context = buildEvaluationContext(),
-                    isAutomatic = isAutomatic,
-                )
-
-                shouldReevaluateAgain = narrativeCoordinator.consumePendingReevaluation()
             }
 
-            if (hydrated != null && hydrated.executionMode() == NarrativeExecutionMode.Automatic) {
-                executeNarrativeAction(hydrated, isRetry = false)
-            } else if (shouldReevaluateAgain) {
+            if (shouldReevaluateAgain) {
                 requestNarrativeProgression(isRetry = false)
             }
         }

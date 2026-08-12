@@ -101,7 +101,6 @@ fun MilestoneScreen(
     BackHandler(enabled = true) { }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val genre by viewModel.genre.collectAsStateWithLifecycle()
     val sagaData by viewModel.sagaData.collectAsStateWithLifecycle()
     val chapterCoverImage by viewModel.chapterCoverImage.collectAsStateWithLifecycle()
     val bookGenerationState by viewModel.bookGenerationState.collectAsStateWithLifecycle()
@@ -115,7 +114,15 @@ fun MilestoneScreen(
         ) { state ->
             when (state) {
                 is MilestoneUiState.Loading -> {
-                    MilestoneLoadingContent(reasoning = state.reasoning)
+                    MilestoneLoadingContent(reasoning = state.reasoning, isAutomaticStep = state.isAutomaticStep)
+                }
+
+                is MilestoneUiState.Error -> {
+                    MilestoneErrorContent(
+                        message = state.message,
+                        canRetry = state.canRetry,
+                        onRetry = viewModel::retryFailedStep,
+                    )
                 }
 
                 is MilestoneUiState.ClosureStep -> {
@@ -142,7 +149,7 @@ fun MilestoneScreen(
         if (showOnboarding) {
             OnboardingDialog(
                 type = OnboardingType.GAMEPLAY_GUIDE,
-                genre = genre,
+                genre = sagaData?.genre,
                 saga = sagaData,
                 onDismiss = viewModel::dismissOnboarding,
             )
@@ -151,9 +158,15 @@ fun MilestoneScreen(
 }
 
 /** Genre icon + whatever [ReasoningSynthesizerService][com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService]
- * is currently streaming for this step (falls back to a generic line while it warms up). */
+ * is currently streaming for this step (falls back to a generic line while it warms up, or to a
+ * dedicated "adjusting a few things" line for [isAutomaticStep] — CreateTimeline has no AI call
+ * and thus no reasoning to stream, but still deserves its own on-brand beat instead of reusing
+ * the generic copy). */
 @Composable
-internal fun MilestoneLoadingContent(reasoning: String?) {
+internal fun MilestoneLoadingContent(
+    reasoning: String?,
+    isAutomaticStep: Boolean = false,
+) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
@@ -169,7 +182,11 @@ internal fun MilestoneLoadingContent(reasoning: String?) {
             )
 
             Text(
-                text = reasoning?.takeIf { it.isNotBlank() } ?: stringResource(R.string.milestone_loading_default),
+                text =
+                    reasoning?.takeIf { it.isNotBlank() }
+                        ?: stringResource(
+                            if (isAutomaticStep) R.string.milestone_adjusting_lore else R.string.milestone_loading_default,
+                        ),
                 style =
                     MaterialTheme.typography.bodyLarge.copy(
                         brush = Brush.horizontalGradient(themeBrushColors()),
@@ -190,6 +207,54 @@ internal fun MilestoneLoadingContent(reasoning: String?) {
                             duration = 10.seconds,
                         ),
             )
+        }
+    }
+}
+
+/** Surfaced instead of auto-retrying a step that already failed once (see
+ * [com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState.Error] doc) — an
+ * explicit tap, not a silent background loop that looks identical to a real loading state from
+ * the outside. */
+@Composable
+internal fun MilestoneErrorContent(
+    message: String,
+    canRetry: Boolean,
+    onRetry: () -> Unit,
+) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 32.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_warning),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(50.dp),
+            )
+            Text(
+                text = stringResource(R.string.milestone_error_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+            if (canRetry) {
+                Button(
+                    onClick = onRetry,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                ) {
+                    Text(stringResource(R.string.try_again))
+                }
+            }
         }
     }
 }
@@ -418,11 +483,18 @@ internal fun MilestoneIntroductionContent(
                 .systemBarsPadding()
                 .padding(horizontal = 32.dp, vertical = 24.dp),
     ) {
-        var textComplete by remember {
-            mutableStateOf(false)
+        // Defense in depth: SagaContentManagerImpl already skips revealing this milestone at all
+        // when it has nothing to show, but if a blank introduction ever reaches this composable
+        // anyway, starting both flags true (instead of waiting on SimpleTypewriterText's
+        // onAnimationFinished, which never fires for blank text) means the title/Continue button
+        // still show up immediately rather than trapping the player on an empty, un-backable
+        // screen.
+        val hasIntroduction = milestone.introduction.isNotBlank()
+        var textComplete by remember(milestone) {
+            mutableStateOf(!hasIntroduction)
         }
-        var shownChapter by remember {
-            mutableStateOf(false)
+        var shownChapter by remember(milestone) {
+            mutableStateOf(!hasIntroduction)
         }
 
         LaunchedEffect(textComplete) {
