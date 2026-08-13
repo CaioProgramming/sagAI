@@ -207,6 +207,12 @@
     <string name="saga_detail_no_events_placeholder">No events recorded</string>
     <string name="saga_detail_no_wiki_info_placeholder">No information saved</string>
     <string name="saga_detail_delete_saga_button">Delete Saga</string>
+    <string name="saga_detail_ended_tag">Journey Complete</string>
+    <string name="saga_detail_about_title">About %1$s</string>
+    <string name="saga_detail_about_more">See more</string>
+    <string name="saga_detail_about_playtime">Playtime</string>
+    <string name="saga_detail_about_created">Created</string>
+    <string name="saga_detail_about_theme">Theme</string>
     <string name="saga_detail_read_story_title">Read your story</string>
     <string name="saga_detail_read_story_subtitle">Read the story from the start until now</string>
     <string name="saga_detail_manage_story">Manage Story</string>
@@ -484,6 +490,7 @@
     <!-- Character stats -->
     <string name="character_stat_height">Height</string>
     <string name="character_stat_weight">Weight</string>
+    <string name="character_stat_age">Age</string>
     <string name="character_generating">Generating %1$s…</string>
     <string name="image_generation_default_label">Generating image…</string>
     <string name="image_generation_awaiting_manual">Awaiting manual image</string>
@@ -527,6 +534,22 @@
     <string name="settings_export_database_loading">Exporting database…</string>
     <string name="settings_export_database_success">Database exported successfully!</string>
     <string name="settings_export_database_failed">Failed to export database.</string>
+    <string name="settings_debug_section">Debug</string>
+    <string name="settings_audit_logs_subtitle">Inspect AI requests</string>
+    <string name="settings_design_system_subtitle">Validate design system</string>
+    <string name="settings_test_starry_loader">Test Starry Loader</string>
+    <string name="settings_test_starry_loader_message">Weaving the next chapter…</string>
+    <string name="settings_test_starry_loader_subtitle">This may take a few seconds</string>
+
+    <!-- Island Test Samples -->
+    <string name="island_test_objective_sample">Find the lost artifact</string>
+    <string name="island_test_advance_processing_sample">Weaving the next chapter…</string>
+    <string name="island_test_book_generation_saga_title">Test Saga</string>
+    <string name="island_test_book_generation_act_title">Act II — The Fall</string>
+    <string name="island_test_book_generation_reasoning">Writing the prose…</string>
+    <string name="island_test_image_generation_label">Portrait of Mascari</string>
+    <string name="island_test_image_generation_reasoning">Rendering…</string>
+    <string name="island_test_image_fallback_prompt">A cyberpunk warrior under neon lights, bust portrait</string>
 
     <!-- Conversation Snippet Sharing -->
     <string name="messages_selected">%1$d of %2$d messages selected</string>
@@ -620,6 +643,13 @@
     <string name="milestone_encouragement">Congratulations! Keep going!</string>
     <string name="continue_button">Continue</string>
     <string name="introduction_milestone">Introduction</string>
+    <string name="milestone_loading_default">Shaping what happens next…</string>
+    <string name="milestone_adjusting_lore">Adjusting a few things…</string>
+    <string name="milestone_error_title">The story hit a snag</string>
+    <string name="milestone_emotional_note_label">Emotional note</string>
+    <string name="milestone_view_details">View details</string>
+    <string name="milestone_generate_book">Generate book</string>
+    <string name="milestone_generating_book">Generating book…</string>
     <string name="create_character">Continue to character</string>
 
     <string name="saga_intro_fallback">Welcome! Let\'s start creating your epic saga. What kind of story do you want to tell\?</string>
@@ -743,6 +773,21 @@
 
     <!-- AI Audit Logs -->
     <string name="audit_logs_title">AI Audit Logs</string>
+    <string name="design_system_preview_title">Design System</string>
+    <string name="design_system_preview_header_font_label">Header font (remote, falls back while resolving)</string>
+    <string name="design_system_preview_bubble_label">Chat bubble shape</string>
+    <string name="design_system_preview_bubble_sample_text">A saga speaks in %1$s\'s voice.</string>
+    <string name="design_system_preview_glow_label">Glow border</string>
+    <string name="design_system_preview_rotating_stroke_label">Rotating "AI is generating" stroke</string>
+    <string name="design_system_preview_shader_label">Boosted shader params (grain/vignette/chromatic/rim)</string>
+    <string name="settings_test_global_island">Test global island</string>
+    <string name="island_test_objective">Objective</string>
+    <string name="island_test_advance_idle">Advance (idle)</string>
+    <string name="island_test_advance_processing">Advance (processing)</string>
+    <string name="island_test_book_generation">Book generation</string>
+    <string name="island_test_image_generation">Image generation</string>
+    <string name="island_test_manual_image_fallback">Manual image fallback</string>
+    <string name="island_test_dismiss">Dismiss island</string>
     <string name="audit_logs_all">All</string>
     <string name="audit_logs_success">Success</string>
     <string name="audit_logs_error">Error</string>
@@ -802,6 +847,14 @@
     <string name="error_retry_align">Try Aligning Again</string>
     <string name="read_chronicles">Read Chronicles</string>
     <string name="the_chronicles">The Chronicles</string>
+    <string name="saga_detail_latest_chapter_label">Latest Chapter</string>
+    <string name="saga_detail_acts_no_acts_title">Keep the story going</string>
+    <string name="saga_detail_acts_no_acts_subtitle">Complete an act to unlock your chronicles</string>
+    <string name="saga_detail_acts_no_books_title">No book yet</string>
+    <string name="saga_detail_acts_no_books_subtitle">You already have enough acts — time to create your first book</string>
+    <string name="saga_detail_acts_create_first_book_cta">Create first book</string>
+    <string name="saga_detail_characters_empty_title">No characters yet</string>
+    <string name="saga_detail_characters_empty_subtitle">Keep playing to meet new characters</string>
     <string name="the_chronicle_awaits">The Chronicle Awaits</string>
     <string name="read_volume">Read Volume %s</string>
     <string name="read_next_volume">Read next volume</string>

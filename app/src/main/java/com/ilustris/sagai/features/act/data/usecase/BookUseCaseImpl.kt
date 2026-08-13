@@ -12,6 +12,9 @@ import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -32,6 +35,7 @@ class BookUseCaseImpl
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
+        private val remoteConfigService: RemoteConfigService,
     ) : BookUseCase {
         override fun generateBookStream(
             saga: SagaContent,
@@ -39,6 +43,7 @@ class BookUseCaseImpl
         ): Flow<StreamingState<GeneratedContent<Book>?>> =
             flow {
                 try {
+                    val narrativeRules = remoteConfigService.getNarrativeRules()
                     val args =
                         BookGenerationArgs(
                             sagaContext = SagaPrompts.mainContext(saga),
@@ -48,11 +53,7 @@ class BookUseCaseImpl
                                     .map { it.data }
                                     .normalizetoAIItems(ChatPrompts.CHARACTER_EXCLUSIONS),
                             conversationDirective = emptyString(),
-                            isFinalVolume =
-                                saga.acts
-                                    .lastOrNull()
-                                    ?.data
-                                    ?.id == actContent.data.id,
+                            isFinalVolume = saga.acts.size >= narrativeRules.actUpdateLimit,
                         )
 
                     val prompt = BookPrompts.generateBookChronicle(promptService, args)
@@ -92,7 +93,6 @@ class BookUseCaseImpl
 
         override fun generateSagaChronicles(saga: SagaContent): Flow<StreamingState<GeneratedContent<Book>?>> =
             flow {
-                // Find all completed acts that don't have a book yet
                 val completedActs = saga.acts.filter { it.book == null }
 
                 for (act in completedActs) {

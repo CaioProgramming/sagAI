@@ -147,12 +147,7 @@ class SagaRepositoryImpl
             characters: List<Character>,
         ): String =
             buildString {
-                appendLine("### MANDATORY CHARACTER ICON")
-                appendLine("The following character are ESSENTIAL to this icon:")
-                appendLine(characters.joinToString { it.name })
-                appendLine("This icon represents the saga. You MUST integrate ALL provided characters into the composition.")
-                appendLine()
-                appendLine("#### SUBJECTS DETAILS:")
+                appendLine("### CHARACTERS")
                 appendLine(
                     characters.toAINormalize(
                         listOf(
@@ -162,15 +157,20 @@ class SagaRepositoryImpl
                             "id",
                             "emojified",
                             "smartZoom",
+                            "artwork",
                         ),
                     ),
                 )
                 appendLine()
-                appendLine("Story context: ")
-                appendLine(saga.description)
-                appendLine(
-                    "FINAL MANDATE: Create a balanced composition with the main character are clearly visible and integrated.",
-                )
+
+                val artwork = saga.artwork?.takeIf { it.isNotBlank() }
+                if (artwork != null) {
+                    appendLine("### KEY ART CONCEPT")
+                    appendLine(artwork)
+                } else {
+                    appendLine("### SAGA CONTEXT")
+                    appendLine(saga.description)
+                }
             }
 
         override suspend fun backupSaga(sagaContent: SagaContent) = backupService.backupSaga(sagaContent)

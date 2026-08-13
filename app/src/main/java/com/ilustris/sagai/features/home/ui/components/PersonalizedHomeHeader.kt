@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,17 +47,18 @@ fun PersonalizedHomeHeader(
 
             Text(
                 text = dynamicContent?.subtitle ?: stringResource(R.string.home_prompt_subtitle),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        shadow = Shadow(MaterialTheme.colorScheme.primary, blurRadius = 10f),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                    ),
                 modifier =
                     Modifier
-                        .alpha(.5f)
                         .clickable {
                             onCreateNewSaga()
                         }.reactiveShimmer(
                             true,
-                            Color.White.shimmerize(),
-                            10.seconds,
+                            duration = 10.seconds,
                             repeatMode = RepeatMode.Restart,
                         ),
             )

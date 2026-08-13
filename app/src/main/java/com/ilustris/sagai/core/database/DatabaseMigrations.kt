@@ -318,6 +318,21 @@ object DatabaseMigrations {
     val MIGRATION_25_26 =
         object : Migration(25, 26) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE Characters ADD COLUMN `age` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN `artwork` TEXT DEFAULT ''")
+            }
+        }
+
+    val MIGRATION_26_27 =
+        object : Migration(26, 27) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE Characters ADD COLUMN `artwork` TEXT DEFAULT ''")
+            }
+        }
+
+    val MIGRATION_27_28 =
+        object : Migration(27, 28) {
+            override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE sagas ADD COLUMN `farewells` TEXT")
             }
         }
@@ -349,5 +364,7 @@ object DatabaseMigrations {
             MIGRATION_23_24,
             MIGRATION_24_25,
             MIGRATION_25_26,
+            MIGRATION_26_27,
+            MIGRATION_27_28,
         )
 }

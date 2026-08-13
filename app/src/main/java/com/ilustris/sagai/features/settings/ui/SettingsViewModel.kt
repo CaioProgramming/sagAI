@@ -6,14 +6,17 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
-import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.restartApp
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.StorageBreakdown
+import com.ilustris.sagai.ui.components.island.ChatIslandService
+import com.ilustris.sagai.ui.components.island.IslandContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +37,8 @@ class SettingsViewModel
         private val settingsUseCase: SettingsUseCase,
         private val visualConfigService: GenreVisualConfigService,
         private val stringHelper: StringResourceHelper,
+        private val chatIslandService: ChatIslandService,
+        val debugImageFallbackService: DebugImageFallbackService,
         @ApplicationContext private val context: Context,
     ) : ViewModel() {
         val notificationsEnabled = settingsUseCase.getNotificationsEnabled()
@@ -222,6 +227,12 @@ class SettingsViewModel
             viewModelScope.launch {
                 settingsUseCase.clearPreferences()
             }
+        }
+
+        /** Fires a sample [IslandContent] at the global shell so its layout can be validated
+         * without needing to reach the real feature (chapter advance, image generation, etc.) live. */
+        fun testIsland(content: IslandContent?) {
+            chatIslandService.setTop(content)
         }
     }
 

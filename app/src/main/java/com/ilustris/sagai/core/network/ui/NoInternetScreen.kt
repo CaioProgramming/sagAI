@@ -18,6 +18,7 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.sagaBrush
 
 @Composable
 fun NoInternetScreen(modifier: Modifier = Modifier) {
@@ -34,19 +35,19 @@ fun NoInternetScreen(modifier: Modifier = Modifier) {
                 Modifier
                     .fillMaxSize()
                     .gradientFill(
-                        gradientAnimation(genresGradient()),
+                        sagaBrush()
                     ),
         )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = stringResource(R.string.no_internet_connection_title),
                 style =
                     MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
                     ),
                 color = MaterialTheme.colorScheme.onSurface,
             )

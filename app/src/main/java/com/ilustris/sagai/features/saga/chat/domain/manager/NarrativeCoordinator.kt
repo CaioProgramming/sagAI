@@ -22,11 +22,15 @@ class NarrativeCoordinator
             context: NarrativeEvaluationContext,
             isAutomatic: Boolean = false,
         ): NarrativeUiState {
-            if (context.isNarrativeProcessing) {
-                schedulePendingReevaluation()
-                return _uiState.value
-            }
-
+            // Deliberately not gated on context.isNarrativeProcessing (message/narrative generation
+            // in flight) — that flag lives outside this coordinator and a scheduled reevaluation
+            // could get stranded unconsumed until an unrelated event happened to ask again, leaving
+            // the advance trigger stuck hidden until app restart or idle. The phase check right
+            // below is the coordinator's own authoritative "something is actually running" signal
+            // and is enough to avoid corrupting an in-flight Processing/BackgroundProcessing phase;
+            // whether the user can *tap* the trigger while generation is still wrapping up is a
+            // presentation concern already handled by disabling the button (see isProcessing on
+            // AdvanceIslandContent), not something this function needs to hide state for.
             if (context.hasActiveMilestoneOverlay && !context.isMilestoneActive) {
                 return _uiState.value
             }

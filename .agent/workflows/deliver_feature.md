@@ -7,7 +7,6 @@ technical achievements and implementation details.
 
 ## ⚠️ IMPORTANT PRE-FLIGHT CHECKS
 
-- **REMEMBER**: Add `docs/` folder to `.gitignore` and push to the branch before proceeding
 - **VALIDATE**: Check for uncommitted changes before proceeding. If changes exist, summarize and
   push to the branch
 - **CODE QUALITY**: Remove ALL comments from code (see Step 2 for details)

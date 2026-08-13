@@ -2,6 +2,7 @@ package com.ilustris.sagai.ui.theme
 import ai.atick.material.MaterialColor
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -27,6 +28,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Typography
@@ -71,6 +73,7 @@ import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
+import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.theme.ResolvedGenreFonts
 import com.ilustris.sagai.core.theme.rememberGenreThemeServices
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -173,8 +176,7 @@ fun ThemeIcon(
                         .graphicsLayer {
                             clip = false
                             alpha = 0.8f * clampedGlow
-                        }
-                        .blur(glowRadius * clampedGlow),
+                        }.blur(glowRadius * clampedGlow),
             )
         }
         Icon(
@@ -195,6 +197,15 @@ fun Modifier.themeVfx(isPlaying: Boolean = true): Modifier {
     if (isPlaying.not()) return this
     val genre = LocalSagaGenre.current
     return this.genreVfx(genre)
+}
+
+@Composable
+fun Modifier.themeFilter(
+    useFallback: Boolean = false,
+    selectiveHighlight: Boolean = false,
+): Modifier {
+    val genre = LocalSagaGenre.current
+    return this.effectForGenre(genre, useFallBack = useFallback, enableSelectiveHighlight = selectiveHighlight)
 }
 
 private val themeColorAnimationSpec =
@@ -426,6 +437,63 @@ fun SagAITheme(
     }
 }
 
+/**
+ * Layers an image-derived palette ([ImagePalette]) on top of whatever [SagAITheme] is already
+ * active, overriding only `background`/`onBackground`/`surface`/`onSurface` — genre accents
+ * (`primary`/`secondary`/`tertiary`, shapes, typography) are left untouched. Wraps content in a
+ * [Surface] so descendant `Text`/`Icon` calls pick up the right color automatically via
+ * [LocalContentColor], with no manual `contentColor` plumbing needed.
+ *
+ * When [imagePalette] is null (no image yet, or still loading), animates back to whatever
+ * background/onBackground the enclosing theme already had — a no-op visually, not a fallback to
+ * a hardcoded color.
+ */
+@Composable
+fun PaletteTheme(
+    imagePalette: ImagePalette?,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    val fallbackBackground = MaterialTheme.colorScheme.background
+    val fallbackOnBackground = MaterialTheme.colorScheme.onBackground
+
+    val animatedBackground by animateColorAsState(
+        targetValue = imagePalette?.dominant ?: fallbackBackground,
+        animationSpec = themeColorAnimationSpec,
+        label = "paletteBackground",
+    )
+    val animatedOnBackground by animateColorAsState(
+        targetValue = imagePalette?.onDominant ?: fallbackOnBackground,
+        animationSpec = themeColorAnimationSpec,
+        label = "paletteOnBackground",
+    )
+
+    val paletteColorScheme =
+        MaterialTheme.colorScheme.copy(
+            background = animatedBackground,
+            primaryContainer = animatedBackground,
+            primary = imagePalette?.vibrant ?: MaterialTheme.colorScheme.primary,
+            onPrimary = imagePalette?.onVibrant ?: MaterialTheme.colorScheme.onPrimary,
+            onBackground = animatedOnBackground,
+            surface = animatedBackground,
+            onSurface = animatedOnBackground,
+        )
+
+    MaterialTheme(
+        colorScheme = paletteColorScheme,
+        typography = MaterialTheme.typography,
+        shapes = MaterialTheme.shapes,
+    ) {
+        Surface(
+            modifier = modifier.fillMaxSize(),
+            color = animatedBackground,
+            contentColor = animatedOnBackground,
+        ) {
+            content()
+        }
+    }
+}
+
 @Composable
 fun ThemeCover(): String? {
     val genre = LocalSagaGenre.current
@@ -508,7 +576,7 @@ fun themeBubble() = LocalSagaGenre.current.bubble(isNarrator = true)
 fun sagaBrush(
     animated: Boolean = false,
     gradientType: GradientType = GradientType.LINEAR,
-): Brush = LocalSagaGenre.current.gradient(animated = animated, gradientType = gradientType)
+): Brush = gradientType.toBrush(themeBrushColors())
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -53,4 +53,6 @@ data class Saga(
     val variationId: String? = null,
     @ColumnInfo(defaultValue = "")
     val worldState: String? = null,
+    @ColumnInfo(defaultValue = "")
+    val artwork: String? = null,
 )

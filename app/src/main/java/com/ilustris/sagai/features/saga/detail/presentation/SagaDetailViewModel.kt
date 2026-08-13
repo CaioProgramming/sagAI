@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.StringResourceHelper
@@ -54,6 +55,8 @@ class SagaDetailViewModel
         private val _initialSection = MutableStateFlow<DetailSectionView.InitialSection?>(null)
         val initialSection = _initialSection.asStateFlow()
 
+        val imagePalette = MutableStateFlow<ImagePalette?>(null)
+
         val detailDrawer = MutableStateFlow<TimelineDrawer?>(null)
 
         private val _reviewGenerationState =
@@ -99,10 +102,25 @@ class SagaDetailViewModel
                                     section
                                 }
                             _state.value = State.Success(resume.saga)
+                            extractPalette()
                         }.onFailureAsync {
                             _state.emit(State.Error(emptyString()))
                         }
                 }
+        }
+
+        private fun extractPalette() {
+            if (imagePalette.value != null) return
+            val originalBitmap = cachedSegmentedImage?.first ?: return
+            viewModelScope.launch(Dispatchers.IO) {
+                val paletteBitmap =
+                    if (originalBitmap.config == Bitmap.Config.HARDWARE) {
+                        originalBitmap.copy(Bitmap.Config.ARGB_8888, false) ?: return@launch
+                    } else {
+                        originalBitmap
+                    }
+                imagePalette.value = ImagePalette.fromBitmap(paletteBitmap)
+            }
         }
 
         fun handleAction(detailAction: DetailAction) {
@@ -126,6 +144,7 @@ class SagaDetailViewModel
             cachedIconPath = null
             cachedSegmentedImage = null
             _initialSection.value = null
+            imagePalette.value = null
             showIntro.value = true
             fetchJob =
                 viewModelScope.launch {

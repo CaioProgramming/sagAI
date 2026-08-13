@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.services.EmotionalToneVisualService
 import com.ilustris.sagai.core.services.MascotEmotionService
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
@@ -25,10 +26,14 @@ class EmotionalProfileViewModel
         private val _emotionalIconUrl = MutableStateFlow<String?>(null)
         val emotionalIconUrl = _emotionalIconUrl.asStateFlow()
 
+        private val _saga = MutableStateFlow<Saga?>(null)
+        val saga = _saga.asStateFlow()
+
         fun loadEmotionalIcon(sagaId: Int) {
             viewModelScope.launch {
                 sagaRepository.getSagaById(sagaId).collect { sagaContent ->
                     if (sagaContent == null) return@collect
+                    _saga.value = sagaContent.data
                     val dominantTone =
                         sagaContent.data.emotionalProfile?.dominantTone
                             ?: sagaContent

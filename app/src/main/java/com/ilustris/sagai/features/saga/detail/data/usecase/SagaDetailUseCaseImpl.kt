@@ -135,7 +135,6 @@ class SagaDetailUseCaseImpl
                     val timelineCount = flows[7] as Int
                     val acts = flows[8] as List<ActContent>
                     val charCount = flows[9] as Int
-                    val chapters = flows[10] as List<ChapterInfo>
                     val fullChapters = flows[11] as List<ChapterContent>
                     val messagesCount = flows[12] as Int
 
@@ -148,7 +147,7 @@ class SagaDetailUseCaseImpl
                         latestWikis = wikis,
                         latestEvent = event,
                         generatedBooks = books,
-                        chapters = chapters,
+                        chapters = fullChapters.map { it.data },
                         fullChapters = fullChapters,
                         chaptersCount = chaptersCount,
                         eventsCount = timelineCount,

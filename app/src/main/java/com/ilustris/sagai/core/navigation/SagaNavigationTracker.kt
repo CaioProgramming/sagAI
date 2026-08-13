@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.navigation
 import com.ilustris.sagai.ui.navigation.BookReaderKey
 import com.ilustris.sagai.ui.navigation.ChatKey
 import com.ilustris.sagai.ui.navigation.CharacterDetailKey
+import com.ilustris.sagai.ui.navigation.MilestoneKey
 import com.ilustris.sagai.ui.navigation.SagaActsKey
 import com.ilustris.sagai.ui.navigation.SagaDetailKey
 import androidx.navigation3.runtime.NavKey
@@ -47,5 +48,10 @@ class SagaNavigationTracker
         fun isOnChronicle(sagaId: Int): Boolean {
             val key = _currentKey.value
             return key is SagaActsKey && key.sagaId == sagaId.toString()
+        }
+
+        fun isOnMilestone(sagaId: Int): Boolean {
+            val key = _currentKey.value
+            return key is MilestoneKey && key.sagaId == sagaId
         }
     }

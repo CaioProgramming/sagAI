@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.premium
 
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,8 +37,12 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.morphingGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shimmerize
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeBrushColors
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun PremiumCard(
@@ -54,17 +59,14 @@ fun PremiumCard(
                         10.dp,
                         Brush.verticalGradient(holographicGradient),
                     ),
-                )
-                .border(
+                ).border(
                     1.dp,
                     Brush.verticalGradient(holographicGradient),
                     RoundedCornerShape(15.dp),
-                )
-                .background(
+                ).background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     RoundedCornerShape(15.dp),
-                )
-                .clickable { onClick() }
+                ).clickable { onClick() }
                 .padding(16.dp),
     ) {
         Row(
@@ -81,12 +83,10 @@ fun PremiumCard(
                             1.dp,
                             MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
                             iconShape,
-                        )
-                        .background(
+                        ).background(
                             MaterialTheme.colorScheme.background,
                             iconShape,
-                        )
-                        .size(24.dp)
+                        ).size(24.dp)
                         .padding(4.dp)
                         .gradientFill(Brush.verticalGradient(holographicGradient)),
             )
@@ -135,61 +135,25 @@ fun PremiumCard(
 @Composable
 fun MiniPremiumCard(modifier: Modifier = Modifier) {
     val shape = MaterialTheme.shapes.medium
-    val brush = Brush.verticalGradient(themeBrushColors())
+    val brush = Brush.verticalGradient(morphingGradient(duration = 5.seconds))
 
-    Row(
-        modifier
-            .dropShadow(shape) {
-                radius = 20f
-                this.brush = brush
-                spread = 2f
-            }
-            .clip(
-                shape,
-            ).background(MaterialTheme.colorScheme.background, shape)
-            .background(fadeGradientBottom(MaterialTheme.colorScheme.primary), shape)
-            .padding(12.dp)
-            .gradientFill(brush),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Column(
+        modifier.reactiveShimmer(true, Color.White.shimmerize(), 15.seconds, repeatMode = RepeatMode.Restart),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            painterResource(R.drawable.ic_spark),
-            null,
-            modifier =
-                Modifier
-                    .size(24.dp),
-        )
-
         PremiumTitle(
             titleStyle = MaterialTheme.typography.labelLarge,
             brush = brush,
-        )
-
-        Box(
-            Modifier
-                .alpha(.1f)
-                .size(2.dp)
-                .background(MaterialTheme.colorScheme.onBackground, CircleShape),
         )
 
         Text(
             stringResource(R.string.premium_sign_up),
             modifier =
                 Modifier
-                    .alpha(.4f)
-                    .weight(1f),
+                    .alpha(.7f),
             style =
-                MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Light,
-                ),
-        )
-
-        Icon(
-            painterResource(R.drawable.round_arrow_forward_ios_24),
-            null,
-            tint = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.size(12.dp),
+                MaterialTheme.typography.labelSmall,
         )
     }
 }

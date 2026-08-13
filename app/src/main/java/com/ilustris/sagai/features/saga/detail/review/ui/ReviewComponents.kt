@@ -339,8 +339,7 @@ fun HeroSummaryCard(
                 .background(
                     MaterialTheme.colorScheme.onBackground,
                     shape,
-                )
-                .padding(12.dp),
+                ).padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -562,7 +561,7 @@ fun DynamicCard(
                     slideOutVertically { -it }
             }) {
                 Text(
-                    text = title,
+                    text = it,
                     style = titleStyle,
                 )
             }
@@ -574,7 +573,7 @@ fun DynamicCard(
                     slideOutVertically { -it }
             }) {
                 Text(
-                    text = subtitle,
+                    text = it,
                     style = subtitleStyle,
                 )
             }
@@ -639,7 +638,6 @@ fun JourneyCollage(
                             .fillMaxHeight(),
                 ) {
                     ChapterCardView(
-                        genre = saga.data.genre,
                         chapter = it,
                         showTitle = false,
                         modifier = Modifier.fillMaxSize(),
@@ -656,7 +654,6 @@ fun JourneyCollage(
                             .fillMaxHeight(),
                 ) {
                     ChapterCardView(
-                        genre = saga.data.genre,
                         chapter = it,
                         showTitle = false,
                         modifier = Modifier.fillMaxSize(),
@@ -680,7 +677,6 @@ fun JourneyCollage(
                             .fillMaxHeight(),
                 ) {
                     ChapterCardView(
-                        genre = saga.data.genre,
                         chapter = it,
                         showTitle = false,
                         modifier = Modifier.fillMaxSize(),
@@ -697,7 +693,6 @@ fun JourneyCollage(
                             .fillMaxHeight(),
                 ) {
                     ChapterCardView(
-                        saga.data.genre,
                         chapter = it,
                         showTitle = false,
                         modifier = Modifier.fillMaxSize(),
@@ -714,7 +709,6 @@ fun JourneyCollage(
                             .fillMaxHeight(),
                 ) {
                     ChapterCardView(
-                        saga.data.genre,
                         chapter = it,
                         showTitle = false,
                         modifier = Modifier.fillMaxSize(),
@@ -938,8 +932,7 @@ fun ReviewTopCharacterContent(
                         2.dp,
                         MaterialTheme.colorScheme.primary,
                         genre.bubble(isNarrator = true),
-                    )
-                    .effectForGenre(genre),
+                    ).effectForGenre(genre),
         )
 
         subtitle?.let {
