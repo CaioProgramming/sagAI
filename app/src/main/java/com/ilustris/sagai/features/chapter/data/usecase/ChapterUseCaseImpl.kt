@@ -324,16 +324,12 @@ class ChapterUseCaseImpl
             buildString {
                 artwork?.takeIf { it.isNotBlank() }?.let {
                     appendLine("### CONCEPT ART DIRECTION")
-                    appendLine(
-                        "This is the scene-specific concept for this chapter's cover. Ground the composition in this:",
-                    )
                     appendLine(it)
                     appendLine()
                 }
 
                 val duo = characters.filterNotNull().take(2)
-                appendLine("### THE ARTBOOK DUO")
-                appendLine("This is a focused character study. Capture the intimate tension and presence of exactly these two individuals.")
+                appendLine("### CHARACTERS")
                 append("[")
                 appendLine(
                     duo.joinToString {
@@ -355,11 +351,11 @@ class ChapterUseCaseImpl
 
                 if (duo.size > 1) {
                     appendLine()
-                    appendLine("#### CORE RELATIONSHIP (COMPOSITIONAL FOCUS):")
+                    appendLine("### RELATIONSHIP")
                     val char1 = duo[0]
                     val char2 = duo[1]
                     appendLine(
-                        "• ${char1.data.name} & ${char2.data.name}: ${
+                        "${char1.data.name} & ${char2.data.name}: ${
                             char1.findRelationship(char2.data.id)?.summarizeRelation(1)
                                 ?: "Complex dynamic connection."
                         }",
@@ -367,14 +363,10 @@ class ChapterUseCaseImpl
                 }
 
                 narrativeContext?.let {
-                    appendLine("Narrative moment: ")
-                    appendLine(narrativeContext)
+                    appendLine()
+                    appendLine("### NARRATIVE MOMENT")
+                    appendLine(it)
                 }
-
-                appendLine()
-                appendLine(
-                    "FINAL ARTBOOK MANDATE: Prioritize the emotional interaction or shared silence between these subjects. No crowded compositions. Focus on character fidelity and the art style.",
-                )
             }
 
         private suspend fun generateChapterPrompt(
@@ -399,8 +391,7 @@ class ChapterUseCaseImpl
                 ChapterPrompts.chapterIntroductionPrompt(
                     promptService = promptService,
                     sagaContent = saga,
-                    currentChapter = chapterContent,
-                    conversationDirective = emptyString(),
+                    narrativeRules = remoteConfigService.getNarrativeRules(),
                 )
             val intro =
                 gemmaClient.generate<GeneratedContent<String>>(
@@ -426,8 +417,7 @@ class ChapterUseCaseImpl
                         ChapterPrompts.chapterIntroductionPrompt(
                             promptService = promptService,
                             sagaContent = saga,
-                            currentChapter = chapterContent,
-                            conversationDirective = emptyString(),
+                            remoteConfigService.getNarrativeRules(),
                         )
 
                     reasoningSynthesizerService

@@ -7,9 +7,12 @@ import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.features.act.data.model.UnifiedActUpdate
 import com.ilustris.sagai.features.act.data.model.ActContent
+import com.ilustris.sagai.features.act.data.model.UnifiedActUpdate
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.buildContextualHistory
+import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 
 /**
@@ -29,7 +32,6 @@ data class ActConclusionArgs(
 data class ActIntroductionArgs(
     val sagaMainContext: String,
     val lastStateContext: String,
-    val narrativeStyle: String,
 )
 
 data class ActSynthesisArgs(
@@ -125,19 +127,12 @@ object ActPrompts {
         narrativeRules: NarrativeRules,
         conversationDirective: String,
     ): SplitPrompt {
-        val isFirst = saga.acts.isEmpty()
-        val lastState =
-            if (isFirst) {
-                "THE BEGINNING: The saga starts here. Ground your introduction in the following backstory: ${saga.data.description}"
-            } else {
-                "THE CONTINUATION: Bridge the story from the previous volume's conclusion: ${saga.acts.lastOrNull()?.data?.content}"
-            }
+        val lastState = saga.buildContextualHistory(narrativeRules)
 
         val args =
             ActIntroductionArgs(
                 sagaMainContext = SagaPrompts.mainContext(saga),
-                lastStateContext = lastState,
-                narrativeStyle = conversationDirective,
+                lastStateContext = lastState.toAINormalize(),
             )
         return promptService.buildSplitBlueprint(ACT_INTRODUCTION_BLUEPRINT, args.asMap())
     }

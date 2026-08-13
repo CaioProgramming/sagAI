@@ -13,9 +13,12 @@ import com.ilustris.sagai.features.brain.ui.SagaBrainView
 import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
 import com.ilustris.sagai.features.characters.ui.SagaCharactersView
+import com.ilustris.sagai.features.debug.ui.DesignSystemPreviewView
 import com.ilustris.sagai.features.debug.ui.LoreDebugView
+import com.ilustris.sagai.features.emotional.ui.EmotionalProfileView
 import com.ilustris.sagai.features.faq.ui.FAQView
 import com.ilustris.sagai.features.home.ui.HomeView
+import com.ilustris.sagai.features.saga.milestone.ui.MilestoneScreen
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.player.ui.PlayerProfileView
 import com.ilustris.sagai.features.playthrough.PlaythroughView
@@ -50,6 +53,15 @@ fun createSagaEntryProvider(
             navToAuditLogs = { navigator.navigate(AuditLogsKey) },
             navToPlaythrough = { navigator.navigate(PlaythroughKey) },
             navToPlayerProfile = { navigator.navigate(PlayerProfileKey) },
+            navToDesignSystemPreview = { navigator.navigate(DesignSystemPreviewKey) },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    entry<DesignSystemPreviewKey> {
+        DesignSystemPreviewView(
+            onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )
@@ -114,6 +126,14 @@ fun createSagaEntryProvider(
         )
     }
 
+    entry<MilestoneKey> { key ->
+        MilestoneScreen(
+            sagaId = key.sagaId,
+            onFinished = { navigator.goBack() },
+            onNavigate = { navigator.navigate(it) },
+        )
+    }
+
     entry<SagaDetailKey> { key ->
         SagaDetailView(
             sagaId = key.sagaId,
@@ -134,8 +154,16 @@ fun createSagaEntryProvider(
             },
             onLoreDebug = { navigator.navigate(LoreDebugKey(key.sagaId)) },
             onBrain = { navigator.navigate(SagaBrainKey(key.sagaId)) },
+            onEmotionalProfile = { navigator.navigate(SagaEmotionalProfileKey(key.sagaId)) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    entry<SagaEmotionalProfileKey> { key ->
+        EmotionalProfileView(
+            sagaId = key.sagaId,
+            onBack = { navigator.goBack() },
         )
     }
 

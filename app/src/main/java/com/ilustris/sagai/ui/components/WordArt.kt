@@ -24,7 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -38,6 +40,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
@@ -64,18 +67,18 @@ fun WordArtText(
     modifier: Modifier = Modifier,
     fontSize: TextUnit = MaterialTheme.typography.displayMedium.fontSize,
     fontFamily: FontFamily? = null,
-    fontWeight: FontWeight = FontWeight.Bold,
+    fontWeight: FontWeight = FontWeight.Black,
     topColor: Color = Color(0xFFFDB813),
     bottomColor: Color = Color(0xFFE35C00),
-    extrusionColor: Color = Color(0xFF8C3400),
-    extrusionDepthFactor: Float = 0.08f,
-    numberOfExtrusionLayers: Int = 5,
+    extrusionColor: Color = bottomColor.darker(0.3f),
+    extrusionDepthFactor: Float = 0.12f,
+    numberOfExtrusionLayers: Int = 6,
     outlineColor: Color = Color(0xFF652800),
-    outlineWidthFactor: Float = 0.12f,
-    rotationX: Float = 15f,
+    outlineWidthFactor: Float = 0.1f,
+    rotationX: Float = 0f,
     glowColor: Color? = null,
     glowRadiusFactor: Float = 0.18f,
-    glowAlpha: Float = 0.55f,
+    isPlaying: Boolean = true,
 ) {
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
@@ -89,18 +92,20 @@ fun WordArtText(
                 fontSize = fontSize,
                 fontFamily = fontFamily,
                 fontWeight = fontWeight,
+                textAlign = TextAlign.Center,
             )
         }
 
-    val mainTextBrush =
-        remember(topColor, bottomColor) {
-            Brush.verticalGradient(colors = listOf(topColor, bottomColor))
-        }
+    // Flat solid fill (no vertical gradient) - a soft gradient reads as a glow/shadow, not the
+    // chunky flat-color comic-book face we're after. `bottomColor` is now only the extrusion
+    // body's default shade, kept as a param for callers that want a different depth tone.
+    val mainTextBrush = remember(topColor) { SolidColor(topColor) }
 
-    val textLayoutResult =
-        remember(text, baseTextStyle) {
-            textMeasurer.measure(text = AnnotatedString(text), style = baseTextStyle)
-        }
+    // Captured from the actually-rendered Text below, so it wraps under the exact same
+    // constraints - the extrusion/outline layers are re-measured against this real layout
+    // instead of an unconstrained one, which was the root cause of line-wrap desync.
+    var frontLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val frontConstraints = frontLayout?.layoutInput?.constraints
 
     val outlineTextStyle =
         remember(baseTextStyle, outlineColor, outlineWidthPx) {
@@ -110,9 +115,41 @@ fun WordArtText(
             )
         }
 
+    val extrusionLayoutResult =
+        remember(text, baseTextStyle, frontConstraints) {
+            frontConstraints?.let { textMeasurer.measure(AnnotatedString(text), style = baseTextStyle, constraints = it) }
+        }
+
     val outlineTextLayoutResult =
-        remember(text, outlineTextStyle) {
-            textMeasurer.measure(AnnotatedString(text), style = outlineTextStyle)
+        remember(text, outlineTextStyle, frontConstraints) {
+            frontConstraints?.let { textMeasurer.measure(AnnotatedString(text), style = outlineTextStyle, constraints = it) }
+        }
+
+    // Depth never fully collapses - the block stays a solid 3D shape at rest, and just
+    // punches a bit deeper on the loop instead of flattening back to a 2D sticker.
+    val depthProgress =
+        if (isPlaying && rememberLifecycleAnimationsActive()) {
+            val infiniteTransition = rememberInfiniteTransition(label = "wordArtPunch")
+            val progress by infiniteTransition.animateFloat(
+                initialValue = 0.7f,
+                targetValue = 0.7f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation =
+                            keyframes {
+                                durationMillis = 1800
+                                0.7f at 0
+                                1f at 450 using FastOutSlowInEasing
+                                1f at 1250
+                                0.7f at 1750 using FastOutSlowInEasing
+                            },
+                        repeatMode = RepeatMode.Restart,
+                    ),
+                label = "wordArtDepth",
+            )
+            progress
+        } else {
+            1f
         }
 
     Box(
@@ -121,13 +158,13 @@ fun WordArtText(
                 .graphicsLayer {
                     this.rotationX = rotationX
                 }.drawBehind {
-                    // Optional outer glow around the text outline to emulate neon/cyberpunk
+                    val depth = extrusionOffsetPx * depthProgress
 
-                    // 1. Extrusion Layers
-                    for (i in numberOfExtrusionLayers downTo 1) {
-                        val shadow =
-                            if (i == numberOfExtrusionLayers) {
-                                if (glowColor != null) {
+                    if (extrusionLayoutResult != null && depth > 0.5f) {
+                        for (i in numberOfExtrusionLayers downTo 1) {
+                            val t = i / numberOfExtrusionLayers.toFloat()
+                            val shadow =
+                                if (i == numberOfExtrusionLayers && glowColor != null) {
                                     Shadow(
                                         glowColor,
                                         offset = Offset(0f, 0f),
@@ -136,28 +173,25 @@ fun WordArtText(
                                 } else {
                                     null
                                 }
-                            } else {
-                                null
-                            }
-                        drawText(
-                            textLayoutResult = textLayoutResult,
-                            color = extrusionColor,
-                            shadow = shadow,
-                            topLeft =
-                                Offset(
-                                    x = i * extrusionOffsetPx * 0.5f,
-                                    y = i * extrusionOffsetPx * 0.866f,
-                                ),
-                        )
+                            drawText(
+                                textLayoutResult = extrusionLayoutResult,
+                                color = extrusionColor,
+                                shadow = shadow,
+                                topLeft =
+                                    Offset(
+                                        x = depth * t * 0.5f,
+                                        y = depth * t * 0.866f,
+                                    ),
+                            )
+                        }
                     }
-                    drawText(
-                        textLayoutResult = outlineTextLayoutResult,
-                    )
+                    outlineTextLayoutResult?.let { drawText(textLayoutResult = it) }
                 },
     ) {
         Text(
             text = text,
-            style = baseTextStyle.copy(brush = mainTextBrush, textAlign = TextAlign.Center),
+            style = baseTextStyle.copy(brush = mainTextBrush),
+            onTextLayout = { frontLayout = it },
         )
     }
 }
@@ -436,29 +470,17 @@ fun Genre.stylisedText(
         }
 
         Genre.HEROES -> {
-            val glowRadius =
-                if (rememberLifecycleAnimationsActive()) {
-                    rememberHeroShadowGlowRadius()
-                } else {
-                    5f
-                }
-
-            Text(
+            WordArtText(
                 text = text,
-                modifier =
-                    modifier
-                        .padding(4.dp)
-                        .genreVfx(this, resolvedColor),
-                style =
-                    style.copy(
-                        fontSize = fontSize,
-                        textAlign = TextAlign.Center,
-                        shadow =
-                            Shadow(
-                                resolvedColor.lighter(0.8f), // Brighter glow
-                                blurRadius = glowRadius,
-                            ),
-                    ),
+                modifier = modifier.padding(4.dp).genreVfx(this),
+                fontSize = fontSize,
+                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                topColor = resolvedColor.lighter(0.6f),
+                bottomColor = resolvedColor,
+                extrusionColor = resolvedColor.darker(0.6f),
+                outlineColor = Color.White,
+                glowColor = resolvedColor.lighter(0.8f),
+                numberOfExtrusionLayers = 12,
             )
         }
 
@@ -546,27 +568,4 @@ fun WordArtTextPreview() {
             }
         }
     }
-}
-
-@Composable
-private fun rememberHeroShadowGlowRadius(): Float {
-    val infiniteTransition = rememberInfiniteTransition(label = "heroShadow")
-    val glowRadius by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 0f,
-        animationSpec =
-            infiniteRepeatable(
-                animation =
-                    keyframes {
-                        durationMillis = 2500
-                        0f at 0
-                        30f at 200 using FastOutSlowInEasing
-                        20f at 1250
-                        5f at 2500
-                    },
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "shadowPulse",
-    )
-    return glowRadius
 }

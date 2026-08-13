@@ -86,6 +86,7 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
+import com.ilustris.sagai.features.premium.MiniPremiumCard
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -196,6 +197,14 @@ fun HomeView(
             onDismiss = { showNamePrompt = false },
         )
     }
+
+    if (uiState.showPremiumOnboarding) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = { viewModel.handleAction(HomeUiAction.DismissPremiumOnboarding) },
+        )
+    }
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
@@ -213,7 +222,6 @@ private fun HomeContent(
 ) {
     val lazyListState = rememberLazyListState()
 
-    // TODO: Move premium upsell to DynamicBottomIsland via global effect
     ChatList(
         state = state,
         onAction = onAction,
@@ -276,7 +284,8 @@ private fun ChatList(
                                                 .sharedElement(
                                                     rememberSharedContentState("spark_icon"),
                                                     splashAnimatedContentScope,
-                                                ).size(32.dp),
+                                                )
+                                                .size(32.dp),
                                         tint = MaterialTheme.colorScheme.onBackground,
                                     )
                                     Spacer(Modifier.weight(1f))
@@ -332,7 +341,8 @@ private fun ChatList(
                             Modifier
                                 .clickable {
                                     onAction(HomeUiAction.CreateFakeSaga)
-                                }.padding(16.dp)
+                                }
+                                .padding(16.dp)
                                 .gradientFill(debugBrush)
                                 .clip(RoundedCornerShape(15.dp))
                                 .fillMaxWidth(),
@@ -442,10 +452,12 @@ private fun ChatList(
                                     Brush.horizontalGradient(iridescentGradient)
                                 radius = 20f
                                 spread = .4f
-                            }.background(
+                            }
+                            .background(
                                 MaterialTheme.colorScheme.onBackground,
                                 MaterialTheme.shapes.large,
-                            ).fillMaxWidth(),
+                            )
+                            .fillMaxWidth(),
                 ) {
                     Text(
                         stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -454,6 +466,18 @@ private fun ChatList(
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.background,
                             ),
+                    )
+                }
+            }
+
+            if (!state.isPremium) {
+                item {
+                    MiniPremiumCard(
+                        modifier =
+                            Modifier
+                                .padding(horizontal = 16.dp)
+                                .fillMaxWidth()
+                                .clickable { onAction(HomeUiAction.OpenPremium) },
                     )
                 }
             }
@@ -498,7 +522,8 @@ fun ChatCard(
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }.size(50.dp),
+                                }
+                                .size(50.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         AvatarTimelineIcon(
@@ -540,7 +565,8 @@ fun ChatCard(
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
                                             animatedVisibilityScope,
-                                        ).weight(1f),
+                                        )
+                                        .weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime

@@ -104,11 +104,11 @@ the APK.
     - **Generate**: Create a draft list of new/updated FAQ items (Question & Answer) relevant to
       this release.
     - **Consult**: Ask the user to provide the path to the current FAQ JSON file (default:
-      `docs/faq_data_en.json`).
+      `docs/faq/faq_data_en.json`).
     - **Compare**: Read the specified file. Compare the generated draft with existing entries.
     - **Refine**: Present the user with a list of suggested additions, updates, or removals.
     - **Update PT-BR FAQ**:
-        - Repeat the process for the Portuguese FAQ file (default: `docs/faq_data_pt.json`).
+        - Repeat the process for the Portuguese FAQ file (default: `docs/faq/faq_data_pt.json`).
         - Ensure translations capture the same tone and accuracy.
     - **Apply**: Ask the user if they want to update the FAQ files with these changes. If yes, write
       the updated JSON to the files.

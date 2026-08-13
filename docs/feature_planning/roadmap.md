@@ -27,6 +27,27 @@ own dedicated folder containing detailed tasks and implementation plans.
   Phase 2 uses agentic tools (`GET_STORY_LOG`, `GET_CHARACTER_PROFILES`, `GET_WIKI_ENTRIES`) so the
   Chronicler agent pulls exactly the context it needs instead of a single stuffed prompt.
 
+### 23. Saga Wrapped — Renderização Temática 💡 (Signature)
+
+* **Status**: Proposto 💡 — aguardando decisão do time, não priorizado
+* **Folder**: `wrapped_themed_render/`
+* **Plan**: `wrapped_themed_render/task.md`
+* **Descrição**: Versão do Saga Wrapped com renderização temática por gênero (terminal pro
+  cyberpunk, livro pro fantasy) para assinantes Signature, mantendo o Wrapped atual 100% free.
+* **Origem**: achado de Premium do `product_agent.md`, planejado pelo `feature_planning_agent.md`.
+* **Bloqueio**: nenhuma capacidade de vídeo existe hoje no projeto — recomendação é um spike técnico
+  (Media3 Transformer, 1 gênero, prova de conceito) antes de qualquer estimativa de prazo real.
+
+### 24. Split System Instructions Architecture
+
+* **Status**: Brainstorming / Planning — não priorizado
+* **Folder**: `split_system_instructions/`
+* **Plan**: `split_system_instructions/task.md`
+* **Description**: Decouples static AI instructions (Role, Directives, Rules) from dynamic task
+  data (Templates, User Input) using the Gemini API `system_instruction` field, to improve
+  instruction adherence and enable context caching. Relocated here from a stray
+  `app/src/main/docs/` copy during the August 2026 docs cleanup.
+
 ---
 ## Usage
 

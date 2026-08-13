@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.data.model
 
 import com.ilustris.sagai.features.act.data.model.Book
+import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
@@ -13,7 +14,7 @@ data class SagaDetailResume(
     val topCharacters: List<CharacterContent> = emptyList(),
     val latestWikis: List<Wiki> = emptyList(),
     val generatedBooks: List<Book> = emptyList(),
-    val chapters: List<com.ilustris.sagai.features.chapter.data.model.ChapterInfo> = emptyList(),
+    val chapters: List<Chapter> = emptyList(),
     val fullChapters: List<com.ilustris.sagai.features.chapter.data.model.ChapterContent> = emptyList(),
     val chaptersCount: Int = 0,
     val charactersCount: Int = 0,

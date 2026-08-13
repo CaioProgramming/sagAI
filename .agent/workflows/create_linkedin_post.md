@@ -21,7 +21,7 @@ and engaging style of the "Dev Diary".
     - Ask if there are any specific screenshots or videos they plan to attach.
 
 3. **Drafting the Post**:
-    - Create a new markdown file (e.g., `docs/posts/linkedin_update_[date].md`).
+    - Create a new markdown file (e.g., `docs/marketing/linkedin_posts/linkedin_update_[date].md`).
     - **Tone**: Personal, enthusiastic, humble but proud. Use first-person ("I", "My"). Avoid
       corporate jargon.
     - **Structure**:
@@ -45,6 +45,6 @@ and engaging style of the "Dev Diary".
 
 5. **Finalize**:
     - Make any requested edits.
-   - **Copy to Clipboard**: Run `pbcopy < docs/posts/linkedin_update_[date].md` to copy the content.
+   - **Copy to Clipboard**: Run `pbcopy < docs/marketing/linkedin_posts/linkedin_update_[date].md` to copy the content.
    - **Open LinkedIn**: Run `open https://www.linkedin.com/feed/` to open the browser.
    - Remind the user that the text is in their clipboard and to attach media.

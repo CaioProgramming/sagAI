@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.features.sos.presentation.SOSViewModel
 
 @Composable
@@ -46,6 +47,11 @@ fun SOSScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var showConfirmDialog by remember { mutableStateOf(false) }
+
+    val exportLauncher =
+        PermissionService.rememberDatabaseExportLauncher { uri ->
+            uri?.let { viewModel.exportDatabase(it) }
+        }
 
     LaunchedEffect(Unit) {
         if (isDatabaseError) {
@@ -103,8 +109,8 @@ fun SOSScreen(
                         Modifier
                             .background(
                                 MaterialTheme.colorScheme.errorContainer,
-                                RoundedCornerShape(4.dp),
-                            ).padding(16.dp),
+                                MaterialTheme.shapes.medium,
+                            ).padding(32.dp),
                 )
             }
 
@@ -141,6 +147,29 @@ fun SOSScreen(
                     stringResource(R.string.continue_text),
                     style = MaterialTheme.typography.labelLarge,
                 )
+            }
+
+            if (BuildConfig.DEBUG) {
+                TextButton(
+                    onClick = {
+                        exportLauncher.launch("sagai_sos_database_backup.db")
+                    },
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_restore),
+                        contentDescription = null,
+                        modifier = Modifier.padding(horizontal = 8.dp).size(24.dp),
+                    )
+                    Text(
+                        stringResource(R.string.export_database_button),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
             }
         }
     }

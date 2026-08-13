@@ -88,6 +88,7 @@ fun SettingsView(
     navToAuditLogs: () -> Unit = {},
     navToPlaythrough: () -> Unit = {},
     navToPlayerProfile: () -> Unit = {},
+    navToDesignSystemPreview: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -121,7 +122,6 @@ fun SettingsView(
     val context = LocalActivity.current
     val permissionLauncher = rememberPermissionLauncher()
 
-    val blurRadius = if (isWiping || showClearDialog) 16.dp else 0.dp
     var showBackupSheet by remember { mutableStateOf(false) }
     var showBackups by remember { mutableStateOf(true) }
     var showPremiumSheet by remember { mutableStateOf(false) }
@@ -583,24 +583,6 @@ fun SettingsView(
             }
 
             item {
-                PreferencesContainer(
-                    stringResource(R.string.player_profile_title),
-                    stringResource(R.string.player_profile_empty),
-                    true,
-                    showSwitch = false,
-                    onClickSwitch = {
-                        navToPlayerProfile()
-                    },
-                    modifier =
-                        Modifier
-                            .background(
-                                MaterialTheme.colorScheme.surfaceContainer,
-                                RoundedCornerShape(15.dp),
-                            ).padding(8.dp),
-                )
-            }
-
-            item {
                 Button(
                     onClick = { viewModel.clearPreferences() },
                     modifier = Modifier.fillMaxWidth(),
@@ -698,23 +680,48 @@ fun SettingsView(
 
             if (com.ilustris.sagai.BuildConfig.DEBUG) {
                 item {
-                    Button(
-                        onClick = { navToAuditLogs() },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                            ),
-                        shape = RoundedCornerShape(15.dp),
+                    Text(
+                        stringResource(R.string.settings_debug_section),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier =
+                            Modifier
+                                .alpha(.5f)
+                                .padding(8.dp),
+                    )
+                }
+                item {
+                    Column(
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                RoundedCornerShape(15.dp),
+                            ).padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text(
+                        PreferencesContainer(
                             stringResource(R.string.audit_logs_title),
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                            textAlign = TextAlign.Start,
+                            stringResource(R.string.settings_audit_logs_subtitle),
+                            showSwitch = false,
+                            onClickSwitch = {
+                                navToAuditLogs()
+                            },
+                           isActivated =  true
+
+                            )
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                            thickness = 1.dp,
+                        )
+                       
+                        PreferencesContainer(
+                            stringResource(R.string.design_system_preview_title),
+                            stringResource(R.string.settings_design_system_subtitle),
+                            showSwitch = false,
+                            onClickSwitch = {
+                                navToDesignSystemPreview()
+                            },
+                            isActivated =  true
                         )
                     }
                 }

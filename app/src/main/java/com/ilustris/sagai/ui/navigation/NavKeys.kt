@@ -22,6 +22,9 @@ data object NewSagaKey : NavKey
 data object AuditLogsKey : NavKey
 
 @Serializable
+data object DesignSystemPreviewKey : NavKey
+
+@Serializable
 data object PlaythroughKey : NavKey
 
 @Serializable
@@ -66,6 +69,11 @@ data class SagaBrainKey(
 ) : NavKey
 
 @Serializable
+data class SagaEmotionalProfileKey(
+    val sagaId: String,
+) : NavKey
+
+@Serializable
 data class CharacterBrainKey(
     val sagaId: String,
     val characterId: Int,
@@ -93,6 +101,16 @@ data class BookReaderKey(
 ) : NavKey
 
 /**
+ * Not reachable via deep link on purpose — the only way in is the single collector on
+ * [com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager.milestoneChainReady]
+ * that pushes this while the user is already on that saga's chat. See MainActivity.
+ */
+@Serializable
+data class MilestoneKey(
+    val sagaId: Int,
+) : NavKey
+
+/**
  * Whether [other] represents the same screen the user is already on (ignores debug flags, etc.).
  */
 fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
@@ -111,6 +129,8 @@ fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
             sagaId == other.sagaId
         }
 
+        this is SagaEmotionalProfileKey && other is SagaEmotionalProfileKey -> sagaId == other.sagaId
+
         this is CharacterBrainKey && other is CharacterBrainKey -> {
             sagaId == other.sagaId && characterId == other.characterId
         }
@@ -120,6 +140,7 @@ fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
         this is LoreDebugKey && other is LoreDebugKey -> sagaId == other.sagaId
         this is BookReaderKey && other is BookReaderKey ->
             sagaId == other.sagaId && initialActId == other.initialActId
+        this is MilestoneKey && other is MilestoneKey -> sagaId == other.sagaId
         else -> false
     }
 }

@@ -55,7 +55,6 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.toNarrativeMetadata
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
-import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -74,6 +73,7 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeProcessingG
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.domain.manager.TIMELINE_ALREADY_ACTIVE_MESSAGE
 import com.ilustris.sagai.features.saga.chat.domain.manager.executionMode
+import com.ilustris.sagai.features.saga.chat.domain.manager.narrativelyCompleteTimeline
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.datasource.MessageDao
@@ -82,12 +82,9 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import com.ilustris.sagai.ui.components.island.AdvanceIslandContent
 import com.ilustris.sagai.ui.components.island.ChatIslandService
-import com.ilustris.sagai.ui.components.island.IntroductionIslandContent
 import com.ilustris.sagai.ui.components.island.IslandContent
 import com.ilustris.sagai.ui.components.island.LoadingIslandContent
-import com.ilustris.sagai.ui.components.island.NarrativeMilestoneIslandContent
 import com.ilustris.sagai.ui.components.island.ObjectiveIslandContent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -96,12 +93,15 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -143,9 +143,11 @@ class SagaContentManagerImpl
         private val _sceneSummary = MutableStateFlow<SceneSummary?>(null)
         override val sceneSummary: StateFlow<SceneSummary?> = _sceneSummary.asStateFlow()
         override val milestoneUpdate = MutableStateFlow<SagaMilestone?>(null)
+        private val _milestoneChainReady =
+            MutableSharedFlow<Int>(replay = 0, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+        override val milestoneChainReady: SharedFlow<Int> = _milestoneChainReady
         private val _showObjectiveOverlay = MutableStateFlow(false)
         override val showObjectiveOverlay: StateFlow<Boolean> = _showObjectiveOverlay.asStateFlow()
-        override val isOnboardingVisible = MutableStateFlow(false)
 
         // Advance-trigger bottom island gating that's purely a UI concern (onboarding overlays,
         // message-selection mode, chat-reply generation) — forwarded by the chat screen via
@@ -167,8 +169,7 @@ class SagaContentManagerImpl
         override val narrativeUiState: StateFlow<NarrativeUiState> = narrativeCoordinator.uiState
 
         private var sagaJob: kotlinx.coroutines.Job? = null
-        private var loadingObserverJob: kotlinx.coroutines.Job? = null
-        private var milestoneObserverJob: kotlinx.coroutines.Job? = null
+        private var milestoneReadinessObserverJob: kotlinx.coroutines.Job? = null
         private var reasoningObserverJob: kotlinx.coroutines.Job? = null
         private var islandObserverJob: kotlinx.coroutines.Job? = null
 
@@ -208,15 +209,17 @@ class SagaContentManagerImpl
             val action = narrativeCoordinator.uiState.value.pendingAction ?: return
             Timber.d("Manually advancing narrative: ${action.javaClass.simpleName}")
             narrativeCoordinator.onUserAdvanceRequested(action)
-            executeNarrativeAction(action, isRetry = false)
-        }
-
-        override suspend fun completeGameplayOnboarding(saga: SagaMetadata?) {
-            requestNarrativeProgression(isRetry = false, fallbackSaga = saga, force = false)
-            isOnboardingVisible.value = false
-            if (narrativeCoordinator.uiState.value.pendingAction == NarrativeAction.CreateAct) {
-                advanceNarrative()
-            }
+            // Detached onto managerScope (then joined) rather than run straight on the caller's
+            // coroutine — MilestoneViewModel's auto-advance effect calls this from its own
+            // viewModelScope, and if that scope dies mid-generation (screen torn down,
+            // backgrounded and trimmed) before executeNarrativeAction reaches
+            // onActionCompleted(), narrativeCoordinator's phase gets stuck at Processing(action)
+            // forever — every later reevaluate() early-returns on a Processing phase, so nothing
+            // ever progresses again until the process restarts. managerScope is @Singleton-scoped
+            // (mirrors ChatGenerationService/BookGenerationService's own reasoning for why their
+            // generation is singleton-scoped, not screen-scoped) so it keeps running to a real
+            // completion regardless of what happens to the caller.
+            managerScope.launch { executeNarrativeAction(action, isRetry = false) }.join()
         }
 
         private fun handleNarrativeActionFailure(
@@ -246,6 +249,12 @@ class SagaContentManagerImpl
         private suspend fun executeNarrativeAction(
             action: NarrativeAction,
             isRetry: Boolean,
+            // False only when called from inside requestNarrativeProgression()'s own automatic-
+            // action loop (progressionMutex already held on this coroutine) — Mutex.withLock
+            // isn't reentrant, so self-chaining back into requestNarrativeProgression() from
+            // there would deadlock. The loop re-decides the next step itself once this call
+            // returns, so the self-chain would be redundant anyway.
+            chainNext: Boolean = true,
         ) {
             val sagaMetadata = content.value ?: return
             setNarrativeProcessingStatus(true)
@@ -281,7 +290,9 @@ class SagaContentManagerImpl
                     is NarrativeExecutionResult.Success -> {
                         handlePostAction(sagaMetadata, action, result.value)
                         awaitMilestoneDismissalIfNeeded()
-                        requestNarrativeProgression(isRetry = false, force = true)
+                        if (chainNext) {
+                            requestNarrativeProgression(isRetry = false)
+                        }
                     }
 
                     is NarrativeExecutionResult.Failure -> {
@@ -305,7 +316,7 @@ class SagaContentManagerImpl
                 // instead. Nothing else proactively consumes that flag once processing actually
                 // clears, so without this the advance trigger can silently never reappear until an
                 // unrelated event (new message, saga reload) happens to ask again.
-                if (narrativeCoordinator.consumePendingReevaluation()) {
+                if (chainNext && narrativeCoordinator.consumePendingReevaluation()) {
                     requestNarrativeProgression(isRetry = false)
                 }
             }
@@ -380,7 +391,6 @@ class SagaContentManagerImpl
             isMilestoneActive.value = false
             milestoneUpdate.value = null
             _showObjectiveOverlay.value = false
-            isOnboardingVisible.value = false
             content.value = null
             lastObservedMessageCount = -1
         }
@@ -403,24 +413,14 @@ class SagaContentManagerImpl
                 managerScope.launch {
                     Timber.d("Loading saga: $sagaId")
                     try {
-                        if (loadingObserverJob == null || loadingObserverJob?.isActive == false) {
-                            loadingObserverJob = observeLoading()
-                        }
-                        if (milestoneObserverJob == null || milestoneObserverJob?.isActive == false) {
-                            milestoneObserverJob = observeMilestone()
+                        if (milestoneReadinessObserverJob == null || milestoneReadinessObserverJob?.isActive == false) {
+                            milestoneReadinessObserverJob = observeMilestoneChainReadiness()
                         }
                         if (reasoningObserverJob == null || reasoningObserverJob?.isActive == false) {
                             reasoningObserverJob = observeReasoning()
                         }
                         if (islandObserverJob == null || islandObserverJob?.isActive == false) {
                             islandObserverJob = observeIslands()
-                        }
-                        managerScope.launch {
-                            isOnboardingVisible.collect { isVisible ->
-                                if (!isVisible) {
-                                    checkNarrativeProgression(content.value)
-                                }
-                            }
                         }
                         sagaHistoryUseCase
                             .getSagaMetadata(sagaId.toInt())
@@ -500,24 +500,38 @@ class SagaContentManagerImpl
 
                                 if (previousSaga == null) {
                                     if (saga.data.isEnded.not()) {
-                                        saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
+                                        // quote is the only thing this milestone has to show (see
+                                        // MilestoneIntroductionContent — titleText is blank for
+                                        // RESUME by design). A null/blank quote used to still
+                                        // reveal the milestone with an empty introduction string,
+                                        // which meant SimpleTypewriterText never rendered, its
+                                        // onAnimationFinished callback that unlocks the Continue
+                                        // button never fired, and the player got stuck on a blank,
+                                        // un-backable screen forever. Skip the reveal entirely
+                                        // instead — same as the already-null-sceneSummary case —
+                                        // and let the player land straight in chat.
+                                        val sceneSummary = saga.getCurrentTimeLine()?.data?.sceneSummary
+                                        val quote = sceneSummary?.quote?.takeIf { it.isNotBlank() }
+                                        if (sceneSummary != null && quote != null) {
                                             emitMilestone(
                                                 SagaMilestone.Introduction(
                                                     type = IntroductionType.RESUME,
                                                     titleText = emptyString(),
-                                                    introduction =
-                                                        it.quote
-                                                            ?: emptyString(),
+                                                    introduction = quote,
                                                     number =
-                                                        saga
-                                                            .chapterNumber(
-                                                                saga.currentChapterInfo?.data?.id
-                                                                    ?: -1,
-                                                            ).toRoman(),
-                                                    sceneSummary = it,
+                                                        stringResourceHelper.getString(
+                                                            R.string.chapter_number_label,
+                                                            saga
+                                                                .chapterNumber(
+                                                                    saga.currentChapterInfo?.data?.id,
+                                                                ).toRoman(),
+                                                        ),
+                                                    sceneSummary = sceneSummary,
                                                 ),
                                             )
-                                        } ?: emitMilestone(null)
+                                        } else {
+                                            emitMilestone(null)
+                                        }
                                     } else {
                                         emitMilestone(null)
                                     }
@@ -607,26 +621,54 @@ class SagaContentManagerImpl
                 sagaHistoryUseCase.updateSaga(saga.data.copy(currentActId = null)).asSuccess()
             }
 
-        private fun observeMilestone() =
+        /**
+         * The single source that turns "a narrative chain step is ready" into a one-shot signal.
+         * Replaces the old observeMilestone()/observeLoading() reactive re-triggers, which each
+         * independently called requestNarrativeProgression() and duplicated the retrigger
+         * executeNarrativeAction() already performs itself once a milestone is dismissed (see its
+         * awaitMilestoneDismissalIfNeeded() call, below). Detection stays reactive; execution is
+         * now driven exclusively by explicit advanceNarrative()/continueMilestone() calls from
+         * whoever owns the Milestone screen — nothing here auto-executes anything.
+         *
+         * Two independent sources feed the same signal: (1) the coordinator entering
+         * AwaitingAdvance — a chain step (event/chapter/act close, or their intros) is ready to
+         * execute; (2) milestoneUpdate itself going non-null/intrusive — covers the resume
+         * "welcome back" Introduction emitted directly from loadSaga(), which never touches the
+         * coordinator's phase at all. NewCharacter is deliberately excluded — it stays a passive
+         * GlobalShellEffect toast, not a chain step. Redundant emissions while already on the
+         * Milestone screen are harmless: the MainActivity collector only acts while
+         * isOnChatForSaga is true, which stops being the case the moment it navigates there.
+         *
+         * Doesn't gate on chat-reply generation here — ChatGenerationService transitively depends
+         * back on SagaContentManager (via MessageUseCase), so injecting it here is a Dagger
+         * dependency cycle. That gating lives in MainActivity's collector instead, which can see
+         * both without the cycle.
+         */
+        private fun observeMilestoneChainReadiness() =
             managerScope.launch {
-                milestoneUpdate.collectLatest {
-                    Timber.d("observeMilestone:\n$it")
-                    if (it == null) {
-                        Timber.i("observeMilestone: No milestone checking story...")
-                        narrativeCoordinator.markMilestoneDismissed()
-                        requestNarrativeProgression()
-                    }
-                }
-            }
+                val awaitingAdvance =
+                    narrativeCoordinator.uiState
+                        .map { it.phase is NarrativePhase.AwaitingAdvance }
+                        .distinctUntilChanged()
+                val freshReveal =
+                    milestoneUpdate
+                        .map { milestone ->
+                            milestone != null &&
+                                milestone.isIntrusive &&
+                                milestone !is SagaMilestone.Loading &&
+                                milestone !is SagaMilestone.NewCharacter
+                        }.distinctUntilChanged()
 
-        private fun observeLoading() =
-            managerScope.launch {
-                narrativeProcessingUiState.collectLatest {
-                    Timber.d("observeLoading: $it")
-                    if (it.not() && milestoneUpdate.value == null) {
-                        requestNarrativeProgression()
+                combine(awaitingAdvance, freshReveal) { advance, reveal -> advance || reveal }
+                    .distinctUntilChanged()
+                    .collectLatest { ready ->
+                        if (ready) {
+                            content.value
+                                ?.data
+                                ?.id
+                                ?.let { _milestoneChainReady.emit(it) }
+                        }
                     }
-                }
             }
 
         private fun observeReasoning() =
@@ -665,8 +707,8 @@ class SagaContentManagerImpl
          * visible screen, unlike the old per-Composable host's DisposableEffect(onDispose), this
          * reacts to navigation itself rather than the chat leaving composition.
          */
-        private fun observeIslands(): kotlinx.coroutines.Job {
-            return managerScope.launch {
+        private fun observeIslands(): kotlinx.coroutines.Job =
+            managerScope.launch {
                 combine(
                     content,
                     milestoneUpdate,
@@ -692,7 +734,6 @@ class SagaContentManagerImpl
                         }
                     }
             }
-        }
 
         /** Same `messages / loreUpdateLimit` fraction the chat's own progress ring used to
          * compute — now feeding the objective island's compact progress ring instead. */
@@ -703,12 +744,19 @@ class SagaContentManagerImpl
             return (timeline.messages.size.toFloat() / updateLimit.toFloat()).coerceIn(0f, 1f)
         }
 
+        /**
+         * Ambient status only — loading pulse or the current objective. Milestone reveals
+         * (Introduction/NewEvent/ChapterFinished/ActFinished) and the mandatory narrative-advance
+         * step now live entirely on the dedicated Milestone screen (see [MilestoneViewModel]),
+         * auto-driven from [milestoneChainReady] rather than shown/gated from the island. The
+         * island never blocks progress again — if it isn't ambient, it doesn't belong here.
+         */
         private suspend fun publishIslands(
             saga: SagaMetadata?,
             milestone: SagaMilestone?,
-            narrativeState: NarrativeUiState,
+            @Suppress("UNUSED_PARAMETER") narrativeState: NarrativeUiState,
             reasoning: String?,
-            advanceSuppressed: Boolean,
+            @Suppress("UNUSED_PARAMETER") advanceSuppressed: Boolean,
         ) {
             if (saga == null) {
                 chatIslandService.setTop(null)
@@ -716,52 +764,11 @@ class SagaContentManagerImpl
                 return
             }
             val genre = saga.data.genre
-            val onContinue: () -> Unit = { managerScope.launch { continueMilestone() } }
 
             val topContent: IslandContent? =
                 when {
-                    // Loading/reasoning takes over the global (top) island regardless of which
-                    // narrative action is in flight — chat input hides for the duration (see
-                    // ChatView's bottomInputState), so the bottom slot stays fully free instead of
-                    // hosting its own separate loading pill.
-                    milestone is SagaMilestone.Loading ->
+                    milestone is SagaMilestone.Loading -> {
                         LoadingIslandContent(reasoning = reasoning, genre = genre)
-
-                    milestone is SagaMilestone.Introduction ->
-                        IntroductionIslandContent(milestone, saga.data, onContinue)
-
-                    // Narrative-result milestones (event evolved/created, chapter or act
-                    // finished) also take over the top island — one surface for every milestone
-                    // reveal instead of a second, competing bottom one.
-                    milestone is SagaMilestone.NewEvent ||
-                        milestone is SagaMilestone.ChapterFinished ||
-                        milestone is SagaMilestone.ActFinished -> {
-                        val characters = when (milestone) {
-                            is SagaMilestone.NewEvent -> milestone.characters
-                            is SagaMilestone.ChapterFinished -> milestone.characters
-                            is SagaMilestone.ActFinished -> milestone.characters
-                            else -> emptyList()
-                        }
-                        val wikis = when (milestone) {
-                            is SagaMilestone.NewEvent -> milestone.wikis
-                            is SagaMilestone.ChapterFinished -> milestone.wikis
-                            is SagaMilestone.ActFinished -> milestone.wikis
-                            else -> emptyList()
-                        }
-                        val emotionalTone = when (milestone) {
-                            is SagaMilestone.NewEvent -> milestone.emotionalTone
-                            is SagaMilestone.ChapterFinished -> milestone.emotionalTone
-                            is SagaMilestone.ActFinished -> milestone.emotionalTone
-                            else -> EmotionalTone.NEUTRAL
-                        }
-                        NarrativeMilestoneIslandContent(
-                            milestone = milestone,
-                            genre = genre,
-                            characters = characters,
-                            wikis = wikis,
-                            emotionalTone = emotionalTone,
-                            onContinue = onContinue,
-                        )
                     }
 
                     else -> {
@@ -779,28 +786,7 @@ class SagaContentManagerImpl
                     }
                 }
             chatIslandService.setTop(topContent)
-
-            val advanceAction = narrativeState.displayAdvanceAction
-            val isProcessing = narrativeState.phase is NarrativePhase.Processing || narrativeState.isProcessing
-            val showAdvance =
-                narrativeState.showAdvanceTrigger && advanceAction != null && !advanceSuppressed
-
-            val bottomContent: IslandContent? =
-                when {
-                    showAdvance && advanceAction != null ->
-                        AdvanceIslandContent(
-                            action = advanceAction,
-                            reasoning = reasoning,
-                            isProcessing = isProcessing,
-                            genre = genre,
-                            onAction = {
-                                if (!isProcessing) managerScope.launch { advanceNarrative() }
-                            },
-                        )
-
-                    else -> null
-                }
-            chatIslandService.setBottom(bottomContent)
+            chatIslandService.setBottom(null)
         }
 
         override fun checkNarrativeProgression(
@@ -812,10 +798,26 @@ class SagaContentManagerImpl
             }
         }
 
+        override suspend fun pruneOrphanTimelines() {
+            val chapter = content.value?.currentChapterInfo ?: return
+            val rules = fetchNarrativeRules()
+            val currentId = chapter.data.currentEventId
+            val orphans =
+                chapter.events.filter { event ->
+                    event.data.id != currentId && !event.narrativelyCompleteTimeline(rules)
+                }
+            if (orphans.isEmpty()) return
+            Timber.w(
+                "pruneOrphanTimelines: chapter ${chapter.data.id} has ${orphans.size} orphaned " +
+                    "timeline(s) (neither current nor closed) — deleting, likely a leftover from a " +
+                    "past CreateTimeline race.",
+            )
+            orphans.forEach { timelineUseCase.deleteTimeline(it.data) }
+        }
+
         private suspend fun requestNarrativeProgression(
             isRetry: Boolean = false,
             fallbackSaga: SagaMetadata? = null,
-            force: Boolean = false,
         ) {
             if (progressionMutex.isLocked) {
                 Timber.i("requestNarrativeProgression: already in progress, queueing reevaluation.")
@@ -823,65 +825,85 @@ class SagaContentManagerImpl
                 return
             }
 
-            var hydrated: NarrativeAction? = null
             // Whether another reevaluation was queued *while we held the lock*. Consumed here but
             // acted on below, outside withLock — recursing from inside it would always see the
             // mutex as locked (by ourselves) and just re-queue forever without ever re-checking.
             var shouldReevaluateAgain = false
             progressionMutex.withLock {
-                val currentSaga = content.value ?: fallbackSaga ?: return@withLock
+                // Automatic actions (currently only CreateTimeline — see NarrativeCoordinator's
+                // executionMode()) are decided AND executed inside this single lock hold, in a
+                // loop, instead of deciding here and executing back in the caller after releasing
+                // the lock like before. That gap used to be a real race: a second concurrent
+                // caller (e.g. ChatViewModel's edge-trigger firing right as this chain's
+                // CloseTimeline finished) could read the exact same "no active timeline" DB
+                // snapshot this call had already decided to act on, and kick off its own
+                // duplicate CreateTimeline — the executor's "timeline already active" guard only
+                // catches the case where the loser's write lands after the winner's; if it lands
+                // first instead, both succeed and one timeline is orphaned (inactive, silently
+                // eating messages nobody reads back). Executing here means no other caller can
+                // ever observe the pre-execution snapshot as "current" again.
+                var automaticStepGuard = 0
+                while (true) {
+                    val currentSaga = content.value ?: fallbackSaga ?: return@withLock
 
-                if (!force && isProcessingNarrative.get()) {
-                    Timber.i("requestNarrativeProgression: narrative processing, queueing reevaluation.")
-                    narrativeCoordinator.schedulePendingReevaluation()
-                    return@withLock
-                }
+                    Timber.d("Starting narrative progression check #${++progressionCounter}")
 
-                Timber.d("Starting narrative progression check #${++progressionCounter}")
-
-                if (currentSaga.mainCharacter == null && isDebugModeEnabled) {
-                    generateCharacter("Main Debug Character").onSuccessAsync { newCharacter ->
-                        sagaHistoryUseCase.updateSaga(currentSaga.data.copy(mainCharacterId = newCharacter.id))
+                    if (currentSaga.mainCharacter == null && isDebugModeEnabled) {
+                        generateCharacter("Main Debug Character").onSuccessAsync { newCharacter ->
+                            sagaHistoryUseCase.updateSaga(currentSaga.data.copy(mainCharacterId = newCharacter.id))
+                        }
+                        return@withLock
                     }
-                    return@withLock
-                }
 
-                val sagaContent = getSagaContent() ?: return@withLock
-                val rules = fetchNarrativeRules()
-                messageDao.getMessagesCount(currentSaga.data.id).first()
+                    val sagaContent = getSagaContent() ?: return@withLock
+                    val rules = fetchNarrativeRules()
+                    messageDao.getMessagesCount(currentSaga.data.id).first()
 
-                // sagaContent is a fresh DB read (getSagaContent() above); currentSaga is the
-                // cached content StateFlow, which is fed by a Room Flow and can lag a write from
-                // a sibling coroutine by a beat (e.g. continueMilestone() clearing currentEventId
-                // right before this runs). Deciding off the stale snapshot here is what let a
-                // moment-long CloseTimeline/EvolveTimeline resolve flash the advance pill before
-                // the correct CreateTimeline resolve (from the next, now-caught-up call) replaced
-                // it — same underlying race as the duplicate-timeline guard, just cosmetic instead
-                // of thrown.
-                val intent = NarrativeCheck.validateProgressionMetadata(sagaContent.toNarrativeMetadata(), rules)
-                hydrated =
-                    intent?.let { NarrativeActionMaterializer.materialize(it, sagaContent) }
-                if (intent != null && hydrated == null) {
-                    Timber.w(
-                        "requestNarrativeProgression: metadata implies progression (${intent.javaClass.simpleName}) but SagaContent hydration failed.",
+                    // sagaContent is a fresh DB read (getSagaContent() above); currentSaga is the
+                    // cached content StateFlow, which is fed by a Room Flow and can lag a write
+                    // from a sibling coroutine by a beat (e.g. continueMilestone() clearing
+                    // currentEventId right before this runs). Deciding off the stale snapshot here
+                    // is what let a moment-long CloseTimeline/EvolveTimeline resolve flash the
+                    // advance pill before the correct CreateTimeline resolve (from the next,
+                    // now-caught-up call) replaced it — same underlying race as the
+                    // duplicate-timeline guard, just cosmetic instead of thrown.
+                    val intent = NarrativeCheck.validateProgressionMetadata(sagaContent.toNarrativeMetadata(), rules)
+                    val hydrated = intent?.let { NarrativeActionMaterializer.materialize(it, sagaContent) }
+                    if (intent != null && hydrated == null) {
+                        Timber.w(
+                            "requestNarrativeProgression: metadata implies progression (${intent.javaClass.simpleName}) but SagaContent hydration failed.",
+                        )
+                        narrativeCoordinator.schedulePendingReevaluation()
+                        return@withLock
+                    }
+
+                    val isAutomatic = hydrated?.executionMode() == NarrativeExecutionMode.Automatic
+                    narrativeCoordinator.reevaluate(
+                        nextResolvedAction = hydrated,
+                        context = buildEvaluationContext(),
+                        isAutomatic = isAutomatic,
                     )
-                    narrativeCoordinator.schedulePendingReevaluation()
+                    shouldReevaluateAgain = narrativeCoordinator.consumePendingReevaluation()
+
+                    if (isAutomatic && hydrated != null) {
+                        if (++automaticStepGuard > 10) {
+                            Timber.e(
+                                "requestNarrativeProgression: automatic-action loop exceeded 10 steps " +
+                                    "(likely stuck re-materializing the same action) — bailing to avoid " +
+                                    "hanging progressionMutex forever.",
+                            )
+                            narrativeCoordinator.schedulePendingReevaluation()
+                            return@withLock
+                        }
+                        executeNarrativeAction(hydrated, isRetry = false, chainNext = false)
+                        continue
+                    }
+
                     return@withLock
                 }
-
-                val isAutomatic = hydrated?.executionMode() == NarrativeExecutionMode.Automatic
-                narrativeCoordinator.reevaluate(
-                    nextResolvedAction = hydrated,
-                    context = buildEvaluationContext(),
-                    isAutomatic = isAutomatic,
-                )
-
-                shouldReevaluateAgain = narrativeCoordinator.consumePendingReevaluation()
             }
 
-            if (hydrated != null && hydrated.executionMode() == NarrativeExecutionMode.Automatic) {
-                executeNarrativeAction(hydrated, isRetry = false)
-            } else if (shouldReevaluateAgain) {
+            if (shouldReevaluateAgain) {
                 requestNarrativeProgression(isRetry = false)
             }
         }
@@ -934,7 +956,16 @@ class SagaContentManagerImpl
             when (milestone) {
                 is SagaMilestone.Introduction,
                 -> {
-                    doNothing()
+                    // Unlike the other milestone types, an Introduction never goes through
+                    // executeNarrativeAction — the "welcome back" RESUME case in particular is
+                    // emitted directly from loadSaga(), so nothing else re-checks progression
+                    // after it's dismissed. Without this, dismissing it while the message limit
+                    // was already hit before the saga even opened just silently drops back to
+                    // chat instead of continuing into the pending EvolveTimeline. Detached onto
+                    // managerScope for the same reason as advanceNarrative() above — this can
+                    // tail into an automatic CreateTimeline execution, and that shouldn't get cut
+                    // short just because the caller's screen went away mid-call.
+                    managerScope.launch { requestNarrativeProgression(isRetry = false, fallbackSaga = saga) }.join()
                 }
 
                 is SagaMilestone.NewEvent -> {

@@ -121,6 +121,12 @@ internal fun RuntimeShader.setGenreFilterUniforms(
     setFloatUniform("u_rimEnergyWidth", uniformValues.rimEnergyWidth * scaleFactor)
     setFloatUniform("u_wispIntensity", uniformValues.wispIntensity)
     setFloatUniform("u_wispSpeed", uniformValues.wispSpeed)
+    setFloatUniform("u_progressiveBlurRadius", uniformValues.progressiveBlurRadius * scaleFactor)
+    setFloatUniform(
+        "u_progressiveBlurRange",
+        uniformValues.progressiveBlurRange.first,
+        uniformValues.progressiveBlurRange.second,
+    )
 
     if (selectiveParams != null) {
         setFloatUniform("u_selectiveHighlightEnabled", 1f)
@@ -247,6 +253,8 @@ fun Modifier.effectForGenre(
     focusRadius: Float? = null,
     customGrain: Float? = null,
     pixelSize: Float? = null,
+    progressiveBlurRadius: Float? = null,
+    progressiveBlurRange: Pair<Float, Float>? = null,
     useFallBack: Boolean = false,
     enableSelectiveHighlight: Boolean = false,
 ): Modifier {
@@ -274,6 +282,9 @@ fun Modifier.effectForGenre(
             focusRadius = focusRadius,
             pixelSize = pixelSize,
             visualConfig = visualConfig,
+        )?.copy(
+            progressiveBlurRadius = progressiveBlurRadius ?: 0f,
+            progressiveBlurRange = progressiveBlurRange ?: (0f to 1f),
         )
 
     if (uniformValues == null) return this
@@ -358,6 +369,8 @@ data class ShaderParams(
     val rimEnergyWidth: Float = 8f,
     val wispIntensity: Float = 0f,
     val wispSpeed: Float = 3f,
+    val progressiveBlurRadius: Float = 0f,
+    val progressiveBlurRange: Pair<Float, Float> = 0f to 1f,
 )
 
 @Composable
