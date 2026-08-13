@@ -2,12 +2,12 @@
 
 🇺🇸 English
 
-Every genre finally has its own personality, chat bubbles included. Horror gets pixel moons and clouds peeking out from behind messages, Cyberpunk gets overlapping name tags straight out of a stream chat, Fantasy bubbles now sit in actual flame. Eight genres, eight completely different vibes — same story engine underneath.
+Every genre finally feels like its own world — chat, characters, the whole atmosphere reworked to actually match the story you picked instead of just wearing a different color on top. It's the kind of update that makes the old version look like it wasn't really trying.
 
-Also: the app stopped occasionally creating the same next chapter twice and just sitting there thinking about it. Transitions are faster now. Drama included, duplicates not.
+We also quietly fixed some stuff under the hood. You probably won't notice. That's exactly the point.
 
 🇧🇷 Português
 
-Cada gênero finalmente tem cara própria até nas bolhas de chat. Horror ganhou lua e nuvem em pixel espiando por trás das mensagens, Cyberpunk ganhou tag de nome sobreposta tipo chat de live, e as bolhas de Fantasia agora pegam fogo de verdade. Oito gêneros, oito climas bem diferentes — o motor de história por trás continua o mesmo.
+Cada gênero agora parece um mundo próprio — chat, personagens, a atmosfera inteira repensada pra combinar de verdade com a história que você escolheu, e não só mudar de cor por cima. É o tipo de atualização que faz a versão anterior parecer que nem estava se esforçando.
 
-De brinde: o app parou de criar o mesmo capítulo seguinte duas vezes do nada e ficar "pensando" mais do que devia. Transição mais rápida agora. Drama incluso, duplicata não.
+Também mexemos em umas coisas por baixo dos panos, discretamente. Você provavelmente nem vai notar. É exatamente esse o ponto.
