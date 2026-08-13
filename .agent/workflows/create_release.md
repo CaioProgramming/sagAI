@@ -22,7 +22,25 @@ the APK.
         - *Recommendation*: Generally, keep documentation in version control, but ignore large assets or temporary files.
 
 
-4. **Check for Open PRs**:
+4. **Hardcoded String Resources Check**:
+    - Diff the accumulated release scope for new/changed UI code:
+      `git diff origin/main...develop -- '*.kt'`.
+    - Scan the added lines for user-facing string literals that didn't go through
+      `stringResource(...)`/`getString(...)` — `Text("...")`, `contentDescription = "..."`,
+      `Toast.makeText(..., "...", ...)`, snackbar/dialog copy, etc.
+    - Skip debug-only/preview code (`features/debug/**`, `DesignSystemPreviewView.kt`,
+      `DesignSystemMocks.kt`) and non-user-facing strings (`Timber.*` log messages, analytics
+      event names) — those don't need resources.
+    - For every real hit:
+        - Add a `snake_case`-named entry to `app/src/main/res/values/strings.xml` (EN).
+        - Add the matching translated entry to `app/src/main/res/values-pt-rBR/strings.xml`
+          (PT-BR) — same key, natural PT-BR copy, not a literal translation.
+        - Update the call site to reference `R.string.xxx` / `stringResource(R.string.xxx)`
+          instead of the literal.
+    - This is a real recurring gap, not a hypothetical — release 1.14.0 shipped without this
+      check having ever been formalized.
+
+5. **Check for Open PRs**:
     - Run `gh pr list --base develop --state open` to see any pending PRs targeting develop.
     - If there are open PRs:
         - List them to the user (Number and Title).
@@ -31,8 +49,14 @@ the APK.
             - Run `gh pr merge [PR_NUMBER] --merge --delete-branch`.
             - Pull changes again: `git pull origin develop`.
             - Repeat the check until user says "No" or no PRs remain.
+        - *Note*: a merge can conflict with work already on `develop` (two PRs independently
+          touching the same function, for example). Don't resolve a conflict there by blindly
+          picking one side — read both versions, understand what each was actually trying to
+          fix, and check whether one already subsumes the other before deciding. Verify with
+          `git diff origin/develop -- <file>` that the resolved result matches the version you
+          intended to keep.
 
-5. **Analyze & Determine Version**:
+6. **Analyze & Determine Version**:
     - **Fetch History**: Run `git log -n 20 --oneline develop` and
       `git log --merges -n 3 --oneline develop`.
     - **Analyze Impact**:
@@ -45,23 +69,23 @@ the APK.
         - *Rule*: If MAJOR increments, reset MINOR and PATCH to 0. If MINOR increments, reset PATCH
           to 0.
 
-6. **Update Version**:
+7. **Update Version**:
     - Update `version.properties` with the new values.
     - *Note*: `app/build.gradle.kts` automatically reads from this file, so no manual Gradle edit is
       needed.
 
-7. **Create Release Branch**:
+8. **Create Release Branch**:
     - Create and checkout a new branch: `git checkout -b release/[new_version]`
     - Example: `git checkout -b release/1.5.0`
     - Commit the version changes: `git add version.properties && git commit -m "chore: bump version to [new_version]"`
 
-8. **Draft Release Notes**:
+9. **Draft Release Notes**:
     - Follow the style guide from `.agent/workflows/create_release_notes.md`.
     - Create `docs/release_notes/release_[new_version].md`.
     - Include the "What's New" and "Bug Fixes" sections based on the git log analysis.
 
-9. **Create Pull Request**:
-    - **Identify Core Features**: Use the git log analysis from Step 4 to identify 1-2 core features
+10. **Create Pull Request**:
+    - **Identify Core Features**: Use the git log analysis from Step 6 to identify 1-2 core features
       or major improvements.
     - **Construct Title**: `✦ Release [Version] - [Core Feature 1] & [Core Feature 2]`
     - **Construct Body**:
@@ -87,19 +111,45 @@ the APK.
     - **Open PR**: Run `gh pr view --web` to open the PR in the browser.
     - **Notify**: Confirm the PR has been created and provide the link.
 
-10. **Build Debug & Release**:
+11. **Proguard / R8 Keep Rules Check**:
+    - This only bites in the *release* build — R8 obfuscation/shrinking doesn't run on debug, so
+      a missing keep rule stays invisible through every debug test and only breaks in production
+      (silently mangled/omitted fields, reflection failures on Gson parsing, etc.). Check this
+      *before* burning a build in Step 12, not after.
+    - Diff for new or changed data/model classes since the last release:
+      `git diff origin/main...develop --name-only -- '*.kt' | grep -E '/(model|data)/'`
+      — pay special attention to anything parsed from AI/LLM JSON output
+      (`core/ai/model/**`) or any new Gson-annotated class, since those rely on reflection to
+      populate fields and are exactly what R8 silently strips without a keep rule.
+    - Check `app/proguard-rules.pro` — new classes are already covered for free if they land
+      under one of the existing wildcarded packages:
+      - `com.ilustris.sagai.core.ai.model.**`
+      - `com.ilustris.sagai.features.**.data.model.**`
+      - `com.ilustris.sagai.features.**.domain.model.**`
+      - (any class with `@SerializedName` fields is covered by the blanket
+        `-keepclassmembers` rule regardless of package)
+    - If a new reflection-parsed class lives *outside* those package globs, either move it
+      under a covered package or add an explicit `-keep class <fqcn> { *; }` rule.
+    - If in doubt, a quick sanity check: `./gradlew assembleRelease` and exercise the
+      AI-response-parsing path (or inspect `app/build/outputs/mapping/release/mapping.txt` for
+      the class) before distributing.
+
+12. **Build Debug & Release**:
     - **Debug Build**: Run `./gradlew assembleDebug` for Firebase distribution.
     - **Release Build**: Run `./gradlew assembleRelease` for Google Play Console.
     - *Note*: This might take a few minutes.
 
-11. **Distribute to Firebase**:
+13. **Distribute to Firebase**:
     - **Prepare Release Notes**: Read the content from `docs/release_notes/release_[new_version].md`.
     - **Distribute**: Run `firebase appdistribution:distribute app/build/outputs/apk/debug/app-debug.apk --app [FIREBASE_APP_ID] --groups "alpha-testers" --release-notes-file docs/release_notes/release_[new_version].md`
     - *Note*: This distributes the debug build to alpha-testers. The release build will be uploaded to Google Play Console manually.
+    - *Note*: Distributing to real alpha-testers is user-visible and not easily reversible —
+      confirm with the user before running this, don't fire it automatically just because the
+      rest of the workflow ran cleanly.
     - **Confirm**: Notify the user that the debug build has been distributed to alpha-testers.
 
-12. **Update FAQ**:
-    - **Analyze**: Using the features and changes identified in Step 5 and 8, determine what new
+14. **Update FAQ**:
+    - **Analyze**: Using the features and changes identified in Step 6 and 9, determine what new
       questions users might have.
     - **Generate**: Create a draft list of new/updated FAQ items (Question & Answer) relevant to
       this release.
@@ -113,7 +163,7 @@ the APK.
     - **Apply**: Ask the user if they want to update the FAQ files with these changes. If yes, write
       the updated JSON to the files.
 
-13. **Finalize**:
+15. **Finalize**:
     - Notify the user that Release **[new_version]** is ready.
     - Run `open app/build/outputs/apk/release/` to show the APK in Finder.
     - Provide the path to the APK: `app/build/outputs/apk/release/app-release.apk`.
