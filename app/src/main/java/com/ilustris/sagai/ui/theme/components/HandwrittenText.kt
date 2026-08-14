@@ -56,6 +56,8 @@ fun HandwrittenText(
     color: Color = MaterialTheme.colorScheme.onBackground,
     fontSize: TextUnit = 18.sp,
     isItalic: Boolean = true,
+    isBold: Boolean = false,
+    centered: Boolean = false,
     strokeWidth: Dp = 1.4.dp,
     lineSpacing: Float = 1.25f,
     duration: Duration = 2500.milliseconds,
@@ -85,16 +87,23 @@ fun HandwrittenText(
         val maxWidthPx = with(density) { maxWidth.toPx() }
 
         val paint =
-            remember(fontSizePx, isItalic) {
+            remember(fontSizePx, isItalic, isBold) {
+                val style =
+                    when {
+                        isBold && isItalic -> Typeface.BOLD_ITALIC
+                        isBold -> Typeface.BOLD
+                        isItalic -> Typeface.ITALIC
+                        else -> Typeface.NORMAL
+                    }
                 android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                    typeface = Typeface.create(Typeface.SERIF, if (isItalic) Typeface.ITALIC else Typeface.NORMAL)
+                    typeface = Typeface.create(Typeface.SERIF, style)
                     textSize = fontSizePx
                 }
             }
 
         val (contours, totalLength, blockHeightPx) =
-            remember(text, maxWidthPx, fontSizePx, isItalic, lineSpacing) {
-                buildHandwrittenContours(text, paint, maxWidthPx, lineSpacing)
+            remember(text, maxWidthPx, fontSizePx, isItalic, isBold, centered, lineSpacing) {
+                buildHandwrittenContours(text, paint, maxWidthPx, lineSpacing, centered)
             }
 
         val heightDp = with(density) { blockHeightPx.toDp() }
@@ -145,6 +154,7 @@ private fun buildHandwrittenContours(
     paint: android.graphics.Paint,
     maxWidthPx: Float,
     lineSpacing: Float,
+    centered: Boolean,
 ): Triple<List<RevealContour>, Float, Float> {
     val lines = wrapText(text, paint, maxWidthPx)
     if (lines.isEmpty()) return Triple(emptyList(), 0f, 0f)
@@ -161,7 +171,8 @@ private fun buildHandwrittenContours(
 
         val outline = android.graphics.Path()
         val baselineY = firstBaseline + index * lineHeight
-        paint.getTextPath(line, 0, line.length, 0f, baselineY, outline)
+        val startX = if (centered) (maxWidthPx - paint.measureText(line)) / 2f else 0f
+        paint.getTextPath(line, 0, line.length, startX, baselineY, outline)
 
         val contourMeasure = android.graphics.PathMeasure(outline, false)
         do {
