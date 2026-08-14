@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
@@ -35,7 +34,7 @@ class TerminalSummaryPage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val accent = content.data.genre.compiledColorPalette().getOrElse(1) { MaterialTheme.colorScheme.primary }
+        val accent = MaterialTheme.colorScheme.primary
         val review = content.data.review ?: return
 
         val entries =
@@ -55,7 +54,7 @@ class TerminalSummaryPage(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    text = "guest@sagai:~$ cat ${stringResource(R.string.review_summary_title).lowercase()}.log",
+                    text = "${content.terminalHost()}:~$ cat ${stringResource(R.string.review_summary_title).lowercase()}.log",
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
@@ -105,6 +104,6 @@ class TerminalSummaryPage(
 
     @Composable
     override fun Background(modifier: Modifier) {
-        TerminalBackground(content.data.genre, modifier)
+        TerminalBackground(modifier)
     }
 }

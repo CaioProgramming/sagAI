@@ -19,7 +19,6 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.saga.detail.review.ui.PopIn
@@ -40,7 +39,7 @@ class TerminalCharactersPage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val accent = content.data.genre.compiledColorPalette().getOrElse(1) { MaterialTheme.colorScheme.primary }
+        val accent = MaterialTheme.colorScheme.primary
         val topCharacters =
             remember {
                 content
@@ -55,7 +54,7 @@ class TerminalCharactersPage(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = "guest@sagai:~$ ls ./characters --top ${topCharacters.size}",
+                    text = "${content.terminalHost()}:~$ ls ./characters --top ${topCharacters.size}",
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
@@ -92,6 +91,6 @@ class TerminalCharactersPage(
 
     @Composable
     override fun Background(modifier: Modifier) {
-        TerminalBackground(content.data.genre, modifier)
+        TerminalBackground(modifier)
     }
 }

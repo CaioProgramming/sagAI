@@ -18,7 +18,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.saga.detail.data.model.Farewell
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
@@ -39,7 +38,7 @@ class TerminalFarewellsPage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val accent = content.data.genre.compiledColorPalette().getOrElse(1) { MaterialTheme.colorScheme.primary }
+        val accent = MaterialTheme.colorScheme.primary
         val speakers =
             remember(farewells) {
                 farewells.mapNotNull { farewell ->
@@ -56,7 +55,7 @@ class TerminalFarewellsPage(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Text(
-                    text = "guest@sagai:~$ tail ./farewells.log",
+                    text = "${content.terminalHost()}:~$ tail ./farewells.log",
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
@@ -86,6 +85,6 @@ class TerminalFarewellsPage(
 
     @Composable
     override fun Background(modifier: Modifier) {
-        TerminalBackground(content.data.genre, modifier)
+        TerminalBackground(modifier)
     }
 }

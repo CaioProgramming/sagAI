@@ -1,13 +1,25 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
 import android.view.MotionEvent
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -17,6 +29,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +49,9 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,7 +64,9 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperienceFactory
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewNavigationStyle
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
+import com.ilustris.sagai.features.saga.detail.review.ui.StoryProgressIndicator
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalBackground
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalGlitchOverlay
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.theme.gradient
@@ -323,6 +342,8 @@ private fun TerminalReviewContainer(
 ) {
     val pageCount = pages.size + if (hasLoadingSlot) 1 else 0
     var currentIndex by remember { mutableIntStateOf(0) }
+    val isLoadingPage = currentIndex >= pages.size
+    val isLastPage = currentIndex == pageCount - 1
 
     LaunchedEffect(currentIndex, pages.size, hasLoadingSlot) {
         if (hasLoadingSlot && currentIndex >= (pages.size - 1).coerceAtLeast(0)) {
@@ -349,6 +370,10 @@ private fun TerminalReviewContainer(
         }
     }
 
+    fun advanceOrFinish() {
+        if (isLastPage) onDismiss() else handleAction(ReviewAction.Continue)
+    }
+
     Box(
         modifier =
             Modifier
@@ -358,27 +383,74 @@ private fun TerminalReviewContainer(
                     interactionSource = remember { MutableInteractionSource() },
                 ) { handleAction(ReviewAction.Continue) },
     ) {
-        val isLoadingPage = currentIndex >= pages.size
         if (!isLoadingPage) {
             pages.getOrNull(currentIndex)?.Background(modifier = Modifier.fillMaxSize())
         } else {
-            TerminalBackground(genre, Modifier.fillMaxSize())
+            TerminalBackground(Modifier.fillMaxSize())
         }
 
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            if (isLoadingPage) {
-                ReviewLoadingIcon()
-            } else {
-                pages.getOrNull(currentIndex)?.Show(
-                    modifier = Modifier.fillMaxSize(),
-                    canAnimate = true,
-                ) { handleAction(it) }
+        AnimatedContent(
+            targetState = currentIndex,
+            modifier = Modifier.fillMaxSize(),
+            transitionSpec = {
+                (fadeIn(tween(350)) + scaleIn(tween(350), initialScale = 0.98f))
+                    .togetherWith(fadeOut(tween(150)))
+            },
+            label = "terminalPage",
+        ) { index ->
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                if (index >= pages.size) {
+                    ReviewLoadingIcon()
+                } else {
+                    pages.getOrNull(index)?.Show(
+                        modifier = Modifier.fillMaxSize(),
+                        canAnimate = true,
+                    ) { handleAction(it) }
+                }
             }
         }
 
-        ReviewSkipButton(genre) {
-            val isLastPage = currentIndex == pageCount - 1
-            if (isLastPage) onDismiss() else handleAction(ReviewAction.Continue)
+        TerminalGlitchOverlay(modifier = Modifier.fillMaxSize())
+
+        ReviewSkipButton(genre) { advanceOrFinish() }
+
+        Column(
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            StoryProgressIndicator(
+                progress = (currentIndex + 1).toFloat() / pageCount.toFloat(),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = { onShare(ShareType.REVIEW_ACTIVITY) }) {
+                    Text(
+                        "[ ${stringResource(R.string.share)} ]",
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                    )
+                }
+
+                TextButton(onClick = { advanceOrFinish() }) {
+                    Text(
+                        "[ ${stringResource(R.string.next)}_ ]",
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
         }
     }
 }

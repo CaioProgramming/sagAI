@@ -2,13 +2,12 @@ package com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 
 private val TerminalBlack = Color(0xFF050208)
 
@@ -16,14 +15,13 @@ private val TerminalBlack = Color(0xFF050208)
  * A self-contained CRT-monitor look: near-black background, a radial vignette,
  * and horizontal scanlines. Deliberately independent of the remote-config-driven
  * shader pipeline (Filters.kt) so it renders identically on every device/API
- * level without needing Remote Config to be populated.
+ * level without needing Remote Config to be populated. The scanline tint comes
+ * from `MaterialTheme.colorScheme.primary` — already the live, theme-resolved
+ * genre color — rather than a second, hand-picked palette.
  */
 @Composable
-fun TerminalBackground(
-    genre: Genre,
-    modifier: Modifier = Modifier,
-) {
-    val accent = genre.compiledColorPalette().getOrElse(0) { Color(0xFF8B00FF) }
+fun TerminalBackground(modifier: Modifier = Modifier) {
+    val accent = MaterialTheme.colorScheme.primary
 
     Canvas(modifier = modifier.fillMaxSize()) {
         drawRect(color = TerminalBlack)

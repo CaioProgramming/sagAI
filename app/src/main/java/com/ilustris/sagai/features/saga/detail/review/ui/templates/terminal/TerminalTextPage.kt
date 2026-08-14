@@ -18,7 +18,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
@@ -42,7 +41,7 @@ class TerminalTextPage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val accent = content.data.genre.compiledColorPalette().getOrElse(1) { MaterialTheme.colorScheme.primary }
+        val accent = MaterialTheme.colorScheme.primary
         var titleTyped by remember { mutableStateOf(!canAnimate || text.title == null) }
 
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
@@ -53,7 +52,7 @@ class TerminalTextPage(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "guest@sagai:~$ $command",
+                    text = "${content.terminalHost()}:~$ $command",
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
@@ -95,6 +94,6 @@ class TerminalTextPage(
 
     @Composable
     override fun Background(modifier: Modifier) {
-        TerminalBackground(content.data.genre, modifier)
+        TerminalBackground(modifier)
     }
 }
