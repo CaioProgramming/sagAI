@@ -119,7 +119,7 @@ class SagaReviewUseCaseImpl
                                 step.blueprintKey,
                                 buildMap {
                                     putAll(genreConfigService.buildAesthetic(content.data.genre))
-                                    put("userName", userName)
+                                    put("playerName", userName)
                                     put(
                                         "Story",
                                         content.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
@@ -171,7 +171,7 @@ class SagaReviewUseCaseImpl
                             step.blueprintKey,
                             buildMap {
                                 putAll(genreConfigService.buildAesthetic(content.data.genre))
-                                put("userName", userName)
+                                put("playerName", userName)
                                 put(
                                     "Story",
                                     content.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
