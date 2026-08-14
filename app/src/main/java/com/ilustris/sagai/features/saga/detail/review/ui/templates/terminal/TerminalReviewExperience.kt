@@ -12,15 +12,15 @@ import com.ilustris.sagai.features.saga.detail.review.ui.topCharacterImageSource
 
 /**
  * Cyberpunk's SagaReview presented as a computer terminal: monospace text typed
- * line by line over a CRT-scanline background, advanced by tapping instead of
- * swiping. Reuses the same [com.ilustris.sagai.features.saga.detail.data.model.Review]
+ * line by line over a CRT-scanline background, with a glitch VFX overlay on top.
+ * Reuses the same [com.ilustris.sagai.features.saga.detail.data.model.Review]
  * stage data as [com.ilustris.sagai.features.saga.detail.review.ui.DefaultReviewExperience] —
- * only the page visuals and navigation model differ.
+ * only the page visuals differ, navigation is still a vertical swipe.
  */
 class TerminalReviewExperience(
     private val content: SagaContent,
 ) : ReviewExperience {
-    override val navigationStyle: ReviewNavigationStyle = ReviewNavigationStyle.TapToAdvance
+    override val navigationStyle: ReviewNavigationStyle = ReviewNavigationStyle.TerminalSwipe
 
     override val pages: List<ReviewPage>
         get() {

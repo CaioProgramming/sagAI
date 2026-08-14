@@ -13,8 +13,8 @@ sealed class ReviewNavigationStyle {
     /** Instagram/Spotify-Wrapped style vertical swipe — the current Default behavior. */
     data object VerticalSwipe : ReviewNavigationStyle()
 
-    /** Tap-anywhere-to-continue, no swipe gesture — used by the Terminal template. */
-    data object TapToAdvance : ReviewNavigationStyle()
+    /** Vertical swipe with terminal-styled chrome (CRT background, glitch overlay) — used by the Terminal template. */
+    data object TerminalSwipe : ReviewNavigationStyle()
 
     /** Horizontal page-turn — used by the Book template. */
     data object HorizontalPageFlip : ReviewNavigationStyle()

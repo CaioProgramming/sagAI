@@ -20,8 +20,9 @@
   with a `bespokeByGenre` escape hatch for a genre that later needs a fully custom experience
   instead of a shared template — additive, no interface changes needed when that day comes.
 - `ReviewExperience.navigationStyle` (`ReviewExperience.kt`) — `VerticalSwipe` (today's default
-  Stories-style pager), `TapToAdvance` (Terminal), `HorizontalPageFlip` (Book). `SagaReview.kt`
-  picks the right container composable (`DefaultReviewContainer`/`TerminalReviewContainer`/
+  Stories-style pager), `TerminalSwipe` (Terminal — same `VerticalPager` mechanics as Default,
+  just terminal-styled chrome on top), `HorizontalPageFlip` (Book). `SagaReview.kt` picks the
+  right container composable (`DefaultReviewContainer`/`TerminalReviewContainer`/
   `BookReviewContainer`) based on this — all three still speak the same `ReviewAction` contract,
   so `SagaReviewViewModel`/`ReviewGenerationCoordinator` never needed to change.
 - Each template's pages live under `features/saga/detail/review/ui/templates/{terminal,book}/`.
@@ -29,8 +30,10 @@
 ## Shipped
 
 - **Cyberpunk → Terminal**: monospace, self-contained CRT scanline `Canvas` (not the
-  Remote-Config-gated shader pipeline — works identically on every device/API level), tap
-  anywhere to advance instead of swipe.
+  Remote-Config-gated shader pipeline — works identically on every device/API level), a
+  periodic glitch VFX overlay, and a real `VerticalPager` (not a plain tap target) so swipe
+  is discoverable and consistent with the rest of the app; a bottom progress bar plus explicit
+  Continue/Share buttons cover users who don't swipe.
 - **Fantasy → Book**: serif on parchment, 3D page-flip via `HorizontalPager` + `graphicsLayer`
   (same recipe the real `BookReader.kt` already uses for reading Acts).
 - **Farewells stage**: a 7th review step — after Conclusion, the saga's 3-4 most-talked-about

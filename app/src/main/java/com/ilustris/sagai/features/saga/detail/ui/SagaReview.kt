@@ -1,16 +1,8 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
 import android.view.MotionEvent
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -34,7 +26,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -128,7 +119,7 @@ fun SagaReview(
                         onRegenerate = onRegenerate,
                     )
 
-                ReviewNavigationStyle.TapToAdvance ->
+                ReviewNavigationStyle.TerminalSwipe ->
                     TerminalReviewContainer(
                         pages = pages,
                         hasLoadingSlot = hasLoadingSlot,
@@ -327,8 +318,9 @@ private fun DefaultReviewContainer(
 }
 
 /**
- * Cyberpunk's terminal template: no swipe gesture, tapping anywhere advances to the
- * next "command". Reuses the same [ReviewAction] contract as [DefaultReviewContainer].
+ * Cyberpunk's terminal template: a real [VerticalPager] (same mechanics as
+ * [DefaultReviewContainer]) dressed as a command line — each swipe reads as
+ * running the next "command". Reuses the same [ReviewAction] contract.
  */
 @Composable
 private fun TerminalReviewContainer(
@@ -340,30 +332,39 @@ private fun TerminalReviewContainer(
     onShare: (ShareType) -> Unit,
     onRegenerate: () -> Unit,
 ) {
+    val coroutineScope = rememberCoroutineScope()
     val pageCount = pages.size + if (hasLoadingSlot) 1 else 0
-    var currentIndex by remember { mutableIntStateOf(0) }
-    val isLoadingPage = currentIndex >= pages.size
-    val isLastPage = currentIndex == pageCount - 1
+    val pagerState = rememberPagerState { pageCount.coerceAtLeast(1) }
+    val isLastPage = pagerState.currentPage == pageCount - 1
 
-    LaunchedEffect(currentIndex, pages.size, hasLoadingSlot) {
-        if (hasLoadingSlot && currentIndex >= (pages.size - 1).coerceAtLeast(0)) {
+    LaunchedEffect(pagerState.currentPage, pages.size, hasLoadingSlot) {
+        if (hasLoadingSlot && pagerState.currentPage >= (pages.size - 1).coerceAtLeast(0)) {
             onEnsureGeneration()
         }
     }
 
-    fun handleAction(action: ReviewAction) {
+    suspend fun handleAction(action: ReviewAction) {
         when (action) {
-            ReviewAction.Continue -> currentIndex = (currentIndex + 1).coerceAtMost(pageCount - 1)
+            ReviewAction.Continue -> {
+                pagerState.animateScrollToPage((pagerState.currentPage + 1).coerceAtMost(pageCount - 1))
+            }
+
             ReviewAction.Finish -> onDismiss()
-            ReviewAction.Restart -> currentIndex = 0
+
+            ReviewAction.Restart -> {
+                pagerState.animateScrollToPage(0)
+            }
+
             ReviewAction.Regenerate -> {
                 onRegenerate()
-                currentIndex = 0
+                pagerState.animateScrollToPage(0)
             }
 
             is ReviewAction.Navigate -> {
                 val pageIndex = pages.indexOfFirst { it.pageType == action.pageType }
-                if (pageIndex != -1) currentIndex = pageIndex
+                if (pageIndex != -1) {
+                    pagerState.animateScrollToPage(pageIndex)
+                }
             }
 
             is ReviewAction.Share -> onShare(action.shareType)
@@ -371,41 +372,38 @@ private fun TerminalReviewContainer(
     }
 
     fun advanceOrFinish() {
-        if (isLastPage) onDismiss() else handleAction(ReviewAction.Continue)
+        coroutineScope.launch {
+            if (isLastPage) onDismiss() else handleAction(ReviewAction.Continue)
+        }
     }
 
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() },
-                ) { handleAction(ReviewAction.Continue) },
-    ) {
-        if (!isLoadingPage) {
-            pages.getOrNull(currentIndex)?.Background(modifier = Modifier.fillMaxSize())
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (pagerState.currentPage < pages.size) {
+            pages
+                .getOrNull(pagerState.currentPage)
+                ?.Background(modifier = Modifier.fillMaxSize())
         } else {
             TerminalBackground(Modifier.fillMaxSize())
         }
 
-        AnimatedContent(
-            targetState = currentIndex,
+        VerticalPager(
+            state = pagerState,
             modifier = Modifier.fillMaxSize(),
-            transitionSpec = {
-                (fadeIn(tween(350)) + scaleIn(tween(350), initialScale = 0.98f))
-                    .togetherWith(fadeOut(tween(150)))
-            },
-            label = "terminalPage",
-        ) { index ->
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                if (index >= pages.size) {
+        ) { pageIndex ->
+            Box(
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                val isLoadingPage = pageIndex >= pages.size
+                if (isLoadingPage) {
                     ReviewLoadingIcon()
-                } else {
-                    pages.getOrNull(index)?.Show(
+                } else if (pagerState.currentPage == pageIndex) {
+                    pages.getOrNull(pageIndex)?.Show(
                         modifier = Modifier.fillMaxSize(),
                         canAnimate = true,
-                    ) { handleAction(it) }
+                    ) {
+                        coroutineScope.launch { handleAction(it) }
+                    }
                 }
             }
         }
@@ -424,7 +422,7 @@ private fun TerminalReviewContainer(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             StoryProgressIndicator(
-                progress = (currentIndex + 1).toFloat() / pageCount.toFloat(),
+                progress = (pagerState.currentPage + 1).toFloat() / pageCount.toFloat(),
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth(),
             )
