@@ -3,15 +3,15 @@ package com.ilustris.sagai.features.saga.detail.review.ui.templates.book
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -22,8 +22,8 @@ import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
-
-private val Ink = androidx.compose.ui.graphics.Color(0xFF3B2E1F)
+import com.ilustris.sagai.ui.theme.SimpleTypewriterText
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * A single storybook page: [isEpigraph] renders it as a centered italic quote
@@ -42,28 +42,28 @@ class BookTextPage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val accent = content.data.genre.compiledColorPalette().firstOrNull() ?: MaterialTheme.colorScheme.primary
+        val accent =
+            content.data.genre
+                .compiledColorPalette()
+                .firstOrNull() ?: MaterialTheme.colorScheme.primary
+        val ink = LocalContentColor.current
 
         if (isEpigraph) {
-            Box(modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+            Box(modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     text.title?.let {
-                        Text(
+                        SimpleTypewriterText(
                             text = "“$it”",
-                            fontFamily = FontFamily.Serif,
-                            fontStyle = FontStyle.Italic,
-                            fontWeight = FontWeight.Medium,
-                            color = Ink,
+                            style =
+                                MaterialTheme.typography
+                                    .titleLarge
+                                    .copy(color = MaterialTheme.colorScheme.primary),
                             textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.headlineSmall,
                         )
                     }
                     text.subtitle?.let {
-                        Text(
+                        SimpleTypewriterText(
                             text = it,
-                            fontFamily = FontFamily.Serif,
-                            fontStyle = FontStyle.Italic,
-                            color = Ink.copy(alpha = 0.75f),
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(top = 12.dp),
@@ -74,26 +74,26 @@ class BookTextPage(
         } else {
             Column(
                 modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 28.dp, vertical = 48.dp),
+                    .fillMaxWidth()
+                    .padding(32.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 text.title?.let {
-                    Text(
+                    SimpleTypewriterText(
                         text = it.uppercase(),
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold,
-                        color = accent,
-                        style = MaterialTheme.typography.titleLarge,
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                color = MaterialTheme.colorScheme.primary,
+                            ),
                     )
                     HorizontalDivider(color = accent.copy(alpha = 0.4f))
                 }
                 text.subtitle?.let {
-                    Text(
+                    SimpleTypewriterText(
                         text = it,
-                        fontFamily = FontFamily.Serif,
-                        color = Ink,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyLarge.copy(color = ink),
+                        duration = (it.length * 16).coerceIn(800, 4000).milliseconds,
+                        isAnimated = canAnimate,
                     )
                 }
             }

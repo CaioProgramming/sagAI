@@ -626,6 +626,7 @@
     <string name="review_stage_journey_subtitle_default">O caminho que fizemos</string>
     <string name="review_stage_conclusion_title">O Legado</string>
     <string name="review_stage_conclusion_subtitle_default">O que ficou</string>
+    <string name="review_farewells_title">A Despedida</string>
 
     <!-- Logs de Auditoria de IA -->
     <string name="audit_logs_title">Logs de Auditoria de IA</string>

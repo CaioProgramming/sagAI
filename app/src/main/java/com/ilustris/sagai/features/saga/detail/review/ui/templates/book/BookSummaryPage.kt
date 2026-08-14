@@ -3,10 +3,10 @@ package com.ilustris.sagai.features.saga.detail.review.ui.templates.book
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,7 +14,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -26,8 +25,6 @@ import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
-
-private val Ink = androidx.compose.ui.graphics.Color(0xFF3B2E1F)
 
 /** The book's "Table of Contents" — tap a chapter to turn back to it. */
 class BookSummaryPage(
@@ -41,6 +38,7 @@ class BookSummaryPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val accent = content.data.genre.compiledColorPalette().firstOrNull() ?: MaterialTheme.colorScheme.primary
+        val ink = LocalContentColor.current
         val review = content.data.review ?: return
 
         val chapters =
@@ -61,14 +59,13 @@ class BookSummaryPage(
 
         Column(
             modifier
-                .fillMaxSize()
-                .padding(horizontal = 32.dp, vertical = 56.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
                 text = stringResource(R.string.review_summary_title),
-                fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
                 color = accent,
@@ -80,8 +77,7 @@ class BookSummaryPage(
             chapters.forEach { (titleRes, pageType) ->
                 Text(
                     text = stringResource(titleRes),
-                    fontFamily = FontFamily.Serif,
-                    color = Ink,
+                    color = ink,
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.titleMedium,
                     modifier =
@@ -93,7 +89,6 @@ class BookSummaryPage(
 
             Text(
                 text = stringResource(R.string.review_restart_button),
-                fontFamily = FontFamily.Serif,
                 fontStyle = FontStyle.Italic,
                 color = accent,
                 style = MaterialTheme.typography.bodyLarge,
@@ -106,9 +101,8 @@ class BookSummaryPage(
             if (BuildConfig.DEBUG) {
                 Text(
                     text = stringResource(R.string.review_regenerate_button),
-                    fontFamily = FontFamily.Serif,
                     fontStyle = FontStyle.Italic,
-                    color = Ink.copy(alpha = 0.6f),
+                    color = ink.copy(alpha = 0.6f),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.clickable { onAction(ReviewAction.Regenerate) },
                 )

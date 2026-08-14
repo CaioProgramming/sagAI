@@ -27,6 +27,17 @@
   so `SagaReviewViewModel`/`ReviewGenerationCoordinator` never needed to change.
 - Each template's pages live under `features/saga/detail/review/ui/templates/{terminal,book}/`.
 
+## Rule: before building a new genre template
+
+Compare the new template's page list against `DefaultReviewExperience`, stage by stage. For every
+data-driven visual Default renders (a chart, a stat counter, an avatar, a photo collage, a cast
+illustration, a Share action) decide explicitly: **reuse it** (reskinned to the template's own
+idiom), **replace it** with an equivalent in that idiom, or **omit it deliberately** — and say why
+in the page's doc comment. Never let a stage "port" as plain title/subtitle text just because that
+was the fastest thing to wire up — that's how a template ends up with real functionality (a stat,
+a photo, a share action) quietly missing instead of just looking different. This is what the Book
+retrofit (below) had to fix after first shipping this way.
+
 ## Shipped
 
 - **Cyberpunk → Terminal**: monospace, self-contained CRT scanline `Canvas` (not the
@@ -36,6 +47,31 @@
   Continue/Share buttons cover users who don't swipe.
 - **Fantasy → Book**: serif on parchment, 3D page-flip via `HorizontalPager` + `graphicsLayer`
   (same recipe the real `BookReader.kt` already uses for reading Acts).
+- **Book retrofit** (2026-08-14): Book originally only ported each stage's title/subtitle text,
+  dropping every data-driven visual Default has for that stage. Closed, one dedicated page class
+  per stage instead of the generic `BookTextPage`:
+  - `BookExpressivenessPage` — reuses `VibeShapeDrawing` (emotional-tone shape), inked instead of
+    shimmered (parchment doesn't shimmer; the pen-drawn shape is the flourish).
+  - `BookPlaystylePage` — reuses `AnimatedPlaytimeCounter`, serif-styled. (Default's own
+    `ReviewPlaystylePage` has no Share button either despite `ShareType.PLAYSTYLE` being fully
+    wired end-to-end — a real gap, but in Default too, so left alone here; worth its own fix.)
+  - `BookCharactersPage` — added `CharacterAvatar` per cast row (was name-only text) + Share link.
+  - `BookJourneyPlatePage` (new) — multi-image "plate" collage, sepia-framed, replacing the
+    single-image `BookIllustrationPage` insert; not a reuse of Default's `JourneyCollage`/
+    `ChapterCardView`, which lean on `MaterialTheme.colorScheme.primary`/`sagaShape()` and would
+    look neon/holographic against parchment.
+  - `BookConclusionPage` (new) — reuses `SagaLegendLayout` (the cast mosaic), which needed
+    `cellBorderColor`/`cellShape` params added to `SagaLegendLayout`/`GtaCell` in
+    `ReviewComponents.kt` (defaults preserve Default's black-border GTA look) so Book could pass a
+    sepia rounded frame instead.
+  - `BookFarewellsPage` — added `CharacterAvatar` per farewell row (was name-only text).
+  - New shared `BookShareLink` (`templates/book/BookComponents.kt`) — an italic serif clickable
+    `Text`, not a filled `Button`; Book never uses filled buttons anywhere (see
+    `BookSummaryPage`'s Restart/Regenerate links), so Share needed to match that idiom rather than
+    import Default's `ButtonDefaults.elevatedButtonColors()` styling.
+  - Added `SagaContent.notableChapterImageSources(limit)` to `ReviewImageSources.kt` (existing
+    `notableChapterImageSource()` — singular — stays, still used by the Characters stage's
+    top-character portrait insert).
 - **Farewells stage**: a 7th review step — after Conclusion, the saga's 3-4 most-talked-about
   characters each get a short AI-generated farewell message. `Review.farewells: List<Farewell>?`
   (new, required for `isComplete()`), generated via a one-shot `gemmaClient.generate<FarewellSet>`
@@ -46,6 +82,86 @@
   `notableChapterImageSource`, all reusing existing fields — no new AI image generation) plus a
   cover page and two illustration insertion points (after Characters, after Journey) per
   template — Book as "plate illustrations", Terminal as a progressive "decoding" image wipe.
+- **`ReviewNavigationStyle.ContinuousScroll`** (2026-08-14) — the hands-free continuous-scroll
+  style Crime/Cowboy need, built ahead of time as infrastructure: `AutoScrollLazyColumn`
+  (`ui/animations/AutoScrollLazyColumn.kt`) is a `LazyColumn` that drifts forward on its own via
+  `withFrameNanos` + `ScrollableState.scrollBy` (per-frame delta, not one long `animateScrollBy`
+  like `AnimatedChapterGridBackground`'s background loop — stops cleanly at list end, no bounce
+  needed since this reads once instead of looping); a touch-down (`pointerInteropFilter`, same
+  pause mechanic `DefaultReviewContainer` already uses) pauses it instantly, and it waits 20s
+  after the finger lifts before drifting again (no delay on the very first auto-scroll, before
+  any touch ever happened). `ContinuousScrollReviewContainer` in `SagaReview.kt` wires this into
+  the same `ReviewAction`/`ReviewPage` contract the other three containers use.
+- **Fantasy → Book switched from `HorizontalPageFlip` to `ContinuousScroll`** (2026-08-14) —
+  `BookReviewExperience.navigationStyle` now points at the scroll style instead of the 3D
+  page-turn; fits the "unrolling a scroll" reading metaphor better than page-turning did.
+  `BookReviewContainer` (`HorizontalPageFlip`'s container in `SagaReview.kt`) is untouched and
+  still wired into the `when` — just currently unreachable since no `ReviewExperience` returns
+  `HorizontalPageFlip` anymore. Left in place rather than deleted, in case page-turn comes back
+  for a different genre later.
+- **Newspaper-layout pass on real-device feedback** (2026-08-14) — screenshots surfaced several
+  issues once actually seen on a phone:
+  - `BookCharactersPage` cast list changed from a vertical `Column` of rows to a horizontal
+    `LazyRow` (avatar → full name → message count, stacked per character) — reads like a
+    newsroom masthead contributor strip.
+  - The most-talked-about-character portrait (`BookIllustrationPage`, fed by
+    `topCharacterImageSource()`) moved from *after* the cast list to right after the Characters
+    hook epigraph, *before* the list — and switched from a rectangular plate to a `CircleShape`
+    cameo (`BookReviewExperience.kt`'s `review.topCharacters` block).
+  - `BookConclusionPage` had text overlaid on the `SagaLegendLayout` photo mosaic inside an
+    `aspectRatio` `Box` — illegible once the page was no longer full-screen. Reworked to a linear
+    stack: title → mosaic → caption → share, no overlay.
+  - `BookFarewellsPage` changed from uniform avatar-left rows to alternating left/right (odd/even
+    index), portrait always on the outer edge, like a newspaper opinion column.
+  - `review_farewells_title` ("The Send-Off") was the **only** `review_*` string key missing a
+    `values-pt-rBR` entry (verified by diffing all `review_*` keys between the two files) — added
+    "A Despedida". Not a systemic gap, just this one string; if a similar mixed-language report
+    comes up again, that diff approach is the fast way to confirm scope before assuming it's
+    widespread.
+  - `BookCoverPage` went from an `aspectRatio(0.8f)` block to a full `screenHeightDp` hero (the
+    one deliberate exception to "no page is full-screen" — it's the masthead), and its scrim
+    switched from a flat black `Brush.verticalGradient` to `fadeGradientBottom(colorScheme.background)`
+    — the same transparent-to-background fade `SagaDetailView`/`CharacterDetailsView` use over
+    their own hero images, so the title sits on the theme's actual background color instead of
+    pure black regardless of light/dark.
+  - Dropped the fixed warm-parchment palette entirely (`BookBackground`'s cream gradient +
+    every page's hardcoded `private val Ink = Color(0xFF3B2E1F)`). Background is now
+    `MaterialTheme.colorScheme.surfaceContainer` with a faint `onSurface`-tinted grain +
+    vignette layered on top (still Canvas-drawn, same "aged page" texture recipe, just
+    theme-derived colors instead of fixed ones so it still reads right in dark mode). Body text
+    color is `LocalContentColor.current` (the actual ambient default — deliberately *not*
+    `MaterialTheme.colorScheme.onSurface` explicitly, since the whole point was "stop pinning a
+    color, let the default do its job") captured once per page as a local `ink` val, reused for
+    `.copy(alpha = X)` de-emphasis. Genre `accent` (title color, dividers) is untouched — that's
+    deliberate genre identity, not the parchment problem that was flagged.
+- **Book article pass** (2026-08-14) — first attempt at `ContinuousScroll` rendered each page as
+  one screen-height item with its own `Background()`, which read as a slow-motion pager, not an
+  article. Reworked, both in `ContinuousScrollReviewContainer` (generic) and every Book page
+  (specific):
+  - Items now wrap content height (`fillMaxWidth`, never `fillMaxSize`) instead of
+    `fillParentMaxHeight` — sections stack like paragraphs of one continuous page, not screens.
+  - Background is drawn once (`pages.firstOrNull()?.Background()`) behind the whole scroll
+    surface instead of once per item — correct for Book specifically since every Book page
+    returns the identical `BookBackground` anyway, so per-item drawing was pure waste.
+  - `BookCoverPage`/`BookConclusionPage` (the two "hero" compositions with text overlaid on
+    imagery) switched from full-screen framing to `aspectRatio`-bound blocks (`0.8f`/`0.75f`) —
+    still reads as a banner/mosaic moment, just not screen-height.
+  - `BookFarewellsPage`'s inner `LazyColumn` (nesting scrollables inside an unbounded-height
+    parent crashes) became a plain `Column` — farewells are ~3-4 items, no laziness needed.
+  - Removed every hardcoded `fontFamily = FontFamily.Serif` across all Book pages. `Theme.kt`'s
+    `dynamicTypography` already swaps `MaterialTheme.typography`'s header/body fonts to the
+    genre's remote-configured font when the theme loads (see `SagAITheme`/`resolvedFonts`) —
+    hardcoding `FontFamily.Serif` silently overrode that per-genre font with a generic system
+    serif. Book text now just uses `MaterialTheme.typography.*` styles directly, like Default
+    does everywhere, so Fantasy's actual configured font shows up instead of a fallback.
+  - Flowing body paragraphs (`BookTextPage`'s content variant, `BookExpressivenessPage`/
+    `BookPlaystylePage` subtitles) now reveal via `SimpleTypewriterText` instead of a static
+    `Text`, duration scaled to text length (`length * 16ms`, clamped 800–4000ms) rather than one
+    fixed duration for every paragraph regardless of how long it is — meant to read as a living
+    article typing itself in as you scroll to it, not Default's staged multi-second
+    `AnimatedVisibility` reveal sequence transplanted verbatim. Titles, stat counters
+    (`AnimatedPlaytimeCounter`), and the `VibeShapeDrawing` flourish keep their own existing
+    animations — typewriter is for prose specifically, not every element.
 
 ## Not started yet — backlog, two genres at a time
 

@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -29,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -59,6 +62,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.Term
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalGlitchOverlay
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
+import com.ilustris.sagai.ui.animations.AutoScrollLazyColumn
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.levitate
@@ -107,7 +111,7 @@ fun SagaReview(
             val onRegenerate = { viewModel.resetReview(currentContent) }
 
             when (experience.navigationStyle) {
-                ReviewNavigationStyle.VerticalSwipe ->
+                ReviewNavigationStyle.VerticalSwipe -> {
                     DefaultReviewContainer(
                         pages = pages,
                         hasLoadingSlot = hasLoadingSlot,
@@ -117,8 +121,9 @@ fun SagaReview(
                         onShare = onShare,
                         onRegenerate = onRegenerate,
                     )
+                }
 
-                ReviewNavigationStyle.TerminalSwipe ->
+                ReviewNavigationStyle.TerminalSwipe -> {
                     TerminalReviewContainer(
                         pages = pages,
                         hasLoadingSlot = hasLoadingSlot,
@@ -128,8 +133,9 @@ fun SagaReview(
                         onShare = onShare,
                         onRegenerate = onRegenerate,
                     )
+                }
 
-                ReviewNavigationStyle.HorizontalPageFlip ->
+                ReviewNavigationStyle.HorizontalPageFlip -> {
                     BookReviewContainer(
                         pages = pages,
                         hasLoadingSlot = hasLoadingSlot,
@@ -139,6 +145,19 @@ fun SagaReview(
                         onShare = onShare,
                         onRegenerate = onRegenerate,
                     )
+                }
+
+                ReviewNavigationStyle.ContinuousScroll -> {
+                    ContinuousScrollReviewContainer(
+                        pages = pages,
+                        hasLoadingSlot = hasLoadingSlot,
+                        genre = genre,
+                        onEnsureGeneration = onEnsureGeneration,
+                        onDismiss = onDismiss,
+                        onShare = onShare,
+                        onRegenerate = onRegenerate,
+                    )
+                }
             }
         }
 
@@ -228,7 +247,9 @@ private fun DefaultReviewContainer(
                 pagerState.animateScrollToPage(pagerState.currentPage + 1)
             }
 
-            ReviewAction.Finish -> onDismiss()
+            ReviewAction.Finish -> {
+                onDismiss()
+            }
 
             ReviewAction.Restart -> {
                 pagerState.animateScrollToPage(0)
@@ -246,7 +267,9 @@ private fun DefaultReviewContainer(
                 }
             }
 
-            is ReviewAction.Share -> onShare(action.shareType)
+            is ReviewAction.Share -> {
+                onShare(action.shareType)
+            }
         }
     }
 
@@ -348,7 +371,9 @@ private fun TerminalReviewContainer(
                 pagerState.animateScrollToPage((pagerState.currentPage + 1).coerceAtMost(pageCount - 1))
             }
 
-            ReviewAction.Finish -> onDismiss()
+            ReviewAction.Finish -> {
+                onDismiss()
+            }
 
             ReviewAction.Restart -> {
                 pagerState.animateScrollToPage(0)
@@ -366,7 +391,9 @@ private fun TerminalReviewContainer(
                 }
             }
 
-            is ReviewAction.Share -> onShare(action.shareType)
+            is ReviewAction.Share -> {
+                onShare(action.shareType)
+            }
         }
     }
 
@@ -479,9 +506,18 @@ private fun BookReviewContainer(
 
     suspend fun handleAction(action: ReviewAction) {
         when (action) {
-            ReviewAction.Continue -> pagerState.animateScrollToPage(pagerState.currentPage + 1)
-            ReviewAction.Finish -> onDismiss()
-            ReviewAction.Restart -> pagerState.animateScrollToPage(0)
+            ReviewAction.Continue -> {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+            }
+
+            ReviewAction.Finish -> {
+                onDismiss()
+            }
+
+            ReviewAction.Restart -> {
+                pagerState.animateScrollToPage(0)
+            }
+
             ReviewAction.Regenerate -> {
                 onRegenerate()
                 pagerState.animateScrollToPage(0)
@@ -494,7 +530,9 @@ private fun BookReviewContainer(
                 }
             }
 
-            is ReviewAction.Share -> onShare(action.shareType)
+            is ReviewAction.Share -> {
+                onShare(action.shareType)
+            }
         }
     }
 
@@ -551,6 +589,113 @@ private fun BookReviewContainer(
                     onDismiss()
                 } else {
                     pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Hands-free continuous scroll, like reading a newspaper article — no swipe/pager, the list
+ * drifts on its own via [AutoScrollLazyColumn]. Sections are stacked at their own natural height
+ * (not one-per-screen) so the "page" reads as one continuous flow, and the background is drawn
+ * once for the whole scroll surface instead of per section — every [ReviewPage] here is expected
+ * to size itself to content (`fillMaxWidth`, never `fillMaxSize`) since the list gives items an
+ * unbounded height. Reuses the same [ReviewAction] contract as the other three containers, just
+ * driven by [LazyListState] instead of `PagerState`.
+ */
+@Composable
+private fun ContinuousScrollReviewContainer(
+    pages: List<ReviewPage>,
+    hasLoadingSlot: Boolean,
+    genre: Genre,
+    onEnsureGeneration: () -> Unit,
+    onDismiss: () -> Unit,
+    onShare: (ShareType) -> Unit,
+    onRegenerate: () -> Unit,
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+    val itemCount = pages.size + if (hasLoadingSlot) 1 else 0
+
+    LaunchedEffect(listState, pages.size, hasLoadingSlot) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo
+                .lastOrNull()
+                ?.index
+        }.collect { lastVisibleIndex ->
+            if (hasLoadingSlot && lastVisibleIndex != null && lastVisibleIndex >= (pages.size - 1).coerceAtLeast(0)) {
+                onEnsureGeneration()
+            }
+        }
+    }
+
+    suspend fun handleAction(action: ReviewAction) {
+        when (action) {
+            ReviewAction.Continue -> {
+                val current = listState.firstVisibleItemIndex
+                listState.animateScrollToItem((current + 1).coerceAtMost(itemCount - 1))
+            }
+
+            ReviewAction.Finish -> {
+                onDismiss()
+            }
+
+            ReviewAction.Restart -> {
+                listState.animateScrollToItem(0)
+            }
+
+            ReviewAction.Regenerate -> {
+                onRegenerate()
+                listState.animateScrollToItem(0)
+            }
+
+            is ReviewAction.Navigate -> {
+                val pageIndex = pages.indexOfFirst { it.pageType == action.pageType }
+                if (pageIndex != -1) {
+                    listState.animateScrollToItem(pageIndex)
+                }
+            }
+
+            is ReviewAction.Share -> {
+                onShare(action.shareType)
+            }
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        pages.firstOrNull()?.Background(modifier = Modifier.fillMaxSize())
+
+        AutoScrollLazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            items(pages.size) { pageIndex ->
+                pages[pageIndex].Show(
+                    modifier = Modifier.fillMaxWidth(),
+                    canAnimate = true,
+                ) {
+                    coroutineScope.launch { handleAction(it) }
+                }
+            }
+
+            if (hasLoadingSlot) {
+                item {
+                    Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
+                        ReviewLoadingIcon()
+                    }
+                }
+            }
+        }
+
+        ReviewSkipButton(genre) {
+            coroutineScope.launch {
+                val current = listState.firstVisibleItemIndex
+                val isLastItem = current >= itemCount - 1
+                if (isLastItem) {
+                    onDismiss()
+                } else {
+                    listState.animateScrollToItem(current + 1)
                 }
             }
         }

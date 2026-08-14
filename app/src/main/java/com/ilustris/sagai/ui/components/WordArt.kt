@@ -57,6 +57,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.SagAIScaffold
+import com.ilustris.sagai.ui.theme.components.HandwrittenText
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.lighter
 import com.ilustris.sagai.ui.theme.themeBrushColors
@@ -376,20 +377,21 @@ fun Genre.stylisedText(
         )
     when (this) {
         Genre.FANTASY -> {
-            AutoResizeText(
+            HandwrittenText(
                 text = text,
                 modifier =
                     modifier
                         .genreVfx(this, resolvedColor, resolvedIconColor),
-                style =
-                    style.copy(
-                        brush = Brush.verticalGradient(palette),
-                        shadow =
-                            Shadow(
-                                palette.last().darker(),
-                                blurRadius = 15f,
-                                offset = Offset(0f, 2f),
-                            ),
+                color = resolvedColor,
+                fontSize = fontSize,
+                isBold = true,
+                isItalic = false,
+                centered = true,
+                shadow =
+                    Shadow(
+                        palette.last().darker(),
+                        blurRadius = 15f,
+                        offset = Offset(0f, 2f),
                     ),
             )
         }

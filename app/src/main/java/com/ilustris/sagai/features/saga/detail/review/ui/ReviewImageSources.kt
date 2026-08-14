@@ -31,3 +31,11 @@ fun SagaContent.notableChapterImageSource(): ReviewImageSource? {
     val chapter = flatChapters().map { it.data }.firstOrNull { it.coverImage.isNotBlank() } ?: return null
     return ReviewImageSource(chapter.coverImage, chapter.title)
 }
+
+/** Up to [limit] chapters with a real cover image, for a multi-image "plate" collage. */
+fun SagaContent.notableChapterImageSources(limit: Int = 4): List<ReviewImageSource> =
+    flatChapters()
+        .map { it.data }
+        .filter { it.coverImage.isNotBlank() }
+        .take(limit)
+        .map { ReviewImageSource(it.coverImage, it.title) }

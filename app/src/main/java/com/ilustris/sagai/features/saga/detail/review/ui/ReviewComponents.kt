@@ -75,6 +75,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.playthrough.CounterText
+import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
@@ -323,12 +324,7 @@ fun HeroSummaryCard(
                 .rankTopCharacters(content.getCharacters(true))
                 .take(5)
         }
-    val playTime =
-        content.data.playTimeMs.let {
-            val minutes = it / 60000
-            val hours = minutes / 60
-            if (hours > 0) "${hours}h ${minutes % 60}m" else "${minutes}m"
-        }
+    val playTime = content.data.playTimeMs.toPlaytimeFormat()
 
     val shape = genre.bubble(isNarrator = true)
     val contentColor = MaterialTheme.colorScheme.background
@@ -774,6 +770,8 @@ fun SagaLegendLayout(
     supportingCharacters: List<Character>,
     sagaIcon: String,
     modifier: Modifier = Modifier,
+    cellBorderColor: Color = Color.Black,
+    cellShape: androidx.compose.ui.graphics.Shape = androidx.compose.ui.graphics.RectangleShape,
 ) {
     // 3x3 Grid Items
     val items =
@@ -795,24 +793,26 @@ fun SagaLegendLayout(
                 .aspectRatio(0.75f),
     ) {
         Row(modifier = Modifier.weight(1f)) {
-            PopIn(0, Modifier.weight(1.1f)) { GtaCell(items[0], Modifier.fillMaxSize()) }
-            PopIn(1, Modifier.weight(1f)) { GtaCell(items[1], Modifier.fillMaxSize()) }
-            PopIn(2, Modifier.weight(1.2f)) { GtaCell(items[2], Modifier.fillMaxSize()) }
+            PopIn(0, Modifier.weight(1.1f)) { GtaCell(items[0], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
+            PopIn(1, Modifier.weight(1f)) { GtaCell(items[1], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
+            PopIn(2, Modifier.weight(1.2f)) { GtaCell(items[2], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
         }
         Row(modifier = Modifier.weight(1.3f)) {
-            PopIn(3, Modifier.weight(1f)) { GtaCell(items[3], Modifier.fillMaxSize()) }
+            PopIn(3, Modifier.weight(1f)) { GtaCell(items[3], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
             PopIn(4, Modifier.weight(1.4f)) {
                 GtaCell(
                     items[4],
                     Modifier.fillMaxSize(),
+                    cellBorderColor,
+                    cellShape,
                 )
             } // Protagonist Cell
-            PopIn(5, Modifier.weight(1.1f)) { GtaCell(items[5], Modifier.fillMaxSize()) }
+            PopIn(5, Modifier.weight(1.1f)) { GtaCell(items[5], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
         }
         Row(modifier = Modifier.weight(1.1f)) {
-            PopIn(6, Modifier.weight(1.2f)) { GtaCell(items[6], Modifier.fillMaxSize()) }
-            PopIn(7, Modifier.weight(1.1f)) { GtaCell(items[7], Modifier.fillMaxSize()) }
-            PopIn(8, Modifier.weight(1f)) { GtaCell(items[8], Modifier.fillMaxSize()) }
+            PopIn(6, Modifier.weight(1.2f)) { GtaCell(items[6], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
+            PopIn(7, Modifier.weight(1.1f)) { GtaCell(items[7], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
+            PopIn(8, Modifier.weight(1f)) { GtaCell(items[8], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
         }
     }
 }
@@ -821,13 +821,16 @@ fun SagaLegendLayout(
 private fun GtaCell(
     url: String,
     modifier: Modifier = Modifier,
+    borderColor: Color = Color.Black,
+    shape: androidx.compose.ui.graphics.Shape = androidx.compose.ui.graphics.RectangleShape,
 ) {
     Box(
         modifier =
             modifier
                 .fillMaxSize()
-                .border(2.dp, Color.Black)
-                .background(Color.Black),
+                .clip(shape)
+                .border(2.dp, borderColor, shape)
+                .background(borderColor, shape),
     ) {
         AsyncImage(
             model = url,

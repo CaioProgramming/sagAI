@@ -18,6 +18,14 @@ sealed class ReviewNavigationStyle {
 
     /** Horizontal page-turn — used by the Book template. */
     data object HorizontalPageFlip : ReviewNavigationStyle()
+
+    /**
+     * Hands-free continuous vertical scroll, like reading a newspaper — no swipe required.
+     * See [com.ilustris.sagai.ui.animations.AutoScrollLazyColumn]. Planned for Crime/Cowboy
+     * (see `docs/feature_planning/wrapped_themed_render/implementation_status.md`); not yet
+     * selected by any [com.ilustris.sagai.features.newsaga.data.model.Genre].
+     */
+    data object ContinuousScroll : ReviewNavigationStyle()
 }
 
 sealed class ReviewAction {

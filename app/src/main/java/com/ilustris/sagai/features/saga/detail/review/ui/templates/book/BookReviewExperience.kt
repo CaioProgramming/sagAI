@@ -7,20 +7,21 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewNavigationStyle
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.saga.detail.review.ui.coverImageSource
-import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSource
+import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSources
 import com.ilustris.sagai.features.saga.detail.review.ui.topCharacterImageSource
 
 /**
- * Fantasy's SagaReview presented as a storybook: serif type on parchment,
- * turned like pages instead of swiped like stories. Reuses the same
- * [com.ilustris.sagai.features.saga.detail.data.model.Review] stage data as
+ * Fantasy's SagaReview presented as a storybook: serif type on parchment, scrolled hands-free
+ * like unrolling a scroll instead of swiped like stories — see
+ * [com.ilustris.sagai.features.saga.detail.review.ui.ReviewNavigationStyle.ContinuousScroll].
+ * Reuses the same [com.ilustris.sagai.features.saga.detail.data.model.Review] stage data as
  * [com.ilustris.sagai.features.saga.detail.review.ui.DefaultReviewExperience] —
  * only the page visuals and navigation model differ.
  */
 class BookReviewExperience(
     private val content: SagaContent,
 ) : ReviewExperience {
-    override val navigationStyle: ReviewNavigationStyle = ReviewNavigationStyle.HorizontalPageFlip
+    override val navigationStyle: ReviewNavigationStyle = ReviewNavigationStyle.ContinuousScroll
 
     override val pages: List<ReviewPage>
         get() {
@@ -38,8 +39,8 @@ class BookReviewExperience(
                     stage.hook?.let {
                         add(BookTextPage(content, it, ReviewPageType.EXPRESSIVENESS, isEpigraph = true))
                     }
-                    stage.content?.let {
-                        add(BookTextPage(content, it, ReviewPageType.EXPRESSIVENESS))
+                    if (stage.content != null) {
+                        add(BookExpressivenessPage(content, stage))
                     }
                 }
 
@@ -48,7 +49,7 @@ class BookReviewExperience(
                         add(BookTextPage(content, it, ReviewPageType.PLAYSTYLE, isEpigraph = true))
                     }
                     stage.content?.let {
-                        add(BookTextPage(content, it, ReviewPageType.PLAYSTYLE))
+                        add(BookPlaystylePage(content, it))
                     }
                 }
 
@@ -56,11 +57,10 @@ class BookReviewExperience(
                     stage.hook?.let {
                         add(BookTextPage(content, it, ReviewPageType.CHARACTERS, isEpigraph = true))
                     }
+                    content.topCharacterImageSource()?.let {
+                        add(BookIllustrationPage(content, it, ReviewPageType.CHARACTERS))
+                    }
                     add(BookCharactersPage(content, stage))
-                }
-
-                content.topCharacterImageSource()?.let {
-                    add(BookIllustrationPage(content, it, ReviewPageType.CHARACTERS))
                 }
 
                 review.actsInsight?.let { stage ->
@@ -72,16 +72,16 @@ class BookReviewExperience(
                     }
                 }
 
-                content.notableChapterImageSource()?.let {
-                    add(BookIllustrationPage(content, it, ReviewPageType.JOURNEY))
+                content.notableChapterImageSources().takeIf { it.isNotEmpty() }?.let {
+                    add(BookJourneyPlatePage(content, it))
                 }
 
                 review.conclusion?.let { stage ->
                     stage.hook?.let {
                         add(BookTextPage(content, it, ReviewPageType.CONCLUSION, isEpigraph = true))
                     }
-                    stage.content?.let {
-                        add(BookTextPage(content, it, ReviewPageType.CONCLUSION))
+                    if (stage.content != null && content.mainCharacter != null) {
+                        add(BookConclusionPage(content))
                     }
                 }
 
