@@ -14,16 +14,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextUnit
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.time.Duration
@@ -31,16 +29,21 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 
 private data class RevealContour(
-    val path: Path,
+    val path: android.graphics.Path,
     val length: Float,
 )
 
 /**
  * Text that appears to be traced by a pen, stroke by stroke, instead of fading or typing in.
- * Extracts each glyph's outline as a [Path] via [android.graphics.Paint.getTextPath], splits it
- * into its individual contours (a letter with a hole, like "e" or "a", is more than one contour),
- * and reveals a growing sub-segment of each contour in reading order every frame — the same
+ * Extracts each glyph's outline via [android.graphics.Paint.getTextPath], splits it into its
+ * individual contours (a letter with a hole, like "e" or "a", is more than one contour), and
+ * reveals a growing sub-segment of each contour in reading order every frame — the same
  * "stroke-dashoffset" trick used for SVG line-drawing animations.
+ *
+ * Deliberately stays in `android.graphics.Path`/`PathMeasure` for all the contour math — that's
+ * the classic, long-stable API with real multi-contour support via `nextContour()`. The Compose
+ * `androidx.compose.ui.graphics.PathMeasure` wrapper has no such method, so contours are only
+ * converted to a Compose `Path` at the very last step, right before `drawPath`.
  *
  * Self-contained (own word-wrap + glyph measurement via a plain [android.graphics.Paint]) rather
  * than reusing Compose's own text layout, since there's no public API to get a glyph outline back
@@ -152,7 +155,6 @@ private fun buildHandwrittenContours(
 
     val contours = mutableListOf<RevealContour>()
     var total = 0f
-    val measure = PathMeasure()
 
     lines.forEachIndexed { index, line ->
         if (line.isBlank()) return@forEachIndexed
@@ -161,16 +163,16 @@ private fun buildHandwrittenContours(
         val baselineY = firstBaseline + index * lineHeight
         paint.getTextPath(line, 0, line.length, 0f, baselineY, outline)
 
-        measure.setPath(outline.asComposePath(), false)
+        val contourMeasure = android.graphics.PathMeasure(outline, false)
         do {
-            val contourLength = measure.length
+            val contourLength = contourMeasure.length
             if (contourLength > 0f) {
-                val contourPath = Path()
-                measure.getSegment(0f, contourLength, contourPath, true)
+                val contourPath = android.graphics.Path()
+                contourMeasure.getSegment(0f, contourLength, contourPath, true)
                 contours += RevealContour(contourPath, contourLength)
                 total += contourLength
             }
-        } while (measure.nextContour())
+        } while (contourMeasure.nextContour())
     }
 
     val blockHeight = firstBaseline + (lines.size - 1) * lineHeight + metrics.descent
@@ -187,19 +189,17 @@ private fun DrawScope.drawHandwrittenReveal(
     if (budget <= 0f) return
 
     var remaining = budget
-    val measure = PathMeasure()
-    val segment = Path()
+    val segment = android.graphics.Path()
 
     for (contour in contours) {
         if (remaining <= 0f) break
         val take = minOf(remaining, contour.length)
 
-        measure.setPath(contour.path, false)
         segment.reset()
-        measure.getSegment(0f, take, segment, true)
+        android.graphics.PathMeasure(contour.path, false).getSegment(0f, take, segment, true)
 
         drawPath(
-            path = segment,
+            path = segment.asComposePath(),
             color = color,
             style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
