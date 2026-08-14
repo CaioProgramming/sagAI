@@ -27,19 +27,24 @@ class TerminalReviewExperience(
             val review = content.data.review ?: return emptyList()
 
             return buildList {
-                content.coverImageSource()?.let {
-                    add(TerminalDecodePage(content, it, "boot", ReviewPageType.INTRO))
+                val coverImage = content.coverImageSource()
+                val introHook = review.introduction?.hook
+
+                if (coverImage != null) {
+                    add(TerminalBootPage(content, coverImage, introHook))
+                } else {
+                    introHook?.let { add(TerminalTextPage(content, it, ReviewPageType.INTRO, "boot")) }
                 }
 
-                review.introduction?.let { stage ->
-                    stage.hook?.let { add(TerminalTextPage(content, it, ReviewPageType.INTRO, "init")) }
-                    stage.content?.let { add(TerminalTextPage(content, it, ReviewPageType.INTRO, "log")) }
+                review.introduction?.content?.let {
+                    add(TerminalTextPage(content, it, ReviewPageType.INTRO, "log"))
                 }
 
                 review.expressiveness?.let { stage ->
                     stage.hook?.let {
                         add(TerminalTextPage(content, it, ReviewPageType.EXPRESSIVENESS, "analyze"))
                     }
+                    add(TerminalEmotionScanPage(content))
                     stage.content?.let {
                         add(TerminalTextPage(content, it, ReviewPageType.EXPRESSIVENESS, "report"))
                     }
@@ -49,6 +54,7 @@ class TerminalReviewExperience(
                     stage.hook?.let {
                         add(TerminalTextPage(content, it, ReviewPageType.PLAYSTYLE, "trace"))
                     }
+                    add(TerminalUptimePage(content))
                     stage.content?.let {
                         add(TerminalTextPage(content, it, ReviewPageType.PLAYSTYLE, "report"))
                     }
