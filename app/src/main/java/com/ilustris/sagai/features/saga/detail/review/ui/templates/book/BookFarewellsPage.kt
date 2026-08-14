@@ -27,6 +27,7 @@ import com.ilustris.sagai.features.saga.detail.data.model.cleanMessage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.theme.components.HandwrittenText
 
 private val Ink = androidx.compose.ui.graphics.Color(0xFF3B2E1F)
 
@@ -76,13 +77,12 @@ class BookFarewellsPage(
             ) {
                 items(speakers) { (name, message) ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
+                        HandwrittenText(
                             text = "“$message”",
-                            fontFamily = FontFamily.Serif,
-                            fontStyle = FontStyle.Italic,
                             color = Ink,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyLarge,
+                            fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                            isAnimated = canAnimate,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                         Text(
                             text = "— $name",
