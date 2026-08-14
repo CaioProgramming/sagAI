@@ -26,3 +26,4 @@ gha-creds-*.json
 keystore.properties
 .hotswan/
 .claude/settings.local.json
+.claude/worktrees/
