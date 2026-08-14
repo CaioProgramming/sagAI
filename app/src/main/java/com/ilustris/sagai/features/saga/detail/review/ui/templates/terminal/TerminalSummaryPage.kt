@@ -58,7 +58,7 @@ class TerminalSummaryPage(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
                 )
 
                 entries.forEach { stage ->

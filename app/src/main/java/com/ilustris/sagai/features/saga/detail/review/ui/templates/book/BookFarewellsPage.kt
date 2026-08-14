@@ -23,6 +23,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.saga.detail.data.model.Farewell
+import com.ilustris.sagai.features.saga.detail.data.model.cleanMessage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
@@ -48,7 +49,7 @@ class BookFarewellsPage(
                 farewells.mapNotNull { farewell ->
                     content.characters
                         .find { it.data.id == farewell.characterId }
-                        ?.let { it.data.name to farewell.message }
+                        ?.let { it.data.name to farewell.cleanMessage(it.data.name) }
                 }
             }
 

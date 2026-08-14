@@ -23,6 +23,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.model.Farewell
+import com.ilustris.sagai.features.saga.detail.data.model.cleanMessage
 
 /** "The Send-Off" — a short farewell from each of the saga's most important characters. */
 class ReviewFarewellsPage(
@@ -43,7 +44,7 @@ class ReviewFarewellsPage(
                 farewells.mapNotNull { farewell ->
                     content.characters
                         .find { it.data.id == farewell.characterId }
-                        ?.let { it.data to farewell.message }
+                        ?.let { it.data to farewell.cleanMessage(it.data.name) }
                 }
             }
 

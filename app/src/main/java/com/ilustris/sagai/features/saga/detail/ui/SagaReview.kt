@@ -6,7 +6,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -412,42 +411,42 @@ private fun TerminalReviewContainer(
 
         ReviewSkipButton(genre) { advanceOrFinish() }
 
-        Column(
+        StoryProgressIndicator(
+            progress = (pagerState.currentPage + 1).toFloat() / pageCount.toFloat(),
+            color = MaterialTheme.colorScheme.primary,
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = 40.dp, start = 20.dp, end = 20.dp)
+                    .fillMaxWidth(),
+        )
+
+        Row(
             modifier =
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            StoryProgressIndicator(
-                progress = (pagerState.currentPage + 1).toFloat() / pageCount.toFloat(),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            TextButton(onClick = { onShare(ShareType.REVIEW_ACTIVITY) }) {
+                Text(
+                    "[ ${stringResource(R.string.share)} ]",
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                )
+            }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TextButton(onClick = { onShare(ShareType.REVIEW_ACTIVITY) }) {
-                    Text(
-                        "[ ${stringResource(R.string.share)} ]",
-                        fontFamily = FontFamily.Monospace,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                    )
-                }
-
-                TextButton(onClick = { advanceOrFinish() }) {
-                    Text(
-                        "[ ${stringResource(R.string.next)}_ ]",
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
+            TextButton(onClick = { advanceOrFinish() }) {
+                Text(
+                    "[ ${stringResource(R.string.next)}_ ]",
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
         }
     }

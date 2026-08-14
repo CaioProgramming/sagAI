@@ -36,6 +36,7 @@ class TerminalEmotionScanPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val accent = MaterialTheme.colorScheme.primary
+        val normal = MaterialTheme.colorScheme.onBackground
         val dominantTone =
             remember {
                 content
@@ -56,13 +57,13 @@ class TerminalEmotionScanPage(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
                 )
 
                 Text(
                     text = "> scan complete",
                     fontFamily = FontFamily.Monospace,
-                    color = accent.copy(alpha = 0.7f),
+                    color = normal.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.bodyMedium,
                 )
 
@@ -72,7 +73,7 @@ class TerminalEmotionScanPage(
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
                         color = accent,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.headlineSmall.neonGlow(accent, blurRadius = 18f),
                     )
                 }
             }

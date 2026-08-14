@@ -119,7 +119,6 @@ class SagaReviewUseCaseImpl
                                 step.blueprintKey,
                                 buildMap {
                                     putAll(genreConfigService.buildAesthetic(content.data.genre))
-                                    put("playerName", userName)
                                     put(
                                         "Story",
                                         content.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),

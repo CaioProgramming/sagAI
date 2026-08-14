@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.model.Farewell
+import com.ilustris.sagai.features.saga.detail.data.model.cleanMessage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
@@ -44,7 +45,13 @@ class TerminalFarewellsPage(
                 farewells.mapNotNull { farewell ->
                     content.characters
                         .find { it.data.id == farewell.characterId }
-                        ?.let { it.data.name to farewell.message }
+                        ?.let { characterContent ->
+                            Triple(
+                                characterContent.data.name,
+                                farewell.cleanMessage(characterContent.data.name),
+                                characterContent.data.terminalColor(accent),
+                            )
+                        }
                 }
             }
         var revealedCount by remember { mutableIntStateOf(if (canAnimate) 0 else speakers.size) }
@@ -59,18 +66,19 @@ class TerminalFarewellsPage(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
                 )
 
-                speakers.forEachIndexed { index, (name, message) ->
+                speakers.forEachIndexed { index, (name, message, color) ->
                     if (index <= revealedCount) {
                         SimpleTypewriterText(
                             text = "> $name: $message",
                             style =
-                                MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = FontFamily.Monospace,
-                                    color = accent.copy(alpha = 0.9f),
-                                ),
+                                MaterialTheme.typography.bodyLarge
+                                    .copy(
+                                        fontFamily = FontFamily.Monospace,
+                                        color = color,
+                                    ).neonGlow(color, blurRadius = 8f),
                             isAnimated = canAnimate && index == revealedCount,
                             duration = 1200.milliseconds,
                             onAnimationFinished = {

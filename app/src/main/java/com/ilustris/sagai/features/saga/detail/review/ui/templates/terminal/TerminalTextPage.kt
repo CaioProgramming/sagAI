@@ -42,6 +42,7 @@ class TerminalTextPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val accent = MaterialTheme.colorScheme.primary
+        val normal = MaterialTheme.colorScheme.onBackground
         var titleTyped by remember { mutableStateOf(!canAnimate || text.title == null) }
 
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
@@ -56,18 +57,19 @@ class TerminalTextPage(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
                 )
 
                 text.title?.let {
                     SimpleTypewriterText(
                         text = "> $it",
                         style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                color = accent,
-                            ),
+                            MaterialTheme.typography.titleLarge
+                                .copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold,
+                                    color = accent,
+                                ).neonGlow(accent),
                         isAnimated = canAnimate,
                         duration = 900.milliseconds,
                         onAnimationFinished = { titleTyped = true },
@@ -81,7 +83,7 @@ class TerminalTextPage(
                             style =
                                 MaterialTheme.typography.bodyLarge.copy(
                                     fontFamily = FontFamily.Monospace,
-                                    color = accent.copy(alpha = 0.85f),
+                                    color = normal,
                                 ),
                             isAnimated = canAnimate,
                             duration = 1200.milliseconds,

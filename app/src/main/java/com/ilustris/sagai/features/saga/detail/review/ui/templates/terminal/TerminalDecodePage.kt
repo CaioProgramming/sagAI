@@ -66,7 +66,7 @@ class TerminalDecodePage(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.neonGlow(accent),
                 )
 
                 Box(

@@ -52,6 +52,16 @@ data class Farewell(
 )
 
 /**
+ * The AI sometimes opens its message with the character's own name, as if writing a
+ * dialogue line (e.g. "Lyra: Caio, ..."), which duplicates the name the UI already shows
+ * alongside it. Strips a leading "Name:"/"Name,"/"Name -" if present; otherwise unchanged.
+ */
+fun Farewell.cleanMessage(characterName: String): String {
+    val namePrefix = Regex("^\\s*${Regex.escape(characterName)}\\s*[:,-]\\s*", RegexOption.IGNORE_CASE)
+    return namePrefix.replaceFirst(message, "")
+}
+
+/**
  * AI response wrapper for the farewells step — mirrors
  * [com.ilustris.sagai.features.saga.chat.data.model.SuggestionGen]. Deliberately just a flat
  * list of strings, not [Farewell]: the model is asked for one message per character in the

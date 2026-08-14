@@ -40,6 +40,7 @@ class TerminalCharactersPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val accent = MaterialTheme.colorScheme.primary
+        val normal = MaterialTheme.colorScheme.onBackground
         val topCharacters =
             remember {
                 content
@@ -58,19 +59,20 @@ class TerminalCharactersPage(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
                 )
 
                 stage.content?.subtitle?.let {
                     Text(
                         text = "# $it",
                         fontFamily = FontFamily.Monospace,
-                        color = accent.copy(alpha = 0.6f),
+                        color = normal.copy(alpha = 0.6f),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
 
                 topCharacters.forEachIndexed { index, (character, messageCount) ->
+                    val characterColor = character.terminalColor(accent)
                     PopIn(index = index) {
                         Text(
                             text =
@@ -80,8 +82,8 @@ class TerminalCharactersPage(
                                     stringResource(R.string.messages_count_label, messageCount),
                                 ),
                             fontFamily = FontFamily.Monospace,
-                            color = accent.copy(alpha = 0.9f),
-                            style = MaterialTheme.typography.bodyMedium,
+                            color = characterColor,
+                            style = MaterialTheme.typography.bodyMedium.neonGlow(characterColor, blurRadius = 8f),
                         )
                     }
                 }

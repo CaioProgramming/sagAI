@@ -37,6 +37,7 @@ class TerminalUptimePage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val accent = MaterialTheme.colorScheme.primary
+        val normal = MaterialTheme.colorScheme.onBackground
 
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
@@ -49,22 +50,23 @@ class TerminalUptimePage(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
                 )
 
                 AnimatedPlaytimeCounter(
                     playtimeMs = content.data.playTimeMs,
                     label = stringResource(R.string.playtime_title),
                     textStyle =
-                        MaterialTheme.typography.displayMedium.copy(
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                            color = accent,
-                        ),
+                        MaterialTheme.typography.displayMedium
+                            .copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                color = accent,
+                            ).neonGlow(accent, blurRadius = 18f),
                     labelStyle =
                         MaterialTheme.typography.labelMedium.copy(
                             fontFamily = FontFamily.Monospace,
-                            color = accent.copy(alpha = 0.7f),
+                            color = normal.copy(alpha = 0.7f),
                         ),
                 )
             }
