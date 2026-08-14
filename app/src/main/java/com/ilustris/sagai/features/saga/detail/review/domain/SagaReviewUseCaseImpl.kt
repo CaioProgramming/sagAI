@@ -13,6 +13,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.player.domain.UserIdentityUseCase
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Farewell
@@ -40,6 +41,7 @@ class SagaReviewUseCaseImpl
         val promptService: PromptService,
         val synthesizerService: ReasoningSynthesizerService,
         val sagaRepository: SagaRepository,
+        val userIdentityUseCase: UserIdentityUseCase,
     ) : SagaReviewUseCase {
         override suspend fun createReview(content: SagaContent): Flow<ReviewState> =
             flow {
@@ -93,6 +95,8 @@ class SagaReviewUseCaseImpl
                     return@flow
                 }
 
+                val userName = userIdentityUseCase.getNameNow().ifBlank { "Player" }
+
                 if (step == ReviewSteps.FAREWELLS) {
                     executeRequest {
                         val protagonist = content.mainCharacter
@@ -115,6 +119,7 @@ class SagaReviewUseCaseImpl
                                 step.blueprintKey,
                                 buildMap {
                                     putAll(genreConfigService.buildAesthetic(content.data.genre))
+                                    put("userName", userName)
                                     put(
                                         "Story",
                                         content.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
@@ -166,6 +171,7 @@ class SagaReviewUseCaseImpl
                             step.blueprintKey,
                             buildMap {
                                 putAll(genreConfigService.buildAesthetic(content.data.genre))
+                                put("userName", userName)
                                 put(
                                     "Story",
                                     content.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
