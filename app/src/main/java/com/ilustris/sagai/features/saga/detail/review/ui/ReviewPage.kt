@@ -12,6 +12,14 @@ interface ReviewPage {
     val content: SagaContent
     val pageType: ReviewPageType
 
+    /**
+     * How long (ms) this page's own entrance animation takes to settle — 0 means "no opinion".
+     * Only meaningful to navigation styles that pace themselves off individual pages (currently
+     * just [ReviewNavigationStyle.ChatScroll], which waits for a message to finish "typing" in
+     * before revealing the next one); every other container ignores it entirely.
+     */
+    val estimatedRevealDurationMs: Long get() = 0L
+
     @Composable
     fun Show(
         modifier: Modifier,

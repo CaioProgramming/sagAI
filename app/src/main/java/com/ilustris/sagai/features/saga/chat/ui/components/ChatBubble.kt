@@ -10,6 +10,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -27,6 +28,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,12 +50,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipScope
+import androidx.compose.material3.TooltipState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -64,16 +70,22 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.constraintlayout.compose.ConstrainedLayoutReference
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.ConstraintLayoutScope
 import androidx.constraintlayout.compose.Dimension
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
@@ -110,9 +122,117 @@ import com.ilustris.sagai.ui.theme.rememberRotatingBorderAngle
 import com.ilustris.sagai.ui.theme.rotatingGradientBorder
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.toEasing
+import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+
+/** Inner padding around a bubble's text — also what the block splitter measures against. */
+private val BUBBLE_TEXT_PADDING = 16.dp
+
+/** Floor for a block's share of the typing budget, so a one-word block isn't a blink. */
+private val MIN_BLOCK_DURATION = 400.milliseconds
+
+/**
+ * Shared spec for every `animateContentSize()` around a message bubble (the message row, the
+ * blocks column, and each block's own shape/size). Previously these used the zero-arg default
+ * (an implicit `spring()`), which snapped rather than eased — this is the same tuned duration/
+ * easing [com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CrimeBubbleFrame]
+ * uses so a bubble's size keeps pace with its typewriter text instead of jumping ahead of it.
+ */
+private val BUBBLE_RESIZE_SPEC: FiniteAnimationSpec<IntSize> =
+    tween(durationMillis = 350, easing = FastOutSlowInEasing)
+
+/** One visual bubble of a message that got broken into several. */
+@Immutable
+private data class BubbleBlock(
+    val text: String,
+    val isAnimated: Boolean,
+    val duration: Duration,
+    /** True for the final block of the message — carries the bits that show up only once. */
+    val isLast: Boolean,
+)
+
+/**
+ * Wraps one bubble block in its genre decorations. Extracted so the multi-block loop doesn't have
+ * to repeat the ConstraintLayout/Box branching inline.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BubbleBlockContainer(
+    genre: Genre,
+    decorationBackground: (@Composable BoxScope.() -> Unit)?,
+    decorationOverlay: (@Composable BoxScope.() -> Unit)?,
+    constraintDecorationBackground: (@Composable ConstraintLayoutScope.(ConstrainedLayoutReference) -> Unit)?,
+    constraintDecorationOverlay: (@Composable ConstraintLayoutScope.(ConstrainedLayoutReference) -> Unit)?,
+    tooltipPositionProvider: PopupPositionProvider,
+    tooltipState: TooltipState,
+    onTooltipDismiss: () -> Unit,
+    tooltip: @Composable TooltipScope.() -> Unit,
+    contentModifier: Modifier,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier =
+            if (genre == Genre.HEROES) {
+                Modifier.padding(
+                    top = 4.dp,
+                    bottom = 12.dp,
+                    start = 4.dp,
+                    end = 12.dp,
+                )
+            } else {
+                Modifier
+            },
+    ) {
+        if (constraintDecorationOverlay != null || constraintDecorationBackground != null) {
+            // ConstraintLayout-backed decoration slot: unlike the plain Box below, this
+            // actually expands to include a decoration that hangs past the bubble's
+            // edge, instead of just drawing over/under whatever space was already there.
+            // TooltipBox is wrapped in a plain Box before being constrained — TooltipBox
+            // itself has its own internal tooltip/anchor layout logic that didn't behave
+            // as a direct ConstraintLayout child (see project notes, 2026-07-29 crash).
+            ConstraintLayout {
+                val contentRef = createRef()
+                constraintDecorationBackground?.invoke(this, contentRef)
+                Box(
+                    Modifier.constrainAs(contentRef) {
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        bottom.linkTo(parent.bottom)
+                        width = Dimension.wrapContent
+                        height = Dimension.wrapContent
+                    },
+                ) {
+                    TooltipBox(
+                        positionProvider = tooltipPositionProvider,
+                        state = tooltipState,
+                        onDismissRequest = onTooltipDismiss,
+                        tooltip = tooltip,
+                        modifier = contentModifier,
+                        content = content,
+                    )
+                }
+                constraintDecorationOverlay?.invoke(this, contentRef)
+            }
+        } else {
+            Box {
+                decorationBackground?.invoke(this)
+                TooltipBox(
+                    positionProvider = tooltipPositionProvider,
+                    state = tooltipState,
+                    onDismissRequest = onTooltipDismiss,
+                    tooltip = tooltip,
+                    modifier = contentModifier,
+                    content = content,
+                )
+                decorationOverlay?.invoke(this)
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -131,6 +251,11 @@ fun ChatBubble(
     messageEffectsEnabled: Boolean = true,
     isSelectionMode: Boolean = false,
     isSelected: Boolean = false,
+    // Lets a caller pace several unread messages one at a time instead of all typing at once —
+    // see ChatView.kt's activeRevealId. Default true so callers that don't coordinate pacing
+    // (previews, etc.) keep today's "animate as soon as visible" behavior.
+    revealTurn: Boolean = true,
+    onRevealComplete: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
@@ -146,7 +271,7 @@ fun ChatBubble(
         if (genre == Genre.HEROES) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
     val isUser = messageContent.isUser(mainCharacter?.data)
     genre.cornerSize()
-    val isAnimated = canAnimate && messageEffectsEnabled.not()
+    val isAnimated = canAnimate && messageEffectsEnabled
     val bubbleStyle =
         remember(isUser, genre, resolvedColor, resolvedIconColor) {
             if (isUser) {
@@ -205,7 +330,11 @@ fun ChatBubble(
     }
 
     val bumpScale = remember { Animatable(1f) }
-    LaunchedEffect(messageContent) {
+    // Keyed on the id, not on messageContent: the UI mapper rebuilds the whole message list on
+    // every emission, so any follow-up write (reaction saved, character link resolved, status
+    // change) produced a structurally different MessageContent and restarted this bump — that
+    // replay was the stutter.
+    LaunchedEffect(message.id) {
         val easing = message.emotionalTone?.toEasing() ?: EaseIn
         bumpScale.animateTo(
             targetValue = 1.05f,
@@ -262,14 +391,14 @@ fun ChatBubble(
                         modifier =
                             modifier
                                 .fillMaxWidth()
-                                .animateContentSize(),
+                                .animateContentSize(BUBBLE_RESIZE_SPEC),
                     ) {
                         Row(
                             modifier =
                                 Modifier
                                     .padding(8.dp)
                                     .fillMaxWidth()
-                                    .animateContentSize(),
+                                    .animateContentSize(BUBBLE_RESIZE_SPEC),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.Bottom,
                         ) {
@@ -362,169 +491,70 @@ fun ChatBubble(
                                         .padding(end = 50.dp),
                             ) {
                                 val palette = genre.colorPalette()
-                                val bubbleModifier =
-                                    if (message.status == MessageStatus.LOADING) {
-                                        Modifier
-                                            .alpha(.7f)
-                                            .emotionalEntrance(
-                                                message.emotionalTone,
-                                                messageEffectsEnabled,
-                                            ).wrapContentSize()
-                                            .rotatingGradientBorder(
-                                                shape = bubbleShape,
-                                                colors = palette,
-                                                rotationDegrees = rotationValue,
-                                            ).background(
-                                                MaterialTheme.colorScheme.surfaceContainer.copy(
-                                                    alpha = .3f,
-                                                ),
-                                                bubbleShape,
-                                            )
-                                    } else {
-                                        when (sender) {
-                                            SenderType.USER -> {
-                                                Modifier
-                                                    .clip(bubbleShape)
-                                                    .combinedClickable(
-                                                        interactionSource = interactionSource,
-                                                        indication = ripple(),
-                                                        onClick = {
-                                                            if (isSelectionMode) {
-                                                                onAction(
-                                                                    MessageAction.ToggleSelection(
-                                                                        message.id,
-                                                                    ),
-                                                                )
-                                                            }
-                                                        },
-                                                        onLongClick = {
-                                                            if (!isSelectionMode) {
-                                                                onAction(
-                                                                    MessageAction.LongPress(
-                                                                        message.id,
-                                                                    ),
-                                                                )
-                                                            }
-                                                        },
-                                                    ).emotionalEntrance(
-                                                        message.emotionalTone,
-                                                        messageEffectsEnabled,
-                                                    ).wrapContentSize()
-                                                    .background(
-                                                        bubbleStyle.backgroundColor,
-                                                        bubbleShape,
-                                                    )
-                                            }
-
-                                            SenderType.CHARACTER -> {
-                                                if (isUser.not()) {
-                                                    Modifier
-                                                        .clip(bubbleShape)
-                                                        .combinedClickable(
-                                                            interactionSource = interactionSource,
-                                                            indication = ripple(),
-                                                            onClick = {
-                                                                if (isSelectionMode) {
-                                                                    onAction(
-                                                                        MessageAction.ToggleSelection(
-                                                                            message.id,
-                                                                        ),
-                                                                    )
-                                                                }
-                                                            },
-                                                            onLongClick = {
-                                                                if (!isSelectionMode) {
-                                                                    onAction(
-                                                                        MessageAction
-                                                                            .LongPress(
-                                                                                message.id,
-                                                                            ),
-                                                                    )
-                                                                }
-                                                            },
-                                                        ).emotionalEntrance(
-                                                            message.emotionalTone,
-                                                            messageEffectsEnabled,
-                                                        ).wrapContentSize()
-                                                        .background(
-                                                            bubbleStyle.backgroundColor,
-                                                            bubbleShape,
-                                                        )
-                                                } else {
-                                                    Modifier
-                                                        .clip(bubbleShape)
-                                                        .combinedClickable(
-                                                            interactionSource = interactionSource,
-                                                            indication = ripple(),
-                                                            onClick = {
-                                                                if (isSelectionMode) {
-                                                                    onAction(
-                                                                        MessageAction.ToggleSelection(
-                                                                            message.id,
-                                                                        ),
-                                                                    )
-                                                                }
-                                                            },
-                                                            onLongClick = {
-                                                                if (!isSelectionMode) {
-                                                                    onAction(
-                                                                        MessageAction
-                                                                            .LongPress(
-                                                                                message.id,
-                                                                            ),
-                                                                    )
-                                                                }
-                                                            },
-                                                        ).emotionalEntrance(
-                                                            message.emotionalTone,
-                                                            messageEffectsEnabled,
-                                                        ).wrapContentSize()
-                                                        .background(
-                                                            bubbleStyle.backgroundColor,
-                                                            bubbleShape,
-                                                        )
+                                // Parameterized by shape because a long message renders as several
+                                // stacked bubbles and only the last one carries the tail — the
+                                // clip/background/border have to follow whichever shape that block
+                                // actually uses.
+                                val rippleIndication = ripple()
+                                val clickableModifier: (Shape) -> Modifier = { blockShape ->
+                                    Modifier
+                                        .clip(blockShape)
+                                        .combinedClickable(
+                                            interactionSource = interactionSource,
+                                            indication = rippleIndication,
+                                            onClick = {
+                                                if (isSelectionMode) {
+                                                    onAction(MessageAction.ToggleSelection(message.id))
                                                 }
-                                            }
-
-                                            else -> {
-                                                val baseModifier =
-                                                    Modifier
-                                                        .clip(bubbleShape)
-                                                        .combinedClickable(
-                                                            interactionSource = interactionSource,
-                                                            indication = ripple(),
-                                                            onClick = {
-                                                                if (isSelectionMode) {
-                                                                    onAction(
-                                                                        MessageAction.ToggleSelection(
-                                                                            message.id,
-                                                                        ),
-                                                                    )
-                                                                }
-                                                            },
-                                                            onLongClick = {
-                                                                if (!isSelectionMode) {
-                                                                    onAction(
-                                                                        MessageAction.LongPress(
-                                                                            message.id,
-                                                                        ),
-                                                                    )
-                                                                }
-                                                            },
-                                                        )
-                                                if (genre == Genre.HEROES) {
-                                                    baseModifier
-                                                        .wrapContentSize()
-                                                        .background(
-                                                            bubbleStyle.backgroundColor,
-                                                            bubbleShape,
-                                                        )
-                                                } else {
-                                                    baseModifier
+                                            },
+                                            onLongClick = {
+                                                if (!isSelectionMode) {
+                                                    onAction(MessageAction.LongPress(message.id))
                                                 }
-                                            }
-                                        }
+                                            },
+                                        )
+                                }
+                                // Spoken bubbles (user and character) get the filled background and
+                                // the emotional entrance; thoughts and actions stay unfilled unless
+                                // the genre is Heroes, which paints every bubble.
+                                val isSpokenBubble =
+                                    sender == SenderType.USER || sender == SenderType.CHARACTER
+                                val bubbleModifierFor: @Composable (Shape) -> Modifier = { blockShape ->
+                                    when {
+                                        message.status == MessageStatus.LOADING ->
+                                            Modifier
+                                                .alpha(.7f)
+                                                .emotionalEntrance(
+                                                    message.emotionalTone,
+                                                    messageEffectsEnabled,
+                                                ).wrapContentSize()
+                                                .rotatingGradientBorder(
+                                                    shape = blockShape,
+                                                    colors = palette,
+                                                    rotationDegrees = rotationValue,
+                                                ).background(
+                                                    MaterialTheme.colorScheme.surfaceContainer.copy(
+                                                        alpha = .3f,
+                                                    ),
+                                                    blockShape,
+                                                )
+
+                                        isSpokenBubble ->
+                                            clickableModifier(blockShape)
+                                                .emotionalEntrance(
+                                                    message.emotionalTone,
+                                                    messageEffectsEnabled,
+                                                ).wrapContentSize()
+                                                .background(bubbleStyle.backgroundColor, blockShape)
+
+                                        genre == Genre.HEROES ->
+                                            clickableModifier(blockShape)
+                                                .wrapContentSize()
+                                                .background(bubbleStyle.backgroundColor, blockShape)
+
+                                        else -> clickableModifier(blockShape)
                                     }
+                                }
 
                                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                     AudioGenButton(
@@ -543,19 +573,20 @@ fun ChatBubble(
                                 }
 
                                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                    val bubbleContentModifier =
-                                        bubbleModifier
+                                    val bubbleContentModifierFor: @Composable (Shape) -> Modifier = { shape ->
+                                        bubbleModifierFor(shape)
                                             .graphicsLayer {
                                                 scaleX = finalScale
                                                 scaleY = finalScale
                                             }.border(
                                                 2.dp,
                                                 borderColorAnimation,
-                                                bubbleShape,
+                                                shape,
                                             ).padding(paddingAnimation)
-                                            .clip(bubbleShape)
+                                            .clip(shape)
                                             .padding(vertical = 4.dp)
-                                            .animateContentSize()
+                                            .animateContentSize(BUBBLE_RESIZE_SPEC)
+                                    }
                                     val bubbleTooltipContent: @Composable TooltipScope.() -> Unit =
                                         {
                                             tooltipData?.let {
@@ -566,13 +597,10 @@ fun ChatBubble(
                                                 )
                                             }
                                         }
-                                    val bubbleTextContent: @Composable () -> Unit = {
+                                    val bubbleTextContent: @Composable (BubbleBlock) -> Unit = { block ->
                                         Box {
-                                            var textAlpha by remember {
-                                                mutableStateOf(
-                                                    if (sender == SenderType.THOUGHT) 0f else 1f,
-                                                )
-                                            }
+                                            val textAlpha =
+                                                if (sender == SenderType.THOUGHT) 0f else 1f
                                             val textColor =
                                                 when {
                                                     sender == SenderType.ACTION -> MaterialColor.Amber400
@@ -588,8 +616,7 @@ fun ChatBubble(
                                                 } else {
                                                     FontStyle.Normal
                                                 }
-                                            val text =
-                                                if (sender == SenderType.ACTION) "(${message.text})" else message.text
+                                            val text = block.text
 
                                             val hasExpressiveTags =
                                                 remember(text) {
@@ -629,7 +656,7 @@ fun ChatBubble(
                                                         mainCharacter = mainCharacter?.data,
                                                         characters = characters,
                                                         wiki = wikis,
-                                                        shouldAnimate = canAnimate && messageEffectsEnabled,
+                                                        shouldAnimate = block.isAnimated,
                                                         onAnnotationClick = { data ->
                                                             tooltipData = data
                                                         },
@@ -637,12 +664,12 @@ fun ChatBubble(
                                                 } else {
                                                     TypewriterText(
                                                         text = text,
-                                                        isAnimated = isAnimated,
+                                                        isAnimated = block.isAnimated,
                                                         genre = genre,
                                                         mainCharacter = mainCharacter?.data,
                                                         characters = characters,
                                                         wiki = wikis,
-                                                        duration = duration,
+                                                        duration = block.duration,
                                                         easing = EaseIn,
                                                         onAnnotationClick = { data ->
                                                             tooltipData = data
@@ -661,71 +688,142 @@ fun ChatBubble(
                                                     )
                                                 }
 
-                                                if (BuildConfig.DEBUG) {
+                                                if (BuildConfig.DEBUG && block.isLast) {
                                                     ReasoningView(message.reasoning, genre)
                                                 }
                                             }
                                         }
                                     }
-                                    Box(
-                                        modifier =
-                                            if (genre == Genre.HEROES) {
-                                                Modifier.padding(
-                                                    top = 4.dp,
-                                                    bottom = 12.dp,
-                                                    start = 4.dp,
-                                                    end = 12.dp,
-                                                )
-                                            } else {
-                                                Modifier
-                                            },
-                                    ) {
-                                        if (constraintDecorationOverlay != null || constraintDecorationBackground != null) {
-                                            // ConstraintLayout-backed decoration slot: unlike the plain Box below, this
-                                            // actually expands to include a decoration that hangs past the bubble's
-                                            // edge, instead of just drawing over/under whatever space was already there.
-                                            // TooltipBox is wrapped in a plain Box before being constrained — TooltipBox
-                                            // itself has its own internal tooltip/anchor layout logic that didn't behave
-                                            // as a direct ConstraintLayout child (see project notes, 2026-07-29 crash).
-                                            ConstraintLayout {
-                                                val content = createRef()
-                                                constraintDecorationBackground?.invoke(
-                                                    this,
-                                                    content,
-                                                )
-                                                Box(
-                                                    Modifier.constrainAs(content) {
-                                                        top.linkTo(parent.top)
-                                                        start.linkTo(parent.start)
-                                                        end.linkTo(parent.end)
-                                                        bottom.linkTo(parent.bottom)
-                                                        width = Dimension.wrapContent
-                                                        height = Dimension.wrapContent
-                                                    },
-                                                ) {
-                                                    TooltipBox(
-                                                        positionProvider = tooltipPositionProvider,
-                                                        state = reactionToolTipState,
-                                                        onDismissRequest = { tooltipData = null },
+                                    val bodyTextStyle =
+                                        MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.Normal,
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                        )
+                                    val fullText =
+                                        if (sender == SenderType.ACTION) "(${message.text})" else message.text
+
+                                    BoxWithConstraints {
+                                        val density = LocalDensity.current
+                                        // The text sits inside 16dp of padding on both sides, so
+                                        // that's the width the splitter has to measure against.
+                                        val textWidthPx =
+                                            with(density) {
+                                                (this@BoxWithConstraints.maxWidth - BUBBLE_TEXT_PADDING * 2)
+                                                    .roundToPx()
+                                                    .coerceAtLeast(1)
+                                            }
+                                        val blocks =
+                                            rememberMessageBlocks(
+                                                text = fullText,
+                                                style = bodyTextStyle,
+                                                maxWidthPx = textWidthPx,
+                                                // An audio message is one playback control — there
+                                                // is nothing to break up.
+                                                enabled = !hasValidAudio,
+                                            )
+
+                                        // Waits for revealTurn too, not just isAnimated: several
+                                        // unread messages composing at once (opening the chat with
+                                        // a backlog) used to all start typing simultaneously with
+                                        // no coordination — this is what actually stalls until the
+                                        // caller (ChatView.kt) grants this specific message its
+                                        // turn, so only one message types at a time.
+                                        var revealedBlocks by remember(message.id, blocks.size, isAnimated, revealTurn) {
+                                            mutableIntStateOf(
+                                                when {
+                                                    !isAnimated -> blocks.size
+                                                    !revealTurn -> 0
+                                                    else -> 1
+                                                },
+                                            )
+                                        }
+
+                                        // Blocks reveal one at a time, each taking a slice of the
+                                        // total typing budget proportional to its length — so a
+                                        // split message takes about as long to read out as it did
+                                        // as a single bubble, it just arrives in pieces.
+                                        val blockDurations =
+                                            remember(blocks, duration) {
+                                                val totalChars =
+                                                    blocks.sumOf { it.length }.coerceAtLeast(1)
+                                                blocks.map { block ->
+                                                    (duration * (block.length.toDouble() / totalChars))
+                                                        .coerceAtLeast(MIN_BLOCK_DURATION)
+                                                }
+                                            }
+
+                                        LaunchedEffect(message.id, blocks.size, isAnimated, revealTurn) {
+                                            if (isAnimated && revealTurn) {
+                                                blocks.indices.forEach { index ->
+                                                    delay(blockDurations[index])
+                                                    if (index < blocks.lastIndex) {
+                                                        revealedBlocks = index + 2
+                                                    }
+                                                }
+                                                onRevealComplete()
+                                            }
+                                            // canAnimate is "not viewed yet". Marking it even when
+                                            // effects are off matters: otherwise those messages stay
+                                            // unviewed forever and would all animate at once the day
+                                            // the reader turns effects back on. Gated on revealTurn
+                                            // when actually animated — marking viewed before this
+                                            // message ever got its turn would make canAnimate false
+                                            // by the time its turn *does* come, skipping the
+                                            // animation entirely.
+                                            if (canAnimate && (!isAnimated || revealTurn)) {
+                                                onAction(MessageAction.MarkViewed(message.id))
+                                            }
+                                        }
+
+                                        Column(
+                                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                                            horizontalAlignment =
+                                                if (isUser) Alignment.End else Alignment.Start,
+                                        ) {
+                                            blocks.take(revealedBlocks).forEachIndexed { index, blockText ->
+                                                key(index) {
+                                                    // The tail always sits on the block that is
+                                                    // currently last on screen, so the group never
+                                                    // looks broken mid-reveal.
+                                                    val isTailBlock = index == revealedBlocks - 1
+                                                    val blockShape =
+                                                        if (isTailBlock) {
+                                                            bubbleShape
+                                                        } else {
+                                                            genre.bubble(
+                                                                bubbleStyle.tailAlignment,
+                                                                showTail = false,
+                                                            )
+                                                        }
+                                                    val block =
+                                                        BubbleBlock(
+                                                            text = blockText,
+                                                            isAnimated = isAnimated,
+                                                            duration = blockDurations[index],
+                                                            isLast = index == blocks.lastIndex,
+                                                        )
+                                                    BubbleBlockContainer(
+                                                        genre = genre,
+                                                        // Genre decorations only dress the tail
+                                                        // block; repeating them on every block in a
+                                                        // group reads as noise and multiplies the
+                                                        // draw cost.
+                                                        decorationBackground =
+                                                            decorationBackground.takeIf { isTailBlock },
+                                                        decorationOverlay =
+                                                            decorationOverlay.takeIf { isTailBlock },
+                                                        constraintDecorationBackground =
+                                                            constraintDecorationBackground.takeIf { isTailBlock },
+                                                        constraintDecorationOverlay =
+                                                            constraintDecorationOverlay.takeIf { isTailBlock },
+                                                        tooltipPositionProvider = tooltipPositionProvider,
+                                                        tooltipState = reactionToolTipState,
+                                                        onTooltipDismiss = { tooltipData = null },
                                                         tooltip = bubbleTooltipContent,
-                                                        modifier = bubbleContentModifier,
-                                                        content = bubbleTextContent,
+                                                        contentModifier = bubbleContentModifierFor(blockShape),
+                                                        content = { bubbleTextContent(block) },
                                                     )
                                                 }
-                                                constraintDecorationOverlay?.invoke(this, content)
-                                            }
-                                        } else {
-                                            Box {
-                                                decorationBackground?.invoke(this)
-                                                TooltipBox(
-                                                    positionProvider = tooltipPositionProvider,
-                                                    state = reactionToolTipState,
-                                                    onDismissRequest = { tooltipData = null },
-                                                    tooltip = bubbleTooltipContent,
-                                                    modifier = bubbleContentModifier,
-                                                    content = bubbleTextContent,
-                                                )
-                                                decorationOverlay?.invoke(this)
                                             }
                                         }
                                     }

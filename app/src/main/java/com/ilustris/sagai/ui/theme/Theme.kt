@@ -81,8 +81,15 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.genreVfx
+import com.ilustris.sagai.ui.animations.glitch
+import com.ilustris.sagai.ui.animations.grunge
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
+import com.ilustris.sagai.ui.animations.ricePaper
+import com.ilustris.sagai.ui.animations.scanLines
+import com.ilustris.sagai.ui.animations.spaceVoyage
+import com.ilustris.sagai.ui.animations.vhs
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 
 const val SAGA_THEME_TRANSITION_MS = 500
@@ -197,6 +204,37 @@ fun Modifier.themeVfx(isPlaying: Boolean = true): Modifier {
     if (isPlaying.not()) return this
     val genre = LocalSagaGenre.current
     return this.genreVfx(genre)
+}
+
+@Composable
+fun Modifier.reviewVfx(isPlaying: Boolean = true): Modifier {
+    if (isPlaying.not()) return this
+    val genre = LocalSagaGenre.current
+    return when (genre) {
+        Genre.FANTASY, Genre.COWBOY -> {
+            Modifier.grunge()
+        }
+
+        Genre.CYBERPUNK -> {
+            Modifier
+                .glitch(glitchFrequency = 0.05f)
+                .chromaticAberration(blurRadius = 6f)
+        }
+
+        Genre.SPACE_OPERA -> {
+            Modifier
+                .scanLines(color = MaterialTheme.colorScheme.primary.copy(alpha = .2f))
+                .chromaticAberration(intensity = .05f, blurRadius = 10f)
+        }
+
+        Genre.SHINOBI -> {
+            Modifier.grunge().ricePaper()
+        }
+
+        else -> {
+            this
+        }
+    }
 }
 
 @Composable

@@ -396,6 +396,26 @@ fun Genre.stylisedText(
             )
         }
 
+        Genre.CRIME -> {
+            HandwrittenText(
+                text = text,
+                modifier =
+                    modifier
+                        .genreVfx(this, resolvedColor, resolvedIconColor),
+                color = resolvedColor,
+                fontSize = fontSize,
+                isBold = true,
+                isItalic = false,
+                centered = true,
+                shadow =
+                    Shadow(
+                        resolvedColor,
+                        blurRadius = 10f,
+                        offset = Offset(0f, 2f),
+                    ),
+            )
+        }
+
         Genre.CYBERPUNK -> {
             AutoResizeText(
                 text = text,
@@ -447,25 +467,6 @@ fun Genre.stylisedText(
                             Shadow(
                                 resolvedColor.copy(alpha = 0.6f),
                                 blurRadius = 15f,
-                            ),
-                    ),
-            )
-        }
-
-        Genre.CRIME -> {
-            AutoResizeText(
-                text = text,
-                modifier =
-                    modifier
-                        .genreVfx(this, resolvedColor),
-                style =
-                    style.copy(
-                        brush = Brush.verticalGradient(palette),
-                        shadow =
-                            Shadow(
-                                color = resolvedColor.copy(alpha = 0.8f),
-                                offset = Offset(0f, 0f),
-                                blurRadius = 20f,
                             ),
                     ),
             )

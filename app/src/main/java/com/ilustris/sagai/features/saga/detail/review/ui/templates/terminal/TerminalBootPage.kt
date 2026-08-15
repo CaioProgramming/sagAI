@@ -122,7 +122,6 @@ class TerminalBootPage(
             ) {
                 Text(
                     text = "${content.terminalHost()}:~$ boot",
-                    fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = accent,
                     style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
@@ -134,7 +133,6 @@ class TerminalBootPage(
                         style =
                             MaterialTheme.typography.titleLarge
                                 .copy(
-                                    fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Bold,
                                     color = accent,
                                 ).neonGlow(accent),
@@ -150,7 +148,6 @@ class TerminalBootPage(
                             text = it,
                             style =
                                 MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = FontFamily.Monospace,
                                     color = normal,
                                 ),
                             isAnimated = canAnimate,

@@ -46,7 +46,7 @@ import kotlin.time.Duration.Companion.seconds
 fun AutoScrollLazyColumn(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
-    scrollSpeed: Dp = 24.dp,
+    scrollSpeed: Dp = 36.dp,
     resumeDelay: Duration = 20.seconds,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,

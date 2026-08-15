@@ -11,8 +11,11 @@ import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSour
 import com.ilustris.sagai.features.saga.detail.review.ui.topCharacterImageSource
 
 /**
- * Cyberpunk's SagaReview presented as a computer terminal: monospace text typed
- * line by line over a CRT-scanline background, with a glitch VFX overlay on top.
+ * Cyberpunk and Space Opera's shared SagaReview template: monospace text typed line by line over
+ * a CRT-scanline background, with a glitch VFX overlay on top. Genre identity comes from theme
+ * colors/fonts and [TerminalBackground]'s per-genre CRT treatment (plain hacker-terminal scanlines
+ * vs. Space Opera's own `spaceVoyage` phosphor/jitter VFX), not from separate page classes — see
+ * [com.ilustris.sagai.features.saga.detail.review.ui.GenreReviewTemplateMapping].
  * Reuses the same [com.ilustris.sagai.features.saga.detail.data.model.Review]
  * stage data as [com.ilustris.sagai.features.saga.detail.review.ui.DefaultReviewExperience] —
  * only the page visuals differ, navigation is still a vertical swipe.

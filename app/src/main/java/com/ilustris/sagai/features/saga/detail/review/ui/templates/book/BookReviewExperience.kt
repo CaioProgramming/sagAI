@@ -11,9 +11,12 @@ import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSour
 import com.ilustris.sagai.features.saga.detail.review.ui.topCharacterImageSource
 
 /**
- * Fantasy's SagaReview presented as a storybook: serif type on parchment, scrolled hands-free
- * like unrolling a scroll instead of swiped like stories — see
+ * Fantasy and Shinobi's shared SagaReview template: a storybook page scrolled hands-free like
+ * unrolling a scroll instead of swiped like stories — see
  * [com.ilustris.sagai.features.saga.detail.review.ui.ReviewNavigationStyle.ContinuousScroll].
+ * Genre identity comes from theme colors/fonts and [BookBackground]'s per-genre texture (parchment
+ * grain vs. rice-paper fiber), not from separate page classes — see
+ * [com.ilustris.sagai.features.saga.detail.review.ui.GenreReviewTemplateMapping].
  * Reuses the same [com.ilustris.sagai.features.saga.detail.data.model.Review] stage data as
  * [com.ilustris.sagai.features.saga.detail.review.ui.DefaultReviewExperience] —
  * only the page visuals and navigation model differ.

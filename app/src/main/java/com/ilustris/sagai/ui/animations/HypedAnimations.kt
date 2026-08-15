@@ -202,6 +202,43 @@ fun Modifier.chromaticAberration(
     }
 
 @Composable
+fun Modifier.scanLines(
+    isPlaying: Boolean = true,
+    scanlineCount: Int = 45,
+    color: Color = Color.Black,
+    opacity: Float = 0.1f,
+): Modifier =
+    composed {
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
+        val infiniteTransition = rememberInfiniteTransition(label = "scanLines")
+        val ticker by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(4000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "scanlineTicker",
+        )
+
+        this.drawWithContent {
+            drawContent()
+            val time = ticker * 2 * kotlin.math.PI.toFloat()
+            val scanlineHeight = size.height / scanlineCount
+            repeat(scanlineCount) { i ->
+                val y = i * scanlineHeight
+                val alpha = opacity + kotlin.math.sin(time * 2f + i * 0.5f) * (opacity * 0.5f)
+                drawRect(
+                    color = color.copy(alpha = alpha.coerceIn(0f, opacity * 2.5f)),
+                    topLeft = Offset(0f, y),
+                    size = Size(size.width, scanlineHeight * 0.5f),
+                )
+            }
+        }
+    }
+
+@Composable
 fun Modifier.sparkle(
     isPlaying: Boolean = true,
     sparkleCount: Int = 10,
@@ -499,6 +536,13 @@ fun Modifier.vhs(isPlaying: Boolean = true): Modifier =
             }
     }
 
+/**
+ * Real brush-stroke silhouettes (two [ImageVector]s, alternated at random, each stamp scaled,
+ * rotated, and mirrored independently) instead of a procedurally-built ribbon path — vector art
+ * has the torn, bristle-separated edges an ink stroke actually has, which straight bezier+width
+ * math can only approximate. Randomizing shape/size/angle/flip per stamp is what keeps repeated
+ * stamps from 2 source assets from ever reading as "the same brush again".
+ */
 @Composable
 fun Modifier.inkBleed(
     isPlaying: Boolean = true,
@@ -513,13 +557,12 @@ fun Modifier.inkBleed(
             targetValue = 1f,
             animationSpec =
                 infiniteRepeatable(
-                    animation = tween(2500, easing = LinearEasing),
+                    animation = tween(5000, easing = LinearEasing),
                     repeatMode = RepeatMode.Restart,
                 ),
             label = "inkTicker",
         )
 
-        MaterialTheme.colorScheme.onBackground
         val inkColor =
             if (color == Color.Unspecified || color == Color.Black || color == Color.White) {
                 MaterialTheme.colorScheme.primary
@@ -527,14 +570,24 @@ fun Modifier.inkBleed(
                 color
             }
 
+        val brushPainters =
+            listOf(
+                rememberVectorPainter(ImageVector.vectorResource(id = R.drawable.noun_brush_stroke)),
+                rememberVectorPainter(ImageVector.vectorResource(id = R.drawable.noun_brush_strokes_1)),
+            )
+
         this.drawWithContent {
             drawContent()
-            val blendMode = BlendMode.Difference
+            // Multiply, not Difference: real ink darkens whatever it lands on, it doesn't
+            // invert it. Difference reads as a color-negative glitch, not a brush.
+            val blendMode = BlendMode.Multiply
 
             repeat(3) { i ->
                 val phaseOffset = i * 0.33f
                 val progress = (ticker + phaseOffset) % 1f
-                val activeWindow = 0.45f
+                // A smaller slice of a longer cycle: each stroke's own animation stays about as
+                // long as before, but the gap of "nothing happening" between strokes grows a lot.
+                val activeWindow = 0.28f
                 val internalProgress = progress / activeWindow
 
                 if (progress < activeWindow) {
@@ -549,85 +602,74 @@ fun Modifier.inkBleed(
                         }
 
                     if (alpha > 0f) {
-                        // Directional Slash properties
-                        val isLtr = random.nextBoolean()
-                        val strokeWidth = 15f + random.nextFloat() * 35f
-                        val sweepLength = size.width * (0.3f + random.nextFloat() * 0.25f)
+                        val painter = brushPainters[random.nextInt(brushPainters.size)]
+                        val intrinsicSize = painter.intrinsicSize
+                        // Sized relative to the screen itself, well past full height — the
+                        // stroke should feel like a much bigger gesture that just happens to
+                        // sweep through this frame, not something drawn to fit inside it.
+                        val targetHeightPx = size.height * (0.9f + random.nextFloat() * 0.9f)
+                        val scaleFactor = targetHeightPx / intrinsicSize.height
+                        val targetWidthPx = intrinsicSize.width * scaleFactor
 
-                        val centerX = size.width * (0.15f + random.nextFloat() * 0.7f)
-                        val startX =
-                            if (isLtr) centerX - (sweepLength / 2) else centerX + (sweepLength / 2)
-                        val endX =
-                            if (isLtr) centerX + (sweepLength / 2) else centerX - (sweepLength / 2)
+                        val centerX = size.width * random.nextFloat()
+                        val centerY = size.height * random.nextFloat()
+                        val angleDeg = random.nextFloat() * 360f
+                        val flipX = if (random.nextBoolean()) 1f else -1f
+                        val flipY = if (random.nextBoolean()) 1f else -1f
 
-                        val startY = size.height * (0.2f + random.nextFloat() * 0.6f)
-                        val endY = startY + (random.nextFloat() - 0.5f) * size.height * 0.3f
-                        val midY =
-                            (startY + endY) / 2 + (random.nextFloat() - 0.5f) * size.height * 0.5f
+                        // Brush "landing" pop: quick overshoot scale-in at the start of the
+                        // window, like a stamp hitting the page with momentum, then it settles.
+                        val landProgress = (internalProgress / 0.18f).coerceIn(0f, 1f)
+                        val overshoot = androidx.compose.animation.core.EaseOutBack.transform(landProgress)
+                        val landScale = 0.5f + 0.5f * overshoot
 
-                        val path =
-                            androidx.compose.ui.graphics
-                                .Path()
-                        val segments = 40
-
-                        for (step in 0..segments) {
-                            val t = step.toFloat() / segments
-                            val invT = 1f - t
-                            val x =
-                                invT * invT * startX + 2 * invT * t * ((startX + endX) / 2) + t * t * endX
-                            val y = invT * invT * startY + 2 * invT * t * midY + t * t * endY
-
-                            // Katana feel: Jitter that gets 'sharper' or 'thinner' along the path
-                            val jitterMagnitude = strokeWidth * (0.5f + (1f - t) * 0.5f)
-                            val jitterX = (random.nextFloat() - 0.5f) * jitterMagnitude * 0.5f
-                            val jitterY = (random.nextFloat() - 0.5f) * jitterMagnitude * 0.8f
-
-                            if (step == 0) {
-                                path.moveTo(x + jitterX, y + jitterY)
-                            } else {
-                                path.lineTo(x + jitterX, y + jitterY)
+                        drawIntoCanvas { canvas ->
+                            val layerPaint = androidx.compose.ui.graphics.Paint()
+                            layerPaint.blendMode = blendMode
+                            canvas.saveLayer(
+                                androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height),
+                                layerPaint,
+                            )
+                            withTransform({
+                                translate(centerX, centerY)
+                                rotate(angleDeg, pivot = Offset.Zero)
+                                scale(scaleFactor * flipX * landScale, scaleFactor * flipY * landScale, pivot = Offset.Zero)
+                                translate(-intrinsicSize.width / 2f, -intrinsicSize.height / 2f)
+                            }) {
+                                with(painter) {
+                                    draw(
+                                        size = intrinsicSize,
+                                        alpha = alpha * 0.9f,
+                                        colorFilter = ColorFilter.tint(inkColor, BlendMode.SrcIn),
+                                    )
+                                }
                             }
+                            canvas.restore()
                         }
 
-                        drawPath(
-                            path = path,
-                            color = inkColor.copy(alpha = alpha * 0.85f),
-                            style =
-                                androidx.compose.ui.graphics.drawscope.Stroke(
-                                    width = strokeWidth,
-                                    cap = androidx.compose.ui.graphics.StrokeCap.Butt, // Sharper ends
-                                    join = androidx.compose.ui.graphics.StrokeJoin.Miter,
-                                ),
-                            blendMode = blendMode,
-                        )
-
-                        // Momemtum flick: Droplets ONLY at the end of the stroke
-                        repeat(15) { j ->
+                        // Momentum flick: a few droplets flung from the stroke's leading tip
+                        val flickRad = angleDeg * (kotlin.math.PI.toFloat() / 180f)
+                        val flickOrigin =
+                            Offset(
+                                centerX + kotlin.math.cos(flickRad) * (targetWidthPx / 2f) * flipX,
+                                centerY + kotlin.math.sin(flickRad) * (targetWidthPx / 2f) * flipY,
+                            )
+                        repeat(10) { j ->
                             val dripSeed = Random(random.nextInt() + j)
-                            // Biased towards the end of the path (t > 0.8)
-                            val tEnd = 0.85f + dripSeed.nextFloat() * 0.15f
-                            val invT = 1f - tEnd
-                            val xEnd =
-                                invT * invT * startX + 2 * invT * tEnd * ((startX + endX) / 2) + tEnd * tEnd * endX
-                            val yEnd =
-                                invT * invT * startY + 2 * invT * tEnd * midY + tEnd * tEnd * endY
-
-                            // Flick direction: Continue the path's momentum
-                            val dx = endX - startX
-                            val dy = endY - startY
-                            val angleBase = kotlin.math.atan2(dy, dx)
-                            val sprayAngle = angleBase + (dripSeed.nextFloat() - 0.5f) * 0.8f
-
-                            val sprayDist = strokeWidth * (0.5f + dripSeed.nextFloat() * 3.5f)
+                            val sprayAngle = flickRad + (dripSeed.nextFloat() - 0.5f) * 0.9f
+                            // Deliberately independent of targetHeightPx now that strokes can be
+                            // bigger than the screen — droplets should stay a hand-sized flick,
+                            // not scale up into the same giant gesture as the stroke itself.
+                            val sprayDist = 20f + dripSeed.nextFloat() * 90f
                             val rDot = 1.5f + dripSeed.nextFloat() * 4f
 
                             drawCircle(
-                                color = inkColor.copy(alpha = alpha * 0.75f),
+                                color = inkColor.copy(alpha = alpha * 0.7f),
                                 radius = rDot,
                                 center =
                                     Offset(
-                                        xEnd + kotlin.math.cos(sprayAngle.toFloat()) * sprayDist,
-                                        yEnd + kotlin.math.sin(sprayAngle.toFloat()) * sprayDist,
+                                        flickOrigin.x + kotlin.math.cos(sprayAngle) * sprayDist,
+                                        flickOrigin.y + kotlin.math.sin(sprayAngle) * sprayDist,
                                     ),
                                 blendMode = blendMode,
                             )
@@ -1025,6 +1067,7 @@ fun Modifier.spaceVoyage(isPlaying: Boolean = true): Modifier =
 
         this
             .chromaticAberration(isPlaying, intensity = 8f, blurRadius = 3f)
+            .scanLines(isPlaying)
             .drawWithContent {
                 val time = ticker * 2 * kotlin.math.PI.toFloat()
                 val noiseRandom = Random(noiseTicker.hashCode())
@@ -1073,20 +1116,7 @@ fun Modifier.spaceVoyage(isPlaying: Boolean = true): Modifier =
                     }
                 }
 
-                // 3. Scanlines Overlay
-                val scanlineCount = 45
-                val scanlineHeight = size.height / scanlineCount
-                repeat(scanlineCount) { i ->
-                    val y = i * scanlineHeight
-                    val alpha = 0.1f + kotlin.math.sin(time * 2f + i * 0.5f) * 0.05f
-                    drawRect(
-                        color = Color.Black.copy(alpha = alpha.coerceIn(0f, 0.25f)),
-                        topLeft = Offset(0f, y),
-                        size = Size(size.width, scanlineHeight * 0.5f),
-                    )
-                }
-
-                // 4. Random VHS "Interference" blocks
+                // 3. Random VHS "Interference" blocks
                 if (noiseRandom.nextFloat() < 0.1f) {
                     val blockY = noiseRandom.nextFloat() * size.height
                     val blockHeight = 2f + noiseRandom.nextFloat() * 15f
@@ -1222,6 +1252,147 @@ fun Modifier.cowboyBurn(isPlaying: Boolean = true): Modifier =
                         center = Offset(grainX, grainY),
                     )
                 }
+            }
+        }
+    }
+
+@Composable
+fun Modifier.grunge(
+    isPlaying: Boolean = true,
+    intensity: Float = 1f,
+    color: Color = Color.Black,
+): Modifier =
+    composed {
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
+        val infiniteTransition = rememberInfiniteTransition(label = "grunge")
+        val ticker by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(100, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "grungeTicker",
+        )
+
+        this.drawWithContent {
+            drawContent()
+            val random = Random(ticker.hashCode())
+
+            // 1. Film Grain (Small random specks)
+            repeat((15 * intensity).toInt()) {
+                val x = random.nextFloat() * size.width
+                val y = random.nextFloat() * size.height
+                drawCircle(
+                    color = color.copy(alpha = 0.05f * intensity),
+                    radius = 0.5f + random.nextFloat() * 1.2f,
+                    center = Offset(x, y),
+                )
+            }
+
+            // 2. Scratches (Vertical hair-like lines)
+            if (random.nextFloat() < 0.12f) {
+                val startX = random.nextFloat() * size.width
+                val length = size.height * (0.1f + random.nextFloat() * 0.4f)
+                val startY = random.nextFloat() * (size.height - length)
+                drawLine(
+                    color = color.copy(alpha = 0.08f * intensity),
+                    start = Offset(startX, startY),
+                    end = Offset(startX + (random.nextFloat() - 0.5f) * 4f, startY + length),
+                    strokeWidth = 0.5f + random.nextFloat(),
+                )
+            }
+
+            // 3. Dust / Larger Specks
+            if (random.nextFloat() < 0.05f) {
+                val x = random.nextFloat() * size.width
+                val y = random.nextFloat() * size.height
+                drawCircle(
+                    color = color.copy(alpha = 0.15f * intensity),
+                    radius = 2f + random.nextFloat() * 3f,
+                    center = Offset(x, y),
+                )
+            }
+
+            // 4. Subtle Brightness Flicker (Vintage projection feel)
+            val flickerAlpha = 0.02f * intensity
+            if (random.nextBoolean()) {
+                drawRect(
+                    color =
+                        if (random.nextBoolean()) {
+                            Color.White.copy(alpha = flickerAlpha)
+                        } else {
+                            Color.Black.copy(alpha = flickerAlpha)
+                        },
+                    blendMode = BlendMode.Overlay,
+                )
+            }
+        }
+    }
+
+@Composable
+fun Modifier.ricePaper(
+    isPlaying: Boolean = true,
+    color: Color = Color(0xFFFBF9F2),
+    fiberColor: Color = Color(0xFFE5E1D1),
+    fiberCount: Int = 30,
+): Modifier =
+    composed {
+        if (!isPlaying || !rememberLifecycleAnimationsActive()) return@composed this
+
+        // We use a very slow transition for a subtle "breathing" texture
+        val infiniteTransition = rememberInfiniteTransition(label = "ricePaper")
+        val alphaPulse by infiniteTransition.animateFloat(
+            initialValue = 0.7f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(4000, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "alphaPulse",
+        )
+
+        // Generate fibers once for stability
+        val fiberData = remember(fiberCount) {
+            List(fiberCount) {
+                val start = Offset(Random.nextFloat(), Random.nextFloat())
+                val length = 20f + Random.nextFloat() * 60f
+                val angle = Random.nextFloat() * 2 * kotlin.math.PI.toFloat()
+                val thickness = 0.5f + Random.nextFloat() * 1.5f
+                Triple(
+                    start,
+                    Offset(kotlin.math.cos(angle) * length, kotlin.math.sin(angle) * length),
+                    thickness,
+                )
+            }
+        }
+
+        this.drawBehind {
+            // 1. Base Paper Color
+            drawRect(color)
+
+            // 2. Fibers (Static but with subtle alpha pulse to feel "alive")
+            fiberData.forEach { (pos, vec, thick) ->
+                val start = Offset(pos.x * size.width, pos.y * size.height)
+                drawLine(
+                    color = fiberColor.copy(alpha = 0.15f * alphaPulse),
+                    start = start,
+                    end = start + vec,
+                    strokeWidth = thick,
+                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                )
+            }
+
+            // 3. Subtle "Pulp" / Grain (Static)
+            repeat(50) { i ->
+                val r = Random(i.toLong() + 12345L)
+                drawCircle(
+                    color = fiberColor.copy(alpha = 0.08f * alphaPulse),
+                    radius = 0.5f + r.nextFloat() * 2f,
+                    center = Offset(r.nextFloat() * size.width, r.nextFloat() * size.height),
+                )
             }
         }
     }

@@ -53,4 +53,13 @@ data class Message(
     val audioPath: String? = null,
     @ColumnInfo(defaultValue = "NULL")
     val reasoning: String? = null,
+    /**
+     * Whether this message has already been revealed to the reader. Drives the typewriter
+     * animation: only unviewed messages type themselves out, so leaving and re-entering a saga
+     * (or just scrolling a bubble out of the LazyColumn and back) doesn't replay the animation.
+     * Defaults to `false` here so newly generated messages animate; the 28→29 migration backfills
+     * existing rows with `1` so history never re-types.
+     */
+    @ColumnInfo(defaultValue = "0")
+    val viewed: Boolean = false,
 )

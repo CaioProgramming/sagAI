@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -73,8 +74,10 @@ class BookCoverPage(
 
             Box(
                 Modifier
-                    .fillMaxSize()
-                    .background(fadedGradientTopAndBottom(MaterialTheme.colorScheme.surfaceContainer)),
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight(.2f)
+                    .background(fadeGradientBottom(MaterialTheme.colorScheme.surfaceContainer)),
             )
 
             HandwrittenText(

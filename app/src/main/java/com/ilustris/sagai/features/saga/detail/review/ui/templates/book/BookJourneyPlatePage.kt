@@ -49,10 +49,7 @@ class BookJourneyPlatePage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val accent =
-            content.data.genre
-                .compiledColorPalette()
-                .firstOrNull() ?: MaterialTheme.colorScheme.primary
+        val accent = MaterialTheme.colorScheme.primary
         val ink = LocalContentColor.current
 
         Column(
@@ -64,7 +61,6 @@ class BookJourneyPlatePage(
         ) {
             Text(
                 text = stringResource(R.string.review_stage_journey_title),
-                fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
                 color = accent,
                 textAlign = TextAlign.Center,

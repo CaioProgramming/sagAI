@@ -337,6 +337,21 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_28_29 =
+        object : Migration(28, 29) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // The column default has to be 0 to match Message.viewed's @ColumnInfo(defaultValue
+                // = "0") — Room validates the migrated schema against the entity's expected
+                // TableInfo, and a DEFAULT 1 here fails that check with an IllegalStateException at
+                // startup ("Migration didn't properly handle: messages(...)").
+                db.execSQL("ALTER TABLE messages ADD COLUMN `viewed` INTEGER NOT NULL DEFAULT 0")
+                // Backfill separately: every message that already exists has, by definition,
+                // already been read — otherwise the whole history would re-run the typewriter
+                // animation on the next launch.
+                db.execSQL("UPDATE messages SET viewed = 1")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -366,5 +381,6 @@ object DatabaseMigrations {
             MIGRATION_25_26,
             MIGRATION_26_27,
             MIGRATION_27_28,
+            MIGRATION_28_29,
         )
 }

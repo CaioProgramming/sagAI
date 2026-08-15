@@ -755,6 +755,8 @@
     <string name="review_stage_conclusion_title">The Legacy</string>
     <string name="review_stage_conclusion_subtitle_default">What remains</string>
     <string name="review_farewells_title">The Send-Off</string>
+    <string name="review_tap_to_expand">Tap to view all</string>
+    <string name="review_tap_to_collapse">Tap to collapse</string>
 
     <!-- Onboarding -->
     <string name="onboarding_skip">Skip</string>

@@ -18,6 +18,8 @@ class PunkRockChatBubbleShape(
     private val tailWidth: Dp = 12.dp,
     private val tailHeight: Dp = 12.dp,
     private val tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
+    /** When false the angular tail is dropped and the body fills the full height. */
+    private val drawTail: Boolean = true,
 ) : Shape {
     override fun createOutline(
         size: Size,
@@ -25,7 +27,7 @@ class PunkRockChatBubbleShape(
         density: Density,
     ): Outline {
         val tailWidthPx = with(density) { tailWidth.toPx() }
-        val tailHeightPx = with(density) { tailHeight.toPx() }
+        val tailHeightPx = with(density) { if (drawTail) tailHeight.toPx() else 0f }
         val path = Path()
 
         val bodyHeight = size.height - tailHeightPx
@@ -51,9 +53,13 @@ class PunkRockChatBubbleShape(
                 path.lineTo(size.width - jitterSmall, bodyHeight * 0.5f)
                 path.lineTo(size.width, bodyHeight - jitterMedium)
 
-                // Tail (Sharp and angular)
-                path.lineTo(size.width, size.height) // Tip
-                path.lineTo(size.width - tailWidthPx, bodyHeight) // Return
+                if (drawTail) {
+                    // Tail (Sharp and angular)
+                    path.lineTo(size.width, size.height) // Tip
+                    path.lineTo(size.width - tailWidthPx, bodyHeight) // Return
+                } else {
+                    path.lineTo(size.width, bodyHeight)
+                }
 
                 // Bottom Edge
                 path.lineTo(size.width * 0.6f, bodyHeight + jitterSmall)
@@ -82,9 +88,13 @@ class PunkRockChatBubbleShape(
                 path.lineTo(jitterSmall, bodyHeight * 0.5f)
                 path.lineTo(0f, bodyHeight - jitterMedium)
 
-                // Tail
-                path.lineTo(0f, size.height) // Tip
-                path.lineTo(tailWidthPx, bodyHeight) // Return
+                if (drawTail) {
+                    // Tail
+                    path.lineTo(0f, size.height) // Tip
+                    path.lineTo(tailWidthPx, bodyHeight) // Return
+                } else {
+                    path.lineTo(0f, bodyHeight)
+                }
 
                 // Bottom Edge
                 path.lineTo(size.width * 0.4f, bodyHeight + jitterSmall)

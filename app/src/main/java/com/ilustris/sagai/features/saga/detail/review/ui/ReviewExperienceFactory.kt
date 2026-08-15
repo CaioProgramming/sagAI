@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.detail.review.ui
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.BookReviewExperience
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CrimeReviewExperience
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalReviewExperience
 
 object ReviewExperienceFactory {
@@ -20,6 +21,7 @@ object ReviewExperienceFactory {
         return when (genre.reviewTemplate()) {
             ReviewTemplate.TERMINAL -> TerminalReviewExperience(content)
             ReviewTemplate.BOOK -> BookReviewExperience(content)
+            ReviewTemplate.CRIME -> CrimeReviewExperience(content)
             ReviewTemplate.DEFAULT -> DefaultReviewExperience(content)
         }
     }

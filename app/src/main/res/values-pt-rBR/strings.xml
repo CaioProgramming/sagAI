@@ -627,6 +627,8 @@
     <string name="review_stage_conclusion_title">O Legado</string>
     <string name="review_stage_conclusion_subtitle_default">O que ficou</string>
     <string name="review_farewells_title">A Despedida</string>
+    <string name="review_tap_to_expand">Toque para ver tudo</string>
+    <string name="review_tap_to_collapse">Toque para recolher</string>
 
     <!-- Logs de Auditoria de IA -->
     <string name="audit_logs_title">Logs de Auditoria de IA</string>

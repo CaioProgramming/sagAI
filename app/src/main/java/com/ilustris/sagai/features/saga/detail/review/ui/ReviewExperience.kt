@@ -21,11 +21,20 @@ sealed class ReviewNavigationStyle {
 
     /**
      * Hands-free continuous vertical scroll, like reading a newspaper — no swipe required.
-     * See [com.ilustris.sagai.ui.animations.AutoScrollLazyColumn]. Planned for Crime/Cowboy
-     * (see `docs/feature_planning/wrapped_themed_render/implementation_status.md`); not yet
-     * selected by any [com.ilustris.sagai.features.newsaga.data.model.Genre].
+     * See [com.ilustris.sagai.ui.animations.AutoScrollLazyColumn]. Used by Fantasy and Shinobi's
+     * shared Book template. Planned for Cowboy too (see
+     * `docs/feature_planning/wrapped_themed_render/implementation_status.md`).
      */
     data object ContinuousScroll : ReviewNavigationStyle()
+
+    /**
+     * A simulated live chat: messages reveal one at a time (typing-pause timed), each new one
+     * forcing the list to scroll to it — pinned to the latest message, like watching a
+     * conversation arrive in real time, rather than [ContinuousScroll]'s hands-free drift through
+     * already-laid-out content. The user can still scroll up freely; the next revealed message
+     * just pulls the view back down. Used by Crime's iMessage-style template.
+     */
+    data object ChatScroll : ReviewNavigationStyle()
 }
 
 sealed class ReviewAction {

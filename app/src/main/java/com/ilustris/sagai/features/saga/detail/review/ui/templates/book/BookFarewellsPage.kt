@@ -43,7 +43,6 @@ class BookFarewellsPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val genre = content.data.genre
-        val accent = genre.compiledColorPalette().firstOrNull() ?: MaterialTheme.colorScheme.primary
         val ink = LocalContentColor.current
         val speakers =
             remember(farewells) {
@@ -63,9 +62,7 @@ class BookFarewellsPage(
         ) {
             Text(
                 text = stringResource(R.string.review_farewells_title),
-                fontWeight = FontWeight.Bold,
-                fontStyle = FontStyle.Italic,
-                color = accent,
+                color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
             )
@@ -83,7 +80,7 @@ class BookFarewellsPage(
                         CharacterAvatar(
                             character,
                             genre = genre,
-                            borderColor = accent,
+                            borderColor = MaterialTheme.colorScheme.primary,
                             borderSize = 2.dp,
                             modifier = Modifier.size(48.dp),
                         )
@@ -103,7 +100,7 @@ class BookFarewellsPage(
                             Text(
                                 text = "— ${character.name}",
                                 fontWeight = FontWeight.Bold,
-                                color = accent,
+                                color = MaterialTheme.colorScheme.primary,
                                 textAlign = sideTextAlign,
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(top = 6.dp),

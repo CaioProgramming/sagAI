@@ -12,8 +12,8 @@
 ## Architecture (already built, don't re-derive)
 
 - `ReviewTemplate` enum (`features/saga/detail/review/ui/ReviewTemplate.kt`) — `DEFAULT`,
-  `TERMINAL`, `BOOK`, one per shared visual style. Multiple `Genre`s can point at the same
-  template.
+  `TERMINAL`, `BOOK`, `CRIME`, one per shared visual style. Multiple `Genre`s can point at the
+  same template (Cyberpunk+Space Opera → TERMINAL, Fantasy+Shinobi → BOOK).
 - `Genre.reviewTemplate()` (`GenreReviewTemplateMapping.kt`) maps each genre to a template;
   unmapped genres fall back to `DEFAULT`.
 - `ReviewExperienceFactory` (`ReviewExperienceFactory.kt`) resolves `Genre -> ReviewExperience`,
@@ -21,11 +21,15 @@
   instead of a shared template — additive, no interface changes needed when that day comes.
 - `ReviewExperience.navigationStyle` (`ReviewExperience.kt`) — `VerticalSwipe` (today's default
   Stories-style pager), `TerminalSwipe` (Terminal — same `VerticalPager` mechanics as Default,
-  just terminal-styled chrome on top), `HorizontalPageFlip` (Book). `SagaReview.kt` picks the
-  right container composable (`DefaultReviewContainer`/`TerminalReviewContainer`/
-  `BookReviewContainer`) based on this — all three still speak the same `ReviewAction` contract,
-  so `SagaReviewViewModel`/`ReviewGenerationCoordinator` never needed to change.
-- Each template's pages live under `features/saga/detail/review/ui/templates/{terminal,book}/`.
+  just terminal-styled chrome on top), `HorizontalPageFlip` (unused — see Book below),
+  `ContinuousScroll` (hands-free auto-scroll, Book), `ChatScroll` (pinned-to-latest simulated
+  chat, Crime). `SagaReview.kt` picks the right container composable
+  (`DefaultReviewContainer`/`TerminalReviewContainer`/`BookReviewContainer`/
+  `ContinuousScrollReviewContainer`/`ChatScrollReviewContainer`) based on this — all five still
+  speak the same `ReviewAction` contract, so `SagaReviewViewModel`/`ReviewGenerationCoordinator`
+  never needed to change.
+- Each template's pages live under
+  `features/saga/detail/review/ui/templates/{terminal,book,crime}/`.
 
 ## Rule: before building a new genre template
 
@@ -162,11 +166,133 @@ retrofit (below) had to fix after first shipping this way.
     `AnimatedVisibility` reveal sequence transplanted verbatim. Titles, stat counters
     (`AnimatedPlaytimeCounter`), and the `VibeShapeDrawing` flourish keep their own existing
     animations — typewriter is for prose specifically, not every element.
+- **Shinobi → Book, Space Opera → Terminal** (2026-08-14) — both reuse an existing template
+  wholesale instead of new page classes: one line in `GenreReviewTemplateMapping.kt` each.
+  `BookBackground` reads `LocalSagaGenre` and swaps its grain texture for scattered washi-paper
+  fiber strands when the genre is Shinobi (same `surfaceContainer`/`onSurface` theme-color base,
+  just a different procedural pattern). `TerminalBackground` does the same for Space Opera: skips
+  its own manual scanline grid and layers `Modifier.spaceVoyage(true)` on top instead — the
+  genre's own existing CRT/VHS VFX (phosphor glow, jitter, scanlines, interference; already used
+  everywhere `genreVfx(genre)` applies for Space Opera) — so it reads as a ship console panel
+  instead of a borrowed Cyberpunk terminal.
+- **Crime → new `CRIME` template, `ChatScroll` navigation style** (2026-08-14) — a simulated text
+  thread, not a reskin of Book/Terminal. `ReviewNavigationStyle.ChatScroll` (`SagaReview.kt`'s
+  `ChatScrollReviewContainer`) is a genuinely different mechanic from `ContinuousScroll`: a plain
+  `LazyColumn` (no autoplay drift), a `revealedCount` state that ticks up over time, and
+  `animateScrollToItem(revealedCount - 1)` forced on every tick so the view always snaps to the
+  newest message. Manual scroll-up to reread still works; the next reveal just pulls back down.
+  - List granularity changed from "one item per review stage" (Book/Terminal) to "one item per
+    chat bubble" — `CrimeReviewExperience` flattens every stage's hook/content `ReviewText` into
+    its own `CrimeTextMessagePage`, alternating sides on a single toggle threaded through the
+    *whole* thread (not reset per stage), so it reads as one continuous conversation rather than N
+    separate exchanges.
+  - No avatars on the alternating bubbles by design (1:1 thread, not group chat) — Farewells is
+    the one exception, since each message there already has a real `characterId` attribution.
+  - Character portraits / chapter stills are `CrimeAttachmentMessagePage`s emitted immediately
+    after their related content bubble, inheriting that bubble's same side — reads as "sent a
+    photo right after the text," not a random insert.
+  - Both bubble page classes pop in (scale 0.6→1 with `EaseOutBack` overshoot + fade, transform
+    origin at the bubble's own tail corner) on first composition via a local
+    `LaunchedEffect(Unit) { visible = true }` — since items only enter the LazyColumn when
+    `revealedCount` includes them, "first composition" and "just revealed" are the same moment, no
+    extra plumbing needed.
+  - Reuses `Genre.bubble()`'s existing `CurvedChatBubbleShape` for Crime — the *same* shape the
+    real in-game chat already renders — rather than a new bubble shape.
+  - `CrimeBackground` is `MaterialTheme.colorScheme.background` (adapts to theme) with a soft
+    corner wash in `compiledColorPalette().first()` at low alpha, not a hardcoded noir palette.
+- **Crime chat pacing + data parity retrofit** (2026-08-15) — Crime shipped covering every stage's
+  *text*, but (same class of gap Book had before its own retrofit) silently dropped every
+  data-driven visual Default shows: playtime, the most-present emotional vibe, the chapter-still
+  grid, and the cast roster with per-character message counts. Closed:
+  - `ReviewPage.estimatedRevealDurationMs: Long get() = 0L` added to the interface — a page's own
+    opinion of how long its entrance animation takes to settle, `0` meaning "no opinion." Only
+    `ChatScroll` reads it (`ChatScrollReviewContainer`'s `delayBeforeReveal`): waits for the prior
+    message's real typing duration (or 800ms if the page doesn't report one) plus a fixed 2s pause
+    before revealing the next, replacing the old flat 1600ms tick that let a new bubble pop in
+    mid-typewrite of the previous one. `Restart`/`Regenerate` now also bump a `restartTrigger` key
+    so the reveal `LaunchedEffect` actually restarts (state alone doesn't retrigger a coroutine
+    that already ran to completion).
+  - `CrimeTitleCardPage` (new) — opens the thread before any bubble, centered `HandwrittenText` of
+    the saga's title, the same beat of charm `BookCoverPage` gives the continuous-scroll journal;
+    Crime has no in-thread cover art to fade in, so this stands in for it.
+  - Stage visuals now ride along as "attachments" — a page emitted right after that stage's content
+    bubble, same side/turn, like sending a photo right after a text (mirrors how
+    `CrimeAttachmentMessagePage` already worked for chapter/character photos):
+    `CrimeVibeStatPage` (`VibeShapeDrawing` + emotional-tone title, card-sized not full-page),
+    `CrimePlaystyleStatPage` (`AnimatedPlaytimeCounter`, same stat Book/Default show).
+  - `CrimeContactCardMessagePage` (new) — the cast, sent as a "shared group link" card: collapsed
+    to an overlapping 3-avatar stack + count (`saga_detail_section_subtitle_characters`), tapping
+    expands inline into the real list (avatar + name + `messages_count_label` per character) —
+    matches how a messaging app actually surfaces a group's membership, not a roster page.
+  - `CrimeAlbumMessagePage` (new) — chapter stills as a photo-stack attachment: collapsed to 2-3
+    overlapping, slightly rotated frames; tapping expands into the same 2-column grid
+    `BookJourneyPlatePage` uses on parchment. Both this and the contact card share one new
+    expand/collapse idiom: a local `expanded` `remember { mutableStateOf(false) }`, a
+    `round_arrow_forward_ios_24` chevron rotating 0→90° (`FAQCard.kt`'s existing pattern, not a new
+    one), and `review_tap_to_expand`/`review_tap_to_collapse` string resources (both locales).
+  - `CrimeBubbleFrame` (new, `CrimeBubbleFrame.kt`) — extracted the Row/AnimatedVisibility pop-in/
+    shape/avatar chrome shared by every bubble type (text, single-photo attachment, and now the
+    four new attachment types) so each page class only supplies its inner content. Two real bugs
+    fixed during the extraction, not just refactor-noise: the bubble `Column` had been sized with
+    `Modifier.weight(1f)` (forces the bubble to stretch to the *entire* remaining row width
+    regardless of text length — wrong for a chat bubble) instead of `widthIn(max = maxWidth)`
+    (caps at 280dp, still wraps to actual content otherwise); and the declared `contentColor`
+    param was never applied, so bubble text read in the screen's ambient `LocalContentColor`
+    instead of the color chosen to contrast that bubble's own background.
+  - `CrimeBubbleFrame`'s content `Column` also gained
+    `Modifier.animateContentSize(tween(450, FastOutSlowInEasing))` — the typewriter reveal grows
+    the bubble's measured content every frame; without this the bubble snapped to each new size
+    instead of visibly keeping pace with the text.
+- **Crime bubble chrome pass** (2026-08-15) — `CrimeBubbleFrame` revised again after review:
+  - `contentColor` is now handed to `content` as an explicit lambda parameter
+    (`content: @Composable ColumnScope.(contentColor: Color) -> Unit`) instead of a
+    `CompositionLocalProvider(LocalContentColor provides contentColor)` wrap — matches
+    `ChatBubble`'s own convention of deriving `textColor` from the same `isUser`/`isMe` boolean and
+    passing it explicitly, rather than an ambient override. Every Crime page's content lambda now
+    takes that color as its first param instead of reading `LocalContentColor.current`.
+  - No more fixed `widthIn(max = 280.dp)`. `CrimeBubbleFrame` instead reserves a margin
+    (`reservedMargin`, default 56.dp) on the side opposite the bubble via asymmetric `Modifier.padding`
+    on the outer `Row` — the same mechanism `ChatBubble` uses
+    (`Modifier.weight(1f).padding(end = 50.dp)`) — so the available width scales with the actual
+    screen instead of a dp constant that would either waste space on a tablet or do nothing on a
+    small phone. `CRIME_AVATAR_SLOT`/`CRIME_BUBBLE_RESERVED_MARGIN`/`CRIME_BUBBLE_HORIZONTAL_PADDING`/
+    `CRIME_BUBBLE_ROW_PADDING` exposed as `internal val`s so `CrimeTextMessagePage`'s block splitter
+    can approximate the same real width without duplicating magic numbers.
+  - `CrimeBubbleFrame` gained `showTail`/`showAvatar` (both default `true`) and `canAnimate` (default
+    `true`) params:
+    - `showTail`/`showAvatar` exist for message-block splitting (next bullet) — only the last block
+      of a split message draws the bubble tail or the avatar; earlier blocks render a blank
+      `Spacer(Modifier.size(CRIME_AVATAR_SLOT))` in the avatar's place so every block still lines up
+      on the same left edge instead of the ones without an avatar sitting closer to the margin.
+    - `canAnimate` gates the pop-in (`scaleIn`/`fadeIn`) itself. Previously the pop-in was
+      unconditional (`remember { mutableStateOf(false) }` + `LaunchedEffect(Unit)`), so a bubble that
+      scrolled far enough to be dropped from the `LazyColumn`'s composition and later scrolled back
+      into view composed fresh and replayed its entrance — several at once if the reader scrolled
+      back past a run of them. Fixed at the source in `ChatScrollReviewContainer`
+      (`SagaReview.kt`): a `remember { mutableStateSetOf<Int>() }` of indices that have ever been
+      composed once now drives `canAnimate = !alreadyAnimated` per item (was hardcoded `true`), so a
+      re-entering item renders already-settled instead of retyping/re-popping. The two shared stat
+      components Crime's attachments reuse had no skip-animation path at all and needed one:
+      `VibeShapeDrawing` gained `isAnimated: Boolean = true` (snaps `Animatable` straight to `1f`
+      when false instead of animating), `AnimatedPlaytimeCounter` gained the same (`tween` duration
+      collapses to `0` when false). `HandwrittenText` already had `isAnimated` and needed no change.
+  - `CrimeTextMessagePage` now replicates `ChatBubble`'s message-block splitting instead of always
+    rendering one bubble per stage line: reuses
+    `com.ilustris.sagai.features.saga.chat.ui.components.rememberMessageBlocks` (the *same* splitter
+    the real in-game chat uses — a public, plain-parameter utility with no dependency on
+    `MessageContent`/reactions/audio, so reusing it cost nothing) inside a `BoxWithConstraints` to
+    measure the real available width, then reveals blocks one at a time via its own internal
+    `revealedBlocks` state + `LaunchedEffect`, each in its own `CrimeBubbleFrame` call — still one
+    `ReviewPage` / one `LazyColumn` item, the split is purely visual exactly like
+    `MessageBlockSplitter`'s own doc comment describes for the real chat. Typing budget
+    (`typingDurationMs`) divides across blocks proportionally to length, floored at 400ms per block
+    (mirrors `ChatBubble`'s `MIN_BLOCK_DURATION`). `estimatedRevealDurationMs` stays the page-level
+    approximation (`320L + typingDurationMs`) since that property has no `@Composable` context to
+    actually run the splitter in — acceptable because most review paragraphs are short enough to
+    stay a single block anyway (the splitter's own fast path skips measurement under ~5 lines).
 
 ## Not started yet — backlog, two genres at a time
 
-- **Crime** — SagaReview as an iMessage conversation; bubbles + "attachments" for photos. Needs a
-  new continuous-scroll `ReviewNavigationStyle` (not a discrete pager).
 - **Cowboy** — vertical scroll styled like movie end credits: heterogeneous blocks (centered
   title card, photo-left/text-right, rotated "attachment" photos, cast list). Only borrows the
   *idea* of continuous auto-scroll from `AnimatedChapterGridBackground` (`ui/animations/`) — its
@@ -196,13 +322,15 @@ retrofit (below) had to fix after first shipping this way.
   stop-motion text effect — it uses `BlendMode.SrcAtop` without forcing an offscreen
   `compositingStrategy`, which blends against whatever's behind the text instead of just the
   glyph shapes; use solid/shadowed text (`StrokedText`-style) instead.
-- **Space Opera** — opening-only Star Wars-style crawl (tilted, receding text scrolling upward —
-  same `graphicsLayer`/`cameraDistance` recipe as Book's page-flip, just `rotationX` instead of
-  `rotationY`, continuous scroll instead of discrete flip), over a starfield
-  (`ui/animations/ConstellationCanvas.kt` already draws twinkling stars, reusable without its
-  `chapterClusters` param). After the opening, the rest of the stages switch to a sci-fi
-  HUD/"transmission received" framing around photos (console frame + scanline) — real movies cut
-  from the crawl to normal scenes rather than crawling throughout, and this mirrors that.
+- **Space Opera** — shipped a baseline (see above: Terminal template + `spaceVoyage` panel), not
+  this original vision. Still on the table as a future upgrade: opening-only Star Wars-style crawl
+  (tilted, receding text scrolling upward — same `graphicsLayer`/`cameraDistance` recipe as Book's
+  page-flip, just `rotationX` instead of `rotationY`, continuous scroll instead of discrete flip),
+  over a starfield (`ui/animations/ConstellationCanvas.kt` already draws twinkling stars, reusable
+  without its `chapterClusters` param). After the opening, the rest of the stages would switch to
+  a sci-fi HUD/"transmission received" framing around photos (console frame + scanline) — real
+  movies cut from the crawl to normal scenes rather than crawling throughout, and this mirrors
+  that. Would need its own template (not just a `TerminalBackground` branch) if pursued.
 - **Heroes** — motion comic: swipe drives a camera pan/zoom across static panel art, styled with
   a comic-panel border. The camera-coordination problem has a proven precedent already in this
   app: `features/brain/ui/components/BrainCanvas.kt`'s focus-follow mechanism — three

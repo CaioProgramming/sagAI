@@ -114,6 +114,7 @@ fun StoryProgressIndicator(
                 .clip(RoundedCornerShape(2.dp)),
         color = color,
         trackColor = color.copy(alpha = 0.3f),
+        gapSize = 0.dp,
         strokeCap = StrokeCap.Round,
     )
 }

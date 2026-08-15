@@ -8,4 +8,5 @@ enum class ReviewTemplate {
     DEFAULT,
     TERMINAL,
     BOOK,
+    CRIME,
 }

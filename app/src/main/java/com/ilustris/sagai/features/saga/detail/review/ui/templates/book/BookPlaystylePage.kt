@@ -32,6 +32,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /** "The Playstyle" page — the same playtime stat Default shows, inked in the book's own type. */
 class BookPlaystylePage(
@@ -46,7 +47,10 @@ class BookPlaystylePage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val accent = content.data.genre.compiledColorPalette().firstOrNull() ?: MaterialTheme.colorScheme.primary
+        val accent =
+            content.data.genre
+                .compiledColorPalette()
+                .firstOrNull() ?: MaterialTheme.colorScheme.primary
         val ink = LocalContentColor.current
         var showText by remember { mutableStateOf(false) }
 
@@ -62,9 +66,9 @@ class BookPlaystylePage(
             AnimatedPlaytimeCounter(
                 playtimeMs = content.data.playTimeMs,
                 label = playstyle.title ?: stringResource(R.string.playtime_title),
+                animationDuration = 2.seconds,
                 textStyle =
-                    MaterialTheme.typography.displaySmall.copy(
-                        fontWeight = FontWeight.Bold,
+                    MaterialTheme.typography.headlineLarge.copy(
                         color = ink,
                     ),
                 labelStyle =

@@ -9,7 +9,8 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
  */
 fun Genre.reviewTemplate(): ReviewTemplate =
     when (this) {
-        Genre.CYBERPUNK -> ReviewTemplate.TERMINAL
-        Genre.FANTASY -> ReviewTemplate.BOOK
+        Genre.CYBERPUNK, Genre.SPACE_OPERA -> ReviewTemplate.TERMINAL
+        Genre.FANTASY, Genre.SHINOBI -> ReviewTemplate.BOOK
+        Genre.CRIME -> ReviewTemplate.CRIME
         else -> ReviewTemplate.DEFAULT
     }

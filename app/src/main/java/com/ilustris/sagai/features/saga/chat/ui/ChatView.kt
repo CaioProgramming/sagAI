@@ -169,6 +169,7 @@ import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -618,6 +619,10 @@ fun ChatContent(
                                                 .find { it.message.id == action.messageId }
                                                 ?.message
                                         onAction(ChatUiAction.OpenMessageOptions(message))
+                                    }
+
+                                    is MessageAction.MarkViewed -> {
+                                        onAction(ChatUiAction.MarkMessageViewed(action.messageId))
                                     }
                                 }
                             }
@@ -1214,6 +1219,30 @@ fun ChatList(
         listState.scrollToItem(0)
     }
 
+    // Chronological queue of not-yet-viewed messages — several can be unread at once (opening the
+    // chat after being away, a multi-message AI reply), and without this every one of their
+    // ChatBubbles animates the instant it composes, all typing over each other. Only the message
+    // at activeRevealId gets its turn; the rest wait (see ChatBubble's revealTurn param).
+    val unviewedOrder =
+        remember(saga) {
+            saga.flatMessages().filter { !it.message.viewed }.map { it.message.id }
+        }
+    var activeRevealId by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(unviewedOrder) {
+        if (activeRevealId == null || activeRevealId !in unviewedOrder) {
+            activeRevealId = unviewedOrder.firstOrNull()
+        }
+    }
+
+    fun advanceReveal(completedMessageId: Int) {
+        coroutineScope.launch {
+            delay(1500)
+            val nextIndex = unviewedOrder.indexOf(completedMessageId) + 1
+            activeRevealId = unviewedOrder.getOrNull(nextIndex)
+        }
+    }
+
     LazyColumn(
         modifier,
         state = listState,
@@ -1356,7 +1385,14 @@ fun ChatList(
                             wikis = wikis,
                             genre = activeGenre ?: genre,
                             flatEvents = flatEvents,
-                            canAnimate = true,
+                            // Only messages that haven't been revealed yet animate. LazyColumn
+                            // disposes and recomposes items as they scroll out of view, so without
+                            // this every old bubble would re-type itself on every scroll.
+                            canAnimate = !it.message.viewed,
+                            // Paces several unread messages one at a time instead of all typing
+                            // at once — see unviewedOrder/activeRevealId above.
+                            revealTurn = it.message.id == activeRevealId,
+                            onRevealComplete = { advanceReveal(it.message.id) },
                             messageEffectsEnabled = messageEffectsEnabled,
                             audioPlaybackState = audioPlaybackState,
                             modifier = Modifier,
