@@ -115,7 +115,13 @@ fun ExpressiveText(
                         text = segment.text,
                         style = style,
                         genre = genre,
-                        animate = shouldAnimate,
+                        // Deliberately not shouldAnimate: the star-hide/tap-to-reveal is a
+                        // spoiler mechanic, not a first-time-only flourish like <action>'s
+                        // levitation. It should require a tap every time a <think> segment
+                        // renders, regardless of whether this message counts as "fresh" —
+                        // tying it to shouldAnimate meant it depended on getting canAnimate
+                        // exactly right for every message, which is what silently broke it.
+                        animate = true,
                         onRevealed = onThinkRevealed,
                     )
                 }
