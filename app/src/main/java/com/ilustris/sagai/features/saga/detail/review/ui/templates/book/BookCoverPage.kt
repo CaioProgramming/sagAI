@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.ui.templates.book
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
@@ -18,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
@@ -56,28 +58,25 @@ class BookCoverPage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
         var showImage by remember { mutableStateOf(!canAnimate) }
 
-        Box(modifier.fillMaxWidth().height(screenHeight)) {
-            AnimatedVisibility(
-                visible = showImage,
-                enter = fadeIn(tween(1200)),
-            ) {
-                AsyncImage(
-                    model = cover.url,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+        Box(modifier.fillMaxWidth().fillMaxHeight(.7f)) {
+            val imageAlpha by animateFloatAsState(
+                if (showImage) 1f else 0f,
+            )
+            AsyncImage(
+                model = cover.url,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().alpha(imageAlpha),
+            )
 
             Box(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .fillMaxHeight(.2f)
-                    .background(fadeGradientBottom(MaterialTheme.colorScheme.surfaceContainer)),
+                    .height(200.dp)
+                    .background(fadeGradientBottom(MaterialTheme.colorScheme.background)),
             )
 
             HandwrittenText(

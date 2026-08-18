@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.detail.ui
 import android.view.MotionEvent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -65,6 +66,9 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperienceFactory
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewNavigationStyle
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.StoryProgressIndicator
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.CowboyBurnMarks
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.HorrorPoliceTapeOverlay
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.ShinobiInkBlooms
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalBackground
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalGlitchOverlay
 import com.ilustris.sagai.features.share.domain.model.ShareType
@@ -83,6 +87,7 @@ import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.rememberVectorShape
 import com.ilustris.sagai.ui.theme.reviewVfx
+import com.ilustris.sagai.ui.theme.themeFilter
 import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
 import com.ilustris.sagai.ui.theme.themeVfx
@@ -432,7 +437,7 @@ private fun TerminalReviewContainer(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().reviewVfx()) {
+    Box(modifier = Modifier.fillMaxSize().themeFilter()) {
         if (pagerState.currentPage < pages.size) {
             pages
                 .getOrNull(pagerState.currentPage)
@@ -689,12 +694,17 @@ private fun ContinuousScrollReviewContainer(
         }
     }
 
-    Box(Modifier.fillMaxSize().reviewVfx()) {
+    Box(Modifier.fillMaxSize().themeFilter()) {
         pages.firstOrNull()?.Background(modifier = Modifier.fillMaxSize())
+
+        // Both are no-ops outside their own genre (checked internally). Same ambient-loop
+        // pacing, independent of scroll — keeps breathing even while the reader holds still.
+        ShinobiInkBlooms(modifier = Modifier.fillMaxSize())
+        CowboyBurnMarks(modifier = Modifier.fillMaxSize())
 
         AutoScrollLazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize(),
         ) {
             items(pages.size) { pageIndex ->
                 pages[pageIndex].Show(
@@ -713,6 +723,11 @@ private fun ContinuousScrollReviewContainer(
                 }
             }
         }
+
+        // Unlike the two background layers above, this one is drawn AFTER (on top of) the
+        // scroll content on purpose — a real overlay, like the scene has already been taped off,
+        // not a texture living behind the page.
+        HorrorPoliceTapeOverlay(modifier = Modifier.fillMaxSize())
 
         ReviewSkipButton(genre) {
             coroutineScope.launch {

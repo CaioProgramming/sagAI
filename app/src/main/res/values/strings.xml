@@ -750,6 +750,11 @@
     <string name="review_stage_playstyle_subtitle_default">How you acted</string>
     <string name="review_stage_characters_title">The Cast</string>
     <string name="review_stage_characters_subtitle_default">Your Squad</string>
+    <string name="review_cast_title_fantasy">The Legends</string>
+    <string name="review_cast_title_shinobi">The Clan</string>
+    <string name="review_cast_title_cowboy">The Wanted</string>
+    <string name="review_cast_title_horror">The Suspects</string>
+    <string name="review_horror_tape_text">CRIME SCENE — DO NOT CROSS</string>
     <string name="review_stage_journey_title">The Journey</string>
     <string name="review_stage_journey_subtitle_default">The path we took</string>
     <string name="review_stage_conclusion_title">The Legacy</string>

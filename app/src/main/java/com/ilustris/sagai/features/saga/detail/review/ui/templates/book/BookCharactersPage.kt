@@ -33,6 +33,7 @@ import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.features.saga.detail.review.ui.reviewCastTitle
 import com.ilustris.sagai.features.share.domain.model.ShareType
 
 /** "Dramatis Personae" — the saga's cast, listed like the front matter of a novel. */
@@ -67,7 +68,7 @@ class BookCharactersPage(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(
-                text = stringResource(R.string.review_stage_characters_title),
+                text = genre.reviewCastTitle(),
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
                 color = accent,

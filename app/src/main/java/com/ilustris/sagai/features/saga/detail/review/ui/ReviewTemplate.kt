@@ -9,4 +9,5 @@ enum class ReviewTemplate {
     TERMINAL,
     BOOK,
     CRIME,
+    COLLAGE,
 }

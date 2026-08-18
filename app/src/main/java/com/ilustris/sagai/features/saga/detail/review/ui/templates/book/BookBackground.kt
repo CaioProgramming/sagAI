@@ -18,7 +18,9 @@ import kotlin.random.Random
  * unlike a fixed parchment gradient) with a faint procedural texture + vignette layered on top.
  * The texture itself is per-genre ([LocalSagaGenre]: an even dot grain for most genres sharing
  * this template, thin washi-style fiber strands for Shinobi) but always tinted with `onSurface`,
- * never a hardcoded ink color, so it reads correctly in both themes.
+ * never a hardcoded ink color, so it reads correctly in both themes. Shinobi's scroll-triggered
+ * ink blooms ([ShinobiInkBlooms]) are a separate layer, rendered by the container alongside this
+ * one — not part of this composable, since they need the container's [androidx.compose.foundation.lazy.LazyListState].
  */
 @Composable
 fun BookBackground(modifier: Modifier = Modifier) {

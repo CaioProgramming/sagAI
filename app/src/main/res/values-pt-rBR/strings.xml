@@ -622,6 +622,11 @@
     <string name="review_stage_playstyle_subtitle_default">Como você agiu</string>
     <string name="review_stage_characters_title">O Elenco</string>
     <string name="review_stage_characters_subtitle_default">Seu Squad</string>
+    <string name="review_cast_title_fantasy">As Lendas</string>
+    <string name="review_cast_title_shinobi">O Clã</string>
+    <string name="review_cast_title_cowboy">Os Procurados</string>
+    <string name="review_cast_title_horror">Os Suspeitos</string>
+    <string name="review_horror_tape_text">CENA DE CRIME — NÃO ULTRAPASSE</string>
     <string name="review_stage_journey_title">A Jornada</string>
     <string name="review_stage_journey_subtitle_default">O caminho que fizemos</string>
     <string name="review_stage_conclusion_title">O Legado</string>

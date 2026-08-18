@@ -158,7 +158,13 @@ private data class BubbleBlock(
  * Wraps one bubble block in its genre decorations. Extracted so the multi-block loop doesn't have
  * to repeat the ConstraintLayout/Box branching inline.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * One block's decoration + shape wrapper. Deliberately has no [TooltipBox] of its own — an earlier
+ * version put one per block, and since every block shared the same [TooltipState], tapping an
+ * annotation in any block popped the tooltip open above *all* currently visible blocks at once.
+ * The single tooltip anchor now lives once per message, around the whole [Column] of blocks in
+ * [ChatBubble].
+ */
 @Composable
 private fun BubbleBlockContainer(
     genre: Genre,
@@ -166,10 +172,6 @@ private fun BubbleBlockContainer(
     decorationOverlay: (@Composable BoxScope.() -> Unit)?,
     constraintDecorationBackground: (@Composable ConstraintLayoutScope.(ConstrainedLayoutReference) -> Unit)?,
     constraintDecorationOverlay: (@Composable ConstraintLayoutScope.(ConstrainedLayoutReference) -> Unit)?,
-    tooltipPositionProvider: PopupPositionProvider,
-    tooltipState: TooltipState,
-    onTooltipDismiss: () -> Unit,
-    tooltip: @Composable TooltipScope.() -> Unit,
     contentModifier: Modifier,
     content: @Composable () -> Unit,
 ) {
@@ -190,44 +192,28 @@ private fun BubbleBlockContainer(
             // ConstraintLayout-backed decoration slot: unlike the plain Box below, this
             // actually expands to include a decoration that hangs past the bubble's
             // edge, instead of just drawing over/under whatever space was already there.
-            // TooltipBox is wrapped in a plain Box before being constrained — TooltipBox
-            // itself has its own internal tooltip/anchor layout logic that didn't behave
-            // as a direct ConstraintLayout child (see project notes, 2026-07-29 crash).
             ConstraintLayout {
                 val contentRef = createRef()
                 constraintDecorationBackground?.invoke(this, contentRef)
                 Box(
-                    Modifier.constrainAs(contentRef) {
-                        top.linkTo(parent.top)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(parent.bottom)
-                        width = Dimension.wrapContent
-                        height = Dimension.wrapContent
-                    },
+                    modifier =
+                        contentModifier.constrainAs(contentRef) {
+                            top.linkTo(parent.top)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            bottom.linkTo(parent.bottom)
+                            width = Dimension.wrapContent
+                            height = Dimension.wrapContent
+                        },
                 ) {
-                    TooltipBox(
-                        positionProvider = tooltipPositionProvider,
-                        state = tooltipState,
-                        onDismissRequest = onTooltipDismiss,
-                        tooltip = tooltip,
-                        modifier = contentModifier,
-                        content = content,
-                    )
+                    content()
                 }
                 constraintDecorationOverlay?.invoke(this, contentRef)
             }
         } else {
             Box {
                 decorationBackground?.invoke(this)
-                TooltipBox(
-                    positionProvider = tooltipPositionProvider,
-                    state = tooltipState,
-                    onDismissRequest = onTooltipDismiss,
-                    tooltip = tooltip,
-                    modifier = contentModifier,
-                    content = content,
-                )
+                Box(contentModifier) { content() }
                 decorationOverlay?.invoke(this)
             }
         }
@@ -521,7 +507,7 @@ fun ChatBubble(
                                     sender == SenderType.USER || sender == SenderType.CHARACTER
                                 val bubbleModifierFor: @Composable (Shape) -> Modifier = { blockShape ->
                                     when {
-                                        message.status == MessageStatus.LOADING ->
+                                        message.status == MessageStatus.LOADING -> {
                                             Modifier
                                                 .alpha(.7f)
                                                 .emotionalEntrance(
@@ -538,21 +524,26 @@ fun ChatBubble(
                                                     ),
                                                     blockShape,
                                                 )
+                                        }
 
-                                        isSpokenBubble ->
+                                        isSpokenBubble -> {
                                             clickableModifier(blockShape)
                                                 .emotionalEntrance(
                                                     message.emotionalTone,
                                                     messageEffectsEnabled,
                                                 ).wrapContentSize()
                                                 .background(bubbleStyle.backgroundColor, blockShape)
+                                        }
 
-                                        genre == Genre.HEROES ->
+                                        genre == Genre.HEROES -> {
                                             clickableModifier(blockShape)
                                                 .wrapContentSize()
                                                 .background(bubbleStyle.backgroundColor, blockShape)
+                                        }
 
-                                        else -> clickableModifier(blockShape)
+                                        else -> {
+                                            clickableModifier(blockShape)
+                                        }
                                     }
                                 }
 
@@ -775,54 +766,62 @@ fun ChatBubble(
                                             }
                                         }
 
-                                        Column(
-                                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                                            horizontalAlignment =
-                                                if (isUser) Alignment.End else Alignment.Start,
+                                        // One tooltip anchor for the whole message, not one per
+                                        // block: every block used to get its own TooltipBox bound to
+                                        // this same tooltipData/reactionToolTipState, so tapping an
+                                        // annotation in one block popped the tooltip open above every
+                                        // visible block of that message at once.
+                                        TooltipBox(
+                                            positionProvider = tooltipPositionProvider,
+                                            state = reactionToolTipState,
+                                            onDismissRequest = { tooltipData = null },
+                                            tooltip = bubbleTooltipContent,
                                         ) {
-                                            blocks.take(revealedBlocks).forEachIndexed { index, blockText ->
-                                                key(index) {
-                                                    // The tail always sits on the block that is
-                                                    // currently last on screen, so the group never
-                                                    // looks broken mid-reveal.
-                                                    val isTailBlock = index == revealedBlocks - 1
-                                                    val blockShape =
-                                                        if (isTailBlock) {
-                                                            bubbleShape
-                                                        } else {
-                                                            genre.bubble(
-                                                                bubbleStyle.tailAlignment,
-                                                                showTail = false,
+                                            Column(
+                                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                                                horizontalAlignment =
+                                                    if (isUser) Alignment.End else Alignment.Start,
+                                            ) {
+                                                blocks.take(revealedBlocks).forEachIndexed { index, blockText ->
+                                                    key(index) {
+                                                        // The tail always sits on the block that is
+                                                        // currently last on screen, so the group
+                                                        // never looks broken mid-reveal.
+                                                        val isTailBlock = index == revealedBlocks - 1
+                                                        val blockShape =
+                                                            if (isTailBlock) {
+                                                                bubbleShape
+                                                            } else {
+                                                                genre.bubble(
+                                                                    bubbleStyle.tailAlignment,
+                                                                    showTail = false,
+                                                                )
+                                                            }
+                                                        val block =
+                                                            BubbleBlock(
+                                                                text = blockText,
+                                                                isAnimated = isAnimated,
+                                                                duration = blockDurations[index],
+                                                                isLast = index == blocks.lastIndex,
                                                             )
-                                                        }
-                                                    val block =
-                                                        BubbleBlock(
-                                                            text = blockText,
-                                                            isAnimated = isAnimated,
-                                                            duration = blockDurations[index],
-                                                            isLast = index == blocks.lastIndex,
+                                                        BubbleBlockContainer(
+                                                            genre = genre,
+                                                            // Genre decorations only dress the tail
+                                                            // block; repeating them on every block in
+                                                            // a group reads as noise and multiplies
+                                                            // the draw cost.
+                                                            decorationBackground =
+                                                                decorationBackground.takeIf { isTailBlock },
+                                                            decorationOverlay =
+                                                                decorationOverlay.takeIf { isTailBlock },
+                                                            constraintDecorationBackground =
+                                                                constraintDecorationBackground.takeIf { isTailBlock },
+                                                            constraintDecorationOverlay =
+                                                                constraintDecorationOverlay.takeIf { isTailBlock },
+                                                            contentModifier = bubbleContentModifierFor(blockShape),
+                                                            content = { bubbleTextContent(block) },
                                                         )
-                                                    BubbleBlockContainer(
-                                                        genre = genre,
-                                                        // Genre decorations only dress the tail
-                                                        // block; repeating them on every block in a
-                                                        // group reads as noise and multiplies the
-                                                        // draw cost.
-                                                        decorationBackground =
-                                                            decorationBackground.takeIf { isTailBlock },
-                                                        decorationOverlay =
-                                                            decorationOverlay.takeIf { isTailBlock },
-                                                        constraintDecorationBackground =
-                                                            constraintDecorationBackground.takeIf { isTailBlock },
-                                                        constraintDecorationOverlay =
-                                                            constraintDecorationOverlay.takeIf { isTailBlock },
-                                                        tooltipPositionProvider = tooltipPositionProvider,
-                                                        tooltipState = reactionToolTipState,
-                                                        onTooltipDismiss = { tooltipData = null },
-                                                        tooltip = bubbleTooltipContent,
-                                                        contentModifier = bubbleContentModifierFor(blockShape),
-                                                        content = { bubbleTextContent(block) },
-                                                    )
+                                                    }
                                                 }
                                             }
                                         }
