@@ -2,35 +2,22 @@ package com.ilustris.sagai.features.saga.detail.review.ui.templates.collage
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,17 +32,8 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.saga.detail.review.ui.coverImageSource
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
-import com.ilustris.sagai.ui.theme.themeBubble
 import com.ilustris.sagai.ui.theme.themeFilter
 import com.ilustris.sagai.ui.theme.themeIcon
-import kotlinx.coroutines.delay
-import kotlin.random.Random
-
-private const val ASSEMBLY_STEPS = 7
-private const val ASSEMBLY_STEP_MS = 90L
-private const val IDLE_TREMOR_STEP_MS = 240L
-private const val IDLE_JITTER_FRACTION = 0.14f
-private const val ENTRANCE_SLIDE_PX = 46f
 
 /** Insert only splits a text into several chips once it would run past this many lines. */
 private const val CHIP_SPLIT_MAX_LINES = 3
@@ -63,18 +41,6 @@ private val CHIP_MAX_WIDTH = 130.dp
 
 /** Reserved clear space at the top of [CollagePosterPage.Show]'s chip layer, so inserts never start above where the icon/title sit in the depth layer behind them. */
 private val CHIP_AREA_TOP_MARGIN = 190.dp
-
-private val STROKE_RING_OFFSETS =
-    listOf(
-        0f to -1f,
-        0.707f to -0.707f,
-        1f to 0f,
-        0.707f to 0.707f,
-        0f to 1f,
-        -0.707f to 0.707f,
-        -1f to 0f,
-        -0.707f to -0.707f,
-    )
 
 /** One scattered magazine-insert slot, small paddings since [CHIP_AREA_TOP_MARGIN] already clears the title above. */
 private data class ChipSlot(
@@ -182,17 +148,18 @@ class CollagePosterPage(
                     canAnimate = canAnimate,
                     seed = index + 10,
                 ) {
-                    Box(
-                        Modifier
-                            .widthIn(max = CHIP_MAX_WIDTH)
-                            .border(2.dp, chipColor, themeBubble())
-                            .clip(themeBubble())
-                            .background(MaterialTheme.colorScheme.background, themeBubble())
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                    // Every other insert stays paper-white so the coloured ones read as
+                    // highlights rather than the page turning into a row of uniform labels.
+                    val paper = if (index % 2 == 0) chipColor else PAPER_WHITE
+                    TornPaperScrap(
+                        seed = index + 300,
+                        paperColor = paper,
+                        modifier = Modifier.widthIn(max = CHIP_MAX_WIDTH),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     ) {
                         Text(
                             text = text,
-                            color = chipColor.readableTextColor(),
+                            color = paper.readableTextColor(),
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
                             style = chipStyle,
@@ -215,6 +182,10 @@ class CollagePosterPage(
         }
 
         val strokeWidthPx = with(LocalDensity.current) { 4.dp.toPx() }
+        // The cutout's outline redraws on the same stop-motion cadence as the collage pieces, so
+        // the character reads as hand-cut on every frame rather than pinned under a static border.
+        val strokeFrame = rememberStopMotionFrame()
+        val strokeJitterPx = with(LocalDensity.current) { 1.6.dp.toPx() }
 
         Box(modifier.fillMaxSize()) {
             DepthLayout(
@@ -222,8 +193,17 @@ class CollagePosterPage(
                 modifier = Modifier.fillMaxSize().themeFilter(),
                 foregroundImageModifier =
                     Modifier
-                        .imageStroke(MaterialTheme.colorScheme.background, strokeWidthPx)
-                        .imageStroke(accent, strokeWidthPx * 1.3f),
+                        .imageStroke(
+                            color = MaterialTheme.colorScheme.background,
+                            widthPx = strokeWidthPx,
+                            jitterFrame = strokeFrame,
+                            jitterAmountPx = strokeJitterPx,
+                        ).imageStroke(
+                            color = accent,
+                            widthPx = strokeWidthPx * 1.3f,
+                            jitterFrame = strokeFrame,
+                            jitterAmountPx = strokeJitterPx,
+                        ),
             ) {
                 // Sits behind the segmented character, in front of the raw photo — the sharp
                 // foreground cutout redraws over this, so the title reads as tucked behind the
@@ -253,7 +233,7 @@ class CollagePosterPage(
                     genre.stylisedText(
                         text = content.data.title,
                         modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                        fontSize = MaterialTheme.typography.displayMedium.fontSize,
+                        fontSize = MaterialTheme.typography.displayLarge.fontSize,
                     )
                 }
             }
@@ -263,102 +243,5 @@ class CollagePosterPage(
             // not tucked behind it like the title.
             PunkScribbleOverlay(modifier = Modifier.fillMaxSize())
         }
-    }
-}
-
-private fun Color.readableTextColor() = if (luminance() > 0.5f) Color.Black else Color.White
-
-/**
- * Solid-color outline hugging the content's actual alpha shape (not its bounding box) — stamps
- * [STROKE_RING_OFFSETS] copies offset by [widthPx], flattens each to a flat [color] silhouette via
- * `saveLayer` + `SrcIn`, then draws the real content on top. Same "offset ghost" technique as
- * [com.ilustris.sagai.ui.animations.comicExtrude]'s front-face outline, without the extrusion body
- * or pop animation — this is meant to sit still behind a photo, not bounce.
- */
-private fun Modifier.imageStroke(
-    color: Color,
-    widthPx: Float,
-) = drawWithContent {
-    fun drawGhost(
-        dx: Float,
-        dy: Float,
-    ) {
-        drawIntoCanvas { canvas ->
-            val paint = Paint()
-            canvas.saveLayer(Rect(0f, 0f, size.width, size.height), paint)
-            canvas.translate(dx, dy)
-            drawContent()
-            drawRect(color = color, blendMode = BlendMode.SrcIn)
-            canvas.restore()
-        }
-    }
-    STROKE_RING_OFFSETS.forEach { (rx, ry) -> drawGhost(rx * widthPx, ry * widthPx) }
-    drawContent()
-}
-
-/**
- * One collage element that jump-cuts through [ASSEMBLY_STEPS] discrete frames ([ASSEMBLY_STEP_MS]
- * apart, decelerating) as it slides/rotates into place — a "glued into place" stop-motion feel
- * rather than a continuously eased tween. Once settled, it keeps a faint perpetual tremor (unless
- * [idleTremor] is false) — same low-fps jitter idea as
- * [com.ilustris.sagai.ui.components.RansomLetter]'s letters, so the whole page reads as one
- * consistent stop-motion identity instead of a one-shot entrance. Positioning is entirely the
- * caller's [modifier] (e.g. `Modifier.align(...).padding(...)`, scoped to whatever container
- * — [Box] or [Column] — it's actually placed in) so this stays reusable across both.
- */
-@Composable
-private fun AssemblingPiece(
-    modifier: Modifier = Modifier,
-    rotation: Float,
-    delayMs: Long,
-    canAnimate: Boolean,
-    seed: Int,
-    idleTremor: Boolean = true,
-    content: @Composable () -> Unit,
-) {
-    var step by remember { mutableIntStateOf(if (canAnimate) 0 else ASSEMBLY_STEPS) }
-
-    LaunchedEffect(canAnimate) {
-        if (canAnimate) {
-            delay(delayMs)
-            repeat(ASSEMBLY_STEPS) {
-                step++
-                delay(ASSEMBLY_STEP_MS)
-            }
-        } else {
-            step = ASSEMBLY_STEPS
-        }
-        if (idleTremor) {
-            while (true) {
-                delay(IDLE_TREMOR_STEP_MS)
-                step++
-            }
-        }
-    }
-
-    val settleStep = step.coerceAtMost(ASSEMBLY_STEPS)
-    val t = settleStep / ASSEMBLY_STEPS.toFloat()
-    val eased = 1f - (1f - t) * (1f - t)
-    val isSettled = step >= ASSEMBLY_STEPS
-    val jitterDecay = if (isSettled) IDLE_JITTER_FRACTION else (1f - t)
-    val jitter = Random(seed * 131 + step)
-    val jitterX = (jitter.nextFloat() - 0.5f) * 40f * jitterDecay
-    val jitterY = (jitter.nextFloat() - 0.5f) * 40f * jitterDecay
-    val jitterRot = (jitter.nextFloat() - 0.5f) * 26f * jitterDecay
-    val entranceY = ENTRANCE_SLIDE_PX * (1f - eased)
-    val scale = 0.6f + 0.4f * eased
-    val visible = step > 0
-
-    Box(
-        modifier.graphicsLayer {
-            translationX = jitterX
-            translationY = entranceY + jitterY
-            rotationZ = rotation + jitterRot
-            scaleX = scale
-            scaleY = scale
-            alpha = if (visible) 1f else 0f
-        },
-    ) {
-        content()
     }
 }

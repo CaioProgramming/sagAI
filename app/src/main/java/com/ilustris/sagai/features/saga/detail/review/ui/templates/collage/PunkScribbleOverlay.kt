@@ -41,7 +41,15 @@ import com.ilustris.sagai.R
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
-private val SCRIBBLE_ICONS = listOf(R.drawable.ic_lightning_bolt, R.drawable.ic_punk_stars, R.drawable.ic_punk_skull)
+private val SCRIBBLE_ICONS =
+    listOf(
+        R.drawable.ic_lightning_bolt,
+        R.drawable.ic_punk_stars,
+        R.drawable.ic_punk_skull,
+        R.drawable.ic_doodle,
+        R.drawable.ic_doodle_heart,
+        R.drawable.ic_star_doodle,
+    )
 private const val DRAW_DURATION_MS = 2000
 private const val HOLD_DURATION_MS = 800L
 private const val FADE_DURATION_MS = 5000
