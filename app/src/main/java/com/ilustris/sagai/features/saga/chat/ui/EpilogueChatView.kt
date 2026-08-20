@@ -3,10 +3,16 @@
 package com.ilustris.sagai.features.saga.chat.ui
 
 import MessageStatus
+import android.graphics.Matrix
+import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -56,10 +62,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -78,7 +89,9 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.presentation.EpilogueChatViewModel
+import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.levitate
@@ -106,6 +119,7 @@ fun EpilogueChatView(
     viewModel: EpilogueChatViewModel = hiltViewModel(),
 ) {
     val character by viewModel.character.collectAsStateWithLifecycle()
+    val protagonist by viewModel.protagonist.collectAsStateWithLifecycle()
     val genre by viewModel.genre.collectAsStateWithLifecycle()
     val relationshipSubtitle by viewModel.relationshipSubtitle.collectAsStateWithLifecycle()
     val messages by viewModel.messages.collectAsStateWithLifecycle()
@@ -178,6 +192,13 @@ fun EpilogueChatView(
                             genre = resolvedGenre,
                             flatEvents = emptyList(),
                             canAnimate = true,
+                            // This is a closed 1:1 conversation — the only character whose avatar
+                            // can ever appear here is the one we're already talking to, so tapping
+                            // it just closes back to the CharacterDetailsView the player came from
+                            // instead of pushing a duplicate of the same detail screen on top.
+                            onAction = { action ->
+                                if (action is MessageAction.ClickCharacter) onBack()
+                            },
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
                         )
@@ -233,7 +254,7 @@ fun EpilogueChatView(
                 }
 
                 EpilogueChatInput(
-                    character = character?.data,
+                    protagonist = protagonist?.data,
                     genre = resolvedGenre,
                     isReplying = isReplying,
                     onSend = { viewModel.sendMessage(it) },
@@ -261,34 +282,59 @@ private fun EpilogueInfoAction() {
             }
         },
     ) {
-        IconButton(onClick = { coroutineScope.launch { tooltipState.show() } }) {
+        IconButton(onClick = { coroutineScope.launch { tooltipState.show() } }, modifier = Modifier.size(32.dp).padding(8.dp)) {
             Icon(
-                painterResource(R.drawable.ic_spark),
+                painterResource(R.drawable.ic_temp),
                 contentDescription = stringResource(R.string.epilogue_chat_disclaimer),
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
 }
 
+/** Mirrors [com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView]'s rotating
+ * sweep-gradient border while a reply is streaming in. */
+@Composable
+private fun epilogueInputBorderRotation(isReplying: Boolean): Float {
+    if (!isReplying || !rememberLifecycleAnimationsActive()) return 0f
+    val infiniteTransition = rememberInfiniteTransition(label = "epilogueInputBorder")
+    val rotation by infiniteTransition.animateFloat(
+        0f,
+        360f,
+        infiniteRepeatable(tween(3000, easing = LinearEasing)),
+        label = "rotation",
+    )
+    return rotation
+}
+
 /**
  * Deliberately mirrors [com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView]'s
  * container styling (dropShadow + gradient border + rounded surface, matching the active genre
- * theme) and its send-button loading treatment, but stripped down to what an epilogue chat
- * actually needs: no expressive tags, no @mention/wiki lookup, no character switcher — just the
- * character avatar, a text field, and a send button.
+ * theme, rotating sweep gradient while a reply streams in) and its send-button loading treatment,
+ * but stripped down to what an epilogue chat actually needs: no expressive tags, no @mention/wiki
+ * lookup, no character switcher — just the protagonist's avatar (this is the player's own
+ * character speaking, not the one being chatted with), a text field, and a send button.
  */
 @Composable
 private fun EpilogueChatInput(
-    character: Character?,
+    protagonist: Character?,
     genre: Genre,
     isReplying: Boolean,
     onSend: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
     val resolvedColor = MaterialTheme.colorScheme.primary
-    val inputBrush = Brush.horizontalGradient(themeBrushColors())
+    val inputBrush =
+        Brush.horizontalGradient(
+            if (isReplying) morphingGradient() else themeBrushColors(),
+        )
+    // dropShadow reallocates its shadow layer whenever brush/color changes, so it gets a fixed
+    // brush regardless of isReplying — the animated color motion stays on the outline/border
+    // draws below, which are cheap stroke operations with no shadow layer behind them.
+    val shadowBrush = Brush.horizontalGradient(themeBrushColors())
     val inputShape = sagaShape()
+    val palette = themeBrushColors()
+    val rotation = epilogueInputBorderRotation(isReplying)
     val glowRadiusState = animateFloatAsState(if (isReplying) 25f else 10f, label = "epilogueInputGlow")
     val textStyle =
         MaterialTheme.typography.labelMedium.copy(
@@ -303,12 +349,31 @@ private fun EpilogueChatInput(
                 .navigationBarsPadding()
                 .imePadding()
                 .dropShadow(inputShape, {
-                    brush = inputBrush
+                    brush = shadowBrush
                     radius = glowRadiusState.value
                     spread = 10f
                 }).fillMaxWidth()
                 .clip(inputShape)
-                .border(1.dp, inputBrush, inputShape)
+                .drawWithContent {
+                    drawContent()
+                    val outline = inputShape.createOutline(size, layoutDirection, this)
+                    if (isReplying) {
+                        val brush =
+                            object : ShaderBrush() {
+                                override fun createShader(size: Size): Shader {
+                                    val shader =
+                                        (Brush.sweepGradient(colors = palette) as ShaderBrush).createShader(size)
+                                    val matrix = Matrix()
+                                    matrix.setRotate(rotation, size.width / 2, size.height / 2)
+                                    shader.setLocalMatrix(matrix)
+                                    return shader
+                                }
+                            }
+                        drawOutline(outline, brush, style = Stroke(1.dp.toPx()))
+                    } else {
+                        drawOutline(outline, inputBrush, style = Stroke(1.dp.toPx()))
+                    }
+                }.border(1.dp, inputBrush, inputShape)
                 .background(MaterialTheme.colorScheme.background, inputShape),
     ) {
         Column(
@@ -353,7 +418,7 @@ private fun EpilogueChatInput(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                character?.let {
+                protagonist?.let {
                     CharacterAvatar(
                         it,
                         genre = genre,

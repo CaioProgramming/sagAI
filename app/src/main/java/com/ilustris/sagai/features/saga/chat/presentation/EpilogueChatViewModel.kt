@@ -49,6 +49,9 @@ class EpilogueChatViewModel
         private val _character = MutableStateFlow<CharacterContent?>(null)
         val character: StateFlow<CharacterContent?> = _character.asStateFlow()
 
+        private val _protagonist = MutableStateFlow<CharacterContent?>(null)
+        val protagonist: StateFlow<CharacterContent?> = _protagonist.asStateFlow()
+
         private val _genre = MutableStateFlow<Genre?>(null)
         val genre: StateFlow<Genre?> = _genre.asStateFlow()
 
@@ -91,6 +94,7 @@ class EpilogueChatViewModel
                     saga = loadedSaga
                     arcs = loadedArcs
                     _character.value = loadedCharacter
+                    _protagonist.value = loadedSaga.mainCharacter
                     _genre.value = loadedSaga.data.genre
                     _relationshipSubtitle.value =
                         loadedSaga.mainCharacter
@@ -109,6 +113,7 @@ class EpilogueChatViewModel
             _isReplying.value = false
             _reasoningChunk.value = null
             _character.value = null
+            _protagonist.value = null
             _genre.value = null
             _relationshipSubtitle.value = null
             saga = null
