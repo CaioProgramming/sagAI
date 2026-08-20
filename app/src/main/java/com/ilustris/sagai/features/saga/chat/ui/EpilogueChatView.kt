@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 
 package com.ilustris.sagai.features.saga.chat.ui
 
@@ -6,6 +6,7 @@ import MessageStatus
 import android.graphics.Matrix
 import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.LinearEasing
@@ -21,16 +22,20 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,8 +43,12 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -74,6 +83,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -83,14 +95,27 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
+import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.EpilogueMessage
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.hint
+import com.ilustris.sagai.features.saga.chat.data.model.icon
+import com.ilustris.sagai.features.saga.chat.data.model.senderForTag
+import com.ilustris.sagai.features.saga.chat.data.model.title
 import com.ilustris.sagai.features.saga.chat.presentation.EpilogueChatViewModel
 import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
+import com.ilustris.sagai.features.saga.chat.ui.components.ExpressiveTag
+import com.ilustris.sagai.features.saga.chat.ui.components.SpeechModeSheet
+import com.ilustris.sagai.features.saga.chat.ui.components.escapeCursorFromTagAndClean
+import com.ilustris.sagai.features.saga.chat.ui.components.finalizeInputForSend
+import com.ilustris.sagai.features.saga.chat.ui.components.getCleanTextLength
+import com.ilustris.sagai.features.saga.chat.ui.components.getCursorInsideTag
+import com.ilustris.sagai.features.saga.chat.ui.components.insertExpressiveTag
+import com.ilustris.sagai.features.saga.chat.ui.components.processInputChange
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
@@ -307,13 +332,18 @@ private fun epilogueInputBorderRotation(isReplying: Boolean): Float {
     return rotation
 }
 
+private const val EPILOGUE_MAX_CONTENT_LENGTH = 2000
+
 /**
  * Deliberately mirrors [com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView]'s
  * container styling (dropShadow + gradient border + rounded surface, matching the active genre
- * theme, rotating sweep gradient while a reply streams in) and its send-button loading treatment,
- * but stripped down to what an epilogue chat actually needs: no expressive tags, no @mention/wiki
- * lookup, no character switcher — just the protagonist's avatar (this is the player's own
- * character speaking, not the one being chatted with), a text field, and a send button.
+ * theme, rotating sweep gradient while a reply streams in), its send-button loading treatment,
+ * and — since the character's replies already use `<action>`/`<think>`/`<narrator>` tags — its
+ * expressive-tag input system, so the player isn't the only one in the conversation without them.
+ * Everything else from ChatInputView is deliberately left out: no @mention/wiki lookup (there are
+ * no wikis here and only one other character, already the one being talked to), no audio, no
+ * typo-fix, no editing, and no character switcher — the avatar is always the protagonist, full
+ * stop, so there's nothing to lock down.
  */
 @Composable
 private fun EpilogueChatInput(
@@ -322,8 +352,16 @@ private fun EpilogueChatInput(
     isReplying: Boolean,
     onSend: (String) -> Unit,
 ) {
-    var text by remember { mutableStateOf("") }
+    var inputField by remember { mutableStateOf(TextFieldValue("")) }
+    var speechModeSheet by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(inputField.text.length) {
+        scrollState.scrollTo(scrollState.maxValue)
+    }
+
     val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
     val inputBrush =
         Brush.horizontalGradient(
             if (isReplying) morphingGradient() else themeBrushColors(),
@@ -341,6 +379,47 @@ private fun EpilogueChatInput(
             color = MaterialTheme.colorScheme.onBackground,
             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
         )
+    val tagBg = MaterialTheme.colorScheme.background
+    val thinkTagSurface = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
+    val textColor = textStyle.color
+
+    val tagMarkerLabels =
+        mapOf(
+            "action" to stringResource(R.string.sender_type_action_title),
+            "think" to stringResource(R.string.sender_type_thought_title),
+            "narrator" to stringResource(R.string.sender_type_narrator_title),
+        )
+
+    val visualTransformation =
+        remember(tagBg, textColor, tagMarkerLabels, thinkTagSurface) {
+            VisualTransformation { text ->
+                transformTextWithContent(
+                    mainCharacter = null,
+                    characters = emptyList(),
+                    wiki = emptyList(),
+                    text = text.text,
+                    genreColor = resolvedColor,
+                    tagBackgroundColor = tagBg,
+                    textColor = textColor,
+                    headerFont = null,
+                    bodyFont = null,
+                    tagMarkerLabels = tagMarkerLabels,
+                    thinkTagSurfaceColor = thinkTagSurface,
+                    annotateMentions = false,
+                )
+            }
+        }
+
+    val currentTagInside =
+        remember(inputField.text, inputField.selection) {
+            getCursorInsideTag(inputField.text, inputField.selection.start)
+        }
+
+    fun sendMessage() {
+        val finalized = finalizeInputForSend(inputField)
+        onSend(finalized.text)
+        inputField = TextFieldValue("")
+    }
 
     Column(
         modifier =
@@ -376,6 +455,39 @@ private fun EpilogueChatInput(
                 }.border(1.dp, inputBrush, inputShape)
                 .background(MaterialTheme.colorScheme.background, inputShape),
     ) {
+        AnimatedVisibility(currentTagInside != null) {
+            currentTagInside?.let { tag ->
+                SenderType.senderForTag(tag)?.let { senderType ->
+                    Row(
+                        Modifier
+                            .alpha(.7f)
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        senderType.icon()?.let {
+                            Icon(
+                                painterResource(it),
+                                null,
+                                modifier = Modifier.size(12.dp),
+                                tint = resolvedIconColor,
+                            )
+                        }
+                        Text(
+                            stringResource(R.string.tag_inside_hint, senderType.title()),
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = resolvedIconColor,
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                ),
+                        )
+                    }
+                }
+            }
+        }
+
         Column(
             modifier =
                 Modifier
@@ -385,31 +497,58 @@ private fun EpilogueChatInput(
                     .fillMaxWidth()
                     .padding(8.dp),
         ) {
+            val isImeVisible = WindowInsets.isImeVisible
+            val activeSpeechMode = currentTagInside?.let { SenderType.senderForTag(it) } ?: SenderType.CHARACTER
+
             BasicTextField(
-                value = text,
-                onValueChange = { text = it },
+                inputField,
                 enabled = !isReplying,
-                maxLines = 4,
-                textStyle = textStyle,
-                cursorBrush = resolvedColor.solidGradient(),
-                decorationBox = { inner ->
-                    Box(Modifier.padding(8.dp), contentAlignment = Alignment.CenterStart) {
-                        if (text.isEmpty()) {
-                            Text(
-                                stringResource(R.string.epilogue_chat_input_placeholder),
-                                style = textStyle,
-                                modifier = Modifier.alpha(.5f).fillMaxWidth(),
-                                maxLines = 1,
-                            )
-                        }
-                        inner()
+                maxLines = if (!isImeVisible) 1 else Int.MAX_VALUE,
+                onValueChange = { newValue ->
+                    processInputChange(inputField, newValue, EPILOGUE_MAX_CONTENT_LENGTH)?.let {
+                        inputField = it
                     }
                 },
+                textStyle = textStyle,
+                visualTransformation = visualTransformation,
+                cursorBrush = resolvedColor.solidGradient(),
+                decorationBox = { inner ->
+                    Box(
+                        Modifier.padding(8.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Box {
+                            inner()
+                            if (inputField.text.isEmpty()) {
+                                Text(
+                                    activeSpeechMode.hint(),
+                                    style = textStyle,
+                                    modifier =
+                                        Modifier
+                                            .alpha(.5f)
+                                            .fillMaxWidth(),
+                                    maxLines = 1,
+                                )
+                            }
+                        }
+                    }
+                },
+                keyboardOptions = KeyboardOptions(imeAction = if (currentTagInside != null) ImeAction.Next else ImeAction.Default),
+                keyboardActions =
+                    KeyboardActions(onNext = {
+                        if (currentTagInside != null) {
+                            inputField = escapeCursorFromTagAndClean(inputField)
+                        }
+                    }),
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 40.dp, max = 160.dp),
+                        .heightIn(min = 40.dp, max = 160.dp)
+                        .verticalScroll(scrollState),
             )
+
+            val cleanLength = remember(inputField.text) { getCleanTextLength(inputField.text) }
+            val progress = cleanLength.toFloat() / EPILOGUE_MAX_CONTENT_LENGTH
 
             Row(
                 Modifier
@@ -431,15 +570,62 @@ private fun EpilogueChatInput(
                     )
                 }
 
+                val speechModeChipShape = MaterialTheme.shapes.extraLarge
+                val isInsideTag = currentTagInside != null
+                Row(
+                    modifier =
+                        Modifier
+                            .clip(speechModeChipShape)
+                            .background(
+                                if (isInsideTag) resolvedColor.copy(alpha = .2f) else MaterialTheme.colorScheme.surfaceContainer,
+                            ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .clickable { speechModeSheet = true }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        activeSpeechMode.icon()?.let {
+                            Icon(
+                                painterResource(it),
+                                contentDescription = null,
+                                tint = resolvedColor,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                        Text(activeSpeechMode.title(), style = MaterialTheme.typography.labelSmall)
+                    }
+
+                    AnimatedVisibility(visible = isInsideTag) {
+                        Row(
+                            modifier =
+                                Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.background.copy(alpha = .2f),
+                                        speechModeChipShape,
+                                    ).clickable {
+                                        inputField = escapeCursorFromTagAndClean(inputField)
+                                    }.padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                stringResource(R.string.next),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            )
+                        }
+                    }
+                }
+
                 Spacer(Modifier.weight(1f))
 
-                val canSend = text.isNotBlank() && !isReplying
+                val canSend = inputField.text.isNotBlank() && !isReplying
                 Box(contentAlignment = Alignment.Center) {
                     IconButton(
-                        onClick = {
-                            onSend(text)
-                            text = ""
-                        },
+                        onClick = { sendMessage() },
                         enabled = canSend,
                         colors =
                             IconButtonDefaults.filledIconButtonColors(
@@ -470,10 +656,35 @@ private fun EpilogueChatInput(
                             trackColor = Color.Transparent,
                             strokeWidth = 1.dp,
                         )
+                    } else if (inputField.text.isNotEmpty()) {
+                        CircularProgressIndicator(
+                            progress = { progress.coerceIn(0f, 1f) },
+                            modifier = Modifier.size(32.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            trackColor = Color.Transparent,
+                            strokeWidth = 1.dp,
+                        )
                     }
                 }
             }
         }
+    }
+
+    if (speechModeSheet) {
+        SpeechModeSheet(
+            activeTag = currentTagInside,
+            accentColor = resolvedColor,
+            canInsertTag = currentTagInside == null,
+            onSelectSpeak = {
+                if (currentTagInside != null) {
+                    inputField = escapeCursorFromTagAndClean(inputField)
+                }
+            },
+            onSelectTag = { tag ->
+                inputField = insertExpressiveTag(inputField, tag)
+            },
+            onDismiss = { speechModeSheet = false },
+        )
     }
 }
 

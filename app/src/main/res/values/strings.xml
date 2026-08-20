@@ -21,7 +21,6 @@
     <string name="character_gallery_title">Characters</string>
     <string name="back_button_description">Back</string>
     <string name="epilogue_chat_disclaimer">This conversation won\'t be saved</string>
-    <string name="epilogue_chat_input_placeholder">Say something…</string>
     <string name="send_button_description">Send</string>
     <string name="talk_to_character_again">Talk to %1$s again</string>
     <string name="lets_create_saga">Let\'s create your saga</string>
