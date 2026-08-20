@@ -45,6 +45,9 @@ class EpilogueChatViewModel
         private val _genre = MutableStateFlow<Genre?>(null)
         val genre: StateFlow<Genre?> = _genre.asStateFlow()
 
+        private val _error = MutableStateFlow(false)
+        val error: StateFlow<Boolean> = _error.asStateFlow()
+
         private var saga: SagaContent? = null
         private var arcs: List<CharacterArc> = emptyList()
         private var loadedFor: Pair<Int, Int>? = null
@@ -71,9 +74,14 @@ class EpilogueChatViewModel
                 val opening = epilogueChatUseCase.openConversation(loadedSaga, loadedCharacter, loadedArcs)
                 _isReplying.value = false
 
-                opening?.text?.takeIf { it.isNotBlank() }?.let { openingLine ->
-                    _messages.value = listOf(EpilogueMessage(text = openingLine, isUser = false))
-                }
+                opening
+                    .onSuccess { reply ->
+                        reply?.text?.takeIf { it.isNotBlank() }?.let { openingLine ->
+                            _messages.value = listOf(EpilogueMessage(text = openingLine, isUser = false))
+                        }
+                    }.onFailure {
+                        _error.value = true
+                    }
             }
         }
 
@@ -83,11 +91,12 @@ class EpilogueChatViewModel
             val currentSaga = saga ?: return
             val currentCharacter = _character.value ?: return
 
+            _error.value = false
             _messages.value = _messages.value + EpilogueMessage(text = trimmed, isUser = true)
 
             viewModelScope.launch {
                 _isReplying.value = true
-                val reply =
+                val result =
                     epilogueChatUseCase.reply(
                         saga = currentSaga,
                         character = currentCharacter,
@@ -97,9 +106,14 @@ class EpilogueChatViewModel
                     )
                 _isReplying.value = false
 
-                reply?.text?.takeIf { it.isNotBlank() }?.let { replyText ->
-                    _messages.value = _messages.value + EpilogueMessage(text = replyText, isUser = false)
-                }
+                result
+                    .onSuccess { reply ->
+                        reply?.text?.takeIf { it.isNotBlank() }?.let { replyText ->
+                            _messages.value = _messages.value + EpilogueMessage(text = replyText, isUser = false)
+                        }
+                    }.onFailure {
+                        _error.value = true
+                    }
             }
         }
     }

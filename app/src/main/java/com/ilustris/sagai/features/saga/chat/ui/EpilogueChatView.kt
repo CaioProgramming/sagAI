@@ -71,6 +71,7 @@ fun EpilogueChatView(
     val genre by viewModel.genre.collectAsStateWithLifecycle()
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val isReplying by viewModel.isReplying.collectAsStateWithLifecycle()
+    val hasError by viewModel.error.collectAsStateWithLifecycle()
 
     LaunchedEffect(sagaId, characterId) {
         viewModel.load(sagaId.toIntOrNull() ?: 0, characterId)
@@ -131,6 +132,17 @@ fun EpilogueChatView(
                         ) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp))
                         }
+                    }
+                }
+
+                if (hasError) {
+                    item {
+                        Text(
+                            stringResource(R.string.message_reply_error),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth(),
+                        )
                     }
                 }
             }

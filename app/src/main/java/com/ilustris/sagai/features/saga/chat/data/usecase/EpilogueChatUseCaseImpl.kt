@@ -6,6 +6,8 @@ import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.EpiloguePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -24,7 +26,10 @@ class EpilogueChatUseCaseImpl
             saga: SagaContent,
             character: CharacterContent,
             arcs: List<CharacterArc>,
-        ): EpilogueReply? = generateTurn(saga, character, arcs, conversationSoFar = emptyList(), userMessage = null)
+        ): RequestResult<EpilogueReply?> =
+            executeRequest {
+                generateTurn(saga, character, arcs, conversationSoFar = emptyList(), userMessage = null)
+            }
 
         override suspend fun reply(
             saga: SagaContent,
@@ -32,7 +37,10 @@ class EpilogueChatUseCaseImpl
             arcs: List<CharacterArc>,
             conversationSoFar: List<EpilogueMessage>,
             userMessage: String,
-        ): EpilogueReply? = generateTurn(saga, character, arcs, conversationSoFar, userMessage)
+        ): RequestResult<EpilogueReply?> =
+            executeRequest {
+                generateTurn(saga, character, arcs, conversationSoFar, userMessage)
+            }
 
         private suspend fun generateTurn(
             saga: SagaContent,

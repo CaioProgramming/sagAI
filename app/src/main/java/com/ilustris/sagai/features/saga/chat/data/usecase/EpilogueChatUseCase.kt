@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
+import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -11,13 +12,18 @@ import com.ilustris.sagai.features.saga.chat.data.model.EpilogueReply
  * character after their saga has ended. Deliberately never touches [com.ilustris.sagai.features.saga.chat.datasource.MessageDao]
  * or [com.ilustris.sagai.features.saga.chat.repository.MessageRepository]: nothing generated
  * here is ever persisted.
+ *
+ * Wrapped in [RequestResult] like every other AI call in this codebase (see
+ * [com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCaseImpl]) — a failed blueprint
+ * fetch or generation call must surface as a recoverable error, never an uncaught exception that
+ * crashes the app.
  */
 interface EpilogueChatUseCase {
     suspend fun openConversation(
         saga: SagaContent,
         character: CharacterContent,
         arcs: List<CharacterArc>,
-    ): EpilogueReply?
+    ): RequestResult<EpilogueReply?>
 
     suspend fun reply(
         saga: SagaContent,
@@ -25,5 +31,5 @@ interface EpilogueChatUseCase {
         arcs: List<CharacterArc>,
         conversationSoFar: List<EpilogueMessage>,
         userMessage: String,
-    ): EpilogueReply?
+    ): RequestResult<EpilogueReply?>
 }
