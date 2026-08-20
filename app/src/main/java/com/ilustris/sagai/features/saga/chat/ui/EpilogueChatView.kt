@@ -76,8 +76,8 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
@@ -307,7 +307,7 @@ private fun EpilogueInfoAction() {
             }
         },
     ) {
-        IconButton(onClick = { coroutineScope.launch { tooltipState.show() } }, modifier = Modifier.size(32.dp).padding(8.dp)) {
+        IconButton(onClick = { coroutineScope.launch { tooltipState.show() } }, modifier = Modifier.size(32.dp).padding(2.dp)) {
             Icon(
                 painterResource(R.drawable.ic_temp),
                 contentDescription = stringResource(R.string.epilogue_chat_disclaimer),
@@ -431,7 +431,8 @@ private fun EpilogueChatInput(
                     brush = shadowBrush
                     radius = glowRadiusState.value
                     spread = 10f
-                }).fillMaxWidth()
+                })
+                .fillMaxWidth()
                 .clip(inputShape)
                 .drawWithContent {
                     drawContent()
