@@ -16,6 +16,7 @@ fun Genre.reviewTemplate(): ReviewTemplate =
         Genre.FANTASY, Genre.SHINOBI, Genre.COWBOY, Genre.HORROR -> ReviewTemplate.BOOK
         Genre.CRIME -> ReviewTemplate.CRIME
         Genre.PUNK_ROCK -> ReviewTemplate.COLLAGE
+        Genre.HEROES -> ReviewTemplate.COMIC
         else -> ReviewTemplate.DEFAULT
     }
 

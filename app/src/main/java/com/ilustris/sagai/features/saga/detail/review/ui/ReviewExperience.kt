@@ -35,6 +35,16 @@ sealed class ReviewNavigationStyle {
      * just pulls the view back down. Used by Crime's iMessage-style template.
      */
     data object ChatScroll : ReviewNavigationStyle()
+
+    /**
+     * One comic page instead of a sequence of screens: every page is a frame laid out on a single
+     * board, and a camera flies from frame to frame. It plays through on its own, then settles on
+     * the whole page — from there a tap flies to a frame, a second tap pulls back out, and swipes
+     * walk the reading order. Free pan/zoom was tried first and made the page easy to lose;
+     * snapping the camera to a target keeps every gesture landing somewhere legible. Used by
+     * Heroes.
+     */
+    data object ComicBoard : ReviewNavigationStyle()
 }
 
 sealed class ReviewAction {

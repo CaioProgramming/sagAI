@@ -4,6 +4,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.BookReviewExperience
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.collage.CollageReviewExperience
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicReviewExperience
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CrimeReviewExperience
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalReviewExperience
 
@@ -24,6 +25,7 @@ object ReviewExperienceFactory {
             ReviewTemplate.BOOK -> BookReviewExperience(content)
             ReviewTemplate.CRIME -> CrimeReviewExperience(content)
             ReviewTemplate.COLLAGE -> CollageReviewExperience(content)
+            ReviewTemplate.COMIC -> ComicReviewExperience(content)
             ReviewTemplate.DEFAULT -> DefaultReviewExperience(content)
         }
     }

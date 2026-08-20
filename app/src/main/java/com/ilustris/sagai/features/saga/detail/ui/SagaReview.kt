@@ -69,6 +69,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.StoryProgressIndicator
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.CowboyBurnMarks
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.HorrorPoliceTapeOverlay
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.ShinobiInkBlooms
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicBoardReviewContainer
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalBackground
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalGlitchOverlay
 import com.ilustris.sagai.features.share.domain.model.ShareType
@@ -185,6 +186,17 @@ fun SagaReview(
                     ChatScrollReviewContainer(
                         pages = pages,
                         hasLoadingSlot = hasLoadingSlot,
+                        genre = genre,
+                        onEnsureGeneration = onEnsureGeneration,
+                        onDismiss = onDismiss,
+                        onShare = onShare,
+                        onRegenerate = onRegenerate,
+                    )
+                }
+
+                ReviewNavigationStyle.ComicBoard -> {
+                    ComicBoardReviewContainer(
+                        pages = pages,
                         genre = genre,
                         onEnsureGeneration = onEnsureGeneration,
                         onDismiss = onDismiss,

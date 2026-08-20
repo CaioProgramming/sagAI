@@ -10,4 +10,5 @@ enum class ReviewTemplate {
     BOOK,
     CRIME,
     COLLAGE,
+    COMIC,
 }
