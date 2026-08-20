@@ -26,81 +26,8 @@ private const val IDLE_TREMOR_STEP_MS = 240L
 private const val IDLE_JITTER_FRACTION = 0.14f
 private const val ENTRANCE_SLIDE_PX = 46f
 
-private val STROKE_RING_OFFSETS =
-    listOf(
-        0f to -1f,
-        0.707f to -0.707f,
-        1f to 0f,
-        0.707f to 0.707f,
-        0f to 1f,
-        -0.707f to 0.707f,
-        -1f to 0f,
-        -0.707f to -0.707f,
-    )
-
 /** Black text on light chips, white text on dark ones — used by every colored insert/label across the Collage template. */
 fun Color.readableTextColor() = if (luminance() > 0.5f) Color.Black else Color.White
-
-/**
- * A counter that ticks in discrete steps, for effects that should redraw at the template's
- * stop-motion cadence rather than every frame. Feed it into anything whose drawing reads it (e.g.
- * [imageStroke]'s `jitterFrame`) to make that drawing re-randomise once per step.
- */
-@Composable
-fun rememberStopMotionFrame(stepMs: Long = IDLE_TREMOR_STEP_MS): Int {
-    var frame by remember { mutableIntStateOf(0) }
-    LaunchedEffect(stepMs) {
-        while (true) {
-            delay(stepMs)
-            frame++
-        }
-    }
-    return frame
-}
-
-/**
- * Solid-color outline hugging the content's actual alpha shape (not its bounding box) — stamps
- * [STROKE_RING_OFFSETS] copies offset by [widthPx], flattens each to a flat [color] silhouette via
- * `saveLayer` + `SrcIn`, then draws the real content on top. Same "offset ghost" technique as
- * [com.ilustris.sagai.ui.animations.comicExtrude]'s front-face outline, without the extrusion body
- * or pop animation. Used for the poster's character stroke and, per-sticker, on the Characters page.
- *
- * Pass a ticking [jitterFrame] (see [rememberStopMotionFrame]) with a non-zero [jitterAmountPx] to
- * make the outline tremble in step with the rest of the template: each frame re-rolls a small
- * whole-stroke offset *and* a per-direction thickness wobble, so the edge breathes like a
- * hand-redrawn line instead of sliding around rigidly.
- */
-fun Modifier.imageStroke(
-    color: Color,
-    widthPx: Float,
-    jitterFrame: Int = 0,
-    jitterAmountPx: Float = 0f,
-) = drawWithContent {
-    fun drawGhost(
-        dx: Float,
-        dy: Float,
-    ) {
-        drawIntoCanvas { canvas ->
-            val paint = Paint()
-            canvas.saveLayer(Rect(0f, 0f, size.width, size.height), paint)
-            canvas.translate(dx, dy)
-            drawContent()
-            drawRect(color = color, blendMode = BlendMode.SrcIn)
-            canvas.restore()
-        }
-    }
-
-    val trembles = jitterAmountPx > 0f
-    val random = Random(jitterFrame * 977)
-    val shiftX = if (trembles) (random.nextFloat() - 0.5f) * jitterAmountPx else 0f
-    val shiftY = if (trembles) (random.nextFloat() - 0.5f) * jitterAmountPx else 0f
-
-    STROKE_RING_OFFSETS.forEach { (rx, ry) ->
-        val wobble = if (trembles) 1f + (random.nextFloat() - 0.5f) * 0.4f else 1f
-        drawGhost(rx * widthPx * wobble + shiftX, ry * widthPx * wobble + shiftY)
-    }
-    drawContent()
-}
 
 /**
  * One collage element that jump-cuts through [ASSEMBLY_STEPS] discrete frames ([ASSEMBLY_STEP_MS]

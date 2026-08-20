@@ -50,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -80,6 +81,8 @@ import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttachment
+import com.ilustris.sagai.ui.animations.imageStroke
+import com.ilustris.sagai.ui.animations.rememberStopMotionFrame
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.components.views.HeroMenuAction
@@ -251,6 +254,26 @@ private fun CharacterDetailsLoaded(
                     ) {
                         item {
                             if (characterData.image.isNotBlank() && !imageError) {
+                                // The hero art gets the Punk Rock poster's cutout treatment: an
+                                // outline traced around the segmented subject itself rather than
+                                // its bounding box, which is what lifts the character off the
+                                // scene behind them. The accent is the character's own colour, so
+                                // the halo identifies *this* character instead of restating the
+                                // genre the whole screen is already themed by.
+                                val heroImageModifier =
+                                    Modifier
+                                        .clipToBounds()
+                                        .fillMaxSize()
+                                        .effectForGenre(
+                                            genre = genre,
+                                            progressiveBlurRadius = 160f,
+                                            progressiveBlurRange = 0.6f to 0.98f,
+                                            enableSelectiveHighlight = true,
+                                        )
+                                val strokeWidthPx = with(LocalDensity.current) { 4.dp.toPx() }
+                                val strokeFrame = rememberStopMotionFrame()
+                                val strokeJitterPx = with(LocalDensity.current) { 1.6.dp.toPx() }
+
                                 Box(
                                     contentAlignment = Alignment.Center,
                                     modifier =
@@ -280,15 +303,23 @@ private fun CharacterDetailsLoaded(
                                                         characterData,
                                                     )
                                                 },
-                                        imageModifier =
-                                            Modifier
-                                                .clipToBounds()
-                                                .fillMaxSize()
-                                                .effectForGenre(
-                                                    genre = genre,
-                                                    progressiveBlurRadius = 160f,
-                                                    progressiveBlurRange = 0.6f to 0.98f,
-                                                    enableSelectiveHighlight = true,
+                                        imageModifier = heroImageModifier,
+                                        // Only the cut-out foreground is stroked — the raw photo
+                                        // behind it has no silhouette to trace. The strokes sit
+                                        // innermost so they hug the unblurred subject and the
+                                        // genre effect then washes over outline and art alike.
+                                        foregroundImageModifier =
+                                            heroImageModifier
+                                                .imageStroke(
+                                                    color = adaptiveColor,
+                                                    widthPx = strokeWidthPx,
+                                                    jitterFrame = strokeFrame,
+                                                    jitterAmountPx = strokeJitterPx,
+                                                ).imageStroke(
+                                                    color = characterColor,
+                                                    widthPx = strokeWidthPx * 1.3f,
+                                                    jitterFrame = strokeFrame,
+                                                    jitterAmountPx = strokeJitterPx,
                                                 ),
                                     ) {
                                         Icon(
