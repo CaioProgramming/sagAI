@@ -1,9 +1,18 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.ilustris.sagai.features.saga.chat.ui
 
 import MessageStatus
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -26,16 +35,22 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,8 +59,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,14 +80,21 @@ import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.presentation.EpilogueChatViewModel
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.components.SagaTopBar
+import com.ilustris.sagai.ui.theme.levitate
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeBrushColors
+import com.ilustris.sagai.ui.theme.themePainter
+import kotlinx.coroutines.launch
 
 /**
  * A closed, ephemeral "talk to the character again" epilogue chat. Never reads from or writes to
  * Room — [EpilogueChatViewModel] holds the whole conversation in memory, so it's gone the moment
- * this screen (and its ViewModel) is cleared or the app restarts.
+ * this screen (and its ViewModel) is cleared or the app restarts. Deliberately mirrors
+ * [ChatView]'s visual language (background genre icon, [SagaTopBar], streamed reasoning while
+ * waiting) so this feels like a natural extension of the main chat rather than a bolted-on screen.
  */
 @Composable
 fun EpilogueChatView(
@@ -81,8 +107,10 @@ fun EpilogueChatView(
 ) {
     val character by viewModel.character.collectAsStateWithLifecycle()
     val genre by viewModel.genre.collectAsStateWithLifecycle()
+    val relationshipSubtitle by viewModel.relationshipSubtitle.collectAsStateWithLifecycle()
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val isReplying by viewModel.isReplying.collectAsStateWithLifecycle()
+    val reasoningChunk by viewModel.reasoningChunk.collectAsStateWithLifecycle()
     val hasError by viewModel.error.collectAsStateWithLifecycle()
 
     LaunchedEffect(sagaId, characterId) {
@@ -90,127 +118,156 @@ fun EpilogueChatView(
     }
 
     SagAITheme(genre = genre) {
-        Column(
+        val resolvedGenre = genre ?: Genre.FANTASY
+
+        Box(
             modifier =
                 Modifier
+                    .background(MaterialTheme.colorScheme.background)
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .statusBarsPadding()
+                    .imePadding(),
         ) {
-            EpilogueChatTopBar(
-                characterName = character?.data?.fullName() ?: stringResource(R.string.app_name),
-                onBack = onBack,
+            Icon(
+                themePainter(),
+                null,
+                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                modifier =
+                    Modifier
+                        .size(64.dp)
+                        .align(Alignment.Center),
             )
 
-            EpilogueDisclaimerBanner()
+            Column(Modifier.fillMaxSize()) {
+                SagaTopBar(
+                    title = character?.data?.fullName() ?: stringResource(R.string.app_name),
+                    subtitle = relationshipSubtitle.orEmpty(),
+                    genre = genre,
+                    isLoading = isReplying,
+                    onBackClick = onBack,
+                    modifier = Modifier.fillMaxWidth(),
+                    actionContent = { EpilogueInfoAction() },
+                )
 
-            val listState = rememberLazyListState()
-            LaunchedEffect(messages.size) {
-                if (messages.isNotEmpty()) {
-                    listState.animateScrollToItem(messages.lastIndex)
-                }
-            }
-
-            val resolvedGenre = genre ?: Genre.FANTASY
-
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize().weight(1f),
-                contentPadding = PaddingValues(vertical = 8.dp),
-            ) {
-                items(messages, key = { it.id }) { epilogueMessage ->
-                    val messageContent =
-                        remember(epilogueMessage, character) {
-                            epilogueMessage.toMessageContent(sagaId.toIntOrNull() ?: 0, character?.data)
-                        }
-
-                    ChatBubble(
-                        messageContent = messageContent,
-                        mainCharacter = null,
-                        characters = listOfNotNull(character?.data),
-                        wikis = emptyList(),
-                        genre = resolvedGenre,
-                        flatEvents = emptyList(),
-                        canAnimate = true,
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                    )
-                }
-
-                if (isReplying) {
-                    item {
-                        Row(
-                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                        }
+                val listState = rememberLazyListState()
+                LaunchedEffect(messages.size) {
+                    if (messages.isNotEmpty()) {
+                        listState.animateScrollToItem(messages.lastIndex)
                     }
                 }
 
-                if (hasError) {
-                    item {
-                        Text(
-                            stringResource(R.string.message_reply_error),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth(),
+                LazyColumn(
+                    state = listState,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                ) {
+                    items(messages, key = { it.id }) { epilogueMessage ->
+                        val messageContent =
+                            remember(epilogueMessage, character) {
+                                epilogueMessage.toMessageContent(sagaId.toIntOrNull() ?: 0, character?.data)
+                            }
+
+                        ChatBubble(
+                            messageContent = messageContent,
+                            mainCharacter = null,
+                            characters = listOfNotNull(character?.data),
+                            wikis = emptyList(),
+                            genre = resolvedGenre,
+                            flatEvents = emptyList(),
+                            canAnimate = true,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
                         )
                     }
+
+                    reasoningChunk?.let { chunk ->
+                        item(key = "reasoning") {
+                            AnimatedContent(
+                                chunk,
+                                transitionSpec = {
+                                    fadeIn(tween(1200)) + slideInVertically { it } togetherWith
+                                        fadeOut(tween(1500)) + slideOutVertically { it }
+                                },
+                            ) { text ->
+                                Text(
+                                    text = text,
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            shadow =
+                                                Shadow(
+                                                    MaterialTheme.colorScheme.primary,
+                                                    blurRadius = 5f,
+                                                ),
+                                            fontWeight = FontWeight.Normal,
+                                            brush = Brush.horizontalGradient(morphingGradient()),
+                                        ),
+                                    textAlign = TextAlign.Center,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier =
+                                        Modifier
+                                            .levitate()
+                                            .padding(16.dp)
+                                            .fillMaxWidth()
+                                            .alpha(.5f),
+                                )
+                            }
+                        }
+                    }
+
+                    if (hasError) {
+                        item {
+                            Text(
+                                stringResource(R.string.message_reply_error),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier =
+                                    Modifier
+                                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                                        .fillMaxWidth(),
+                            )
+                        }
+                    }
                 }
+
+                EpilogueChatInput(
+                    character = character?.data,
+                    genre = resolvedGenre,
+                    isReplying = isReplying,
+                    onSend = { viewModel.sendMessage(it) },
+                )
             }
-
-            EpilogueChatInput(
-                character = character?.data,
-                genre = resolvedGenre,
-                isReplying = isReplying,
-                onSend = { viewModel.sendMessage(it) },
-            )
         }
     }
 }
 
+/**
+ * Placeholder icon ([R.drawable.ic_spark]) until a dedicated one is designed — opens a tooltip
+ * explaining the conversation is temporary, replacing the old persistent disclaimer banner.
+ */
 @Composable
-private fun EpilogueChatTopBar(
-    characterName: String,
-    onBack: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+private fun EpilogueInfoAction() {
+    val tooltipState = rememberTooltipState(isPersistent = true)
+    val coroutineScope = rememberCoroutineScope()
+
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        state = tooltipState,
+        tooltip = {
+            PlainTooltip {
+                Text(stringResource(R.string.epilogue_chat_disclaimer))
+            }
+        },
     ) {
-        IconButton(onClick = onBack) {
+        IconButton(onClick = { coroutineScope.launch { tooltipState.show() } }) {
             Icon(
-                painterResource(R.drawable.ic_back_left),
-                contentDescription = stringResource(R.string.back_button_description),
+                painterResource(R.drawable.ic_spark),
+                contentDescription = stringResource(R.string.epilogue_chat_disclaimer),
+                modifier = Modifier.size(20.dp),
             )
         }
-
-        Text(
-            characterName,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(start = 4.dp),
-        )
-    }
-}
-
-@Composable
-private fun EpilogueDisclaimerBanner() {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-                .padding(horizontal = 16.dp, vertical = 6.dp),
-    ) {
-        Text(
-            stringResource(R.string.epilogue_chat_disclaimer),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 

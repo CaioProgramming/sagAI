@@ -36,6 +36,9 @@ object EpiloguePrompts {
      * - [EPILOGUE_CHAT_REPLY_BLUEPRINT] is used for every turn after that, responding to
      *   `latestMessage` in light of `conversationHistory`.
      * - Both must stay consistent with `sagaEndingContext` and `recentCharacterBeats`.
+     * - `protagonistContext` is the player's own character (same shape as `characterContext`'s
+     *   underlying data) — use it to keep references to the protagonist accurate, not to shift
+     *   focus away from the character actually being addressed.
      */
     suspend fun epilogueTurnPrompt(
         promptService: PromptService,
@@ -73,6 +76,10 @@ object EpiloguePrompts {
                 put(
                     "characterContext",
                     CharacterPrompts.sceneCharacterContext(character, arcs, saga.mainCharacter),
+                )
+                put(
+                    "protagonistContext",
+                    saga.mainCharacter?.data?.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS).orEmpty(),
                 )
                 put("recentCharacterBeats", recentCharacterBeats)
                 put(

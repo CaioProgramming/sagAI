@@ -2,17 +2,21 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.EpiloguePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
-import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.EpilogueMessage
 import com.ilustris.sagai.features.saga.chat.data.model.EpilogueReply
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class EpilogueChatUseCaseImpl
@@ -21,51 +25,67 @@ class EpilogueChatUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
     ) : EpilogueChatUseCase {
-        override suspend fun openConversation(
+        override fun openConversation(
             saga: SagaContent,
             character: CharacterContent,
             arcs: List<CharacterArc>,
-        ): RequestResult<EpilogueReply?> =
-            executeRequest {
-                generateTurn(saga, character, arcs, conversationSoFar = emptyList(), userMessage = null)
-            }
+        ): Flow<StreamingState<EpilogueReply?>> =
+            generateTurn(saga, character, arcs, conversationSoFar = emptyList(), userMessage = null)
 
-        override suspend fun reply(
+        override fun reply(
             saga: SagaContent,
             character: CharacterContent,
             arcs: List<CharacterArc>,
             conversationSoFar: List<EpilogueMessage>,
             userMessage: String,
-        ): RequestResult<EpilogueReply?> =
-            executeRequest {
-                generateTurn(saga, character, arcs, conversationSoFar, userMessage)
-            }
+        ): Flow<StreamingState<EpilogueReply?>> = generateTurn(saga, character, arcs, conversationSoFar, userMessage)
 
-        private suspend fun generateTurn(
+        private fun generateTurn(
             saga: SagaContent,
             character: CharacterContent,
             arcs: List<CharacterArc>,
             conversationSoFar: List<EpilogueMessage>,
             userMessage: String?,
-        ): EpilogueReply? {
-            val prompt =
-                EpiloguePrompts.epilogueTurnPrompt(
-                    promptService = promptService,
-                    saga = saga,
-                    character = character,
-                    arcs = arcs,
-                    conversationSoFar = conversationSoFar,
-                    userMessage = userMessage,
-                )
+        ): Flow<StreamingState<EpilogueReply?>> =
+            flow {
+                try {
+                    val prompt =
+                        EpiloguePrompts.epilogueTurnPrompt(
+                            promptService = promptService,
+                            saga = saga,
+                            character = character,
+                            arcs = arcs,
+                            conversationSoFar = conversationSoFar,
+                            userMessage = userMessage,
+                        )
 
-            return gemmaClient.generate<EpilogueReply>(
-                promptSplit =
-                    prompt.mergeInstructions(
-                        genreConfigService.conversationInstructions(saga.data.genre),
-                    ),
-                userInteraction = true,
-                requirement = ModelRequirement.MEDIUM,
-            )
-        }
+                    val generateStream =
+                        gemmaClient.generateStreaming<EpilogueReply>(
+                            promptSplit =
+                                prompt.mergeInstructions(
+                                    genreConfigService.conversationInstructions(saga.data.genre),
+                                ),
+                            userInteraction = true,
+                            requirement = ModelRequirement.HIGH,
+                        )
+
+                    emitAll(
+                        reasoningSynthesizerService.synthesizeReasoning(
+                            generateStream,
+                            context = "Reconnecting with ${character.data.fullName()} after their story ended",
+                            genre = saga.data.genre,
+                        ),
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    emit(
+                        StreamingState.Error(
+                            message = e.message ?: "Unknown error",
+                            throwable = e,
+                        ),
+                    )
+                }
+            }
     }

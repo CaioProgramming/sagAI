@@ -2,16 +2,19 @@ package com.ilustris.sagai.features.saga.chat.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.EpilogueMessage
+import com.ilustris.sagai.features.saga.chat.data.model.EpilogueReply
 import com.ilustris.sagai.features.saga.chat.data.usecase.EpilogueChatUseCase
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,11 +43,17 @@ class EpilogueChatViewModel
         private val _isReplying = MutableStateFlow(false)
         val isReplying: StateFlow<Boolean> = _isReplying.asStateFlow()
 
+        private val _reasoningChunk = MutableStateFlow<String?>(null)
+        val reasoningChunk: StateFlow<String?> = _reasoningChunk.asStateFlow()
+
         private val _character = MutableStateFlow<CharacterContent?>(null)
         val character: StateFlow<CharacterContent?> = _character.asStateFlow()
 
         private val _genre = MutableStateFlow<Genre?>(null)
         val genre: StateFlow<Genre?> = _genre.asStateFlow()
+
+        private val _relationshipSubtitle = MutableStateFlow<String?>(null)
+        val relationshipSubtitle: StateFlow<String?> = _relationshipSubtitle.asStateFlow()
 
         private val _error = MutableStateFlow(false)
         val error: StateFlow<Boolean> = _error.asStateFlow()
@@ -71,13 +80,7 @@ class EpilogueChatViewModel
             loadedFor = key
 
             loadJob?.cancel()
-            _messages.value = emptyList()
-            _error.value = false
-            _isReplying.value = false
-            _character.value = null
-            _genre.value = null
-            saga = null
-            arcs = emptyList()
+            resetState()
 
             loadJob =
                 viewModelScope.launch {
@@ -89,20 +92,27 @@ class EpilogueChatViewModel
                     arcs = loadedArcs
                     _character.value = loadedCharacter
                     _genre.value = loadedSaga.data.genre
+                    _relationshipSubtitle.value =
+                        loadedSaga.mainCharacter
+                            ?.data
+                            ?.id
+                            ?.let { protagonistId -> loadedCharacter.findRelationship(protagonistId) }
+                            ?.let { relation -> "${relation.data.emoji} ${relation.data.title}".trim() }
 
-                    _isReplying.value = true
-                    val opening = epilogueChatUseCase.openConversation(loadedSaga, loadedCharacter, loadedArcs)
-                    _isReplying.value = false
-
-                    opening
-                        .onSuccess { reply ->
-                            reply?.text?.takeIf { it.isNotBlank() }?.let { openingLine ->
-                                _messages.value = listOf(EpilogueMessage(text = openingLine, isUser = false))
-                            }
-                        }.onFailure {
-                            _error.value = true
-                        }
+                    collectTurn(epilogueChatUseCase.openConversation(loadedSaga, loadedCharacter, loadedArcs))
                 }
+        }
+
+        private fun resetState() {
+            _messages.value = emptyList()
+            _error.value = false
+            _isReplying.value = false
+            _reasoningChunk.value = null
+            _character.value = null
+            _genre.value = null
+            _relationshipSubtitle.value = null
+            saga = null
+            arcs = emptyList()
         }
 
         fun sendMessage(text: String) {
@@ -115,25 +125,44 @@ class EpilogueChatViewModel
             _messages.value = _messages.value + EpilogueMessage(text = trimmed, isUser = true)
 
             viewModelScope.launch {
-                _isReplying.value = true
-                val result =
+                collectTurn(
                     epilogueChatUseCase.reply(
                         saga = currentSaga,
                         character = currentCharacter,
                         arcs = arcs,
                         conversationSoFar = _messages.value,
                         userMessage = trimmed,
-                    )
-                _isReplying.value = false
+                    ),
+                )
+            }
+        }
 
-                result
-                    .onSuccess { reply ->
-                        reply?.text?.takeIf { it.isNotBlank() }?.let { replyText ->
+        private suspend fun collectTurn(turnFlow: Flow<StreamingState<EpilogueReply?>>) {
+            _isReplying.value = true
+            _reasoningChunk.value = null
+
+            turnFlow.collect { state ->
+                when (state) {
+                    is StreamingState.Reasoning -> {
+                        _reasoningChunk.value = state.chunk
+                    }
+
+                    is StreamingState.Success -> {
+                        _isReplying.value = false
+                        _reasoningChunk.value = null
+                        state.data?.text?.takeIf { it.isNotBlank() }?.let { replyText ->
                             _messages.value = _messages.value + EpilogueMessage(text = replyText, isUser = false)
                         }
-                    }.onFailure {
-                        _error.value = true
                     }
+
+                    is StreamingState.Error -> {
+                        _isReplying.value = false
+                        _reasoningChunk.value = null
+                        if (!state.isFlowCancellation()) {
+                            _error.value = true
+                        }
+                    }
+                }
             }
         }
     }
