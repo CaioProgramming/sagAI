@@ -11,6 +11,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.EpilogueMessage
 import com.ilustris.sagai.features.saga.chat.data.usecase.EpilogueChatUseCase
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,7 +52,16 @@ class EpilogueChatViewModel
         private var saga: SagaContent? = null
         private var arcs: List<CharacterArc> = emptyList()
         private var loadedFor: Pair<Int, Int>? = null
+        private var loadJob: Job? = null
 
+        /**
+         * Nav3 can reuse this screen's backstack entry (and this ViewModel instance) across
+         * different characters — e.g. going back to the roster and picking someone else doesn't
+         * guarantee a fresh ViewModel. Any change in [sagaId]/[characterId] must fully wipe the
+         * previous conversation before loading the new one, and cancel any still-running load so
+         * a slow response for the old character can't land after the reset and show up under the
+         * new one's name.
+         */
         fun load(
             sagaId: Int,
             characterId: Int,
@@ -60,29 +70,39 @@ class EpilogueChatViewModel
             if (loadedFor == key) return
             loadedFor = key
 
-            viewModelScope.launch {
-                val loadedSaga = sagaRepository.getSagaById(sagaId).first() ?: return@launch
-                val loadedCharacter = characterUseCase.getCharacterContent(characterId).first() ?: return@launch
-                val loadedArcs = characterUseCase.getCharacterArcs(characterId).first()
+            loadJob?.cancel()
+            _messages.value = emptyList()
+            _error.value = false
+            _isReplying.value = false
+            _character.value = null
+            _genre.value = null
+            saga = null
+            arcs = emptyList()
 
-                saga = loadedSaga
-                arcs = loadedArcs
-                _character.value = loadedCharacter
-                _genre.value = loadedSaga.data.genre
+            loadJob =
+                viewModelScope.launch {
+                    val loadedSaga = sagaRepository.getSagaById(sagaId).first() ?: return@launch
+                    val loadedCharacter = characterUseCase.getCharacterContent(characterId).first() ?: return@launch
+                    val loadedArcs = characterUseCase.getCharacterArcs(characterId).first()
 
-                _isReplying.value = true
-                val opening = epilogueChatUseCase.openConversation(loadedSaga, loadedCharacter, loadedArcs)
-                _isReplying.value = false
+                    saga = loadedSaga
+                    arcs = loadedArcs
+                    _character.value = loadedCharacter
+                    _genre.value = loadedSaga.data.genre
 
-                opening
-                    .onSuccess { reply ->
-                        reply?.text?.takeIf { it.isNotBlank() }?.let { openingLine ->
-                            _messages.value = listOf(EpilogueMessage(text = openingLine, isUser = false))
+                    _isReplying.value = true
+                    val opening = epilogueChatUseCase.openConversation(loadedSaga, loadedCharacter, loadedArcs)
+                    _isReplying.value = false
+
+                    opening
+                        .onSuccess { reply ->
+                            reply?.text?.takeIf { it.isNotBlank() }?.let { openingLine ->
+                                _messages.value = listOf(EpilogueMessage(text = openingLine, isUser = false))
+                            }
+                        }.onFailure {
+                            _error.value = true
                         }
-                    }.onFailure {
-                        _error.value = true
-                    }
-            }
+                }
         }
 
         fun sendMessage(text: String) {

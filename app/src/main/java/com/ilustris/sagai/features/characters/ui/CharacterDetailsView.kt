@@ -536,7 +536,7 @@ private fun CharacterDetailsLoaded(
                             }
                         }
 
-                        if (sagaInfo.isEnded) {
+                        if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
                             item {
                                 Button(
                                     onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },

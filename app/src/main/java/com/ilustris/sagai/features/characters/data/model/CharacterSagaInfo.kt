@@ -14,12 +14,22 @@ data class CharacterSagaInfo(
     val title: String = "",
     val icon: String = "",
     val isEnded: Boolean = false,
+    val mainCharacterId: Int? = null,
 ) {
     /**
      * Creates a minimal [Saga] instance for backward-compatible APIs that still require the full type.
      * Only the projected fields carry real data; all other fields use their defaults.
      */
-    fun toSaga() = Saga(id = id, genre = genre, variationId = variationId, title = title, icon = icon, isEnded = isEnded)
+    fun toSaga() =
+        Saga(
+            id = id,
+            genre = genre,
+            variationId = variationId,
+            title = title,
+            icon = icon,
+            isEnded = isEnded,
+            mainCharacterId = mainCharacterId,
+        )
 
     fun toSagaInfo() =
         com.ilustris.sagai.features.home.data.model.SagaInfo(

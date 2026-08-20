@@ -3,14 +3,18 @@ package com.ilustris.sagai.features.saga.chat.ui
 import MessageStatus
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -19,14 +23,13 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +39,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -44,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.fullName
+import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.EpilogueMessage
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -52,6 +61,9 @@ import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.presentation.EpilogueChatViewModel
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.sagaShape
+import com.ilustris.sagai.ui.theme.solidGradient
+import com.ilustris.sagai.ui.theme.themeBrushColors
 
 /**
  * A closed, ephemeral "talk to the character again" epilogue chat. Never reads from or writes to
@@ -148,7 +160,9 @@ fun EpilogueChatView(
             }
 
             EpilogueChatInput(
-                enabled = !isReplying,
+                character = character?.data,
+                genre = resolvedGenre,
+                isReplying = isReplying,
                 onSend = { viewModel.sendMessage(it) },
             )
         }
@@ -200,44 +214,143 @@ private fun EpilogueDisclaimerBanner() {
     }
 }
 
+/**
+ * Deliberately mirrors [com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView]'s
+ * container styling (dropShadow + gradient border + rounded surface, matching the active genre
+ * theme) and its send-button loading treatment, but stripped down to what an epilogue chat
+ * actually needs: no expressive tags, no @mention/wiki lookup, no character switcher — just the
+ * character avatar, a text field, and a send button.
+ */
 @Composable
 private fun EpilogueChatInput(
-    enabled: Boolean,
+    character: Character?,
+    genre: Genre,
+    isReplying: Boolean,
     onSend: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .imePadding()
-                .padding(8.dp),
-    ) {
-        OutlinedTextField(
-            value = text,
-            onValueChange = { text = it },
-            enabled = enabled,
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(24.dp),
-            placeholder = { Text(stringResource(R.string.epilogue_chat_input_placeholder)) },
-            colors = OutlinedTextFieldDefaults.colors(),
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val inputBrush = Brush.horizontalGradient(themeBrushColors())
+    val inputShape = sagaShape()
+    val glowRadiusState = animateFloatAsState(if (isReplying) 25f else 10f, label = "epilogueInputGlow")
+    val textStyle =
+        MaterialTheme.typography.labelMedium.copy(
+            color = MaterialTheme.colorScheme.onBackground,
+            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
         )
 
-        IconButton(
-            enabled = enabled && text.isNotBlank(),
-            onClick = {
-                onSend(text)
-                text = ""
-            },
-            colors = IconButtonDefaults.iconButtonColors(),
+    Column(
+        modifier =
+            Modifier
+                .padding(16.dp)
+                .navigationBarsPadding()
+                .imePadding()
+                .dropShadow(inputShape, {
+                    brush = inputBrush
+                    radius = glowRadiusState.value
+                    spread = 10f
+                }).fillMaxWidth()
+                .clip(inputShape)
+                .border(1.dp, inputBrush, inputShape)
+                .background(MaterialTheme.colorScheme.background, inputShape),
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .padding(4.dp)
+                    .clip(inputShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f), inputShape)
+                    .fillMaxWidth()
+                    .padding(8.dp),
         ) {
-            Icon(
-                painterResource(R.drawable.ic_send),
-                contentDescription = stringResource(R.string.send_button_description),
+            BasicTextField(
+                value = text,
+                onValueChange = { text = it },
+                enabled = !isReplying,
+                maxLines = 4,
+                textStyle = textStyle,
+                cursorBrush = resolvedColor.solidGradient(),
+                decorationBox = { inner ->
+                    Box(Modifier.padding(8.dp), contentAlignment = Alignment.CenterStart) {
+                        if (text.isEmpty()) {
+                            Text(
+                                stringResource(R.string.epilogue_chat_input_placeholder),
+                                style = textStyle,
+                                modifier = Modifier.alpha(.5f).fillMaxWidth(),
+                                maxLines = 1,
+                            )
+                        }
+                        inner()
+                    }
+                },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 40.dp, max = 160.dp),
             )
+
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                character?.let {
+                    CharacterAvatar(
+                        it,
+                        genre = genre,
+                        grainRadius = 0f,
+                        pixelation = 0f,
+                        useFallback = false,
+                        modifier = Modifier.size(32.dp).clip(CircleShape),
+                        borderSize = 1.dp,
+                        innerPadding = 0.dp,
+                    )
+                }
+
+                Spacer(Modifier.weight(1f))
+
+                val canSend = text.isNotBlank() && !isReplying
+                Box(contentAlignment = Alignment.Center) {
+                    IconButton(
+                        onClick = {
+                            onSend(text)
+                            text = ""
+                        },
+                        enabled = canSend,
+                        colors =
+                            IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(4.dp)
+                                .size(32.dp),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_send),
+                            contentDescription = stringResource(R.string.send_button_description),
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .fillMaxSize(),
+                        )
+                    }
+
+                    if (isReplying) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            trackColor = Color.Transparent,
+                            strokeWidth = 1.dp,
+                        )
+                    }
+                }
+            }
         }
     }
 }
