@@ -28,6 +28,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -104,6 +106,7 @@ fun CharacterDetailsView(
     characterId: Int? = null,
     onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
+    onOpenEpilogueChat: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
@@ -132,6 +135,7 @@ fun CharacterDetailsView(
                     it,
                     onBack = onBack,
                     onOpenCharacterBrain = onOpenCharacterBrain,
+                    onOpenEpilogueChat = onOpenEpilogueChat,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
@@ -149,6 +153,7 @@ fun CharacterDetailsContent(
     detailData: CharacterDetailData,
     onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
+    onOpenEpilogueChat: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
     openEvent: (Timeline?) -> Unit = {},
@@ -161,6 +166,7 @@ fun CharacterDetailsContent(
         openEvent = openEvent,
         onBack = onBack,
         onOpenCharacterBrain = onOpenCharacterBrain,
+        onOpenEpilogueChat = onOpenEpilogueChat,
         viewModel = viewModel,
         imagePalette = imagePalette,
         sharedTransitionScope = sharedTransitionScope,
@@ -187,6 +193,7 @@ private fun CharacterDetailsLoaded(
     viewModel: CharacterDetailsViewModel,
     onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
+    onOpenEpilogueChat: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
     imagePalette: ImagePalette? = null,
@@ -524,6 +531,30 @@ private fun CharacterDetailsLoaded(
                                     CharacterDetailText(
                                         text = characterData.profile.personality,
                                         contentColor = adaptiveTextColor,
+                                    )
+                                }
+                            }
+                        }
+
+                        if (sagaInfo.isEnded) {
+                            item {
+                                Button(
+                                    onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },
+                                    colors =
+                                        ButtonDefaults.buttonColors(
+                                            containerColor = characterColor,
+                                            contentColor = adaptiveColor,
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                                            .fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        stringResource(
+                                            R.string.talk_to_character_again,
+                                            characterData.name,
+                                        ),
                                     )
                                 }
                             }
