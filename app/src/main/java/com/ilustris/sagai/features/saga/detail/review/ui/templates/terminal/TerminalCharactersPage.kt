@@ -6,22 +6,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
-import com.ilustris.sagai.features.saga.detail.review.ui.PopIn
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
@@ -54,39 +53,87 @@ class TerminalCharactersPage(
                 Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(
-                    text = "${content.terminalHost()}:~$ ls ./characters --top ${topCharacters.size}",
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = accent,
-                    style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
+                TerminalTypewriter(
+                    lines =
+                        buildList {
+                            add(
+                                terminalPromptLine(
+                                    host = content.terminalHost(),
+                                    command =
+                                        stage.content?.title
+                                            ?: "ls ./characters --top ${topCharacters.size}",
+                                    accent = accent,
+                                ),
+                            )
+                            stage.content?.subtitle?.let {
+                                add(
+                                    TerminalLine(
+                                        text = "# $it",
+                                        style =
+                                            MaterialTheme.typography.bodySmall.copy(
+                                                fontFamily = FontFamily.Monospace,
+                                                color = normal,
+                                            ),
+                                        alpha = .6f,
+                                    ),
+                                )
+                            }
+                        },
+                    canAnimate = canAnimate,
+                    caretColor = accent,
                 )
 
-                stage.content?.subtitle?.let {
-                    Text(
-                        text = "# $it",
-                        fontFamily = FontFamily.Monospace,
-                        color = normal.copy(alpha = 0.6f),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-
-                topCharacters.forEachIndexed { index, (character, messageCount) ->
-                    val characterColor = character.terminalColor(accent)
-                    PopIn(index = index) {
-                        Text(
-                            text =
-                                "%02d  %-24s %s".format(
-                                    index + 1,
-                                    character.name.take(24),
-                                    stringResource(R.string.messages_count_label, messageCount),
-                                ),
-                            fontFamily = FontFamily.Monospace,
-                            color = characterColor,
-                            style = MaterialTheme.typography.bodyMedium.neonGlow(characterColor, blurRadius = 8f),
-                        )
+                // The portraits are dealt out and then collected, the same gesture the archive
+                // page makes with the chapter covers — the roster resolving into one dossier.
+                topCharacters
+                    .mapNotNull { (character, _) ->
+                        character.image.takeIf { it.isNotBlank() }?.let { character to it }
                     }
-                }
+                    // Dealt least-important first, so the lead lands last and ends up on top of
+                    // the finished pile — the order the eye reads the stack in reverse.
+                    .reversed()
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { portraits ->
+                        GatheringPlates(
+                            items = portraits,
+                            canAnimate = canAnimate,
+                            seed = portraits.size + 7,
+                            plateSize = 110.dp,
+                            areaHeight = 210.dp,
+                        ) { (character, image), _ ->
+                            Box(Modifier.fillMaxSize().plateFrame(character.terminalColor(accent))) {
+                                AsyncImage(
+                                    model = image,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+                        }
+                    }
+
+                TerminalTypewriter(
+                    lines =
+                        topCharacters.mapIndexed { index, (character, messageCount) ->
+                            val characterColor = character.terminalColor(accent)
+                            TerminalLine(
+                                text =
+                                    "%02d  %-24s %s".format(
+                                        index + 1,
+                                        character.name.take(24),
+                                        stringResource(R.string.messages_count_label, messageCount),
+                                    ),
+                                style =
+                                    MaterialTheme.typography.bodyMedium
+                                        .copy(
+                                            fontFamily = FontFamily.Monospace,
+                                            color = characterColor,
+                                        ).neonGlow(characterColor, blurRadius = 8f),
+                            )
+                        },
+                    canAnimate = canAnimate,
+                    caretColor = accent,
+                )
             }
         }
     }

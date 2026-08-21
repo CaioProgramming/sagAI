@@ -65,6 +65,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
@@ -90,6 +91,7 @@ import com.ilustris.sagai.ui.animations.ricePaper
 import com.ilustris.sagai.ui.animations.scanLines
 import com.ilustris.sagai.ui.animations.spaceVoyage
 import com.ilustris.sagai.ui.animations.vhs
+import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 
 const val SAGA_THEME_TRANSITION_MS = 500
@@ -210,6 +212,7 @@ fun Modifier.themeVfx(isPlaying: Boolean = true): Modifier {
 fun Modifier.reviewVfx(isPlaying: Boolean = true): Modifier {
     if (isPlaying.not()) return this
     val genre = LocalSagaGenre.current
+
     return when (genre) {
         Genre.FANTASY, Genre.COWBOY -> {
             Modifier.grunge()
@@ -223,12 +226,12 @@ fun Modifier.reviewVfx(isPlaying: Boolean = true): Modifier {
 
         Genre.SPACE_OPERA -> {
             Modifier
-                .scanLines(color = MaterialTheme.colorScheme.primary.copy(alpha = .2f))
+                .glitch(glitchFrequency = 0.02f)
                 .chromaticAberration(intensity = .05f, blurRadius = 10f)
         }
 
         Genre.SHINOBI -> {
-            Modifier.grunge().ricePaper()
+            Modifier.ricePaper()
         }
 
         else -> {
@@ -244,6 +247,16 @@ fun Modifier.themeFilter(
 ): Modifier {
     val genre = LocalSagaGenre.current
     return this.effectForGenre(genre, useFallBack = useFallback, enableSelectiveHighlight = selectiveHighlight)
+}
+
+@Composable
+fun themeStylizedText(
+    text: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = MaterialTheme.typography.displayMedium.fontSize,
+) {
+    val currentGenre = LocalSagaGenre.current ?: return
+    currentGenre.stylisedText(text, modifier, fontSize)
 }
 
 private val themeColorAnimationSpec =

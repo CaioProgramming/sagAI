@@ -7,8 +7,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewNavigationStyle
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.saga.detail.review.ui.coverImageSource
-import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSource
-import com.ilustris.sagai.features.saga.detail.review.ui.topCharacterImageSource
+import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSources
 
 /**
  * Cyberpunk and Space Opera's shared SagaReview template: monospace text typed line by line over
@@ -34,7 +33,7 @@ class TerminalReviewExperience(
                 val introHook = review.introduction?.hook
 
                 if (coverImage != null) {
-                    add(TerminalBootPage(content, coverImage, introHook))
+                    add(TerminalBootPage(content, coverImage, introHook, content.data))
                 } else {
                     introHook?.let { add(TerminalTextPage(content, it, ReviewPageType.INTRO, "boot")) }
                 }
@@ -47,20 +46,17 @@ class TerminalReviewExperience(
                     stage.hook?.let {
                         add(TerminalTextPage(content, it, ReviewPageType.EXPRESSIVENESS, "analyze"))
                     }
-                    add(TerminalEmotionScanPage(content))
-                    stage.content?.let {
-                        add(TerminalTextPage(content, it, ReviewPageType.EXPRESSIVENESS, "report"))
-                    }
+                    add(TerminalEmotionScanPage(content, stage.content))
                 }
 
                 review.playstyle?.let { stage ->
                     stage.hook?.let {
                         add(TerminalTextPage(content, it, ReviewPageType.PLAYSTYLE, "trace"))
                     }
-                    add(TerminalUptimePage(content))
-                    stage.content?.let {
-                        add(TerminalTextPage(content, it, ReviewPageType.PLAYSTYLE, "report"))
-                    }
+                    // The content rides the counter rather than getting a screen of its own: the
+                    // prose is *about* the figure, and printing it beside the number is the whole
+                    // reason the number is there.
+                    add(TerminalUptimePage(content, stage.content))
                 }
 
                 review.topCharacters?.let { stage ->
@@ -70,30 +66,27 @@ class TerminalReviewExperience(
                     add(TerminalCharactersPage(content, stage))
                 }
 
-                content.topCharacterImageSource()?.let {
-                    add(TerminalDecodePage(content, it, "decrypt", ReviewPageType.CHARACTERS))
-                }
-
                 review.actsInsight?.let { stage ->
                     stage.hook?.let {
                         add(TerminalTextPage(content, it, ReviewPageType.JOURNEY, "history"))
                     }
-                    stage.content?.let {
-                        add(TerminalTextPage(content, it, ReviewPageType.JOURNEY, "log"))
+
+                    // The recap prints under the gathering itself. Splitting them left a page of
+                    // text about pictures and a page of pictures with nothing said about them.
+                    val plates = content.notableChapterImageSources(limit = 6)
+                    if (plates.isNotEmpty()) {
+                        add(TerminalArchivePage(content, plates, stage.content))
+                    } else {
+                        stage.content?.let {
+                            add(TerminalTextPage(content, it, ReviewPageType.JOURNEY, "log"))
+                        }
                     }
                 }
 
-                content.notableChapterImageSource()?.let {
-                    add(TerminalDecodePage(content, it, "render", ReviewPageType.JOURNEY))
-                }
-
-                review.conclusion?.let { stage ->
-                    stage.hook?.let {
-                        add(TerminalTextPage(content, it, ReviewPageType.CONCLUSION, "shutdown"))
-                    }
-                    stage.content?.let {
-                        add(TerminalTextPage(content, it, ReviewPageType.CONCLUSION, "log"))
-                    }
+                // Only the hook stands alone here — the send-off's own words belong on the last
+                // screen, where the log is being closed, not on a page before it.
+                review.conclusion?.hook?.let {
+                    add(TerminalTextPage(content, it, ReviewPageType.CONCLUSION, "shutdown"))
                 }
 
                 review.farewells
@@ -101,7 +94,7 @@ class TerminalReviewExperience(
                     ?.let { add(TerminalFarewellsPage(content, it)) }
 
                 if (review.isComplete()) {
-                    add(TerminalSummaryPage(content))
+                    add(TerminalSummaryPage(content, review.conclusion?.content))
                 }
             }
         }

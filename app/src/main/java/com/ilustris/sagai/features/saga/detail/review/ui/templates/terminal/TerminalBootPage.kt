@@ -4,10 +4,14 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,18 +27,23 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewImageSource
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.themeStylizedText
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -47,6 +56,7 @@ class TerminalBootPage(
     override val content: SagaContent,
     private val image: ReviewImageSource,
     private val hook: ReviewText?,
+    private val saga: Saga,
 ) : ReviewPage {
     override val pageType: ReviewPageType = ReviewPageType.INTRO
 
@@ -58,103 +68,85 @@ class TerminalBootPage(
     ) {
         val accent = MaterialTheme.colorScheme.primary
         val normal = MaterialTheme.colorScheme.onBackground
-        val reveal = remember { Animatable(if (canAnimate) 0f else 1f) }
-        var titleTyped by remember { mutableStateOf(!canAnimate || hook?.title == null) }
 
-        LaunchedEffect(image.url) {
-            if (canAnimate) {
-                reveal.snapTo(0f)
-                reveal.animateTo(1f, tween(1800, easing = LinearEasing))
-            }
+        // The boot text runs first and the picture decodes only once it has finished. A machine
+        // announces what it is loading before the thing appears; running both at once made the
+        // reveal something that merely happened to coincide with the words.
+        var booted by remember(hook) { mutableStateOf(!canAnimate) }
+        val reveal = remember { Animatable(if (canAnimate) 0f else 1f) }
+
+        LaunchedEffect(booted, image.url) {
+            if (!booted) return@LaunchedEffect
+            reveal.snapTo(0f)
+            reveal.animateTo(1f, tween(2000, easing = LinearEasing))
         }
 
         Box(modifier.fillMaxSize()) {
-            AsyncImage(
-                model = image.url,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val revealY = size.height * reveal.value
-
-                var y = 0f
-                while (y < revealY) {
-                    drawLine(
-                        color = Color.Black.copy(alpha = 0.08f),
-                        start = Offset(0f, y),
-                        end = Offset(size.width, y),
-                        strokeWidth = 1f,
-                    )
-                    y += 4f
-                }
-
-                drawRect(
-                    color = Color.Black,
-                    topLeft = Offset(0f, revealY),
-                    size = Size(size.width, (size.height - revealY).coerceAtLeast(0f)),
-                )
-
-                if (reveal.value < 1f) {
-                    drawRect(
-                        color = accent.copy(alpha = 0.5f),
-                        topLeft = Offset(0f, revealY - 1f),
-                        size = Size(size.width, 2f),
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .blockDecode(
+                        progress = reveal.value,
+                        edgeColor = accent.copy(alpha = 0.3f),
+                        seed = image.url.hashCode(),
+                    ),
+            ) {
+                DepthLayout(image.url) {
+                    themeStylizedText(
+                        saga.title,
+                        modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(32.dp),
                     )
                 }
 
-                drawRect(
-                    brush =
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f)),
-                            startY = size.height * 0.4f,
-                            endY = size.height,
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f)),
+                                startY = 0.4f,
+                            ),
                         ),
                 )
             }
 
             Column(
                 Modifier
+                    .background(fadeGradientBottom())
+                    .fillMaxWidth()
                     .align(Alignment.BottomStart)
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(
-                    text = "${content.terminalHost()}:~$ boot",
-                    fontWeight = FontWeight.Bold,
-                    color = accent,
-                    style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
+                TerminalTypewriter(
+                    lines =
+                        buildList {
+                            add(
+                                terminalPromptLine(
+                                    host = content.terminalHost(),
+                                    command = hook?.title ?: "boot",
+                                    accent = accent,
+                                ),
+                            )
+                            hook?.subtitle?.let {
+                                add(
+                                    TerminalLine(
+                                        text = it,
+                                        style =
+                                            MaterialTheme.typography.bodyLarge.copy(
+                                                fontFamily = FontFamily.Monospace,
+                                                color = normal,
+                                            ),
+                                    ),
+                                )
+                            }
+                        },
+                    canAnimate = canAnimate,
+                    caretColor = accent,
+                    onFinished = { booted = true },
                 )
 
-                hook?.title?.let {
-                    SimpleTypewriterText(
-                        text = "> $it",
-                        style =
-                            MaterialTheme.typography.titleLarge
-                                .copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = accent,
-                                ).neonGlow(accent),
-                        isAnimated = canAnimate,
-                        duration = 900.milliseconds,
-                        onAnimationFinished = { titleTyped = true },
-                    )
-                }
-
-                if (titleTyped) {
-                    hook?.subtitle?.let {
-                        SimpleTypewriterText(
-                            text = it,
-                            style =
-                                MaterialTheme.typography.bodyLarge.copy(
-                                    color = normal,
-                                ),
-                            isAnimated = canAnimate,
-                            duration = 1200.milliseconds,
-                        )
-                    }
-                }
+                Spacer(Modifier.height(100.dp))
             }
         }
     }

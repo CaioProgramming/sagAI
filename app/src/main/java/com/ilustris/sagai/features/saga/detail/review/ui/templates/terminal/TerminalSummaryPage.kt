@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
@@ -26,6 +27,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 /** `cat summary.log` — a command menu that can jump back to any stage. */
 class TerminalSummaryPage(
     override val content: SagaContent,
+    private val conclusion: ReviewText? = null,
     override val pageType: ReviewPageType = ReviewPageType.SUMMARY,
 ) : ReviewPage {
     @Composable
@@ -48,17 +50,56 @@ class TerminalSummaryPage(
                 )
             }
 
+        // Terminal selection instead of a ripple — see TerminalSelectionIndication for why the
+        // Material affordance is the one thing that breaks the fiction here.
+        val selection = remember(accent) { terminalSelection(accent) }
+
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
             Column(
                 Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    text = "${content.terminalHost()}:~$ cat ${stringResource(R.string.review_summary_title).lowercase()}.log",
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = accent,
-                    style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
+                // The send-off's own words open the log rather than occupying a screen before it.
+                conclusion?.let { text ->
+                    TerminalTypewriter(
+                        lines =
+                            buildList {
+                                text.title?.let {
+                                    add(
+                                        TerminalLine(
+                                            text = "> $it",
+                                            style =
+                                                MaterialTheme.typography.titleMedium.copy(
+                                                    fontFamily = FontFamily.Monospace,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = accent,
+                                                ).neonGlow(accent),
+                                        ),
+                                    )
+                                }
+                                text.subtitle?.let {
+                                    add(
+                                        TerminalLine(
+                                            text = it,
+                                            style =
+                                                MaterialTheme.typography.bodyMedium.copy(
+                                                    fontFamily = FontFamily.Monospace,
+                                                ),
+                                            alpha = .75f,
+                                        ),
+                                    )
+                                }
+                            },
+                        canAnimate = canAnimate,
+                        modifier = Modifier.padding(bottom = 12.dp),
+                    )
+                }
+
+                TerminalCommandLine(
+                    host = content.terminalHost(),
+                    command = "cat ${stringResource(R.string.review_summary_title).lowercase()}.log",
+                    accent = accent,
+                    style = MaterialTheme.typography.bodyLarge,
                 )
 
                 entries.forEach { stage ->
@@ -69,7 +110,7 @@ class TerminalSummaryPage(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier =
                             Modifier
-                                .clickable { onAction(ReviewAction.Navigate(stage)) }
+                                .terminalClickable(selection) { onAction(ReviewAction.Navigate(stage)) }
                                 .padding(vertical = 4.dp),
                     )
                 }
@@ -82,7 +123,7 @@ class TerminalSummaryPage(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier =
                         Modifier
-                            .clickable { onAction(ReviewAction.Restart) }
+                            .terminalClickable(selection) { onAction(ReviewAction.Restart) }
                             .padding(vertical = 4.dp),
                 )
 
@@ -94,7 +135,7 @@ class TerminalSummaryPage(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier =
                             Modifier
-                                .clickable { onAction(ReviewAction.Regenerate) }
+                                .terminalClickable(selection) { onAction(ReviewAction.Regenerate) }
                                 .padding(vertical = 4.dp),
                     )
                 }

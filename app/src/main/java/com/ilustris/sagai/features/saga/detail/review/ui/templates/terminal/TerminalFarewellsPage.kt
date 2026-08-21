@@ -61,32 +61,33 @@ class TerminalFarewellsPage(
                 Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Text(
-                    text = "${content.terminalHost()}:~$ tail ./farewells.log",
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = accent,
-                    style = MaterialTheme.typography.bodyLarge.neonGlow(accent),
+                TerminalTypewriter(
+                    lines =
+                        buildList {
+                            add(
+                                terminalPromptLine(
+                                    host = content.terminalHost(),
+                                    command = "tail ./farewells.log",
+                                    accent = accent,
+                                ),
+                            )
+                            speakers.forEach { (name, message, color) ->
+                                add(
+                                    TerminalLine(
+                                        text = "> $name: $message",
+                                        style =
+                                            MaterialTheme.typography.bodyLarge
+                                                .copy(
+                                                    fontFamily = FontFamily.Monospace,
+                                                    color = color,
+                                                ).neonGlow(color, blurRadius = 8f),
+                                    ),
+                                )
+                            }
+                        },
+                    canAnimate = canAnimate,
+                    caretColor = accent,
                 )
-
-                speakers.forEachIndexed { index, (name, message, color) ->
-                    if (index <= revealedCount) {
-                        SimpleTypewriterText(
-                            text = "> $name: $message",
-                            style =
-                                MaterialTheme.typography.bodyLarge
-                                    .copy(
-                                        fontFamily = FontFamily.Monospace,
-                                        color = color,
-                                    ).neonGlow(color, blurRadius = 8f),
-                            isAnimated = canAnimate && index == revealedCount,
-                            duration = 1200.milliseconds,
-                            onAnimationFinished = {
-                                if (index == revealedCount) revealedCount++
-                            },
-                        )
-                    }
-                }
             }
         }
     }

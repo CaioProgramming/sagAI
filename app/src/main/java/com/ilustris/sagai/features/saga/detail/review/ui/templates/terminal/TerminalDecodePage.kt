@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,12 +17,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -61,55 +56,34 @@ class TerminalDecodePage(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(
-                    text = "${content.terminalHost()}:~$ $command ${image.caption}.img",
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = accent,
-                    style = MaterialTheme.typography.bodyMedium.neonGlow(accent),
+                TerminalTypewriter(
+                    lines =
+                        listOf(
+                            terminalPromptLine(
+                                host = content.terminalHost(),
+                                command = "$command ${image.caption}.img",
+                                accent = accent,
+                                style = MaterialTheme.typography.bodyMedium,
+                            ),
+                        ),
+                    canAnimate = canAnimate,
+                    caretColor = accent,
                 )
 
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(0.8f),
-                ) {
-                    AsyncImage(
-                        model = image.url,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        val revealY = size.height * reveal.value
-
-                        var y = 0f
-                        while (y < revealY) {
-                            drawLine(
-                                color = Color.Black.copy(alpha = 0.08f),
-                                start = Offset(0f, y),
-                                end = Offset(size.width, y),
-                                strokeWidth = 1f,
-                            )
-                            y += 4f
-                        }
-
-                        drawRect(
-                            color = Color.Black,
-                            topLeft = Offset(0f, revealY),
-                            size = Size(size.width, (size.height - revealY).coerceAtLeast(0f)),
-                        )
-
-                        if (reveal.value < 1f) {
-                            drawRect(
-                                color = accent.copy(alpha = 0.5f),
-                                topLeft = Offset(0f, revealY - 1f),
-                                size = Size(size.width, 2f),
-                            )
-                        }
-                    }
-                }
+                AsyncImage(
+                    model = image.url,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(0.8f)
+                            .blockDecode(
+                                progress = reveal.value,
+                                edgeColor = accent.copy(alpha = 0.35f),
+                                seed = image.url.hashCode(),
+                            ),
+                )
 
                 val filledBars = (reveal.value * 20).toInt()
                 Text(

@@ -72,6 +72,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.ShinobiI
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicBoardReviewContainer
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalBackground
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalGlitchOverlay
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalProgress
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.animations.AutoScrollLazyColumn
@@ -82,17 +83,18 @@ import com.ilustris.sagai.ui.animations.grunge
 import com.ilustris.sagai.ui.animations.inkBleed
 import com.ilustris.sagai.ui.animations.ricePaper
 import com.ilustris.sagai.ui.animations.vhs
+import com.ilustris.sagai.ui.theme.filters.crtScreen
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.rememberVectorShape
-import com.ilustris.sagai.ui.theme.reviewVfx
 import com.ilustris.sagai.ui.theme.themeFilter
 import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
 import com.ilustris.sagai.ui.theme.themeVfx
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.seconds
@@ -155,6 +157,7 @@ fun SagaReview(
                         onDismiss = onDismiss,
                         onShare = onShare,
                         onRegenerate = onRegenerate,
+                        onPageTurn = viewModel::playPageTurn,
                     )
                 }
 
@@ -399,6 +402,7 @@ private fun TerminalReviewContainer(
     onDismiss: () -> Unit,
     onShare: (ShareType) -> Unit,
     onRegenerate: () -> Unit,
+    onPageTurn: () -> Unit = {},
 ) {
     val coroutineScope = rememberCoroutineScope()
     val pageCount = pages.size + if (hasLoadingSlot) 1 else 0
@@ -409,6 +413,14 @@ private fun TerminalReviewContainer(
         if (hasLoadingSlot && pagerState.currentPage >= (pages.size - 1).coerceAtLeast(0)) {
             onEnsureGeneration()
         }
+    }
+
+    // Skips the page the reader lands on, so opening the review doesn't fire the same sound the
+    // screen transition into it already played.
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }
+            .drop(1)
+            .collect { onPageTurn() }
     }
 
     suspend fun handleAction(action: ReviewAction) {
@@ -449,7 +461,10 @@ private fun TerminalReviewContainer(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().themeFilter()) {
+    // The whole screen goes through the tube rather than wearing a glitch filter: curvature has to
+    // resample the content, so it can only come from a shader wrapping everything, and it is the
+    // curvature — not the scanlines — that makes the eye read this as a physical display.
+    Box(modifier = Modifier.fillMaxSize().crtScreen()) {
         if (pagerState.currentPage < pages.size) {
             pages
                 .getOrNull(pagerState.currentPage)
@@ -469,8 +484,12 @@ private fun TerminalReviewContainer(
                 if (isLoadingPage) {
                     ReviewLoadingIcon()
                 } else if (pagerState.currentPage == pageIndex) {
+                    // No per-page genre VFX here: the tube around the whole container already
+                    // supplies misconvergence and roll, and a glitch pass on top of it fights the
+                    // CRT instead of adding to it — two different displays claiming the same
+                    // screen. The tube is the terminal's one screen treatment.
                     pages.getOrNull(pageIndex)?.Show(
-                        modifier = Modifier.fillMaxSize().reviewVfx(),
+                        modifier = Modifier.fillMaxSize(),
                         canAnimate = true,
                     ) {
                         coroutineScope.launch { handleAction(it) }
@@ -481,43 +500,25 @@ private fun TerminalReviewContainer(
 
         ReviewSkipButton(genre) { advanceOrFinish() }
 
-        StoryProgressIndicator(
-            progress = (pagerState.currentPage + 1).toFloat() / pageCount.toFloat(),
+        // Progress drawn out of characters rather than as a Material track: a rounded tweened bar
+        // is the most modern object that could appear on this screen, and it belongs to a design
+        // language that postdates everything else here.
+        TerminalProgress(
+            current = pagerState.currentPage + 1,
+            total = pageCount,
             color = MaterialTheme.colorScheme.primary,
             modifier =
                 Modifier
                     .align(Alignment.TopCenter)
                     .statusBarsPadding()
-                    .padding(32.dp)
-                    .fillMaxWidth(),
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 56.dp),
         )
 
-        Row(
-            modifier =
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TextButton(onClick = { onShare(ShareType.REVIEW_ACTIVITY) }) {
-                Text(
-                    "[ ${stringResource(R.string.share)} ]",
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                )
-            }
-
-            TextButton(onClick = { advanceOrFinish() }) {
-                Text(
-                    "[ ${stringResource(R.string.next)}_ ]",
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
+        // Glitch is Cyberpunk's own corruption, not the terminal's. Space Opera's panel is a
+        // working console; tearing its signal would be telling a different story about it.
+        if (genre == Genre.CYBERPUNK) {
+            TerminalGlitchOverlay(Modifier.fillMaxSize())
         }
     }
 }

@@ -82,6 +82,7 @@ import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
+import com.ilustris.sagai.ui.theme.filters.genreCrtScreen
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -481,7 +482,7 @@ fun sagaHeaderComponent(
                             progressiveBlurRadius = 160f,
                             progressiveBlurRange = 0.6f to 0.98f,
                             enableSelectiveHighlight = true,
-                        ),
+                        ).genreCrtScreen(genre),
                 contentScale = ContentScale.Crop,
             )
 

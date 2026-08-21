@@ -38,9 +38,16 @@ private const val STOP_MOTION_STEP_MS = 240L
  * `jitterFrame`) to make that drawing re-randomise once per step.
  */
 @Composable
-fun rememberStopMotionFrame(stepMs: Long = STOP_MOTION_STEP_MS): Int {
+fun rememberStopMotionFrame(
+    stepMs: Long = STOP_MOTION_STEP_MS,
+    isActive: Boolean = true,
+): Int {
+    // [isActive] is a condition inside the effect rather than a branch around the remember slots:
+    // callers that only sometimes need a tick must still allocate the same state every time, or
+    // the composition rebuilds underneath them when the flag flips.
     var frame by remember { mutableIntStateOf(0) }
-    LaunchedEffect(stepMs) {
+    LaunchedEffect(stepMs, isActive) {
+        if (!isActive) return@LaunchedEffect
         while (true) {
             delay(stepMs)
             frame++

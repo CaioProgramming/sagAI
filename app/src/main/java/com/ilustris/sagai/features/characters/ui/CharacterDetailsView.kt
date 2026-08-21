@@ -75,6 +75,7 @@ import com.ilustris.sagai.features.characters.ui.components.CharacterDetailText
 import com.ilustris.sagai.features.characters.ui.components.CharacterKnowledgeList
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.share.domain.model.ShareType
@@ -94,6 +95,7 @@ import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
+import com.ilustris.sagai.ui.theme.filters.genreCrtScreen
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
@@ -270,8 +272,14 @@ private fun CharacterDetailsLoaded(
                                             progressiveBlurRange = 0.6f to 0.98f,
                                             enableSelectiveHighlight = true,
                                         )
+                                        // Space Opera's portraits arrive as if read off a console
+                                        // panel. No-ops for every other genre, which keep theirs.
+                                        .genreCrtScreen(genre)
                                 val strokeWidthPx = with(LocalDensity.current) { 4.dp.toPx() }
-                                val strokeFrame = rememberStopMotionFrame()
+                                // Only ticks for the genre that draws a trembling outline; the
+                                // rest would be paying a redraw every 240ms for nothing.
+                                val strokeFrame =
+                                    rememberStopMotionFrame(isActive = genre == Genre.PUNK_ROCK)
                                 val strokeJitterPx = with(LocalDensity.current) { 1.6.dp.toPx() }
 
                                 Box(
@@ -304,23 +312,31 @@ private fun CharacterDetailsLoaded(
                                                     )
                                                 },
                                         imageModifier = heroImageModifier,
-                                        // Only the cut-out foreground is stroked — the raw photo
+                                        // Punk Rock only. The trembling hand-cut outline is that
+                                        // template's own signature — every other genre keeps the
+                                        // plain portrait it had before.
+                                        //
+                                        // Only the cut-out foreground is stroked: the raw photo
                                         // behind it has no silhouette to trace. The strokes sit
                                         // innermost so they hug the unblurred subject and the
                                         // genre effect then washes over outline and art alike.
                                         foregroundImageModifier =
-                                            heroImageModifier
-                                                .imageStroke(
-                                                    color = adaptiveColor,
-                                                    widthPx = strokeWidthPx,
-                                                    jitterFrame = strokeFrame,
-                                                    jitterAmountPx = strokeJitterPx,
-                                                ).imageStroke(
-                                                    color = characterColor,
-                                                    widthPx = strokeWidthPx * 1.3f,
-                                                    jitterFrame = strokeFrame,
-                                                    jitterAmountPx = strokeJitterPx,
-                                                ),
+                                            if (genre == Genre.PUNK_ROCK) {
+                                                heroImageModifier
+                                                    .imageStroke(
+                                                        color = adaptiveColor,
+                                                        widthPx = strokeWidthPx,
+                                                        jitterFrame = strokeFrame,
+                                                        jitterAmountPx = strokeJitterPx,
+                                                    ).imageStroke(
+                                                        color = characterColor,
+                                                        widthPx = strokeWidthPx * 1.3f,
+                                                        jitterFrame = strokeFrame,
+                                                        jitterAmountPx = strokeJitterPx,
+                                                    )
+                                            } else {
+                                                heroImageModifier
+                                            },
                                     ) {
                                         Icon(
                                             themePainter(),
