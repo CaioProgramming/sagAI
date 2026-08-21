@@ -18,12 +18,10 @@ import com.ilustris.sagai.features.saga.detail.review.ui.reviewTemplate
  * indicator inside [content] when a skin has taken over that job; see
  * [com.ilustris.sagai.features.saga.milestone.ui.MilestoneClosureContent]'s `stepIndicator` slot.
  *
- * Only [ReviewTemplate.TERMINAL] has a skin so far (this phase's job is proving the pattern end to
- * end for Cyberpunk/Space Opera). Every other template — [ReviewTemplate.BOOK],
- * [ReviewTemplate.COMIC], [ReviewTemplate.COLLAGE], [ReviewTemplate.CRIME], and
- * [ReviewTemplate.DEFAULT] (including a null [genre]) — falls straight through to [content]
- * unmodified. That fallthrough is deliberate: a later phase gives each of those its own skin, this
- * one is not a half-built version of them.
+ * Every [ReviewTemplate] now has a matching skin — [TerminalMilestoneSkin], [BookMilestoneSkin],
+ * [CollageMilestoneSkin], [ComicMilestoneSkin], [CrimeMilestoneSkin] — except
+ * [ReviewTemplate.DEFAULT] (and a null [genre]), which falls straight through to [content]
+ * unmodified, matching how the review feature itself leaves ungrouped genres unstyled.
  */
 @Composable
 fun MilestoneSkinChrome(
@@ -33,15 +31,56 @@ fun MilestoneSkinChrome(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    if (genre != null && genre.reviewTemplate() == ReviewTemplate.TERMINAL) {
-        TerminalMilestoneSkin(
-            genre = genre,
-            stepIndex = stepIndex,
-            stepTotal = stepTotal,
-            modifier = modifier,
-            content = content,
-        )
-    } else {
+    if (genre == null) {
         content()
+        return
+    }
+    when (genre.reviewTemplate()) {
+        ReviewTemplate.TERMINAL ->
+            TerminalMilestoneSkin(
+                genre = genre,
+                stepIndex = stepIndex,
+                stepTotal = stepTotal,
+                modifier = modifier,
+                content = content,
+            )
+
+        ReviewTemplate.BOOK ->
+            BookMilestoneSkin(
+                genre = genre,
+                stepIndex = stepIndex,
+                stepTotal = stepTotal,
+                modifier = modifier,
+                content = content,
+            )
+
+        ReviewTemplate.COLLAGE ->
+            CollageMilestoneSkin(
+                genre = genre,
+                stepIndex = stepIndex,
+                stepTotal = stepTotal,
+                modifier = modifier,
+                content = content,
+            )
+
+        ReviewTemplate.COMIC ->
+            ComicMilestoneSkin(
+                genre = genre,
+                stepIndex = stepIndex,
+                stepTotal = stepTotal,
+                modifier = modifier,
+                content = content,
+            )
+
+        ReviewTemplate.CRIME ->
+            CrimeMilestoneSkin(
+                genre = genre,
+                stepIndex = stepIndex,
+                stepTotal = stepTotal,
+                modifier = modifier,
+                content = content,
+            )
+
+        ReviewTemplate.DEFAULT -> content()
     }
 }
