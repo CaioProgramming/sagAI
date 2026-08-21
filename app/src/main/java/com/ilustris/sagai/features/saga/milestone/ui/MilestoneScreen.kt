@@ -68,8 +68,11 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
+import com.ilustris.sagai.features.saga.detail.review.ui.ReviewTemplate
+import com.ilustris.sagai.features.saga.detail.review.ui.reviewTemplate
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneViewModel
+import com.ilustris.sagai.features.saga.milestone.ui.skin.MilestoneSkinChrome
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.navigation.SagaActsKey
@@ -134,21 +137,41 @@ fun MilestoneScreen(
                 }
 
                 is MilestoneUiState.ClosureStep -> {
-                    MilestoneClosureContent(
-                        state = state,
-                        sagaId = sagaId,
+                    // The terminal skin draws its own char-cell progress bar as chrome, pinned
+                    // over the same spot this Column would otherwise reserve for the plain dot
+                    // one — so that dot indicator has to stay out of the way here, not render
+                    // underneath it. Every other genre keeps today's inline StepIndicator.
+                    val isTerminalSkin = genre?.reviewTemplate() == ReviewTemplate.TERMINAL
+                    val stepIndicator: @Composable () -> Unit =
+                        if (isTerminalSkin) {
+                            {}
+                        } else {
+                            { StepIndicator(stepIndex = state.stepIndex, stepTotal = state.stepTotal) }
+                        }
+                    MilestoneSkinChrome(
                         genre = genre,
-                        coverImage = chapterCoverImage,
-                        actCoverImages = actChapterCovers,
-                        bookGenerationState = bookGenerationState,
-                        onContinue = viewModel::onContinue,
-                        onNavigate = onNavigate,
-                        onGenerateBook = viewModel::generateBook,
-                    )
+                        stepIndex = state.stepIndex,
+                        stepTotal = state.stepTotal,
+                    ) {
+                        MilestoneClosureContent(
+                            state = state,
+                            sagaId = sagaId,
+                            genre = genre,
+                            coverImage = chapterCoverImage,
+                            actCoverImages = actChapterCovers,
+                            bookGenerationState = bookGenerationState,
+                            onContinue = viewModel::onContinue,
+                            onNavigate = onNavigate,
+                            onGenerateBook = viewModel::generateBook,
+                            stepIndicator = stepIndicator,
+                        )
+                    }
                 }
 
                 is MilestoneUiState.IntroductionStep -> {
-                    MilestoneIntroductionContent(milestone = state.milestone, onContinue = viewModel::onContinue)
+                    MilestoneSkinChrome(genre = genre, stepIndex = null, stepTotal = null) {
+                        MilestoneIntroductionContent(milestone = state.milestone, onContinue = viewModel::onContinue)
+                    }
                 }
             }
         }
@@ -280,6 +303,14 @@ internal fun MilestoneClosureContent(
     bookGenerationState: BookGenerationUiState = BookGenerationUiState.Idle,
     onNavigate: (NavKey) -> Unit = {},
     onGenerateBook: (Act) -> Unit = {},
+    // A slot rather than a hardcoded call so a genre skin (see MilestoneSkinChrome) can swap in
+    // its own step indicator — e.g. Terminal's char-cell TerminalProgress, rendered as chrome
+    // above this whole composable — without this layout needing to know that skin exists. Left at
+    // today's plain dot indicator by default so every caller that doesn't opt into a skin (design
+    // preview included) renders exactly as before.
+    stepIndicator: @Composable () -> Unit = {
+        StepIndicator(stepIndex = state.stepIndex, stepTotal = state.stepTotal)
+    },
 ) {
     val milestone = state.milestone
     Column(
@@ -290,7 +321,7 @@ internal fun MilestoneClosureContent(
                 .padding(horizontal = 32.dp, vertical = 24.dp),
     ) {
         if (state.stepTotal > 1) {
-            StepIndicator(stepIndex = state.stepIndex, stepTotal = state.stepTotal)
+            stepIndicator()
         }
 
         // Reset (and re-fire) per milestone instance — event -> chapter -> act each get their
