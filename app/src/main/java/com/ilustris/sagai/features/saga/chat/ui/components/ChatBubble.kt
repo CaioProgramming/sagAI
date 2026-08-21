@@ -82,7 +82,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupPositionProvider
 import androidx.constraintlayout.compose.ConstrainedLayoutReference
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintLayoutScope
@@ -158,6 +157,7 @@ private data class BubbleBlock(
  * Wraps one bubble block in its genre decorations. Extracted so the multi-block loop doesn't have
  * to repeat the ConstraintLayout/Box branching inline.
  */
+
 /**
  * One block's decoration + shape wrapper. Deliberately has no [TooltipBox] of its own — an earlier
  * version put one per block, and since every block shared the same [TooltipState], tapping an
@@ -252,7 +252,11 @@ fun ChatBubble(
         }
     val sender = message.senderType
     val resolvedColor =
-        if (genre == Genre.HEROES) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.primary
+        // Heroes previously read colorScheme.background here, which is pure black in dark mode —
+        // darkened further for the character-bubble fill (BubbleStyle.characterBubble) that came
+        // out black-on-black against the page. surfaceContainerHighest is a genre-independent
+        // Material3 tonal surface that always renders as a visible mid-gray in dark mode.
+        if (genre == Genre.HEROES) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.primary
     val resolvedIconColor =
         if (genre == Genre.HEROES) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
     val isUser = messageContent.isUser(mainCharacter?.data)
