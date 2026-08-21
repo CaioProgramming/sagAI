@@ -41,7 +41,6 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.filters.ultimateEnergyShader
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.lighter
 import kotlin.random.Random
