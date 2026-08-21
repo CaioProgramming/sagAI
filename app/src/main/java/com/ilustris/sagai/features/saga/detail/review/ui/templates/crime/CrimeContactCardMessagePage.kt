@@ -26,7 +26,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -124,32 +123,12 @@ class CrimeContactCardMessagePage(
                         HorizontalDivider(color = ink.copy(alpha = 0.15f))
 
                         topCharacters.forEach { (character, messageCount) ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                CharacterAvatar(
-                                    character,
-                                    genre = genre,
-                                    modifier = Modifier.size(36.dp),
-                                )
-
-                                Text(
-                                    text = "${character.name} ${character.lastName.orEmpty()}".trim(),
-                                    color = ink,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f),
-                                )
-
-                                Text(
-                                    text = stringResource(R.string.messages_count_label, messageCount),
-                                    fontStyle = FontStyle.Italic,
-                                    color = ink.copy(alpha = 0.6f),
-                                    style = MaterialTheme.typography.labelSmall,
-                                )
-                            }
+                            CrimeContactRow(
+                                character = character,
+                                genre = genre,
+                                subtitle = stringResource(R.string.messages_count_label, messageCount),
+                                ink = ink,
+                            )
                         }
                     }
                 }

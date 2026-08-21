@@ -136,9 +136,9 @@ class ComicCastMemberPanel(
 }
 
 @Composable
-private fun CastPortrait(
+fun CastPortrait(
     character: Character,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     Box(
         modifier

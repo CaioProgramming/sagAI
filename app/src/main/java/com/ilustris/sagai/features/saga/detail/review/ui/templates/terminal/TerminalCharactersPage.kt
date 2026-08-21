@@ -10,11 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -101,14 +99,10 @@ class TerminalCharactersPage(
                             plateSize = 110.dp,
                             areaHeight = 210.dp,
                         ) { (character, image), _ ->
-                            Box(Modifier.fillMaxSize().plateFrame(character.terminalColor(accent))) {
-                                AsyncImage(
-                                    model = image,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            }
+                            TerminalPortraitPlate(
+                                imageUrl = image,
+                                accentColor = character.terminalColor(accent),
+                            )
                         }
                     }
 
