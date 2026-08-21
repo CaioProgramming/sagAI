@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.chat.data.manager
 
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -256,7 +257,7 @@ class NarrativeActionExecutorImpl
         ) = executeRequest {
             val saga = environment.getSagaMetadata() ?: error("Saga not available")
             environment.dismissMilestone()
-            var generated: GeneratedContent<Chapter>? = null
+            var generated: GeneratedContentWithLore<Chapter>? = null
             chapterUseCase.synthesizeChapterEvolutionStream(chapter.data.id).collect { state ->
                 when (state) {
                     is StreamingState.Reasoning -> {
@@ -324,7 +325,7 @@ class NarrativeActionExecutorImpl
                 error("Timeline already completed")
             } else {
                 environment.dismissMilestone()
-                var generated: GeneratedContent<Timeline>? = null
+                var generated: GeneratedContentWithLore<Timeline>? = null
                 timelineUseCase.generateFullLoreUpdateStream(saga, timeline.data).collect { state ->
                     when (state) {
                         is StreamingState.Reasoning -> {
@@ -365,7 +366,7 @@ class NarrativeActionExecutorImpl
             val saga = environment.getSagaMetadata() ?: error("Saga not available")
             Timber.d("updating act(${currentAct.data.id})")
             if (environment.isDebugMode()) {
-                GeneratedContent(
+                GeneratedContentWithLore(
                     Act(
                         id = currentAct.data.id,
                         title = "Updated Act ${saga.acts.size}",
@@ -376,7 +377,7 @@ class NarrativeActionExecutorImpl
                 )
             } else {
                 environment.dismissMilestone()
-                var generated: GeneratedContent<Act>? = null
+                var generated: GeneratedContentWithLore<Act>? = null
                 val fullSaga = environment.getSagaContent() ?: error("Saga content not available")
                 actUseCase.synthesizeActEvolutionStream(fullSaga, currentAct).collect { state ->
                     when (state) {

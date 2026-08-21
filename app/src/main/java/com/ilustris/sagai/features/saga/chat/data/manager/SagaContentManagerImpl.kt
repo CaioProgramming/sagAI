@@ -6,6 +6,7 @@ import androidx.room.withTransaction
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
@@ -1206,7 +1207,7 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeAction.EvolveTimeline -> {
-                    val generatedContent = resultValue as? GeneratedContent<Timeline>
+                    val generatedContent = resultValue as? GeneratedContentWithLore<Timeline>
                     val timeline = generatedContent?.data ?: resultValue as? Timeline
                     val message = generatedContent?.finalMessage
                     timeline?.let { t ->
@@ -1230,6 +1231,8 @@ class SagaContentManagerImpl
                                     emotionalMascot = mascotIcon,
                                     messageText = message,
                                     sagaContent = fullSaga,
+                                    characters = generatedContent?.characters ?: emptyList(),
+                                    wikis = generatedContent?.wikis ?: emptyList(),
                                 ),
                             )
                         }
@@ -1237,22 +1240,37 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeAction.GenerateChapter -> {
-                    val generatedContent = resultValue as? GeneratedContent<Chapter>
+                    val generatedContent = resultValue as? GeneratedContentWithLore<Chapter>
                     val chapter = generatedContent?.data ?: resultValue as? Chapter
                     val message = generatedContent?.finalMessage
                     chapter?.let { c ->
                         getSagaContent()?.let { fullSaga ->
-                            emitMilestone(SagaMilestone.ChapterFinished(c, message, fullSaga))
+                            emitMilestone(
+                                SagaMilestone.ChapterFinished(
+                                    chapter = c,
+                                    messageText = message,
+                                    sagaContent = fullSaga,
+                                    characters = generatedContent?.characters ?: emptyList(),
+                                    wikis = generatedContent?.wikis ?: emptyList(),
+                                ),
+                            )
                         }
                     } ?: dismissMilestone()
                 }
 
                 is NarrativeAction.GenerateAct -> {
-                    val generatedContent = resultValue as? GeneratedContent<Act>
+                    val generatedContent = resultValue as? GeneratedContentWithLore<Act>
                     val act = generatedContent?.data ?: resultValue as? Act
                     val message = generatedContent?.finalMessage
                     act?.let { a ->
-                        emitMilestone(SagaMilestone.ActFinished(a, message))
+                        emitMilestone(
+                            SagaMilestone.ActFinished(
+                                act = a,
+                                messageText = message,
+                                characters = generatedContent?.characters ?: emptyList(),
+                                wikis = generatedContent?.wikis ?: emptyList(),
+                            ),
+                        )
                     } ?: dismissMilestone()
                 }
 
@@ -1563,7 +1581,7 @@ class SagaContentManagerImpl
             timelineUseCase.updateTimeline(currentTimeline.data.copy(sceneSummary = sceneSummary))
         }
 
-        private suspend fun handleStreamingState(state: StreamingState<GeneratedContent<*>>) {
+        private suspend fun handleStreamingState(state: StreamingState<GeneratedContentWithLore<*>>) {
             when (state) {
                 is StreamingState.Reasoning -> {
                     contentReasoning.value = state.chunk
@@ -1575,10 +1593,12 @@ class SagaContentManagerImpl
                     if (data is Timeline) {
                         emitMilestone(
                             SagaMilestone.NewEvent(
-                                data,
-                                null,
-                                state.data.finalMessage,
+                                timeline = data,
+                                emotionalMascot = null,
+                                messageText = state.data.finalMessage,
                                 sagaContent = getSagaContent()!!,
+                                characters = state.data.characters,
+                                wikis = state.data.wikis,
                             ),
                         )
                     }

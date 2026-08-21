@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
@@ -21,6 +22,7 @@ import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.UnifiedActUpdate
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.characters.data.model.ArcSourceType
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.ActMetadata
@@ -281,7 +283,7 @@ class ActUseCaseImpl
         override fun synthesizeActEvolutionStream(
             saga: SagaContent,
             actContent: ActContent,
-        ): Flow<StreamingState<GeneratedContent<Act>>> =
+        ): Flow<StreamingState<GeneratedContentWithLore<Act>>> =
             flow {
                 try {
                     val fullSaga = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
@@ -325,6 +327,7 @@ class ActUseCaseImpl
                                         )
 
                                     // 2. Save Landmark Wikis
+                                    val persistedWikis = mutableListOf<Wiki>()
                                     synthesis.landmarkWikis.forEach { wikiUpdate ->
                                         val existingWiki =
                                             fullSaga.wikis.find {
@@ -343,14 +346,17 @@ class ActUseCaseImpl
                                                 sagaId = saga.data.id,
                                                 isFeatured = true,
                                             )
-                                        if (existingWiki != null) {
-                                            wikiUseCase.updateWiki(wikiToSave)
-                                        } else {
-                                            wikiUseCase.saveWiki(wikiToSave)
-                                        }
+                                        val savedWiki =
+                                            if (existingWiki != null) {
+                                                wikiUseCase.updateWiki(wikiToSave)
+                                            } else {
+                                                wikiUseCase.saveWiki(wikiToSave)
+                                            }
+                                        persistedWikis.add(savedWiki)
                                     }
 
                                     // 3. Save Character Arcs
+                                    val arcCharacters = mutableListOf<Character>()
                                     synthesis.characterArcs.forEach { arcUpdate ->
                                         val character = saga.findCharacter(arcUpdate.characterName)
                                         character?.let {
@@ -363,6 +369,7 @@ class ActUseCaseImpl
                                                     content = arcUpdate.arcContent,
                                                 ),
                                             )
+                                            arcCharacters.add(it.data)
                                         }
                                     }
                                     synthesis.finalWorldState?.let {
@@ -371,9 +378,11 @@ class ActUseCaseImpl
 
                                     emit(
                                         StreamingState.Success(
-                                            GeneratedContent(
-                                                updatedAct,
-                                                state.data.finalMessage,
+                                            GeneratedContentWithLore(
+                                                data = updatedAct,
+                                                finalMessage = state.data.finalMessage,
+                                                wikis = persistedWikis,
+                                                characters = arcCharacters,
                                             ),
                                         ),
                                     )

@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.model.mergeInstructions
@@ -25,6 +26,7 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.ArcSourceType
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.fullName
@@ -464,7 +466,7 @@ class ChapterUseCaseImpl
                 }
             }
 
-        override fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>> =
+        override fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContentWithLore<Chapter>?>> =
             flow {
                 try {
                     val (saga, chapterContent) = fetchContext(chapterId)
@@ -512,6 +514,7 @@ class ChapterUseCaseImpl
                                         )
 
                                     // 2. Save Landmark Wikis
+                                    val persistedWikis = mutableListOf<Wiki>()
                                     synthesis.landmarkWikis.forEach { wikiUpdate ->
                                         val existingWiki =
                                             saga.wikis.find { it.title.equals(wikiUpdate.title, true) }
@@ -526,14 +529,17 @@ class ChapterUseCaseImpl
                                                 chapterId = chapterContent.data.id,
                                                 isFeatured = true,
                                             )
-                                        if (existingWiki != null) {
-                                            wikiUseCase.updateWiki(wikiToSave)
-                                        } else {
-                                            wikiUseCase.saveWiki(wikiToSave)
-                                        }
+                                        val savedWiki =
+                                            if (existingWiki != null) {
+                                                wikiUseCase.updateWiki(wikiToSave)
+                                            } else {
+                                                wikiUseCase.saveWiki(wikiToSave)
+                                            }
+                                        persistedWikis.add(savedWiki)
                                     }
 
                                     // 3. Save Character Arcs
+                                    val arcCharacters = mutableListOf<Character>()
                                     synthesis.characterArcs.forEach { arcUpdate ->
                                         val character = saga.findCharacter(arcUpdate.characterName)
                                         character?.let {
@@ -546,6 +552,7 @@ class ChapterUseCaseImpl
                                                     content = arcUpdate.arcContent,
                                                 ),
                                             )
+                                            arcCharacters.add(it.data)
                                         }
                                     }
 
@@ -556,9 +563,11 @@ class ChapterUseCaseImpl
 
                                     emit(
                                         StreamingState.Success(
-                                            GeneratedContent(
-                                                updatedChapter,
-                                                state.data.finalMessage,
+                                            GeneratedContentWithLore(
+                                                data = updatedChapter,
+                                                finalMessage = state.data.finalMessage,
+                                                wikis = persistedWikis,
+                                                characters = arcCharacters,
                                             ),
                                         ),
                                     )

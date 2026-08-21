@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -43,5 +44,5 @@ interface ActUseCase {
     fun synthesizeActEvolutionStream(
         saga: SagaContent,
         actContent: ActContent,
-    ): Flow<StreamingState<GeneratedContent<Act>>>
+    ): Flow<StreamingState<GeneratedContentWithLore<Act>>>
 }

@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
@@ -88,6 +89,7 @@ class TimelineUseCaseImpl
             )
 
             // 2. Save Wiki Updates
+            val persistedWikis = mutableListOf<Wiki>()
             unifiedLore.wikiUpdates.forEach { wikiUpdate ->
                 val existingWiki = fullSaga.wikis.find { it.title.equals(wikiUpdate.title, true) }
                 val wikiToSave =
@@ -100,11 +102,13 @@ class TimelineUseCaseImpl
                         sagaId = saga.data.id,
                         timelineId = timeline.id,
                     )
-                if (existingWiki != null) {
-                    wikiUseCase.updateWiki(wikiToSave)
-                } else {
-                    wikiUseCase.saveWiki(wikiToSave)
-                }
+                val savedWiki =
+                    if (existingWiki != null) {
+                        wikiUseCase.updateWiki(wikiToSave)
+                    } else {
+                        wikiUseCase.saveWiki(wikiToSave)
+                    }
+                persistedWikis.add(savedWiki)
             }
 
             val charactersUpdates =
@@ -113,7 +117,11 @@ class TimelineUseCaseImpl
                     timeline.id,
                     unifiedLore.charactersUpdates,
                 )
-            Timber.d("generateFullLoreUpdate: Updated characters based on lore updates: ${charactersUpdates.size}")
+            val persistedCharacters = charactersUpdates.mapNotNull { it?.getSuccess() }
+            Timber.d(
+                "generateFullLoreUpdate: Updated characters based on lore updates: " +
+                    "${persistedCharacters.size}, wikis: ${persistedWikis.size}",
+            )
             refreshChapterContinuityRollup(saga.data.id, timeline.chapterId)
         }
 
@@ -187,6 +195,7 @@ class TimelineUseCaseImpl
                                     )
 
                                 // 2. Save Wiki Updates
+                                val persistedWikis = mutableListOf<Wiki>()
                                 unifiedLore.wikiUpdates.forEach { wikiUpdate ->
                                     val existingWiki =
                                         fullSaga.wikis.find {
@@ -205,11 +214,13 @@ class TimelineUseCaseImpl
                                             sagaId = saga.data.id,
                                             timelineId = timeline.id,
                                         )
-                                    if (existingWiki != null) {
-                                        wikiUseCase.updateWiki(wikiToSave)
-                                    } else {
-                                        wikiUseCase.saveWiki(wikiToSave)
-                                    }
+                                    val savedWiki =
+                                        if (existingWiki != null) {
+                                            wikiUseCase.updateWiki(wikiToSave)
+                                        } else {
+                                            wikiUseCase.saveWiki(wikiToSave)
+                                        }
+                                    persistedWikis.add(savedWiki)
                                 }
 
                                 val charactersUpdates =
@@ -218,15 +229,21 @@ class TimelineUseCaseImpl
                                         timelineId = timeline.id,
                                         updates = unifiedLore.charactersUpdates,
                                     )
-                                Timber.d("generateFullLoreUpdate: Updated characters based on lore updates: ${charactersUpdates.size}")
+                                val persistedCharacters = charactersUpdates.mapNotNull { it?.getSuccess() }
+                                Timber.d(
+                                    "generateFullLoreUpdate: Updated characters based on lore updates: " +
+                                        "${persistedCharacters.size}, wikis: ${persistedWikis.size}",
+                                )
 
                                 refreshChapterContinuityRollup(saga.data.id, timeline.chapterId)
 
                                 emit(
                                     StreamingState.Success(
-                                        GeneratedContent(
-                                            timelineUpdate,
-                                            state.data.finalMessage,
+                                        GeneratedContentWithLore(
+                                            data = timelineUpdate,
+                                            finalMessage = state.data.finalMessage,
+                                            wikis = persistedWikis,
+                                            characters = persistedCharacters,
                                         ),
                                     ),
                                 )
