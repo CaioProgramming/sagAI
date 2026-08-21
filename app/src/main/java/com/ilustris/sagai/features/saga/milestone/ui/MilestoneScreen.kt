@@ -11,6 +11,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +52,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -60,12 +62,16 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneViewModel
+import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.navigation.SagaActsKey
 import com.ilustris.sagai.ui.navigation.SagaChaptersKey
 import com.ilustris.sagai.ui.navigation.SagaEventsKey
@@ -102,7 +108,9 @@ fun MilestoneScreen(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val sagaData by viewModel.sagaData.collectAsStateWithLifecycle()
+    val genre by viewModel.genre.collectAsStateWithLifecycle()
     val chapterCoverImage by viewModel.chapterCoverImage.collectAsStateWithLifecycle()
+    val actChapterCovers by viewModel.actChapterCovers.collectAsStateWithLifecycle()
     val bookGenerationState by viewModel.bookGenerationState.collectAsStateWithLifecycle()
     val showOnboarding by viewModel.showOnboarding.collectAsStateWithLifecycle()
 
@@ -129,7 +137,9 @@ fun MilestoneScreen(
                     MilestoneClosureContent(
                         state = state,
                         sagaId = sagaId,
+                        genre = genre,
                         coverImage = chapterCoverImage,
+                        actCoverImages = actChapterCovers,
                         bookGenerationState = bookGenerationState,
                         onContinue = viewModel::onContinue,
                         onNavigate = onNavigate,
@@ -264,7 +274,9 @@ internal fun MilestoneClosureContent(
     state: MilestoneUiState.ClosureStep,
     sagaId: Int,
     onContinue: () -> Unit,
+    genre: Genre? = null,
     coverImage: String? = null,
+    actCoverImages: List<String> = emptyList(),
     bookGenerationState: BookGenerationUiState = BookGenerationUiState.Idle,
     onNavigate: (NavKey) -> Unit = {},
     onGenerateBook: (Act) -> Unit = {},
@@ -342,6 +354,26 @@ internal fun MilestoneClosureContent(
 
                     if (milestone is SagaMilestone.ChapterFinished) {
                         ChapterCoverCard(coverImage = coverImage, modifier = Modifier.padding(top = 16.dp))
+                    }
+
+                    if (milestone is SagaMilestone.ActFinished && actCoverImages.isNotEmpty()) {
+                        ActCoverRow(coverImages = actCoverImages, modifier = Modifier.padding(top = 16.dp))
+                    }
+
+                    if (milestone.wikis.isNotEmpty() && genre != null) {
+                        MilestoneWikisRow(
+                            wikis = milestone.wikis,
+                            genre = genre,
+                            modifier = Modifier.padding(top = 16.dp),
+                        )
+                    }
+
+                    if (milestone.characters.isNotEmpty() && genre != null) {
+                        MilestoneCharactersRow(
+                            characters = milestone.characters,
+                            genre = genre,
+                            modifier = Modifier.padding(top = 16.dp),
+                        )
                     }
 
                     milestone.emotionalReviewText?.takeIf { it.isNotBlank() }?.let { review ->
@@ -458,6 +490,136 @@ private val SagaMilestone.emotionalReviewText: String?
             is SagaMilestone.ActFinished -> act.emotionalReview
             else -> null
         }
+
+/** AI-generated wikis attached to this closure step, if any — [NewEvent][SagaMilestone.NewEvent],
+ * [ChapterFinished][SagaMilestone.ChapterFinished] and [ActFinished][SagaMilestone.ActFinished]
+ * are the only variants that carry them. */
+private val SagaMilestone.wikis: List<Wiki>
+    get() =
+        when (this) {
+            is SagaMilestone.NewEvent -> wikis
+            is SagaMilestone.ChapterFinished -> wikis
+            is SagaMilestone.ActFinished -> wikis
+            else -> emptyList()
+        }
+
+/** AI-generated/updated characters attached to this closure step, if any — same trio of
+ * variants as [wikis]. */
+private val SagaMilestone.characters: List<Character>
+    get() =
+        when (this) {
+            is SagaMilestone.NewEvent -> characters
+            is SagaMilestone.ChapterFinished -> characters
+            is SagaMilestone.ActFinished -> characters
+            else -> emptyList()
+        }
+
+/** Plain, un-themed row of wiki entries generated alongside this milestone — genre-specific
+ * skinning is later work, this phase just proves the generated content reaches the screen. Same
+ * "created" label [MilestoneIslandBody][com.ilustris.sagai.ui.components.island.MilestoneIslandBody]
+ * already uses for its own wikis row. */
+@Composable
+private fun MilestoneWikisRow(
+    wikis: List<Wiki>,
+    genre: Genre,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.milestone_wikis_created),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            wikis.forEach { wiki ->
+                WikiCard(
+                    wiki = wiki,
+                    genre = genre,
+                    expanded = false,
+                    modifier = Modifier.width(220.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Plain, un-themed row of character updates for this milestone — see [MilestoneWikisRow]. */
+@Composable
+private fun MilestoneCharactersRow(
+    characters: List<Character>,
+    genre: Genre,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.milestone_characters_created),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            characters.forEach { character ->
+                MilestoneCharacterUpdateCard(character = character, genre = genre)
+            }
+        }
+    }
+}
+
+/** Bare avatar + name — no invented "what changed" summary, [SagaMilestone] only carries the
+ * [Character] itself, not a per-character diff. */
+@Composable
+private fun MilestoneCharacterUpdateCard(
+    character: Character,
+    genre: Genre,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.width(72.dp),
+    ) {
+        CharacterAvatar(
+            character = character,
+            genre = genre,
+            modifier = Modifier.size(56.dp),
+        )
+        Text(
+            text = "${character.name} ${character.lastName.orEmpty()}".trim(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+/** Act closure carries one cover per finished chapter (see
+ * [MilestoneViewModel.actChapterCovers]) — reuses [ChapterCoverCard] unchanged in a horizontally
+ * scrollable row instead of growing it a list-aware variant, so the single-cover
+ * [SagaMilestone.ChapterFinished] call site stays untouched. */
+@Composable
+private fun ActCoverRow(
+    coverImages: List<String>,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        coverImages.forEach { cover ->
+            ChapterCoverCard(coverImage = cover, modifier = Modifier.width(200.dp))
+        }
+    }
+}
 
 /** Pushed on top of the Milestone screen, not replacing it — the chain keeps waiting on its own
  * continueMilestone()/advanceNarrative() calls regardless of what's on screen, so "peeking" at
