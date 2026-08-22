@@ -759,7 +759,7 @@ internal fun MilestoneIntroductionContent(
 }
 
 @Composable
-private fun StepIndicator(
+internal fun StepIndicator(
     stepIndex: Int,
     stepTotal: Int,
 ) {

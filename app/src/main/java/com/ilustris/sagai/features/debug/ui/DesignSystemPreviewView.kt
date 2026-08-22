@@ -83,11 +83,15 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
+import com.ilustris.sagai.features.saga.detail.review.ui.ReviewTemplate
+import com.ilustris.sagai.features.saga.detail.review.ui.reviewTemplate
 import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.ui.MilestoneClosureContent
 import com.ilustris.sagai.features.saga.milestone.ui.MilestoneIntroductionContent
 import com.ilustris.sagai.features.saga.milestone.ui.MilestoneLoadingContent
+import com.ilustris.sagai.features.saga.milestone.ui.StepIndicator
+import com.ilustris.sagai.features.saga.milestone.ui.skin.MilestoneSkinChrome
 import com.ilustris.sagai.ui.animations.comicExtrude
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.WordArtText
@@ -220,6 +224,10 @@ fun DesignSystemPreviewView(
                                 color = MaterialTheme.colorScheme.background,
                             ) {
                                 Box(Modifier.fillMaxSize()) {
+                                    // Terminal draws its own char-cell TerminalProgress as chrome over
+                                    // this same spot, mirroring MilestoneScreen's own isTerminalSkin
+                                    // check — otherwise the plain dot indicator would double up under it.
+                                    val isTerminalSkin = genre.reviewTemplate() == ReviewTemplate.TERMINAL
                                     when (kind) {
                                         // MilestoneLoadingContent has no button on purpose — in
                                         // the real screen it advances on its own once generation
@@ -227,66 +235,98 @@ fun DesignSystemPreviewView(
                                         // gets its own "Next" affordance here instead, without
                                         // touching the production composable's contract.
                                         MilestonePreviewKind.LOADING -> {
-                                            Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp)) {
-                                                Box(Modifier.fillMaxWidth().weight(1f)) {
-                                                    MilestoneLoadingContent(
-                                                        reasoning = "Weaving the next thread of your story...",
-                                                    )
-                                                }
-                                                Button(
-                                                    onClick = { milestonePreviewKind = MilestonePreviewKind.EVENT },
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                ) {
-                                                    Text("Next")
+                                            MilestoneSkinChrome(genre = genre, stepIndex = null, stepTotal = null) {
+                                                Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp)) {
+                                                    Box(Modifier.fillMaxWidth().weight(1f)) {
+                                                        MilestoneLoadingContent(
+                                                            reasoning = "Weaving the next thread of your story...",
+                                                        )
+                                                    }
+                                                    Button(
+                                                        onClick = { milestonePreviewKind = MilestonePreviewKind.EVENT },
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                    ) {
+                                                        Text("Next")
+                                                    }
                                                 }
                                             }
                                         }
 
                                         MilestonePreviewKind.EVENT -> {
-                                            MilestoneClosureContent(
-                                                state =
-                                                    MilestoneUiState.ClosureStep(
-                                                        DesignSystemMocks.mockNewEventMilestone(genre),
-                                                        stepIndex = 1,
-                                                        stepTotal = 3,
-                                                    ),
-                                                sagaId = 1,
-                                                onContinue = { milestonePreviewKind = MilestonePreviewKind.CHAPTER },
-                                            )
+                                            MilestoneSkinChrome(genre = genre, stepIndex = 1, stepTotal = 3) {
+                                                MilestoneClosureContent(
+                                                    state =
+                                                        MilestoneUiState.ClosureStep(
+                                                            DesignSystemMocks.mockNewEventMilestone(genre),
+                                                            stepIndex = 1,
+                                                            stepTotal = 3,
+                                                        ),
+                                                    sagaId = 1,
+                                                    genre = genre,
+                                                    onContinue = { milestonePreviewKind = MilestonePreviewKind.CHAPTER },
+                                                    stepIndicator =
+                                                        if (isTerminalSkin) {
+                                                            {}
+                                                        } else {
+                                                            { StepIndicator(stepIndex = 1, stepTotal = 3) }
+                                                        },
+                                                )
+                                            }
                                         }
 
                                         MilestonePreviewKind.CHAPTER -> {
-                                            MilestoneClosureContent(
-                                                state =
-                                                    MilestoneUiState.ClosureStep(
-                                                        DesignSystemMocks.mockChapterFinishedMilestone(genre),
-                                                        stepIndex = 2,
-                                                        stepTotal = 3,
-                                                    ),
-                                                sagaId = 1,
-                                                coverImage = "https://i.pinimg.com/564x/0a/92/7d/0a927df0b8a6a12a5276e03882775739.jpg",
-                                                onContinue = { milestonePreviewKind = MilestonePreviewKind.ACT },
-                                            )
+                                            MilestoneSkinChrome(genre = genre, stepIndex = 2, stepTotal = 3) {
+                                                MilestoneClosureContent(
+                                                    state =
+                                                        MilestoneUiState.ClosureStep(
+                                                            DesignSystemMocks.mockChapterFinishedMilestone(genre),
+                                                            stepIndex = 2,
+                                                            stepTotal = 3,
+                                                        ),
+                                                    sagaId = 1,
+                                                    genre = genre,
+                                                    coverImage = "https://i.pinimg.com/564x/0a/92/7d/0a927df0b8a6a12a5276e03882775739.jpg",
+                                                    onContinue = { milestonePreviewKind = MilestonePreviewKind.ACT },
+                                                    stepIndicator =
+                                                        if (isTerminalSkin) {
+                                                            {}
+                                                        } else {
+                                                            { StepIndicator(stepIndex = 2, stepTotal = 3) }
+                                                        },
+                                                )
+                                            }
                                         }
 
                                         MilestonePreviewKind.ACT -> {
-                                            MilestoneClosureContent(
-                                                state =
-                                                    MilestoneUiState.ClosureStep(
-                                                        DesignSystemMocks.mockActFinishedMilestone(),
-                                                        stepIndex = 3,
-                                                        stepTotal = 3,
-                                                    ),
-                                                sagaId = 1,
-                                                onContinue = { milestonePreviewKind = MilestonePreviewKind.INTRO },
-                                            )
+                                            MilestoneSkinChrome(genre = genre, stepIndex = 3, stepTotal = 3) {
+                                                MilestoneClosureContent(
+                                                    state =
+                                                        MilestoneUiState.ClosureStep(
+                                                            DesignSystemMocks.mockActFinishedMilestone(),
+                                                            stepIndex = 3,
+                                                            stepTotal = 3,
+                                                        ),
+                                                    sagaId = 1,
+                                                    genre = genre,
+                                                    actCoverImages = DesignSystemMocks.mockActCoverImages(),
+                                                    onContinue = { milestonePreviewKind = MilestonePreviewKind.INTRO },
+                                                    stepIndicator =
+                                                        if (isTerminalSkin) {
+                                                            {}
+                                                        } else {
+                                                            { StepIndicator(stepIndex = 3, stepTotal = 3) }
+                                                        },
+                                                )
+                                            }
                                         }
 
                                         MilestonePreviewKind.INTRO -> {
-                                            MilestoneIntroductionContent(
-                                                milestone = DesignSystemMocks.mockIntroductionMilestone(),
-                                                onContinue = { milestonePreviewKind = null },
-                                            )
+                                            MilestoneSkinChrome(genre = genre, stepIndex = null, stepTotal = null) {
+                                                MilestoneIntroductionContent(
+                                                    milestone = DesignSystemMocks.mockIntroductionMilestone(),
+                                                    onContinue = { milestonePreviewKind = null },
+                                                )
+                                            }
                                         }
                                     }
                                     IconButton(
