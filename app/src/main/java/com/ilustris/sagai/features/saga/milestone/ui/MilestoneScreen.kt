@@ -125,7 +125,9 @@ fun MilestoneScreen(
         ) { state ->
             when (state) {
                 is MilestoneUiState.Loading -> {
-                    MilestoneLoadingContent(reasoning = state.reasoning, isAutomaticStep = state.isAutomaticStep)
+                    MilestoneSkinChrome(genre = genre, stepIndex = null, stepTotal = null) {
+                        MilestoneLoadingContent(reasoning = state.reasoning, isAutomaticStep = state.isAutomaticStep)
+                    }
                 }
 
                 is MilestoneUiState.Error -> {
