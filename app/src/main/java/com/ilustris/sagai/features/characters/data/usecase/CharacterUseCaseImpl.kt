@@ -634,4 +634,7 @@ class CharacterUseCaseImpl
         ) = repository.getTopCharacters(sagaId, limit)
 
         override fun getCharacterContent(characterId: Int): Flow<CharacterContent?> = repository.getCharacterContent(characterId)
+
+        override suspend fun getCharactersByFirstSceneId(timelineId: Int): List<Character> =
+            repository.getCharactersByFirstSceneId(timelineId)
     }

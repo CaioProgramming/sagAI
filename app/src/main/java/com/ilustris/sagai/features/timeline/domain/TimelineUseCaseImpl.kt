@@ -229,10 +229,14 @@ class TimelineUseCaseImpl
                                         timelineId = timeline.id,
                                         updates = unifiedLore.charactersUpdates,
                                     )
-                                val persistedCharacters = charactersUpdates.mapNotNull { it?.getSuccess() }
+                                val updatedCharactersCount = charactersUpdates.count { it?.getSuccess() != null }
+                                // The milestone card celebrates who's NEW this event, not who merely
+                                // got a relationship/knowledge/nickname touch-up above.
+                                val newlyAppearedCharacters = characterUseCase.getCharactersByFirstSceneId(timeline.id)
                                 Timber.d(
                                     "generateFullLoreUpdate: Updated characters based on lore updates: " +
-                                        "${persistedCharacters.size}, wikis: ${persistedWikis.size}",
+                                        "$updatedCharactersCount, new characters: " +
+                                        "${newlyAppearedCharacters.size}, wikis: ${persistedWikis.size}",
                                 )
 
                                 refreshChapterContinuityRollup(saga.data.id, timeline.chapterId)
@@ -243,7 +247,7 @@ class TimelineUseCaseImpl
                                             data = timelineUpdate,
                                             finalMessage = state.data.finalMessage,
                                             wikis = persistedWikis,
-                                            characters = persistedCharacters,
+                                            characters = newlyAppearedCharacters,
                                         ),
                                     ),
                                 )

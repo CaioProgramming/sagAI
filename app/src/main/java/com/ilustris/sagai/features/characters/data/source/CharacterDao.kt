@@ -79,4 +79,7 @@ interface CharacterDao {
 
     @Query("SELECT COUNT(*) FROM Characters WHERE sagaId = :sagaId")
     fun getCharactersCount(sagaId: Int): Flow<Int>
+
+    @Query("SELECT * FROM Characters WHERE firstSceneId = :timelineId")
+    suspend fun getCharactersByFirstSceneId(timelineId: Int): List<Character>
 }

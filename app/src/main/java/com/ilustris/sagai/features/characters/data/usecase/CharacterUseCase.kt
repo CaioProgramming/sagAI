@@ -113,4 +113,6 @@ interface CharacterUseCase {
         sagaId: Int,
         limit: Int,
     ): Flow<List<CharacterContent>>
+
+    suspend fun getCharactersByFirstSceneId(timelineId: Int): List<Character>
 }
