@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,26 +17,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.subtitle
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicCaptionBox
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicFadeIn
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicTag
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.SlantShape
 
 /**
- * Heroes' chrome for the Milestone screen — the comic panel language
+ * Heroes' chrome for the Milestone screen — the comic language
  * [com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicBoardReviewContainer]
- * wears for the story review, borrowed at a single-panel scale rather than ported wholesale.
+ * wears for the story review, borrowed at a single-beat scale rather than ported wholesale.
  *
- * [ComicBoard][com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicBoard] is
- * built for paging through a sequence of panels with its own camera and gesture navigation — a
- * milestone is one beat, not a sequence, so none of that machinery belongs here. What carries over
- * is the visual identity: a [SlantShape]-clipped frame with an ink border (same border+background
- * clip pattern as that package's own `ComicPanel`), and a corner [ComicTag] instead of a full
- * speech balloon — wrapping all of [content] in a balloon would fight the title/rows/buttons it
- * renders internally, which this skin has no visibility into and no business reshaping.
+ * A bordered [com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.SlantShape] panel
+ * made sense when there was a cover image to fill it, but most milestones (a bare `NewEvent`, for
+ * one) have none — a `surfaceContainer` box around empty space just looked like an empty box. So
+ * [content] renders straight over the screen's own background instead
+ * ([com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicBoardReviewContainer]
+ * uses the same plain background for its own board, there's no comic-specific texture to borrow
+ * here), with two [ComicCaptionBox] narration boxes — the same flat, hard-edged "narrator's voice"
+ * box
+ * [com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicNarrationPanel] scatters
+ * across a bare panel — pinned to opposite corners as pure decoration, replacing the single corner
+ * tag this used to carry (a location/issue-cover stamp that had nothing to stamp here).
  *
  * [stepIndex]/[stepTotal] are accepted only for signature parity with [MilestoneSkinChrome]'s other
  * skins; Heroes keeps the plain dot `StepIndicator`
@@ -52,37 +54,32 @@ fun ComicMilestoneSkin(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    // The panel's one-time entrance, matching MilestoneClosureContent's own
+    // content's own one-time entrance, matching MilestoneClosureContent's own
     // fadeIn+scaleIn(0.92f) reveal rather than inventing a new animation idiom.
     var panelVisible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { panelVisible = true }
 
-    val panelShape = SlantShape(topLeftLean = 0.02f, bottomRightLean = 0.02f)
-
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         AnimatedVisibility(
             visible = panelVisible,
             enter = fadeIn(tween(450)) + scaleIn(initialScale = 0.92f, animationSpec = tween(450)),
-            modifier = Modifier.fillMaxSize().padding(12.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .clip(panelShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainer, panelShape)
-                        .border(3.dp, MaterialTheme.colorScheme.onBackground, panelShape),
-            ) {
-                content()
-            }
+            content()
         }
 
-        // A cover-line tag, not a balloon wrapping the whole panel — see the class doc for why.
         ComicFadeIn(
             delayMillis = 300,
-            modifier = Modifier.align(Alignment.TopEnd).padding(20.dp),
+            modifier = Modifier.align(Alignment.TopStart).padding(20.dp),
         ) {
-            ComicTag(text = genre.subtitle())
+            ComicCaptionBox(text = genre.subtitle())
+        }
+
+        ComicFadeIn(
+            delayMillis = 600,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
+        ) {
+            ComicCaptionBox(text = stringResource(genre.title))
         }
     }
 }
