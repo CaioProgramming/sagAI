@@ -30,8 +30,9 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.saga.detail.review.ui.SagaLegendLayout
 import com.ilustris.sagai.features.share.domain.model.ShareType
-import kotlinx.coroutines.delay
+import com.ilustris.sagai.ui.genre.book.BookBackground
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 
 /**
  * "The Legacy" — the same cast mosaic Default shows, sepia-framed instead of GTA black-bordered.

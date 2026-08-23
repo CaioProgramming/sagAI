@@ -25,6 +25,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewImageSource
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.book.BookBackground
 
 /** A portrait plate — currently used for the most-talked-about character, framed as a circular
  * cameo (like a contributor portrait in a newspaper masthead) rather than a rectangular plate. */

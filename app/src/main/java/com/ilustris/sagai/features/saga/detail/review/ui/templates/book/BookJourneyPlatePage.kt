@@ -31,6 +31,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewImageSource
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.share.domain.model.ShareType
+import com.ilustris.sagai.ui.genre.book.BookBackground
 
 /**
  * A "plate" page of several chapter stills — the book equivalent of Default's `JourneyCollage`,

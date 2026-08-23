@@ -5,8 +5,8 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
+import com.ilustris.sagai.ui.genre.comic.ComicBalloonSpec
+import com.ilustris.sagai.ui.genre.comic.ComicPanel
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
@@ -607,34 +609,3 @@ private data class PanelRect(
 )
 
 
-/**
- * A single comic frame: hard border and a flat ground, the gutter around it coming from the
- * board's own spacing. Clips its content — pages still on the default (full-screen) layout are
- * taller than a panel's allotted height, and without clipping they bleed past the border into the
- * row below instead of just running out of room.
- */
-@Composable
-fun ComicPanel(
-    modifier: Modifier = Modifier,
-    borderColor: Color = Color.Black,
-    background: Color = Color.White,
-    framed: Boolean = true,
-    shape: Shape = RectangleShape,
-    content: @Composable () -> Unit,
-) {
-    // Unframed panels claim their space in the layout but draw nothing of their own — and notably
-    // don't clip, so a page made only of balloons can let them spill wherever they land.
-    if (!framed) {
-        Box(modifier) { content() }
-        return
-    }
-
-    Box(
-        modifier
-            .clip(shape)
-            .background(background, shape)
-            .border(3.dp, borderColor, shape),
-    ) {
-        content()
-    }
-}

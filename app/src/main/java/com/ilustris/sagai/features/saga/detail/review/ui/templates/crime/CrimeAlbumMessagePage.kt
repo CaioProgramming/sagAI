@@ -39,6 +39,8 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewImageSource
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.crime.CrimeBackground
+import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
 
 private val ALBUM_STACK_SIZE = 150.dp
 

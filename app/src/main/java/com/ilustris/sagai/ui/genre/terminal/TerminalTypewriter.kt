@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal
+package com.ilustris.sagai.ui.genre.terminal
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.layout.Arrangement

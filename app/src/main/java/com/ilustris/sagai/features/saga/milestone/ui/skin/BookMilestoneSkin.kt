@@ -6,10 +6,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.BookBackground
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.CowboyBurnMarks
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.HorrorPoliceTapeOverlay
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.ShinobiInkBlooms
+import com.ilustris.sagai.ui.genre.book.BookBackground
+import com.ilustris.sagai.ui.genre.book.CowboyBurnMarks
+import com.ilustris.sagai.ui.genre.book.HorrorPoliceTapeOverlay
+import com.ilustris.sagai.ui.genre.book.ShinobiInkBlooms
 import com.ilustris.sagai.ui.theme.LocalSagaGenre
 
 /**

@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.saga.detail.review.ui.templates.book
+package com.ilustris.sagai.ui.genre.book
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing

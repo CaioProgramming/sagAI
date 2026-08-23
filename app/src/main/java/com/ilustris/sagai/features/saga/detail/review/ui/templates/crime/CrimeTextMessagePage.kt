@@ -21,9 +21,15 @@ import com.ilustris.sagai.features.saga.chat.ui.components.rememberMessageBlocks
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.crime.CRIME_AVATAR_SLOT
+import com.ilustris.sagai.ui.genre.crime.CRIME_BUBBLE_HORIZONTAL_PADDING
+import com.ilustris.sagai.ui.genre.crime.CRIME_BUBBLE_RESERVED_MARGIN
+import com.ilustris.sagai.ui.genre.crime.CRIME_BUBBLE_ROW_PADDING
+import com.ilustris.sagai.ui.genre.crime.CrimeBackground
+import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
-import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
 
 /** Floor for one block's share of the typing budget — mirrors [com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble]'s `MIN_BLOCK_DURATION`. */
 private const val MIN_BLOCK_DURATION_MS = 400L

@@ -28,6 +28,7 @@ import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.book.BookBackground
 
 /** The book's "Table of Contents" — tap a chapter to turn back to it. */
 class BookSummaryPage(

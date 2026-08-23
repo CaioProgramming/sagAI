@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CrimeBackground
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CrimeBubbleFrame
+import com.ilustris.sagai.ui.genre.crime.CrimeBackground
+import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
 
 /**
  * Crime's chrome for the Milestone screen — the same chat-thread identity Crime's review templates

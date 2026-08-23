@@ -35,6 +35,8 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.saga.detail.review.ui.reviewCastTitle
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.genre.collage.AssemblingPiece
+import com.ilustris.sagai.ui.genre.collage.CharacterSticker
 import com.ilustris.sagai.ui.theme.hexToColor
 import kotlinx.coroutines.delay
 

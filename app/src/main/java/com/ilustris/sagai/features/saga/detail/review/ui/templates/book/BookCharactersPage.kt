@@ -35,6 +35,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.saga.detail.review.ui.reviewCastTitle
 import com.ilustris.sagai.features.share.domain.model.ShareType
+import com.ilustris.sagai.ui.genre.book.BookBackground
 
 /** "Dramatis Personae" — the saga's cast, listed like the front matter of a novel. */
 class BookCharactersPage(

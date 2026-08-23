@@ -19,6 +19,8 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.comic.COMIC_INK
+import com.ilustris.sagai.ui.genre.comic.COMIC_PAPER
 
 /**
  * The last beat: a way back to the start, and nothing else.

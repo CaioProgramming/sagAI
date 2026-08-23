@@ -26,6 +26,10 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewImageSource
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.terminal.TerminalBackground
+import com.ilustris.sagai.ui.genre.terminal.TerminalTypewriter
+import com.ilustris.sagai.ui.genre.terminal.blockDecode
+import com.ilustris.sagai.ui.genre.terminal.terminalPromptLine
 
 /** An image "decoding" line by line, like a file being pulled off a slow connection. */
 class TerminalDecodePage(

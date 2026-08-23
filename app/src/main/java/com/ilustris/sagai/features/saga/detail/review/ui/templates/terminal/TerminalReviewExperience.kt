@@ -8,6 +8,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.saga.detail.review.ui.coverImageSource
 import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSources
+import com.ilustris.sagai.ui.genre.terminal.TerminalBackground
 
 /**
  * Cyberpunk and Space Opera's shared SagaReview template: monospace text typed line by line over

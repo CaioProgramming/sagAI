@@ -12,6 +12,7 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.collage.CollageScatterLayout
 
 /**
  * Punk Rock's closing stage: the whole cast pasted up as torn scraps behind the send-off headline.

@@ -28,6 +28,7 @@ import com.ilustris.sagai.features.saga.detail.data.model.cleanMessage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.book.BookBackground
 
 /** The "Afterword" — a signed farewell letter from each of the saga's most important characters. */
 class BookFarewellsPage(

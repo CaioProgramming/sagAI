@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.saga.detail.review.ui.templates.collage
+package com.ilustris.sagai.ui.genre.collage
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope

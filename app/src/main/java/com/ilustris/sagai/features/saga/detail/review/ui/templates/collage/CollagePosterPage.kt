@@ -4,9 +4,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -34,6 +34,11 @@ import com.ilustris.sagai.ui.animations.imageStroke
 import com.ilustris.sagai.ui.animations.rememberStopMotionFrame
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
+import com.ilustris.sagai.ui.genre.collage.AssemblingPiece
+import com.ilustris.sagai.ui.genre.collage.PAPER_WHITE
+import com.ilustris.sagai.ui.genre.collage.PunkScribbleOverlay
+import com.ilustris.sagai.ui.genre.collage.TornPaperScrap
+import com.ilustris.sagai.ui.genre.collage.readableTextColor
 import com.ilustris.sagai.ui.theme.themeFilter
 import com.ilustris.sagai.ui.theme.themeIcon
 

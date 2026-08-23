@@ -35,6 +35,9 @@ import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.crime.CrimeBackground
+import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
+import com.ilustris.sagai.ui.genre.crime.CrimeContactRow
 
 /**
  * The cast, sent as a "shared group link" card — collapsed to an overlapping avatar stack + count,

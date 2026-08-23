@@ -9,6 +9,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.saga.detail.review.ui.coverImageSource
 import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSources
 import com.ilustris.sagai.features.saga.detail.review.ui.topCharacterImageSource
+import com.ilustris.sagai.ui.genre.book.BookBackground
 
 /**
  * Fantasy and Shinobi's shared SagaReview template: a storybook page scrolled hands-free like

@@ -22,6 +22,7 @@ import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.book.BookBackground
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import kotlin.time.Duration.Companion.milliseconds
 

@@ -29,6 +29,12 @@ import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.collage.AssemblingPiece
+import com.ilustris.sagai.ui.genre.collage.PAPER_INK
+import com.ilustris.sagai.ui.genre.collage.TornPaperScrap
+import com.ilustris.sagai.ui.genre.collage.TornPaperStrip
+import com.ilustris.sagai.ui.genre.collage.readableTextColor
+import com.ilustris.sagai.ui.genre.collage.rememberTearReveal
 
 private const val TIME_TEAR_DELAY_MS = 250L
 private const val LABEL_DELAY_MS = 1400L

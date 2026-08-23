@@ -137,7 +137,7 @@ private val MIN_BLOCK_DURATION = 400.milliseconds
  * Shared spec for every `animateContentSize()` around a message bubble (the message row, the
  * blocks column, and each block's own shape/size). Previously these used the zero-arg default
  * (an implicit `spring()`), which snapped rather than eased — this is the same tuned duration/
- * easing [com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CrimeBubbleFrame]
+ * easing [com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame]
  * uses so a bubble's size keeps pace with its typewriter text instead of jumping ahead of it.
  */
 private val BUBBLE_RESIZE_SPEC: FiniteAnimationSpec<IntSize> =

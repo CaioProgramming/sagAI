@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal
+package com.ilustris.sagai.ui.genre.terminal
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text

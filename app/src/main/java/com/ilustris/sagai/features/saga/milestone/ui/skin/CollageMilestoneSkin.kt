@@ -8,9 +8,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.collage.AssemblingPiece
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.collage.PunkScribbleOverlay
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.collage.TornPaperScrap
+import com.ilustris.sagai.ui.genre.collage.AssemblingPiece
+import com.ilustris.sagai.ui.genre.collage.PunkScribbleOverlay
+import com.ilustris.sagai.ui.genre.collage.TornPaperScrap
 
 /**
  * Punk Rock's chrome for the Milestone screen — the same torn-paper-and-doodles identity

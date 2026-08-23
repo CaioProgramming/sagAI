@@ -154,7 +154,7 @@ fun Modifier.genreCrtScreen(genre: Genre?): Modifier {
  * coordinates, so the grid holds its apparent size across screen densities.
  *
  * Requires API 33 for [RuntimeShader]; below that this is a no-op and callers should keep whatever
- * drawn approximation they had (see [com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalBackground]).
+ * drawn approximation they had (see [com.ilustris.sagai.ui.genre.terminal.TerminalBackground]).
  * Animation stops with the lifecycle, so a backgrounded screen isn't driving a per-frame shader.
  */
 @Composable

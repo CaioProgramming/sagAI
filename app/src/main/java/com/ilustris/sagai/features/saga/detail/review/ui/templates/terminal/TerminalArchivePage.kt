@@ -21,6 +21,12 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewImageSource
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.terminal.GatheringPlates
+import com.ilustris.sagai.ui.genre.terminal.TerminalBackground
+import com.ilustris.sagai.ui.genre.terminal.TerminalLine
+import com.ilustris.sagai.ui.genre.terminal.TerminalTypewriter
+import com.ilustris.sagai.ui.genre.terminal.plateFrame
+import com.ilustris.sagai.ui.genre.terminal.terminalPromptLine
 
 /**
  * The journey stage: the run of chapter art gathered into one archive, with the stage's own words

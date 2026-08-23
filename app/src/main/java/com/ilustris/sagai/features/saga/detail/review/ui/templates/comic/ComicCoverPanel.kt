@@ -17,6 +17,9 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.saga.detail.review.ui.coverImageSource
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
+import com.ilustris.sagai.ui.genre.comic.ComicBalloonSpec
+import com.ilustris.sagai.ui.genre.comic.ComicCaptionBox
+import com.ilustris.sagai.ui.genre.comic.ComicTag
 
 /**
  * The issue's cover: a full-bleed portrait splash the board opens on before the camera starts

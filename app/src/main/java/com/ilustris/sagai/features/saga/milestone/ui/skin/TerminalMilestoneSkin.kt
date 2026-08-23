@@ -10,9 +10,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalBackground
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalGlitchOverlay
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalProgress
+import com.ilustris.sagai.ui.genre.terminal.TerminalBackground
+import com.ilustris.sagai.ui.genre.terminal.TerminalGlitchOverlay
+import com.ilustris.sagai.ui.genre.terminal.TerminalProgress
 import com.ilustris.sagai.ui.theme.filters.crtScreen
 
 /**

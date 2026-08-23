@@ -13,6 +13,7 @@ import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.collage.CollageScatterLayout
 
 /** Punk Rock's journey stage: every chapter cover pasted up as a torn scrap around the stage title. */
 class CollageJourneyPage(

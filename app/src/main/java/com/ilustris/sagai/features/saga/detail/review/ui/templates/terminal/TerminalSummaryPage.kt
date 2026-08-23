@@ -23,6 +23,14 @@ import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.terminal.TerminalBackground
+import com.ilustris.sagai.ui.genre.terminal.TerminalCommandLine
+import com.ilustris.sagai.ui.genre.terminal.TerminalLine
+import com.ilustris.sagai.ui.genre.terminal.TerminalSelectionIndication
+import com.ilustris.sagai.ui.genre.terminal.TerminalTypewriter
+import com.ilustris.sagai.ui.genre.terminal.neonGlow
+import com.ilustris.sagai.ui.genre.terminal.terminalClickable
+import com.ilustris.sagai.ui.genre.terminal.terminalSelection
 
 /** `cat summary.log` — a command menu that can jump back to any stage. */
 class TerminalSummaryPage(

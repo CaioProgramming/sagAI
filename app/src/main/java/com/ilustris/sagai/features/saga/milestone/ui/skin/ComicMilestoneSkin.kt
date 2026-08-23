@@ -21,8 +21,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.subtitle
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicCaptionBox
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicFadeIn
+import com.ilustris.sagai.ui.genre.comic.ComicCaptionBox
+import com.ilustris.sagai.ui.genre.comic.ComicFadeIn
+import com.ilustris.sagai.ui.genre.comic.SlantShape
 
 /**
  * Heroes' chrome for the Milestone screen — the comic language

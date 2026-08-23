@@ -17,6 +17,9 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
+import com.ilustris.sagai.ui.genre.comic.ComicBalloonSpec
+import com.ilustris.sagai.ui.genre.comic.ComicCaptionBox
+import com.ilustris.sagai.ui.genre.comic.ComicFadeIn
 
 internal const val FAREWELL_GROUP = "farewells"
 

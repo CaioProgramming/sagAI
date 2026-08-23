@@ -18,6 +18,10 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.features.saga.detail.review.ui.coverImageSource
 import com.ilustris.sagai.features.saga.detail.review.ui.notableChapterImageSources
+import com.ilustris.sagai.ui.genre.comic.ComicBalloonSpec
+import com.ilustris.sagai.ui.genre.comic.ComicCaptionBox
+import com.ilustris.sagai.ui.genre.comic.ComicFadeIn
+import com.ilustris.sagai.ui.genre.comic.SlantShape
 
 /**
  * One image, one frame.

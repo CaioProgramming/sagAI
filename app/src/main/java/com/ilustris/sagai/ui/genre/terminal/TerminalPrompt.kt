@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal
+package com.ilustris.sagai.ui.genre.terminal
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -22,16 +22,19 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import kotlinx.coroutines.delay
 
 /** A real terminal's cursor blinks around twice a second, on and off in equal halves. */
 private const val CARET_BLINK_MS = 530L
 
-/** The `user@host` portion of every terminal prompt — the saga's own title, slugified. */
-fun SagaContent.terminalHost(): String {
+/**
+ * The `user@host` portion of every terminal prompt — [title], slugified. Takes the title rather
+ * than the saga it came from: the Milestone screen reaches this idiom holding only a chapter or act
+ * name, never a full `SagaContent` (see `SagaMilestone`'s variants, only two of which carry one).
+ */
+fun terminalHost(title: String): String {
     val slug =
-        data.title
+        title
             .lowercase()
             .replace(Regex("[^a-z0-9]+"), "_")
             .trim('_')

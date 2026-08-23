@@ -47,11 +47,15 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.genre.collage.AssemblingPiece
+import com.ilustris.sagai.ui.genre.collage.PAPER_INK
+import com.ilustris.sagai.ui.genre.collage.buildTornRectPath
+import com.ilustris.sagai.ui.genre.collage.drawStackedShadow
 import com.ilustris.sagai.ui.theme.components.HandwrittenText
 import com.ilustris.sagai.ui.theme.hexToColor
-import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import kotlin.random.Random
+import kotlinx.coroutines.delay
 
 private val NOTE_WIDTH = 208.dp
 private const val NOTE_STAGGER_MS = 700L
