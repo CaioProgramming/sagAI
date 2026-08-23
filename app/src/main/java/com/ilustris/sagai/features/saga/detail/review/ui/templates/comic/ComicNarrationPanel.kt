@@ -3,21 +3,14 @@ package com.ilustris.sagai.features.saga.detail.review.ui.templates.comic
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.ui.genre.comic.ComicBalloonSpec
-import com.ilustris.sagai.ui.genre.comic.ComicCaptionBox
-import com.ilustris.sagai.ui.genre.comic.ComicFadeIn
-import com.ilustris.sagai.ui.genre.comic.ComicTag
+import com.ilustris.sagai.ui.genre.comic.comicNarrationBalloons
 
 /**
  * A frame that is pure narration, told as caption boxes scattered *loose* over the frame rather
@@ -42,39 +35,12 @@ class ComicNarrationPanel(
 
     override val panelSpan = PanelSpan.BAND
 
+    // The geometry lives in `comicNarrationBalloons` so the Milestone screen's single-beat
+    // surface lays these out identically. Only the specs are shared, not a composable: the board
+    // has to place balloons itself in its own measure policy, or they lose the ability to break
+    // out past the panel border — which is the entire reason they are balloons and not content.
     override val balloons: List<ComicBalloonSpec>
-        get() =
-            buildList {
-                text.title?.let { title ->
-                    add(
-                        ComicBalloonSpec(
-                            alignment = Alignment.TopStart,
-                            widthFraction = 0.86f,
-                            offset = DpOffset((-10).dp, 10.dp),
-                        ) { ComicFadeIn { ComicTag(text = title) } },
-                    )
-                }
-
-                val beats = splitIntoBeats(text.subtitle.orEmpty(), maxBeats = 3)
-                beats.forEachIndexed { index, beat ->
-                    // Spread down the frame by bias rather than by fixed offsets: the boxes have
-                    // no way to measure each other, so dividing the height between them up front
-                    // is what keeps a long beat from landing on top of the next one.
-                    val verticalBias = -0.35f + 1.25f * ((index + 0.5f) / beats.size)
-                    val leaning = if (index % 2 == 0) 1 else -1
-                    add(
-                        ComicBalloonSpec(
-                            alignment = BiasAlignment(0.28f * leaning, verticalBias),
-                            widthFraction = 0.82f,
-                            offset = DpOffset((14 * leaning).dp, 0.dp),
-                        ) {
-                            ComicFadeIn(delayMillis = 250 + index * 400) {
-                                ComicCaptionBox(text = beat, align = TextAlign.Start)
-                            }
-                        },
-                    )
-                }
-            }
+        get() = comicNarrationBalloons(text.title, text.subtitle)
 
     @Composable
     override fun Show(
@@ -84,29 +50,4 @@ class ComicNarrationPanel(
     ) {
         Box(modifier.fillMaxSize())
     }
-}
-
-/**
- * Breaks prose on sentence boundaries and regroups it into at most [maxBeats] roughly even chunks,
- * so a long paragraph becomes a few caption boxes instead of one per sentence (which would flood
- * the frame) or one box holding everything (which is the slab we're avoiding).
- */
-internal fun splitIntoBeats(
-    text: String,
-    maxBeats: Int,
-): List<String> {
-    val trimmed = text.trim()
-    if (trimmed.isEmpty()) return emptyList()
-
-    val sentences =
-        Regex("(?<=[.!?…])\\s+")
-            .split(trimmed)
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-
-    if (sentences.size <= 1) return listOf(trimmed)
-
-    val beats = minOf(maxBeats, sentences.size)
-    val perBeat = (sentences.size + beats - 1) / beats
-    return sentences.chunked(perBeat).map { it.joinToString(" ") }
 }

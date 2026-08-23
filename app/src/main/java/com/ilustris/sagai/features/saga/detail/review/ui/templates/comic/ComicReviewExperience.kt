@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.ui.templates.comic
 
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.ui.genre.comic.splitIntoBeats
 import com.ilustris.sagai.features.saga.detail.data.model.cleanMessage
 import com.ilustris.sagai.features.saga.detail.data.model.isComplete
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperience

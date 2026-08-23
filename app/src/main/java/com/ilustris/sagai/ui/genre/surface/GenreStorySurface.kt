@@ -13,6 +13,9 @@ import com.ilustris.sagai.ui.genre.GenreSurfaceStyle
 import com.ilustris.sagai.ui.genre.book.BookBackground
 import com.ilustris.sagai.ui.genre.crime.CrimeBackground
 import com.ilustris.sagai.ui.genre.surface.book.BookStoryBeat
+import com.ilustris.sagai.ui.genre.surface.collage.CollageStoryBeat
+import com.ilustris.sagai.ui.genre.surface.comic.ComicStoryBeat
+import com.ilustris.sagai.ui.genre.surface.crime.CrimeStoryBeat
 import com.ilustris.sagai.ui.genre.surface.plain.PlainStoryBeat
 import com.ilustris.sagai.ui.genre.surface.terminal.TerminalStoryBeat
 import com.ilustris.sagai.ui.genre.terminal.TerminalBackground
@@ -52,13 +55,18 @@ fun GenreStorySurface(
             GenreSurfaceStyle.TERMINAL ->
                 TerminalStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding)
 
-            // Crime, Collage and Comic land here until their own surfaces exist; the default
-            // layout is genre-neutral rather than wrong, so this reads as unstyled, not broken.
-            GenreSurfaceStyle.CRIME,
-            GenreSurfaceStyle.COLLAGE,
-            GenreSurfaceStyle.COMIC,
-            GenreSurfaceStyle.DEFAULT,
-            -> PlainStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding, genre)
+            GenreSurfaceStyle.CRIME ->
+                CrimeStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding)
+
+            GenreSurfaceStyle.COLLAGE ->
+                CollageStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding)
+
+            GenreSurfaceStyle.COMIC ->
+                ComicStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding)
+
+            // Only reachable for a null genre — every real genre has a style of its own.
+            GenreSurfaceStyle.DEFAULT ->
+                PlainStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding, genre)
         }
     }
 }
