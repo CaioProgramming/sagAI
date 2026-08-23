@@ -83,15 +83,13 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
-import com.ilustris.sagai.ui.genre.GenreSurfaceStyle
-import com.ilustris.sagai.ui.genre.surfaceStyle
 import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
-import com.ilustris.sagai.features.saga.milestone.ui.MilestoneClosureContent
-import com.ilustris.sagai.features.saga.milestone.ui.MilestoneIntroductionContent
-import com.ilustris.sagai.features.saga.milestone.ui.MilestoneLoadingContent
-import com.ilustris.sagai.features.saga.milestone.ui.StepIndicator
-import com.ilustris.sagai.features.saga.milestone.ui.skin.MilestoneSkinChrome
+import com.ilustris.sagai.features.saga.milestone.ui.toStoryBeat
+import com.ilustris.sagai.ui.genre.surface.GenreStoryLoading
+import com.ilustris.sagai.ui.genre.surface.GenreStoryNotice
+import com.ilustris.sagai.ui.genre.surface.GenreStorySurface
+import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.animations.comicExtrude
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.WordArtText
@@ -224,110 +222,120 @@ fun DesignSystemPreviewView(
                                 color = MaterialTheme.colorScheme.background,
                             ) {
                                 Box(Modifier.fillMaxSize()) {
-                                    // Terminal draws its own char-cell TerminalProgress as chrome over
-                                    // this same spot, mirroring MilestoneScreen's own isTerminalSkin
-                                    // check — otherwise the plain dot indicator would double up under it.
-                                    val isTerminalSkin = genre.surfaceStyle() == GenreSurfaceStyle.TERMINAL
+                                    // Every kind now goes through the same GenreStorySurface the
+                                    // real screen uses, so what shows up here is not a lookalike —
+                                    // it is the production composable with mock content. `genre` is
+                                    // passed explicitly rather than left to LocalSagaGenre so the
+                                    // pager can force one the ambient theme hasn't switched to yet.
                                     when (kind) {
-                                        // MilestoneLoadingContent has no button on purpose — in
-                                        // the real screen it advances on its own once generation
-                                        // finishes. The preview has nothing driving that, so it
-                                        // gets its own "Next" affordance here instead, without
-                                        // touching the production composable's contract.
+                                        // The real screen advances out of Loading on its own once
+                                        // generation finishes. Nothing drives that here, so the
+                                        // preview adds its own "Next" without touching the
+                                        // production composable's contract.
                                         MilestonePreviewKind.LOADING -> {
-                                            MilestoneSkinChrome(genre = genre, stepIndex = null, stepTotal = null) {
-                                                Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp)) {
-                                                    Box(Modifier.fillMaxWidth().weight(1f)) {
-                                                        MilestoneLoadingContent(
-                                                            reasoning = "Weaving the next thread of your story...",
-                                                        )
-                                                    }
-                                                    Button(
-                                                        onClick = { milestonePreviewKind = MilestonePreviewKind.EVENT },
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                    ) {
-                                                        Text("Next")
-                                                    }
+                                            Column(Modifier.fillMaxSize()) {
+                                                Box(Modifier.fillMaxWidth().weight(1f)) {
+                                                    GenreStoryLoading(
+                                                        message = "Weaving the next thread of your story...",
+                                                        genre = genre,
+                                                    )
+                                                }
+                                                Button(
+                                                    onClick = { milestonePreviewKind = MilestonePreviewKind.EVENT },
+                                                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                                                ) {
+                                                    Text("Next")
                                                 }
                                             }
                                         }
 
-                                        MilestonePreviewKind.EVENT -> {
-                                            MilestoneSkinChrome(genre = genre, stepIndex = 1, stepTotal = 3) {
-                                                MilestoneClosureContent(
-                                                    state =
-                                                        MilestoneUiState.ClosureStep(
+                                        MilestonePreviewKind.EVENT ->
+                                            GenreStorySurface(
+                                                beat =
+                                                    MilestoneUiState
+                                                        .ClosureStep(
                                                             DesignSystemMocks.mockNewEventMilestone(genre),
                                                             stepIndex = 1,
                                                             stepTotal = 3,
+                                                        ).toStoryBeat(
+                                                            sagaId = 1,
+                                                            sagaTitle = "Ashes of the Old Guard",
+                                                            coverImage = null,
+                                                            actCoverImages = emptyList(),
+                                                            bookGenerationState = BookGenerationUiState.Idle,
+                                                            onContinue = { milestonePreviewKind = MilestonePreviewKind.CHAPTER },
+                                                            onNavigate = {},
+                                                            onGenerateBook = {},
                                                         ),
-                                                    sagaId = 1,
-                                                    genre = genre,
-                                                    onContinue = { milestonePreviewKind = MilestonePreviewKind.CHAPTER },
-                                                    stepIndicator =
-                                                        if (isTerminalSkin) {
-                                                            {}
-                                                        } else {
-                                                            { StepIndicator(stepIndex = 1, stepTotal = 3) }
-                                                        },
-                                                )
-                                            }
-                                        }
+                                                genre = genre,
+                                            )
 
-                                        MilestonePreviewKind.CHAPTER -> {
-                                            MilestoneSkinChrome(genre = genre, stepIndex = 2, stepTotal = 3) {
-                                                MilestoneClosureContent(
-                                                    state =
-                                                        MilestoneUiState.ClosureStep(
+                                        MilestonePreviewKind.CHAPTER ->
+                                            GenreStorySurface(
+                                                beat =
+                                                    MilestoneUiState
+                                                        .ClosureStep(
                                                             DesignSystemMocks.mockChapterFinishedMilestone(genre),
                                                             stepIndex = 2,
                                                             stepTotal = 3,
+                                                        ).toStoryBeat(
+                                                            sagaId = 1,
+                                                            sagaTitle = "Ashes of the Old Guard",
+                                                            coverImage = MOCK_COVER_URL,
+                                                            actCoverImages = emptyList(),
+                                                            bookGenerationState = BookGenerationUiState.Idle,
+                                                            onContinue = { milestonePreviewKind = MilestonePreviewKind.ACT },
+                                                            onNavigate = {},
+                                                            onGenerateBook = {},
                                                         ),
-                                                    sagaId = 1,
-                                                    genre = genre,
-                                                    coverImage = "https://i.pinimg.com/564x/0a/92/7d/0a927df0b8a6a12a5276e03882775739.jpg",
-                                                    onContinue = { milestonePreviewKind = MilestonePreviewKind.ACT },
-                                                    stepIndicator =
-                                                        if (isTerminalSkin) {
-                                                            {}
-                                                        } else {
-                                                            { StepIndicator(stepIndex = 2, stepTotal = 3) }
-                                                        },
-                                                )
-                                            }
-                                        }
+                                                genre = genre,
+                                            )
 
-                                        MilestonePreviewKind.ACT -> {
-                                            MilestoneSkinChrome(genre = genre, stepIndex = 3, stepTotal = 3) {
-                                                MilestoneClosureContent(
-                                                    state =
-                                                        MilestoneUiState.ClosureStep(
+                                        MilestonePreviewKind.ACT ->
+                                            GenreStorySurface(
+                                                beat =
+                                                    MilestoneUiState
+                                                        .ClosureStep(
                                                             DesignSystemMocks.mockActFinishedMilestone(),
                                                             stepIndex = 3,
                                                             stepTotal = 3,
+                                                        ).toStoryBeat(
+                                                            sagaId = 1,
+                                                            sagaTitle = "Ashes of the Old Guard",
+                                                            coverImage = null,
+                                                            actCoverImages = DesignSystemMocks.mockActCoverImages(),
+                                                            bookGenerationState = BookGenerationUiState.Idle,
+                                                            onContinue = { milestonePreviewKind = MilestonePreviewKind.INTRO },
+                                                            onNavigate = {},
+                                                            onGenerateBook = {},
                                                         ),
-                                                    sagaId = 1,
-                                                    genre = genre,
-                                                    actCoverImages = DesignSystemMocks.mockActCoverImages(),
-                                                    onContinue = { milestonePreviewKind = MilestonePreviewKind.INTRO },
-                                                    stepIndicator =
-                                                        if (isTerminalSkin) {
-                                                            {}
-                                                        } else {
-                                                            { StepIndicator(stepIndex = 3, stepTotal = 3) }
-                                                        },
-                                                )
-                                            }
-                                        }
+                                                genre = genre,
+                                            )
 
-                                        MilestonePreviewKind.INTRO -> {
-                                            MilestoneSkinChrome(genre = genre, stepIndex = null, stepTotal = null) {
-                                                MilestoneIntroductionContent(
-                                                    milestone = DesignSystemMocks.mockIntroductionMilestone(),
-                                                    onContinue = { milestonePreviewKind = null },
-                                                )
-                                            }
-                                        }
+                                        MilestonePreviewKind.INTRO ->
+                                            GenreStorySurface(
+                                                beat =
+                                                    DesignSystemMocks.mockIntroductionMilestone().toStoryBeat(
+                                                        sagaTitle = "Ashes of the Old Guard",
+                                                        onContinue = { milestonePreviewKind = MilestonePreviewKind.ERROR },
+                                                    ),
+                                                genre = genre,
+                                            )
+
+                                        // Never previewable before this refactor, and now the one
+                                        // state whose genre treatment nobody has ever laid eyes on.
+                                        MilestonePreviewKind.ERROR ->
+                                            GenreStoryNotice(
+                                                title = stringResource(R.string.milestone_error_title),
+                                                message = "The story lost its thread while closing this chapter.",
+                                                genre = genre,
+                                                action =
+                                                    StoryBeatAction(
+                                                        id = "retry",
+                                                        label = stringResource(R.string.try_again),
+                                                        onClick = { milestonePreviewKind = null },
+                                                    ),
+                                            )
                                     }
                                     IconButton(
                                         onClick = { milestonePreviewKind = null },
@@ -434,7 +442,11 @@ fun DesignSystemPreviewView(
     }
 }
 
-private enum class MilestonePreviewKind { LOADING, EVENT, CHAPTER, ACT, INTRO }
+/** Stand-in chapter art, so the cover slot in each genre's treatment has something to show. */
+private const val MOCK_COVER_URL =
+    "https://i.pinimg.com/564x/0a/92/7d/0a927df0b8a6a12a5276e03882775739.jpg"
+
+private enum class MilestonePreviewKind { LOADING, EVENT, CHAPTER, ACT, INTRO, ERROR }
 
 @Composable
 private fun BoxScope.GenrePager(pagerState: androidx.compose.foundation.pager.PagerState) {
