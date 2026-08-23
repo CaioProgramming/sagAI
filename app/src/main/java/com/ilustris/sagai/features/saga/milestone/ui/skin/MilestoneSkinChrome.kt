@@ -3,8 +3,8 @@ package com.ilustris.sagai.features.saga.milestone.ui.skin
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.detail.review.ui.ReviewTemplate
-import com.ilustris.sagai.features.saga.detail.review.ui.reviewTemplate
+import com.ilustris.sagai.ui.genre.GenreSurfaceStyle
+import com.ilustris.sagai.ui.genre.surfaceStyle
 
 /**
  * Genre "skin" dispatcher for the Milestone screen — wraps [content] in whichever full-screen
@@ -18,9 +18,9 @@ import com.ilustris.sagai.features.saga.detail.review.ui.reviewTemplate
  * indicator inside [content] when a skin has taken over that job; see
  * [com.ilustris.sagai.features.saga.milestone.ui.MilestoneClosureContent]'s `stepIndicator` slot.
  *
- * Every [ReviewTemplate] now has a matching skin — [TerminalMilestoneSkin], [BookMilestoneSkin],
+ * Every [GenreSurfaceStyle] now has a matching skin — [TerminalMilestoneSkin], [BookMilestoneSkin],
  * [CollageMilestoneSkin], [ComicMilestoneSkin], [CrimeMilestoneSkin] — except
- * [ReviewTemplate.DEFAULT] (and a null [genre]), which falls straight through to [content]
+ * [GenreSurfaceStyle.DEFAULT] (and a null [genre]), which falls straight through to [content]
  * unmodified, matching how the review feature itself leaves ungrouped genres unstyled.
  */
 @Composable
@@ -35,8 +35,8 @@ fun MilestoneSkinChrome(
         content()
         return
     }
-    when (genre.reviewTemplate()) {
-        ReviewTemplate.TERMINAL ->
+    when (genre.surfaceStyle()) {
+        GenreSurfaceStyle.TERMINAL ->
             TerminalMilestoneSkin(
                 genre = genre,
                 stepIndex = stepIndex,
@@ -45,7 +45,7 @@ fun MilestoneSkinChrome(
                 content = content,
             )
 
-        ReviewTemplate.BOOK ->
+        GenreSurfaceStyle.BOOK ->
             BookMilestoneSkin(
                 genre = genre,
                 stepIndex = stepIndex,
@@ -54,7 +54,7 @@ fun MilestoneSkinChrome(
                 content = content,
             )
 
-        ReviewTemplate.COLLAGE ->
+        GenreSurfaceStyle.COLLAGE ->
             CollageMilestoneSkin(
                 genre = genre,
                 stepIndex = stepIndex,
@@ -63,7 +63,7 @@ fun MilestoneSkinChrome(
                 content = content,
             )
 
-        ReviewTemplate.COMIC ->
+        GenreSurfaceStyle.COMIC ->
             ComicMilestoneSkin(
                 genre = genre,
                 stepIndex = stepIndex,
@@ -72,7 +72,7 @@ fun MilestoneSkinChrome(
                 content = content,
             )
 
-        ReviewTemplate.CRIME ->
+        GenreSurfaceStyle.CRIME ->
             CrimeMilestoneSkin(
                 genre = genre,
                 stepIndex = stepIndex,
@@ -81,6 +81,6 @@ fun MilestoneSkinChrome(
                 content = content,
             )
 
-        ReviewTemplate.DEFAULT -> content()
+        GenreSurfaceStyle.DEFAULT -> content()
     }
 }

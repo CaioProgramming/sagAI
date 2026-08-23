@@ -68,8 +68,8 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
-import com.ilustris.sagai.features.saga.detail.review.ui.ReviewTemplate
-import com.ilustris.sagai.features.saga.detail.review.ui.reviewTemplate
+import com.ilustris.sagai.ui.genre.GenreSurfaceStyle
+import com.ilustris.sagai.ui.genre.surfaceStyle
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneViewModel
 import com.ilustris.sagai.features.saga.milestone.ui.skin.MilestoneSkinChrome
@@ -143,7 +143,7 @@ fun MilestoneScreen(
                     // over the same spot this Column would otherwise reserve for the plain dot
                     // one — so that dot indicator has to stay out of the way here, not render
                     // underneath it. Every other genre keeps today's inline StepIndicator.
-                    val isTerminalSkin = genre?.reviewTemplate() == ReviewTemplate.TERMINAL
+                    val isTerminalSkin = genre?.surfaceStyle() == GenreSurfaceStyle.TERMINAL
                     val stepIndicator: @Composable () -> Unit =
                         if (isTerminalSkin) {
                             {}

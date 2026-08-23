@@ -17,7 +17,7 @@ import com.ilustris.sagai.ui.genre.book.BookBackground
  * [com.ilustris.sagai.features.saga.detail.review.ui.ReviewNavigationStyle.ContinuousScroll].
  * Genre identity comes from theme colors/fonts and [BookBackground]'s per-genre texture (parchment
  * grain vs. rice-paper fiber), not from separate page classes — see
- * [com.ilustris.sagai.features.saga.detail.review.ui.GenreReviewTemplateMapping].
+ * [com.ilustris.sagai.ui.genre.GenreSurfaceStyle].
  * Reuses the same [com.ilustris.sagai.features.saga.detail.data.model.Review] stage data as
  * [com.ilustris.sagai.features.saga.detail.review.ui.DefaultReviewExperience] —
  * only the page visuals and navigation model differ.

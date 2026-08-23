@@ -7,11 +7,13 @@ import com.ilustris.sagai.features.saga.detail.review.ui.templates.collage.Colla
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicReviewExperience
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CrimeReviewExperience
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalReviewExperience
+import com.ilustris.sagai.ui.genre.GenreSurfaceStyle
+import com.ilustris.sagai.ui.genre.surfaceStyle
 
 object ReviewExperienceFactory {
     /**
      * Escape hatch for a genre that needs a fully bespoke experience instead of a
-     * shared [ReviewTemplate] — checked before template resolution. Empty for now;
+     * shared [GenreSurfaceStyle] — checked before template resolution. Empty for now;
      * a future genre "graduating" out of a shared template lands here as a one-line
      * addition, with no change to [ReviewExperience]/[ReviewPage]/SagaReview.kt.
      */
@@ -20,13 +22,13 @@ object ReviewExperienceFactory {
     fun createExperience(content: SagaContent): ReviewExperience {
         val genre = content.data.genre
         bespokeByGenre[genre]?.let { return it(content) }
-        return when (genre.reviewTemplate()) {
-            ReviewTemplate.TERMINAL -> TerminalReviewExperience(content)
-            ReviewTemplate.BOOK -> BookReviewExperience(content)
-            ReviewTemplate.CRIME -> CrimeReviewExperience(content)
-            ReviewTemplate.COLLAGE -> CollageReviewExperience(content)
-            ReviewTemplate.COMIC -> ComicReviewExperience(content)
-            ReviewTemplate.DEFAULT -> DefaultReviewExperience(content)
+        return when (genre.surfaceStyle()) {
+            GenreSurfaceStyle.TERMINAL -> TerminalReviewExperience(content)
+            GenreSurfaceStyle.BOOK -> BookReviewExperience(content)
+            GenreSurfaceStyle.CRIME -> CrimeReviewExperience(content)
+            GenreSurfaceStyle.COLLAGE -> CollageReviewExperience(content)
+            GenreSurfaceStyle.COMIC -> ComicReviewExperience(content)
+            GenreSurfaceStyle.DEFAULT -> DefaultReviewExperience(content)
         }
     }
 }

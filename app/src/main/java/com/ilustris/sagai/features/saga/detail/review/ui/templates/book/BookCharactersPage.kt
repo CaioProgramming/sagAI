@@ -33,7 +33,7 @@ import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
-import com.ilustris.sagai.features.saga.detail.review.ui.reviewCastTitle
+import com.ilustris.sagai.ui.genre.castTitle
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.genre.book.BookBackground
 
@@ -69,7 +69,7 @@ class BookCharactersPage(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(
-                text = genre.reviewCastTitle(),
+                text = genre.castTitle(),
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
                 color = accent,

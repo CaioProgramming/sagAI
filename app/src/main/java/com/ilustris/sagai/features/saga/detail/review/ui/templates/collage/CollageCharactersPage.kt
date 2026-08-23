@@ -33,7 +33,7 @@ import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
-import com.ilustris.sagai.features.saga.detail.review.ui.reviewCastTitle
+import com.ilustris.sagai.ui.genre.castTitle
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.genre.collage.AssemblingPiece
 import com.ilustris.sagai.ui.genre.collage.CharacterSticker
@@ -149,7 +149,7 @@ class CollageCharactersPage(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 genre.stylisedText(
-                    text = genre.reviewCastTitle(),
+                    text = genre.castTitle(),
                     modifier = Modifier.fillMaxWidth(),
                     fontSize = MaterialTheme.typography.headlineMedium.fontSize,
                 )

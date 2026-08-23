@@ -83,8 +83,8 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
-import com.ilustris.sagai.features.saga.detail.review.ui.ReviewTemplate
-import com.ilustris.sagai.features.saga.detail.review.ui.reviewTemplate
+import com.ilustris.sagai.ui.genre.GenreSurfaceStyle
+import com.ilustris.sagai.ui.genre.surfaceStyle
 import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.ui.MilestoneClosureContent
@@ -227,7 +227,7 @@ fun DesignSystemPreviewView(
                                     // Terminal draws its own char-cell TerminalProgress as chrome over
                                     // this same spot, mirroring MilestoneScreen's own isTerminalSkin
                                     // check — otherwise the plain dot indicator would double up under it.
-                                    val isTerminalSkin = genre.reviewTemplate() == ReviewTemplate.TERMINAL
+                                    val isTerminalSkin = genre.surfaceStyle() == GenreSurfaceStyle.TERMINAL
                                     when (kind) {
                                         // MilestoneLoadingContent has no button on purpose — in
                                         // the real screen it advances on its own once generation
