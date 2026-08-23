@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
+import com.ilustris.sagai.ui.genre.surface.StoryBody
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
 import com.ilustris.sagai.ui.genre.terminal.TerminalCommandLine
@@ -59,6 +61,7 @@ fun TerminalStoryBeat(
     beat: StoryBeat,
     modifier: Modifier = Modifier,
     canAnimate: Boolean = true,
+    embedded: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val accent = MaterialTheme.colorScheme.primary
@@ -75,18 +78,11 @@ fun TerminalStoryBeat(
 
     Column(
         modifier
-            .fillMaxSize()
-            .systemBarsPadding()
+            .storyRoot(embedded)
             .padding(contentPadding)
             .padding(horizontal = 24.dp, vertical = 24.dp),
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
+        StoryBody(embedded, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             // The opening command and its output — the beat itself.
             val head = next()
             TerminalTypewriter(

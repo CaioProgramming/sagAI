@@ -45,6 +45,7 @@ import com.ilustris.sagai.ui.genre.comic.SlantShape
 import com.ilustris.sagai.ui.genre.comic.comicNarrationBalloons
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
 
@@ -64,6 +65,7 @@ fun ComicStoryBeat(
     beat: StoryBeat,
     modifier: Modifier = Modifier,
     canAnimate: Boolean = true,
+    embedded: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val hasAttachments = beat.figures.isNotEmpty() || beat.entries.isNotEmpty() || beat.cast.isNotEmpty()
@@ -73,15 +75,17 @@ fun ComicStoryBeat(
 
     Box(
         modifier
-            .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .systemBarsPadding()
+            .storyRoot(embedded)
             .padding(contentPadding),
     ) {
         if (hasAttachments) {
-            ComicPageColumn(beat, Modifier.fillMaxSize())
+            ComicPageColumn(beat, Modifier.fillMaxWidth(), embedded)
         } else {
-            ComicLooseBeat(beat, Modifier.fillMaxSize())
+            // The loose layout places by bias inside a box, so it needs a height to divide up.
+            // Embedded, it has none — the review only ever sends it words, and a fixed band is
+            // what its own board would have given the same beat.
+            ComicLooseBeat(beat, if (embedded) Modifier.fillMaxWidth().height(260.dp) else Modifier.fillMaxSize())
         }
 
         beat.progress?.takeIf { it.total > 1 }?.let {
@@ -137,15 +141,16 @@ private fun ComicLooseBeat(
 private fun ComicPageColumn(
     beat: StoryBeat,
     modifier: Modifier = Modifier,
+    embedded: Boolean = false,
 ) {
     var delay = 0
     fun nextDelay(): Int = (delay + 260).also { delay = it }
 
     Column(
         modifier
-            .verticalScroll(rememberScrollState())
+            .then(if (embedded) Modifier else Modifier.verticalScroll(rememberScrollState()))
             .padding(horizontal = 16.dp, vertical = 24.dp)
-            .padding(bottom = 72.dp),
+            .padding(bottom = if (embedded) 0.dp else 72.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         beat.eyebrow?.let {

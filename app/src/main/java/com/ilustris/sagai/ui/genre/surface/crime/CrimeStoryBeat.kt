@@ -55,6 +55,8 @@ import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
 import com.ilustris.sagai.ui.genre.crime.CrimeContactRow
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
+import com.ilustris.sagai.ui.genre.surface.StoryBody
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryBeatTone
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
@@ -77,6 +79,7 @@ fun CrimeStoryBeat(
     beat: StoryBeat,
     modifier: Modifier = Modifier,
     canAnimate: Boolean = true,
+    embedded: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val genre = LocalSagaGenre.current ?: Genre.CRIME
@@ -84,18 +87,14 @@ fun CrimeStoryBeat(
 
     Column(
         modifier
-            .fillMaxSize()
-            .systemBarsPadding()
+            .storyRoot(embedded)
             .padding(contentPadding)
-            .padding(horizontal = 12.dp, vertical = 16.dp),
+            .padding(
+                horizontal = if (embedded) 0.dp else 12.dp,
+                vertical = if (embedded) 0.dp else 16.dp,
+            ),
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
+        StoryBody(embedded, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             beat.eyebrow?.let { CrimeThreadDivider(it) }
 
             beat.body?.takeIf { it.isNotBlank() }?.let { body ->

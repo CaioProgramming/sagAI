@@ -58,7 +58,9 @@ import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
+import com.ilustris.sagai.ui.genre.surface.StoryBody
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -79,13 +81,13 @@ fun PlainStoryBeat(
     beat: StoryBeat,
     modifier: Modifier = Modifier,
     canAnimate: Boolean = true,
+    embedded: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     genre: Genre? = null,
 ) {
     Column(
         modifier
-            .fillMaxSize()
-            .systemBarsPadding()
+            .storyRoot(embedded)
             .padding(contentPadding)
             .padding(horizontal = 32.dp, vertical = 24.dp),
     ) {
@@ -96,11 +98,8 @@ fun PlainStoryBeat(
         var visible by remember(beat.key) { mutableStateOf(!canAnimate) }
         LaunchedEffect(beat.key) { visible = true }
 
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
+        StoryBody(
+            embedded,
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

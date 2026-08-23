@@ -50,6 +50,8 @@ import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
+import com.ilustris.sagai.ui.genre.surface.StoryBody
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryBeatTone
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
@@ -75,6 +77,7 @@ fun BookStoryBeat(
     beat: StoryBeat,
     modifier: Modifier = Modifier,
     canAnimate: Boolean = true,
+    embedded: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val accent =
@@ -90,21 +93,14 @@ fun BookStoryBeat(
 
     Column(
         modifier
-            .fillMaxSize()
-            .systemBarsPadding()
+            .storyRoot(embedded)
             .padding(contentPadding)
             .padding(horizontal = 32.dp, vertical = 24.dp),
     ) {
         var revealed by remember(beat.key) { mutableStateOf(!canAnimate) }
         LaunchedEffect(beat.key) { if (!canAnimate) revealed = true }
 
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
+        StoryBody(embedded, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             beat.eyebrow?.let {
                 Text(
                     text = it.uppercase(),

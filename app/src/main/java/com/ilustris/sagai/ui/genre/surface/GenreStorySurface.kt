@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -30,9 +31,10 @@ import com.ilustris.sagai.ui.theme.LocalSagaGenre
  * [com.ilustris.sagai.ui.theme.components.MorphingThemeIcon] uses: a design-system preview wants to
  * force a genre, while a real screen should just inherit the one its theme already established.
  *
- * [drawBackground] is on by default because a full-screen beat owns its whole surface. The story
- * review turns it off: its own containers already paint the background behind a pager, and painting
- * it twice would cover the page-turn.
+ * [embedded] says whether the beat owns the screen or is one item inside somebody else's scrolling
+ * container. The story review embeds; the Milestone screen does not. It changes real structure, not
+ * just decoration — an embedded beat is measured with unbounded height, so it must not fill, weight
+ * or scroll — which is why it is a parameter rather than something each surface infers.
  */
 @Composable
 fun GenreStorySurface(
@@ -40,33 +42,35 @@ fun GenreStorySurface(
     modifier: Modifier = Modifier,
     genre: Genre? = LocalSagaGenre.current,
     canAnimate: Boolean = true,
-    drawBackground: Boolean = true,
+    embedded: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
-    Box(modifier.fillMaxSize()) {
-        if (drawBackground) {
+    Box(if (embedded) modifier.fillMaxWidth() else modifier.fillMaxSize()) {
+        // An embedded beat draws no ground of its own: the review's containers already painted it
+        // behind the whole pager, and a second coat would cover the page-turn between beats.
+        if (!embedded) {
             GenreStoryBackground(Modifier.fillMaxSize(), genre)
         }
 
         when (genre?.surfaceStyle() ?: GenreSurfaceStyle.DEFAULT) {
             GenreSurfaceStyle.BOOK ->
-                BookStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding)
+                BookStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding)
 
             GenreSurfaceStyle.TERMINAL ->
-                TerminalStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding)
+                TerminalStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding)
 
             GenreSurfaceStyle.CRIME ->
-                CrimeStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding)
+                CrimeStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding)
 
             GenreSurfaceStyle.COLLAGE ->
-                CollageStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding)
+                CollageStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding)
 
             GenreSurfaceStyle.COMIC ->
-                ComicStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding)
+                ComicStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding)
 
             // Only reachable for a null genre — every real genre has a style of its own.
             GenreSurfaceStyle.DEFAULT ->
-                PlainStoryBeat(beat, Modifier.fillMaxSize(), canAnimate, contentPadding, genre)
+                PlainStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding, genre)
         }
     }
 }

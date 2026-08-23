@@ -42,6 +42,8 @@ import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.ui.genre.collage.AssemblingPiece
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
+import com.ilustris.sagai.ui.genre.surface.StoryBody
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
 import com.ilustris.sagai.ui.genre.collage.CharacterSticker
@@ -72,6 +74,7 @@ fun CollageStoryBeat(
     beat: StoryBeat,
     modifier: Modifier = Modifier,
     canAnimate: Boolean = true,
+    embedded: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val genre = LocalSagaGenre.current ?: Genre.PUNK_ROCK
@@ -82,19 +85,15 @@ fun CollageStoryBeat(
     var revealed by remember(beat.key) { mutableStateOf(!canAnimate) }
     LaunchedEffect(beat.key) { revealed = true }
 
-    Box(modifier.fillMaxSize()) {
+    Box(if (embedded) modifier.fillMaxWidth() else modifier.fillMaxSize()) {
         Column(
             Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
+                .storyRoot(embedded)
                 .padding(contentPadding)
-                .padding(vertical = 20.dp),
+                .padding(vertical = if (embedded) 0.dp else 20.dp),
         ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
+            StoryBody(
+                embedded,
                 verticalArrangement = Arrangement.spacedBy(18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
