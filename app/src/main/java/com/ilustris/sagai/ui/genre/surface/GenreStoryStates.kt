@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,27 +23,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.genre.GenreSurfaceStyle
+import com.ilustris.sagai.ui.genre.PhysicalButton
 import com.ilustris.sagai.ui.genre.collage.PAPER_INK
 import com.ilustris.sagai.ui.genre.collage.TornPaperStrip
 import com.ilustris.sagai.ui.genre.collage.rememberTearReveal
-import com.ilustris.sagai.ui.genre.comic.ComicCaptionBox
-import com.ilustris.sagai.ui.genre.comic.ComicPanel
 import com.ilustris.sagai.ui.genre.comic.COMIC_INK
 import com.ilustris.sagai.ui.genre.comic.COMIC_PAPER
-import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
+import com.ilustris.sagai.ui.genre.comic.ComicCaptionBox
+import com.ilustris.sagai.ui.genre.comic.ComicPanel
 import com.ilustris.sagai.ui.genre.surfaceStyle
+import com.ilustris.sagai.ui.genre.terminal.TerminalCommandButton
 import com.ilustris.sagai.ui.genre.terminal.TerminalLine
 import com.ilustris.sagai.ui.genre.terminal.TerminalProgress
 import com.ilustris.sagai.ui.genre.terminal.TerminalTypewriter
@@ -52,11 +53,13 @@ import com.ilustris.sagai.ui.genre.terminal.terminalPromptLine
 import com.ilustris.sagai.ui.theme.LocalSagaGenre
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shimmerize
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themePainter
+import com.ilustris.sagai.ui.theme.themeStylizedText
 import com.ilustris.sagai.ui.theme.themeVfx
 import kotlin.time.Duration.Companion.seconds
 
@@ -70,6 +73,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 @Composable
 fun GenreStoryLoading(
+    title: String,
     message: String,
     modifier: Modifier = Modifier,
     genre: Genre? = LocalSagaGenre.current,
@@ -79,9 +83,9 @@ fun GenreStoryLoading(
         GenreStoryBackground(Modifier.fillMaxSize(), genre)
 
         when (genre?.surfaceStyle() ?: GenreSurfaceStyle.DEFAULT) {
-            GenreSurfaceStyle.TERMINAL -> TerminalLoading(message, progress)
+            GenreSurfaceStyle.TERMINAL -> TerminalLoading(title, message, progress)
             GenreSurfaceStyle.BOOK -> BookLoading(message)
-            GenreSurfaceStyle.CRIME -> CrimeLoading(message, genre)
+            GenreSurfaceStyle.CRIME -> CrimeLoading(title, message)
             GenreSurfaceStyle.COLLAGE -> CollageLoading(message)
             GenreSurfaceStyle.COMIC -> ComicLoading(message)
             GenreSurfaceStyle.DEFAULT -> PlainLoading(message)
@@ -89,7 +93,19 @@ fun GenreStoryLoading(
     }
 }
 
-/** Something went wrong and the player has to decide what happens next. */
+/**
+ * Something went wrong and the player has to decide what happens next.
+ *
+ * Centred the same way [GenreStoryIntroduction] is, and for the same reason: this is a system
+ * interruption, not a beat of the story, so it doesn't earn any genre's bespoke layout — a shell
+ * transcript or a chat thread would dress up an error as more narrative than it is. Only the
+ * ground under it and the ambient weather over it still change hands between genres.
+ *
+ * Terminal is one exception, the same as in [GenreStoryIntroduction]: a console doesn't pop a
+ * dialog, it prints a failed command. Heroes and Horror are the other: their action still sits in
+ * the same centred column, just pressed as a [PhysicalButton] instead of a flat Material one — the
+ * same swap their introduction and their own beat surface already make.
+ */
 @Composable
 fun GenreStoryNotice(
     title: String,
@@ -98,31 +114,115 @@ fun GenreStoryNotice(
     genre: Genre? = LocalSagaGenre.current,
     action: StoryBeatAction? = null,
 ) {
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    val isTerminal = (genre?.surfaceStyle() ?: GenreSurfaceStyle.DEFAULT) == GenreSurfaceStyle.TERMINAL
+    val usesPhysicalButton = genre == Genre.HEROES || genre == Genre.HORROR
+
+    Box(modifier.fillMaxSize()) {
         GenreStoryBackground(Modifier.fillMaxSize(), genre)
 
-        GenreStorySurface(
-            beat =
-                StoryBeat(
-                    key = title to message,
-                    title = title,
-                    body = message,
-                    // Terminal prints it as a failed command rather than a titled paragraph.
-                    verb = "recover --retry",
-                    tone = StoryBeatTone.SYSTEM,
-                    actions = listOfNotNull(action?.copy(emphasis = StoryActionEmphasis.PRIMARY)),
+        if (isTerminal) {
+            TerminalNotice(title, message, action)
+        } else {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_warning),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(50.dp),
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+                action?.let {
+                    if (usesPhysicalButton) {
+                        PhysicalButton(
+                            text = it.label,
+                            onClick = it.onClick,
+                            busy = it.busy,
+                            accent = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                        )
+                    } else {
+                        Button(
+                            onClick = it.onClick,
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                        ) {
+                            Text(it.label)
+                        }
+                    }
+                }
+            }
+        }
+
+        GenreStoryAmbientOverlay(Modifier.fillMaxSize(), genre)
+    }
+}
+
+/** A failed command instead of a dialog — the error is what the terminal just tried to run. */
+@Composable
+private fun TerminalNotice(
+    title: String,
+    message: String,
+    action: StoryBeatAction?,
+) {
+    val error = MaterialTheme.colorScheme.error
+    val mono = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace)
+    val host = terminalHost("")
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        TerminalTypewriter(
+            lines =
+                listOf(
+                    terminalPromptLine(host = host, command = "recover --retry", accent = error),
+                    TerminalLine(text = "[FATAL] $title", style = mono.copy(color = error)),
+                    TerminalLine(
+                        text = message,
+                        style = mono.copy(color = MaterialTheme.colorScheme.onBackground.copy(alpha = .85f)),
+                    ),
                 ),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-            genre = genre,
             canAnimate = false,
-            embedded = true,
+            caretColor = error,
+            modifier = Modifier.fillMaxWidth(),
         )
+        action?.let {
+            TerminalCommandButton(
+                label = it.label,
+                onClick = it.onClick,
+                accent = MaterialTheme.colorScheme.primary,
+                busy = it.busy,
+                modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+            )
+        }
     }
 }
 
 /** A live prompt with the caret still blinking, and a bar sweeping with no known total. */
 @Composable
 private fun TerminalLoading(
+    title: String,
     message: String,
     progress: StoryProgress?,
 ) {
@@ -138,7 +238,7 @@ private fun TerminalLoading(
         TerminalTypewriter(
             lines =
                 listOf(
-                    terminalPromptLine(host = terminalHost(""), command = "story --advance", accent = accent),
+                    terminalPromptLine(host = terminalHost(title), command = "story --advance", accent = accent),
                     TerminalLine(text = message, style = mono.copy(color = MaterialTheme.colorScheme.onBackground)),
                 ),
             caretColor = accent,
@@ -184,54 +284,28 @@ private fun BookLoading(message: String) {
     }
 }
 
-/** Someone on the other end is typing. */
+/** Someone on the other end is typing — the saga's own name, lettered in its word-art. */
 @Composable
 private fun CrimeLoading(
+    title: String,
     message: String,
-    genre: Genre?,
 ) {
     Column(
         Modifier.fillMaxSize().padding(20.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        CrimeBubbleFrame(
-            isMe = false,
-            genre = genre ?: Genre.CRIME,
-            showAvatar = false,
-            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
-        ) { contentColor ->
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                repeat(3) { index -> TypingDot(contentColor, index) }
-            }
-        }
+        themeStylizedText(title, modifier = Modifier.align(Alignment.CenterHorizontally))
+
         Text(
             text = message,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f),
-            modifier = Modifier.padding(start = 12.dp, top = 10.dp),
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    shadow = Shadow(Color.White, blurRadius = 10f),
+                    textAlign = TextAlign.Center,
+                ),
+            modifier = Modifier.padding(8.dp).align(Alignment.CenterHorizontally).reactiveShimmer(true),
         )
     }
-}
-
-@Composable
-private fun TypingDot(
-    color: Color,
-    index: Int,
-) {
-    val transition = rememberInfiniteTransition(label = "typingDot$index")
-    val alpha by transition.animateFloat(
-        initialValue = 0.25f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(600, delayMillis = index * 180), RepeatMode.Reverse),
-        label = "typingDotAlpha$index",
-    )
-    Box(
-        Modifier
-            .size(7.dp)
-            .alpha(alpha)
-            .clip(CircleShape)
-            .background(color),
-    )
 }
 
 /** A strip caught halfway through its tear — the page is still being ripped open. */
@@ -241,7 +315,6 @@ private fun CollageLoading(message: String) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         TornPaperStrip(
             seed = 13,
-            modifier = Modifier.fillMaxWidth(1.14f),
             revealProgress = reveal,
             contentPadding = PaddingValues(horizontal = 30.dp, vertical = 40.dp),
         ) {
@@ -261,15 +334,7 @@ private fun CollageLoading(message: String) {
 @Composable
 private fun ComicLoading(message: String) {
     Box(Modifier.fillMaxSize().padding(28.dp), contentAlignment = Alignment.Center) {
-        ComicPanel(
-            modifier = Modifier.fillMaxWidth(),
-            borderColor = COMIC_INK,
-            background = COMIC_PAPER,
-        ) {
-            Box(Modifier.fillMaxWidth().padding(28.dp), contentAlignment = Alignment.Center) {
-                ComicCaptionBox(text = message, align = TextAlign.Center)
-            }
-        }
+        ComicCaptionBox(text = message, align = TextAlign.Start, modifier = Modifier.levitate())
     }
 }
 

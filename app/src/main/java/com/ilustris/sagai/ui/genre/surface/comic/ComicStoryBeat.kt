@@ -2,25 +2,20 @@ package com.ilustris.sagai.ui.genre.surface.comic
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,24 +25,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.ui.genre.PhysicalButton
 import com.ilustris.sagai.ui.genre.comic.COMIC_INK
 import com.ilustris.sagai.ui.genre.comic.COMIC_PAPER
 import com.ilustris.sagai.ui.genre.comic.ComicCaptionBox
 import com.ilustris.sagai.ui.genre.comic.ComicFadeIn
 import com.ilustris.sagai.ui.genre.comic.ComicPanel
-import com.ilustris.sagai.ui.genre.comic.ComicShoutBlock
 import com.ilustris.sagai.ui.genre.comic.ComicSpeechBalloon
 import com.ilustris.sagai.ui.genre.comic.ComicTag
 import com.ilustris.sagai.ui.genre.comic.SlantShape
 import com.ilustris.sagai.ui.genre.comic.comicNarrationBalloons
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
-import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 
 /**
  * A beat as one comic page.
@@ -80,25 +76,25 @@ fun ComicStoryBeat(
             .padding(contentPadding),
     ) {
         if (hasAttachments) {
-            ComicPageColumn(beat, Modifier.fillMaxWidth(), embedded)
+            // Actions ride inside this column's own scroll, not pinned over it — a beat with a
+            // cover, two wikis and a cast is tall enough that a floating action row either
+            // overlapped the last line of text or had nowhere honest to sit.
+            ComicPageColumn(beat, Modifier.fillMaxWidth(), embedded, revealed)
         } else {
-            // The loose layout places by bias inside a box, so it needs a height to divide up.
-            // Embedded, it has none — the review only ever sends it words, and a fixed band is
-            // what its own board would have given the same beat.
             ComicLooseBeat(beat, if (embedded) Modifier.fillMaxWidth().height(260.dp) else Modifier.fillMaxSize())
+
+            AnimatedVisibility(
+                visible = !beat.gateActionsOnReveal || revealed,
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(20.dp),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    beat.actions.forEach { ComicActionButton(it) }
+                }
+            }
         }
 
         beat.progress?.takeIf { it.total > 1 }?.let {
             ComicIssueNumber(it, Modifier.align(Alignment.TopEnd).padding(16.dp))
-        }
-
-        AnimatedVisibility(
-            visible = !beat.gateActionsOnReveal || revealed,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(20.dp),
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                beat.actions.forEach { ComicActionBlock(it) }
-            }
         }
     }
 }
@@ -142,23 +138,34 @@ private fun ComicPageColumn(
     beat: StoryBeat,
     modifier: Modifier = Modifier,
     embedded: Boolean = false,
+    revealed: Boolean = true,
 ) {
     var delay = 0
+
     fun nextDelay(): Int = (delay + 260).also { delay = it }
 
     Column(
         modifier
             .then(if (embedded) Modifier else Modifier.verticalScroll(rememberScrollState()))
-            .padding(horizontal = 16.dp, vertical = 24.dp)
-            .padding(bottom = if (embedded) 0.dp else 72.dp),
+            .padding(horizontal = 16.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         beat.eyebrow?.let {
             ComicFadeIn(delayMillis = nextDelay()) { ComicTag(text = it) }
         }
 
+        // Plain lettering, not another box: a page that is mostly panels and boxes already reads
+        // as a comic — a title stamped in its own block on top of that just competed with them.
         beat.title?.let {
-            ComicFadeIn(delayMillis = nextDelay()) { ComicShoutBlock(text = it) }
+            ComicFadeIn(delayMillis = nextDelay()) {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
 
         beat.body?.takeIf { it.isNotBlank() }?.let {
@@ -233,6 +240,14 @@ private fun ComicPageColumn(
                 ComicSpeechBalloon(text = aside.text, speaker = aside.label)
             }
         }
+
+        if (beat.actions.isNotEmpty()) {
+            AnimatedVisibility(!beat.gateActionsOnReveal || revealed) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    beat.actions.forEach { ComicActionButton(it) }
+                }
+            }
+        }
     }
 }
 
@@ -245,21 +260,19 @@ private fun ComicIssueNumber(
     ComicTag(text = "${progress.index} / ${progress.total}", modifier = modifier)
 }
 
-/** An action as the loudest block on the page — a comic has no buttons, only lettering. */
+/**
+ * An action as a physical button, same family as [PhysicalButton] everywhere else in Comic —
+ * primary in the genre's own accent, secondary in paper, so "Continuar" and "Ver detalhes" read as
+ * two weights of the same object instead of two different visual languages.
+ */
 @Composable
-private fun ComicActionBlock(action: StoryBeatAction) {
+private fun ComicActionButton(action: StoryBeatAction) {
     val isPrimary = action.emphasis == StoryActionEmphasis.PRIMARY
-    Box(Modifier.then(if (action.busy) Modifier else Modifier.clickable(onClick = action.onClick))) {
-        if (isPrimary) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (action.busy) {
-                    CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp, color = COMIC_PAPER)
-                    Spacer(Modifier.width(8.dp))
-                }
-                ComicShoutBlock(text = action.label)
-            }
-        } else {
-            ComicCaptionBox(text = action.label, italic = false)
-        }
-    }
+    PhysicalButton(
+        text = action.label,
+        onClick = action.onClick,
+        busy = action.busy,
+        accent = if (isPrimary) MaterialTheme.colorScheme.primary else COMIC_PAPER,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }

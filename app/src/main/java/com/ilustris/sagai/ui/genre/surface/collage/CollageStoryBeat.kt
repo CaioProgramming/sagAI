@@ -44,11 +44,11 @@ import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBody
 import com.ilustris.sagai.ui.genre.surface.storyRoot
+import com.ilustris.sagai.ui.genre.surface.GenreStoryAmbientOverlay
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
 import com.ilustris.sagai.ui.genre.collage.CharacterSticker
 import com.ilustris.sagai.ui.genre.collage.PAPER_INK
-import com.ilustris.sagai.ui.genre.collage.PunkScribbleOverlay
 import com.ilustris.sagai.ui.genre.collage.TornPaperScrap
 import com.ilustris.sagai.ui.genre.collage.TornPaperStrip
 import com.ilustris.sagai.ui.genre.collage.TornPhotoScrap
@@ -286,7 +286,7 @@ fun CollageStoryBeat(
         }
 
         // Doodled on the finished poster, not tucked behind it.
-        PunkScribbleOverlay(Modifier.fillMaxSize())
+        GenreStoryAmbientOverlay(Modifier.fillMaxSize(), genre)
     }
 }
 

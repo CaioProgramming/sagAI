@@ -16,10 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
@@ -48,15 +45,18 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.ui.genre.PhysicalButton
+import com.ilustris.sagai.ui.genre.surface.GenreStoryAmbientOverlay
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
-import com.ilustris.sagai.ui.genre.surface.StoryBody
-import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryBeatTone
+import com.ilustris.sagai.ui.genre.surface.StoryBody
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.theme.LocalSagaGenre
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
+import com.ilustris.sagai.ui.theme.components.HandwrittenText
 import kotlin.time.Duration.Companion.milliseconds
 
 /** Body typing speed, clamped so a one-line beat still takes a readable moment. */
@@ -80,19 +80,35 @@ fun BookStoryBeat(
     embedded: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
-    val accent =
-        LocalSagaGenre.current
-            ?.compiledColorPalette()
-            ?.firstOrNull() ?: MaterialTheme.colorScheme.primary
+    val genre = LocalSagaGenre.current
+    val accent = genre?.compiledColorPalette()?.firstOrNull() ?: MaterialTheme.colorScheme.primary
     val ink = LocalContentColor.current
 
-    if (beat.tone == StoryBeatTone.EPIGRAPH) {
-        BookEpigraph(beat, modifier, canAnimate, contentPadding)
-        return
-    }
+    Box(modifier) {
+        if (beat.tone == StoryBeatTone.EPIGRAPH) {
+            BookEpigraph(beat, Modifier, canAnimate, contentPadding)
+        } else {
+            BookPage(beat, genre, accent, ink, canAnimate, embedded, contentPadding)
+        }
 
+        // Genre-exclusive weather over the finished page — drawn last, the same "already taped
+        // off"/"ink already bloomed" layering BookMilestoneSkin used to give these three genres.
+        GenreStoryAmbientOverlay(Modifier.fillMaxSize(), genre)
+    }
+}
+
+@Composable
+private fun BookPage(
+    beat: StoryBeat,
+    genre: Genre?,
+    accent: Color,
+    ink: Color,
+    canAnimate: Boolean,
+    embedded: Boolean,
+    contentPadding: PaddingValues,
+) {
     Column(
-        modifier
+        Modifier
             .storyRoot(embedded)
             .padding(contentPadding)
             .padding(horizontal = 32.dp, vertical = 24.dp),
@@ -113,9 +129,12 @@ fun BookStoryBeat(
             }
 
             beat.title?.let {
-                SimpleTypewriterText(
+                HandwrittenText(
                     text = it.uppercase(),
-                    style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                    isBold = true,
+                    isItalic = false,
                     isAnimated = canAnimate,
                 )
                 HorizontalDivider(color = accent.copy(alpha = 0.4f))
@@ -150,7 +169,22 @@ fun BookStoryBeat(
 
         AnimatedVisibility(!beat.gateActionsOnReveal || revealed) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                beat.actions.forEach { BookLinkAction(it, accent, ink) }
+                beat.actions.forEach { action ->
+                    if (genre == Genre.HORROR) {
+                        // Horror is the one Book genre that's tactile rather than printed — the
+                        // page is already taped off, so what you press is a physical object too,
+                        // not one more italic link on the paper.
+                        PhysicalButton(
+                            text = action.label,
+                            onClick = action.onClick,
+                            busy = action.busy,
+                            accent = accent,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        BookLinkAction(action, accent, ink)
+                    }
+                }
             }
         }
     }
@@ -170,10 +204,11 @@ private fun BookEpigraph(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             beat.title?.let {
-                SimpleTypewriterText(
+                HandwrittenText(
                     text = "“$it”",
-                    style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
-                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                    centered = true,
                     isAnimated = canAnimate,
                 )
             }

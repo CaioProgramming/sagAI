@@ -7,6 +7,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
@@ -106,6 +107,10 @@ fun MilestoneUiState.ClosureStep.toStoryBeat(
 /**
  * The cold open of a chapter or act. Unstepped by design, and its actions are held back until the
  * surface has finished revealing — this beat exists to be read, not clicked past.
+ *
+ * [verb]/[sagaTitle] only matter to Terminal, which is also the one style
+ * [GenreStoryIntroduction][com.ilustris.sagai.ui.genre.surface.GenreStoryIntroduction] renders as an
+ * actual command prompt rather than the shared centred layout every other genre gets.
  */
 @Composable
 fun SagaMilestone.Introduction.toStoryBeat(
@@ -117,9 +122,8 @@ fun SagaMilestone.Introduction.toStoryBeat(
         eyebrow = number.takeIf { it.isNotBlank() },
         title = titleText,
         body = introduction.takeIf { it.isNotBlank() },
-        verb = if (type == com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType.ACT) "act --open" else "chapter --open",
+        verb = if (type == IntroductionType.ACT) "act --open" else "chapter --open",
         source = sagaTitle,
-        tone = StoryBeatTone.ANNOUNCEMENT,
         gateActionsOnReveal = true,
         actions =
             listOf(

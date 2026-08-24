@@ -20,11 +20,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -110,7 +113,18 @@ fun ComicCaptionBox(
 ) {
     Box(
         modifier
-            .background(background)
+            // Hard-edged and offset, not blurred — a halftone card sitting a beat above the page,
+            // not a Material surface catching soft light.
+            .dropShadow(
+                shape = RectangleShape,
+                shadow =
+                    Shadow(
+                        radius = 0.dp,
+                        spread = 0.dp,
+                        color = ink,
+                        offset = DpOffset(4.dp, 4.dp),
+                    ),
+            ).background(background)
             .border(2.dp, ink)
             .padding(horizontal = 10.dp, vertical = 7.dp),
     ) {

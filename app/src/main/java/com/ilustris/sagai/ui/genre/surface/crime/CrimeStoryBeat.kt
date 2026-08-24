@@ -55,11 +55,11 @@ import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
 import com.ilustris.sagai.ui.genre.crime.CrimeContactRow
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
-import com.ilustris.sagai.ui.genre.surface.StoryBody
-import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryBeatTone
+import com.ilustris.sagai.ui.genre.surface.StoryBody
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.theme.LocalSagaGenre
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import kotlinx.coroutines.delay
@@ -93,6 +93,7 @@ fun CrimeStoryBeat(
                 horizontal = if (embedded) 0.dp else 12.dp,
                 vertical = if (embedded) 0.dp else 16.dp,
             ),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         StoryBody(embedded, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             beat.eyebrow?.let { CrimeThreadDivider(it) }

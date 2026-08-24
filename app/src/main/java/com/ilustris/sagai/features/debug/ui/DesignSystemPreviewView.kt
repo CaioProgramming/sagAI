@@ -86,10 +86,6 @@ import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBa
 import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.ui.toStoryBeat
-import com.ilustris.sagai.ui.genre.surface.GenreStoryLoading
-import com.ilustris.sagai.ui.genre.surface.GenreStoryNotice
-import com.ilustris.sagai.ui.genre.surface.GenreStorySurface
-import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.animations.comicExtrude
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.WordArtText
@@ -98,6 +94,11 @@ import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.ImageGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.ObjectiveIslandContent
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.genre.surface.GenreStoryIntroduction
+import com.ilustris.sagai.ui.genre.surface.GenreStoryLoading
+import com.ilustris.sagai.ui.genre.surface.GenreStoryNotice
+import com.ilustris.sagai.ui.genre.surface.GenreStorySurface
+import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
@@ -236,6 +237,7 @@ fun DesignSystemPreviewView(
                                             Column(Modifier.fillMaxSize()) {
                                                 Box(Modifier.fillMaxWidth().weight(1f)) {
                                                     GenreStoryLoading(
+                                                        it.name,
                                                         message = "Weaving the next thread of your story...",
                                                         genre = genre,
                                                     )
@@ -249,7 +251,7 @@ fun DesignSystemPreviewView(
                                             }
                                         }
 
-                                        MilestonePreviewKind.EVENT ->
+                                        MilestonePreviewKind.EVENT -> {
                                             GenreStorySurface(
                                                 beat =
                                                     MilestoneUiState
@@ -269,8 +271,9 @@ fun DesignSystemPreviewView(
                                                         ),
                                                 genre = genre,
                                             )
+                                        }
 
-                                        MilestonePreviewKind.CHAPTER ->
+                                        MilestonePreviewKind.CHAPTER -> {
                                             GenreStorySurface(
                                                 beat =
                                                     MilestoneUiState
@@ -290,8 +293,9 @@ fun DesignSystemPreviewView(
                                                         ),
                                                 genre = genre,
                                             )
+                                        }
 
-                                        MilestonePreviewKind.ACT ->
+                                        MilestonePreviewKind.ACT -> {
                                             GenreStorySurface(
                                                 beat =
                                                     MilestoneUiState
@@ -311,9 +315,10 @@ fun DesignSystemPreviewView(
                                                         ),
                                                 genre = genre,
                                             )
+                                        }
 
-                                        MilestonePreviewKind.INTRO ->
-                                            GenreStorySurface(
+                                        MilestonePreviewKind.INTRO -> {
+                                            GenreStoryIntroduction(
                                                 beat =
                                                     DesignSystemMocks.mockIntroductionMilestone().toStoryBeat(
                                                         sagaTitle = "Ashes of the Old Guard",
@@ -321,10 +326,11 @@ fun DesignSystemPreviewView(
                                                     ),
                                                 genre = genre,
                                             )
+                                        }
 
                                         // Never previewable before this refactor, and now the one
                                         // state whose genre treatment nobody has ever laid eyes on.
-                                        MilestonePreviewKind.ERROR ->
+                                        MilestonePreviewKind.ERROR -> {
                                             GenreStoryNotice(
                                                 title = stringResource(R.string.milestone_error_title),
                                                 message = "The story lost its thread while closing this chapter.",
@@ -336,6 +342,7 @@ fun DesignSystemPreviewView(
                                                         onClick = { milestonePreviewKind = null },
                                                     ),
                                             )
+                                        }
                                     }
                                     IconButton(
                                         onClick = { milestonePreviewKind = null },

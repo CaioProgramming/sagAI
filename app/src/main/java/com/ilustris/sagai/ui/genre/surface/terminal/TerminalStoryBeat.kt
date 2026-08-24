@@ -3,7 +3,6 @@ package com.ilustris.sagai.ui.genre.surface.terminal
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -35,14 +34,13 @@ import com.ilustris.sagai.ui.genre.surface.StoryBody
 import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
-import com.ilustris.sagai.ui.genre.terminal.TerminalCommandLine
+import com.ilustris.sagai.ui.genre.terminal.TerminalCommandButton
 import com.ilustris.sagai.ui.genre.terminal.TerminalLine
 import com.ilustris.sagai.ui.genre.terminal.TerminalPortraitPlate
 import com.ilustris.sagai.ui.genre.terminal.TerminalProgress
 import com.ilustris.sagai.ui.genre.terminal.TerminalTypewriter
 import com.ilustris.sagai.ui.genre.terminal.terminalHost
 import com.ilustris.sagai.ui.genre.terminal.terminalPromptLine
-import com.ilustris.sagai.ui.genre.terminal.terminalSelection
 
 /**
  * A beat as a terminal session: one continuous transcript where every attachment is the output of a
@@ -236,34 +234,19 @@ private fun TerminalStepBar(
     )
 }
 
-/** An action as the next command waiting to be run — caret on the one the reader is meant to take. */
+/** An action as the next command waiting to be run. */
 @Composable
 private fun TerminalAction(
     action: StoryBeatAction,
     host: String,
     accent: Color,
 ) {
-    val isPrimary = action.emphasis == StoryActionEmphasis.PRIMARY
-    TerminalCommandLine(
-        host = if (isPrimary) "" else host,
-        command = action.label.lowercase().replace(' ', '_'),
+    TerminalCommandButton(
+        label = action.label,
+        onClick = action.onClick,
         accent = accent,
-        showCaret = isPrimary && !action.busy,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .then(
-                    if (action.busy) {
-                        Modifier
-                    } else {
-                        // terminalSelection inverts the character cells under the press instead of
-                        // washing a ripple over them — a console highlights, it doesn't glow.
-                        Modifier.clickable(
-                            interactionSource = null,
-                            indication = terminalSelection(accent),
-                            onClick = action.onClick,
-                        )
-                    },
-                ),
+        host = host,
+        primary = action.emphasis == StoryActionEmphasis.PRIMARY,
+        busy = action.busy,
     )
 }
