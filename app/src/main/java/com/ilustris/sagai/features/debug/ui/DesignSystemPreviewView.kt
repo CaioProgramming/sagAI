@@ -94,6 +94,10 @@ import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.ImageGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.ObjectiveIslandContent
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.genre.recap.GenreRecapCard
+import com.ilustris.sagai.ui.genre.recap.RecapCard
+import com.ilustris.sagai.ui.genre.recap.RecapProgress
+import com.ilustris.sagai.ui.genre.recap.RecapStat
 import com.ilustris.sagai.ui.genre.surface.GenreStoryIntroduction
 import com.ilustris.sagai.ui.genre.surface.GenreStoryLoading
 import com.ilustris.sagai.ui.genre.surface.GenreStoryNotice
@@ -188,6 +192,11 @@ fun DesignSystemPreviewView(
 
                             // Config Info Box
                             VisualConfigInfo()
+
+                            // Recap card, both states — otherwise the only way to see one is to
+                            // actually finish a saga in this genre.
+                            SampleLabel("RECAP CARD")
+                            RecapCardSample(genre)
 
                             HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
@@ -796,6 +805,47 @@ private fun SampleLabel(text: String) {
         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
         modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
     )
+}
+
+/**
+ * Both recap states side by side. Goes through [GenreRecapCard] with a hand-built [RecapCard]
+ * rather than through `RecapHeroCard`, so a preview doesn't need a mock Saga carrying a fully
+ * generated review just to show the ready state.
+ */
+@Composable
+private fun RecapCardSample(genre: Genre) {
+    val stats =
+        listOf(
+            RecapStat("247", stringResource(R.string.recap_stat_messages)),
+            RecapStat("11", stringResource(R.string.recap_stat_characters)),
+            RecapStat("3", stringResource(R.string.recap_stat_chapters)),
+        )
+    val title = stringResource(R.string.recap_your_journey)
+    val cta = stringResource(R.string.recap_revisit_now)
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        GenreRecapCard(
+            card = RecapCard(title = title, stats = stats, callToAction = cta),
+            modifier = Modifier.fillMaxWidth().height(150.dp),
+            genre = genre,
+        )
+        GenreRecapCard(
+            card =
+                RecapCard(
+                    title = title,
+                    stats = stats,
+                    callToAction = cta,
+                    progress =
+                        RecapProgress(
+                            completed = 2,
+                            total = 6,
+                            message = stringResource(R.string.recap_almost_ready, 2, 6),
+                        ),
+                ),
+            modifier = Modifier.fillMaxWidth().height(150.dp),
+            genre = genre,
+        )
+    }
 }
 
 @Composable

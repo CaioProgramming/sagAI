@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.ui
 
+import com.ilustris.sagai.ui.genre.DynamicCard
+import com.ilustris.sagai.ui.genre.DynamicLinework
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.ui
 
+import com.ilustris.sagai.ui.genre.DynamicCard
+import com.ilustris.sagai.ui.genre.DynamicLinework
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -117,111 +119,6 @@ fun StoryProgressIndicator(
         gapSize = 0.dp,
         strokeCap = StrokeCap.Round,
     )
-}
-
-@Composable
-fun DynamicLinework(
-    color: Color,
-    lineCount: Int,
-    strokeWidth: Dp = 1.dp,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier,
-) {
-    var size by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
-
-    // Generate minimalist, sweeping paths
-    val paths =
-        remember(size, lineCount) {
-            if (size == androidx.compose.ui.unit.IntSize.Zero) return@remember emptyList<Path>()
-            val width = size.width.toFloat()
-            val height = size.height.toFloat()
-            val random = Random(lineCount.toLong())
-
-            List(lineCount) {
-                val path = Path()
-                // Randomly start from any of the 4 sides, well outside the view
-                val startSide = random.nextInt(4)
-                val endSide = (startSide + random.nextInt(1, 3)) % 4
-
-                fun getPoint(side: Int): Offset {
-                    val padding = 200f
-                    return when (side) {
-                        0 -> Offset(random.nextFloat() * width, -padding)
-
-                        // Top
-                        1 -> Offset(width + padding, random.nextFloat() * height)
-
-                        // Right
-                        2 -> Offset(random.nextFloat() * width, height + padding)
-
-                        // Bottom
-                        else -> Offset(-padding, random.nextFloat() * height) // Left
-                    }
-                }
-
-                val start = getPoint(startSide)
-                val end = getPoint(endSide)
-
-                // Control points are deeply randomized to create wide, sweeping curves
-                val cp1 = Offset(random.nextFloat() * width, random.nextFloat() * height)
-                val cp2 = Offset(random.nextFloat() * width, random.nextFloat() * height)
-
-                path.moveTo(start.x, start.y)
-                path.cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y)
-                path
-            }
-        }
-
-    val animProgresses =
-        remember(paths) {
-            paths.map { Animatable(if (enabled) 0f else 1f) }
-        }
-
-    LaunchedEffect(paths, enabled) {
-        if (enabled) {
-            animProgresses.forEachIndexed { index, anim ->
-                launch {
-                    delay(index * 300L + Random.nextLong(0, 500))
-                    anim.animateTo(
-                        1f,
-                        animationSpec =
-                            tween(
-                                durationMillis = 3000 + Random.nextInt(0, 2000),
-                                easing = EaseOutCubic,
-                            ),
-                    )
-                }
-            }
-        }
-    }
-
-    Canvas(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .onSizeChanged { size = it },
-    ) {
-        paths.forEachIndexed { index, path ->
-            val progress = animProgresses[index].value
-            if (progress > 0f) {
-                val pathMeasure = PathMeasure()
-                pathMeasure.setPath(path, false)
-                val segmentPath = Path()
-                pathMeasure.getSegment(0f, pathMeasure.length * progress, segmentPath)
-
-                drawPath(
-                    path = segmentPath,
-                    color = color,
-                    style =
-                        Stroke(
-                            width = strokeWidth.toPx(),
-                            cap = StrokeCap.Round,
-                            join = StrokeJoin.Round,
-                        ),
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -528,53 +425,6 @@ fun HeroSummaryCard(
                 Modifier
                     .size(24.dp),
         )
-    }
-}
-
-@Composable
-fun DynamicCard(
-    title: String,
-    subtitle: String,
-    titleStyle: TextStyle,
-    subtitleStyle: TextStyle,
-    lineColor: Color,
-    modifier: Modifier,
-) {
-    val lineCount = Random.nextInt(1, 5)
-    Box(modifier, contentAlignment = Alignment.Center) {
-        DynamicLinework(lineColor, lineCount, modifier = Modifier.fillMaxSize(), strokeWidth = 2.dp)
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier =
-                Modifier
-                    .align(Alignment.Center)
-                    .padding(8.dp),
-        ) {
-            AnimatedContent(title, transitionSpec = {
-                fadeIn(animationSpec = tween(500)) +
-                    slideInVertically { it } togetherWith
-                    fadeOut(animationSpec = tween(500)) +
-                    slideOutVertically { -it }
-            }) {
-                Text(
-                    text = it,
-                    style = titleStyle,
-                )
-            }
-
-            AnimatedContent(subtitle, transitionSpec = {
-                fadeIn(animationSpec = tween(500)) +
-                    slideInVertically { it } togetherWith
-                    fadeOut(animationSpec = tween(500)) +
-                    slideOutVertically { -it }
-            }) {
-                Text(
-                    text = it,
-                    style = subtitleStyle,
-                )
-            }
-        }
     }
 }
 
