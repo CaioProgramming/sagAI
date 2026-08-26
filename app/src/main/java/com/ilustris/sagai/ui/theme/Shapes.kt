@@ -41,26 +41,36 @@ import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Builds the polygon-to-container transform.
+ *
+ * Deliberately a fresh [Matrix] per call rather than a field on the shape. `createOutline` is
+ * invoked on every draw, and a shared matrix accumulates: the second draw scales on top of the
+ * first, the third on top of that, and the path leaves the viewport within a couple of frames.
+ * That went unnoticed for as long as these shapes were only ever drawn once — it surfaces the
+ * moment anything animates them.
+ *
+ * Assumes the polygon keeps the default radius of 1f and centre of 0f, and stretches it to fill
+ * the container.
+ */
+private fun morphMatrix(size: Size): Matrix =
+    Matrix().apply {
+        scale(size.width / 2f, size.height / 2f)
+        translate(1f, 1f)
+    }
+
 class CustomRotatingMorphShape(
     private val morph: Morph,
     private val percentage: Float,
     private val rotation: Float,
 ) : Shape {
-    private val matrix = Matrix()
-
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
         density: Density,
     ): Outline {
-        // Below assumes that you haven't changed the default radius of 1f, nor the centerX and centerY of 0f
-        // By default this stretches the path to the size of the container, if you don't want stretching, use the same size.width for both x and y.
-        matrix.scale(size.width / 2f, size.height / 2f)
-        matrix.translate(1f, 1f)
-
         val path = morph.toPath(progress = percentage).asComposePath()
-        path.transform(matrix)
-
+        path.transform(morphMatrix(size))
         return Outline.Generic(path)
     }
 }
@@ -69,20 +79,13 @@ class MorphPolygonShape(
     private val morph: Morph,
     private val percentage: Float,
 ) : Shape {
-    private val matrix = Matrix()
-
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
         density: Density,
     ): Outline {
-        // Below assumes that you haven't changed the default radius of 1f, nor the centerX and centerY of 0f
-        // By default this stretches the path to the size of the container, if you don't want stretching, use the same size.width for both x and y.
-        matrix.scale(size.width / 2f, size.height / 2f)
-        matrix.translate(1f, 1f)
-
         val path = morph.toPath(progress = percentage).asComposePath()
-        path.transform(matrix)
+        path.transform(morphMatrix(size))
         return Outline.Generic(path)
     }
 }
@@ -112,6 +115,8 @@ class RoundedPolygonShape(
         return Outline.Generic(path)
     }
 }
+
+fun RoundedPolygon.toShape() = RoundedPolygonShape(this)
 
 @Composable
 fun DrawShape(

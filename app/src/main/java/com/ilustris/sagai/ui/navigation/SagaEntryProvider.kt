@@ -23,6 +23,7 @@ import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.player.ui.PlayerProfileView
 import com.ilustris.sagai.features.playthrough.PlaythroughView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
+import com.ilustris.sagai.features.saga.chat.ui.EpilogueChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
 import com.ilustris.sagai.features.saga.detail.ui.SagaWikiView
 import com.ilustris.sagai.features.settings.ui.SettingsView
@@ -214,6 +215,19 @@ fun createSagaEntryProvider(
             onOpenCharacterBrain = { sagaId, characterId ->
                 navigator.navigate(CharacterBrainKey(sagaId.toString(), characterId))
             },
+            onOpenEpilogueChat = { sagaId, characterId ->
+                navigator.navigate(EpilogueChatKey(sagaId.toString(), characterId))
+            },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    entry<EpilogueChatKey> { key ->
+        EpilogueChatView(
+            sagaId = key.sagaId,
+            characterId = key.characterId,
+            onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )

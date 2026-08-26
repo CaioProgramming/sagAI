@@ -71,6 +71,11 @@ class DefaultReviewExperience(
                     add(ReviewConclusionPage(content))
                 }
 
+                // Farewells — the send-off, right before the final summary card
+                review.farewells
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { add(ReviewFarewellsPage(content, it)) }
+
                 // Summary — only when every step is ready
                 if (review.isComplete()) {
                     add(ReviewSummaryPage(content))

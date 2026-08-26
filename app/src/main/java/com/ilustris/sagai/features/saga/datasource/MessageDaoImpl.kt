@@ -34,6 +34,8 @@ class MessageDaoImpl
 
         override suspend fun updateMessage(message: Message) = messageDao.updateMessage(message)
 
+        override suspend fun markViewed(messageId: Int) = messageDao.markViewed(messageId)
+
         override suspend fun getLastMessageWithContent(sagaId: Int): MessageContent? = messageDao.getLastMessageWithContent(sagaId)
 
         override fun getMessagesCount(sagaId: Int): Flow<Int> = messageDao.getMessagesCount(sagaId)

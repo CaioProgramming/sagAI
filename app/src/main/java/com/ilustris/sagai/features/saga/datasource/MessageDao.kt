@@ -32,6 +32,14 @@ interface MessageDao {
     @Update
     suspend fun updateMessage(message: Message)
 
+    /**
+     * Targeted single-column update on purpose. A full-entity [updateMessage] with a stale copy
+     * would race with the character-link resolution that writes `characterId`/`speakerName` shortly
+     * after a reply lands, and last-write-wins would silently revert it.
+     */
+    @Query("UPDATE messages SET viewed = 1 WHERE id = :messageId")
+    suspend fun markViewed(messageId: Int)
+
     @Transaction
     @Query("SELECT * FROM messages WHERE sagaId = :sagaId ORDER BY timestamp DESC LIMIT 1")
     suspend fun getLastMessageWithContent(sagaId: Int): MessageContent?

@@ -113,6 +113,7 @@ class ChatViewModel
         private var lastEventId: Int = 0
         private var lastMessageCount: Int = 0
         private var lastMessagesFingerprint: Long = 0L
+        private val viewedMessageIds = mutableSetOf<Int>()
         private var wikiObserverJob: kotlinx.coroutines.Job? = null
 
         private var sagaObserverJob: kotlinx.coroutines.Job? = null
@@ -273,6 +274,10 @@ class ChatViewModel
 
                 is ChatUiAction.ToggleMessageSelection -> {
                     stateManager.toggleMessageSelection(action.messageId)
+                }
+
+                is ChatUiAction.MarkMessageViewed -> {
+                    markMessageViewed(action.messageId)
                 }
 
                 is ChatUiAction.ClearSelection -> {
@@ -647,6 +652,18 @@ class ChatViewModel
         fun checkSaga() {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.checkNarrativeProgression(uiState.value.sagaContent)
+            }
+        }
+
+        /**
+         * Persists that a message finished revealing itself. Guarded by an in-memory set because
+         * the bubble can re-emit this on recomposition, and every redundant write would invalidate
+         * the messages table and push another emission through the chat flow for nothing.
+         */
+        private fun markMessageViewed(messageId: Int) {
+            if (!viewedMessageIds.add(messageId)) return
+            viewModelScope.launch(Dispatchers.IO) {
+                messageUseCase.markViewed(messageId)
             }
         }
 

@@ -43,10 +43,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
@@ -60,6 +59,7 @@ import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaIntent
 import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.components.NewSagaBookFocus
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
@@ -217,8 +217,7 @@ fun LibraryPager(
                                 Modifier
                                     .size(
                                         24.dp,
-                                    )
-                                    .reactiveShimmer(
+                                    ).reactiveShimmer(
                                         repeatMode = RepeatMode.Restart,
                                         shimmerColors = themeShimmer(),
                                         isPlaying = true,
@@ -326,42 +325,36 @@ private fun EchoIdeaCard(
 
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier =
                 modifier
                     .fillMaxSize()
                     .padding(4.dp)
-                    .dropShadow(shape) {
-                        brush = genreBrush
-                        radius = 10f
-                        spread = 1f
-                    }
                     .border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), shape)
                     .clip(shape)
                     .background(MaterialTheme.colorScheme.background, shape)
+                    .background(fadeGradientBottom(MaterialTheme.colorScheme.primary))
                     .clickable(onClick = onClick)
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Icon(
-                    themePainter(),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp),
-                )
+            Icon(
+                themePainter(),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp),
+            )
 
-                Text(
-                    text = echo.title,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            Text(
+                text = echo.title,
+                style = MaterialTheme.typography.titleSmall,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
             Text(
                 text = echo.pitch,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 overflow = TextOverflow.Ellipsis,
             )

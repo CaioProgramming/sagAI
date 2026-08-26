@@ -28,4 +28,6 @@ interface CharacterRepository {
     ): Flow<List<CharacterContent>>
 
     fun getCharacterContent(characterId: Int): Flow<CharacterContent?>
+
+    suspend fun getCharactersByFirstSceneId(timelineId: Int): List<Character>
 }

@@ -43,6 +43,9 @@ interface MessageUseCase {
 
     suspend fun updateMessage(message: Message): RequestResult<Message>
 
+    /** Flags a message as already revealed so it never replays the typewriter animation. */
+    suspend fun markViewed(messageId: Int)
+
     fun setDebugMode(enabled: Boolean)
 
     fun isInDebugMode(): Boolean

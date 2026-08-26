@@ -379,6 +379,9 @@
     <string name="recap_characters_found">%d personagens encontrados</string>
     <string name="recap_chapters_lived">%d capítulos vividos</string>
     <string name="recap_revisit_now">Revisite sua saga agora</string>
+    <string name="recap_stat_messages">mensagens trocadas</string>
+    <string name="recap_stat_characters">personagens encontrados</string>
+    <string name="recap_stat_chapters">capítulos vividos</string>
     <string name="recap_your_journey">Sua Jornada</string>
     <string name="recap_preparing">Preparando seu recap…</string>
     <string name="recap_almost_ready">Seu recap está quase pronto (%1$d/%2$d)</string>
@@ -622,10 +625,18 @@
     <string name="review_stage_playstyle_subtitle_default">Como você agiu</string>
     <string name="review_stage_characters_title">O Elenco</string>
     <string name="review_stage_characters_subtitle_default">Seu Squad</string>
+    <string name="review_cast_title_fantasy">As Lendas</string>
+    <string name="review_cast_title_shinobi">O Clã</string>
+    <string name="review_cast_title_cowboy">Os Procurados</string>
+    <string name="review_cast_title_horror">Os Suspeitos</string>
+    <string name="review_horror_tape_text">CENA DE CRIME — NÃO ULTRAPASSE</string>
     <string name="review_stage_journey_title">A Jornada</string>
     <string name="review_stage_journey_subtitle_default">O caminho que fizemos</string>
     <string name="review_stage_conclusion_title">O Legado</string>
     <string name="review_stage_conclusion_subtitle_default">O que ficou</string>
+    <string name="review_farewells_title">A Despedida</string>
+    <string name="review_tap_to_expand">Toque para ver tudo</string>
+    <string name="review_tap_to_collapse">Toque para recolher</string>
 
     <!-- Logs de Auditoria de IA -->
     <string name="audit_logs_title">Logs de Auditoria de IA</string>

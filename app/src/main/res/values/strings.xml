@@ -20,6 +20,9 @@
     <string name="save_saga">Save saga</string>
     <string name="character_gallery_title">Characters</string>
     <string name="back_button_description">Back</string>
+    <string name="epilogue_chat_disclaimer">This conversation won\'t be saved</string>
+    <string name="send_button_description">Send</string>
+    <string name="talk_to_character_again">Talk to %1$s again</string>
     <string name="lets_create_saga">Let\'s create your saga</string>
     <string name="lets_create_saga_subtitle">AI will help you bring everything to life; don\'t be shy with the details of your journey.</string>
     <string name="generate_saga">Generate ✨</string>
@@ -427,6 +430,12 @@
     <string name="recap_characters_found">%d characters found</string>
     <string name="recap_chapters_lived">%d chapters lived</string>
     <string name="recap_revisit_now">Revisit your saga now</string>
+    <!-- Label-only variants of the three counted stats. The genre recap cards render the count and
+         its label separately (a number on a sticker, a column of terminal output), which a single
+         "%d messages sent" string can't be split back into. -->
+    <string name="recap_stat_messages">messages sent</string>
+    <string name="recap_stat_characters">characters found</string>
+    <string name="recap_stat_chapters">chapters lived</string>
     <string name="recap_your_journey">Your Journey</string>
     <string name="recap_preparing">Preparing your recap…</string>
     <string name="recap_almost_ready">Your recap is almost ready (%1$d/%2$d)</string>
@@ -750,10 +759,18 @@
     <string name="review_stage_playstyle_subtitle_default">How you acted</string>
     <string name="review_stage_characters_title">The Cast</string>
     <string name="review_stage_characters_subtitle_default">Your Squad</string>
+    <string name="review_cast_title_fantasy">The Legends</string>
+    <string name="review_cast_title_shinobi">The Clan</string>
+    <string name="review_cast_title_cowboy">The Wanted</string>
+    <string name="review_cast_title_horror">The Suspects</string>
+    <string name="review_horror_tape_text">CRIME SCENE — DO NOT CROSS</string>
     <string name="review_stage_journey_title">The Journey</string>
     <string name="review_stage_journey_subtitle_default">The path we took</string>
     <string name="review_stage_conclusion_title">The Legacy</string>
     <string name="review_stage_conclusion_subtitle_default">What remains</string>
+    <string name="review_farewells_title">The Send-Off</string>
+    <string name="review_tap_to_expand">Tap to view all</string>
+    <string name="review_tap_to_collapse">Tap to collapse</string>
 
     <!-- Onboarding -->
     <string name="onboarding_skip">Skip</string>

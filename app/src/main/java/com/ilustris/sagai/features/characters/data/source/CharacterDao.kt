@@ -59,7 +59,7 @@ interface CharacterDao {
     /**
      * Lightweight projection of the Saga entity, loading only the fields needed by the character details page.
      */
-    @Query("SELECT id, genre, variationId, title, icon FROM sagas WHERE id = :sagaId LIMIT 1")
+    @Query("SELECT id, genre, variationId, title, icon, isEnded, mainCharacterId FROM sagas WHERE id = :sagaId LIMIT 1")
     suspend fun getSagaInfoForCharacter(sagaId: Int): CharacterSagaInfo?
 
     @Transaction
@@ -79,4 +79,7 @@ interface CharacterDao {
 
     @Query("SELECT COUNT(*) FROM Characters WHERE sagaId = :sagaId")
     fun getCharactersCount(sagaId: Int): Flow<Int>
+
+    @Query("SELECT * FROM Characters WHERE firstSceneId = :timelineId")
+    suspend fun getCharactersByFirstSceneId(timelineId: Int): List<Character>
 }

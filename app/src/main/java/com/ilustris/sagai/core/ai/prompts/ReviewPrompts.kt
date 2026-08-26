@@ -52,4 +52,5 @@ object ReviewPrompts {
     const val REVIEW_EXPRESSIVENESS_BLUEPRINT = "review_expressiveness_blueprint"
     const val REVIEW_INTRODUCTION_BLUEPRINT = "review_introduction_blueprint"
     const val REVIEW_PLAYSTYLE_BLUEPRINT = "review_playstyle_blueprint"
+    const val REVIEW_FAREWELLS_BLUEPRINT = "review_farewells_blueprint"
 }

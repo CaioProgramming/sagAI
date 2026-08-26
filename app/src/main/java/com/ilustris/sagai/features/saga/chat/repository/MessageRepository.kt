@@ -17,6 +17,8 @@ interface MessageRepository {
 
     suspend fun updateMessage(message: Message): Message
 
+    suspend fun markViewed(messageId: Int)
+
     suspend fun getLastMessage(sagaId: Int): Message?
 
     fun getMessagesCount(sagaId: Int): Flow<Int>

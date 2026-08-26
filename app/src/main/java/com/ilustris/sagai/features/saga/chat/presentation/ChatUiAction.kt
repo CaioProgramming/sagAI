@@ -60,6 +60,11 @@ sealed class ChatUiAction {
         val messageId: Int,
     ) : ChatUiAction()
 
+    /** A message finished its reveal animation and should never replay it. */
+    data class MarkMessageViewed(
+        val messageId: Int,
+    ) : ChatUiAction()
+
     data object ClearSelection : ChatUiAction()
 
     data class ShareConversation(

@@ -63,7 +63,7 @@ fun TypewriterText(
     onTextUpdate: (String) -> Unit = { },
     onAnnotationClick: (Any?) -> Unit = { },
 ) {
-    var textTarget by remember { mutableIntStateOf(0) }
+    var textTarget by remember(text) { mutableIntStateOf(0) }
     val charIndex by animateIntAsState(
         targetValue = textTarget,
         animationSpec =
@@ -74,40 +74,54 @@ fun TypewriterText(
         finishedListener = { onAnimationFinished() },
     )
 
-    LaunchedEffect(Unit) {
-        if (textTarget == 0 && isAnimated) {
-            textTarget = text.length
-        } else {
-            textTarget = text.length
-            onTextUpdate(text)
-        }
+    LaunchedEffect(text, isAnimated) {
+        textTarget = text.length
+        if (!isAnimated) onTextUpdate(text)
     }
-    val currentText = if (isAnimated) text.take(charIndex) else text
 
-    LaunchedEffect(charIndex) {
+    val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
+    val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
+    val genreColor = MaterialTheme.colorScheme.primary
+
+    // Built once from the *complete* text, then revealed with subSequence. Annotating the partial
+    // text instead would re-run the character/wiki regex matching on every animation frame, which
+    // is what made the typewriter stutter badly enough to get switched off.
+    val wikiAnnotation =
+        remember(text, mainCharacter, characters, wiki, genreColor, headerFont, bodyFont) {
+            buildWikiAndCharactersAnnotation(
+                text,
+                mainCharacter,
+                characters,
+                wiki,
+                genreColor,
+                Color.Black,
+                headerFont,
+                bodyFont,
+            )
+        }
+
+    // coerceIn is the bounds guard: charIndex is driven by an animation that can still be in
+    // flight against a shorter text if the message content changes mid-reveal.
+    val visibleAnnotation =
+        if (isAnimated) {
+            wikiAnnotation.subSequence(0, charIndex.coerceIn(0, wikiAnnotation.length))
+        } else {
+            wikiAnnotation
+        }
+
+    LaunchedEffect(charIndex, isAnimated) {
         if (isAnimated) {
             onTextUpdate(text.take(charIndex))
         }
     }
-    val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
-    val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
 
-    val wikiAnnotation =
-        buildWikiAndCharactersAnnotation(
-            currentText,
-            mainCharacter,
-            characters,
-            wiki,
-            MaterialTheme.colorScheme.primary,
-            Color.Black,
-            headerFont,
-            bodyFont,
-        )
     ClickableText(
-        text = wikiAnnotation,
+        text = visibleAnnotation,
         style = style,
         onClick = { offset ->
-            if (textTarget == text.length) {
+            // Only once the reveal is complete — mid-animation the visible offsets don't line up
+            // with what the reader thinks they're tapping.
+            if (!isAnimated || charIndex >= text.length) {
                 val characterAnnotation =
                     wikiAnnotation
                         .getStringAnnotations(tag = "character_tag", start = offset, end = offset)
@@ -173,7 +187,9 @@ fun SimpleTypewriterText(
         if (isAnimated) text.substring(0, charIndex.coerceAtMost(text.length)) else text
 
     LaunchedEffect(charIndex) {
-        onTextUpdate(text.substring(0, charIndex))
+        // Must clamp like the line above: charIndex is animated, so it can still be pointing past
+        // the end of a text that just got replaced by a shorter one.
+        onTextUpdate(text.substring(0, charIndex.coerceAtMost(text.length)))
     }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {

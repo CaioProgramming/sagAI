@@ -22,12 +22,18 @@ import com.ilustris.sagai.ui.theme.components.chat.ShinobiChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.cornerSize
 
+/**
+ * @param showTail set to false for every bubble in a consecutive group except the visually last
+ *   one, so a split message reads as one utterance instead of several separate ones. Shinobi and
+ *   Space Opera ignore it — neither draws a literal tail to begin with.
+ */
 @Composable
 fun Genre?.bubble(
     tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
     tailWidth: Dp = 8.dp,
     tailHeight: Dp = 8.dp,
     isNarrator: Boolean = false,
+    showTail: Boolean = true,
     visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
 ): Shape {
     val cornerSize = cornerSize(visualConfig)
@@ -42,6 +48,7 @@ fun Genre?.bubble(
                 tailWidth = tailW,
                 tailHeight = tailH,
                 tailAlignment = tailAlignment,
+                drawTail = showTail,
             )
         }
 
@@ -55,6 +62,7 @@ fun Genre?.bubble(
                 tailWidth = tailW,
                 tailHeight = tailH,
                 tailAlignment = tailAlignment,
+                drawTail = showTail,
             )
         }
 
@@ -64,6 +72,7 @@ fun Genre?.bubble(
                 tailWidth = tailW,
                 tailHeight = tailH,
                 tailAlignment = tailAlignment,
+                drawTail = showTail,
             )
         }
 
@@ -71,7 +80,7 @@ fun Genre?.bubble(
             HorrorChatBubbleShape(
                 pixelSize = cornerSize,
                 tailAlignment = tailAlignment,
-                drawTail = !isNarrator,
+                drawTail = showTail && !isNarrator,
             )
         }
 
@@ -81,6 +90,7 @@ fun Genre?.bubble(
                 tailAlignment = tailAlignment,
                 tailWidth = tailW,
                 tailHeight = tailH,
+                drawTail = showTail,
             )
         }
 
@@ -99,6 +109,7 @@ fun Genre?.bubble(
                 tailWidth = tailW,
                 tailHeight = tailH,
                 isNarrator = isNarrator,
+                drawTail = showTail,
             )
         }
 
@@ -107,6 +118,7 @@ fun Genre?.bubble(
                 tailAlignment = tailAlignment,
                 tailWidth = tailW,
                 tailHeight = tailH,
+                drawTail = showTail,
             )
         }
 
@@ -116,6 +128,7 @@ fun Genre?.bubble(
                 tailWidth = tailW,
                 tailHeight = tailH,
                 tailAlignment = tailAlignment,
+                drawTail = showTail,
             )
         }
     }

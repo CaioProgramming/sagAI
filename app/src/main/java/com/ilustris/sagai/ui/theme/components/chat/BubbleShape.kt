@@ -34,15 +34,22 @@ class CurvedChatBubbleShape(
     private val tailHeight: Dp,
     private val tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
     private val isNarrator: Boolean = false,
+    /**
+     * When false the tail is replaced by an ordinary rounded corner. Used for every bubble in a
+     * group except the last one. Note this is *not* the same as passing zero tail dimensions —
+     * that collapses the tail's Bézier curves onto the corner and leaves it visibly square.
+     */
+    private val drawTail: Boolean = true,
 ) : Shape {
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
         density: Density,
     ): Outline {
+        val hasTail = drawTail && !isNarrator
         val cornerRadiusPx = with(density) { cornerRadius.toPx() }
-        val tailWidthPx = with(density) { if (isNarrator) 0.dp.toPx() else tailWidth.toPx() }
-        val tailHeightPx = with(density) { if (isNarrator) 0.dp.toPx() else tailHeight.toPx() }
+        val tailWidthPx = with(density) { if (hasTail) tailWidth.toPx() else 0.dp.toPx() }
+        val tailHeightPx = with(density) { if (hasTail) tailHeight.toPx() else 0.dp.toPx() }
 
         val bubbleBodyWidth = size.width - tailWidthPx
         val bubbleBodyHeight = size.height - tailHeightPx
@@ -60,6 +67,30 @@ class CurvedChatBubbleShape(
                         arcTo(Rect(bubbleBodyWidth - 2 * cornerRadiusPx, 0f, bubbleBodyWidth, 2 * cornerRadiusPx), 270f, 90f, false)
                         // Right edge leading to tail
                         lineTo(bubbleBodyWidth, bubbleBodyHeight - cornerRadiusPx) // End of right edge curve
+
+                        if (!hasTail) {
+                            // Plain bottom-right corner instead of the tail.
+                            arcTo(
+                                Rect(
+                                    bubbleBodyWidth - 2 * cornerRadiusPx,
+                                    bubbleBodyHeight - 2 * cornerRadiusPx,
+                                    bubbleBodyWidth,
+                                    bubbleBodyHeight,
+                                ),
+                                0f,
+                                90f,
+                                false,
+                            )
+                            lineTo(cornerRadiusPx, bubbleBodyHeight) // Bottom edge
+                            arcTo(
+                                Rect(0f, bubbleBodyHeight - 2 * cornerRadiusPx, 2 * cornerRadiusPx, bubbleBodyHeight),
+                                90f,
+                                90f,
+                                false,
+                            )
+                            close()
+                            return@apply
+                        }
 
                         // --- BottomRight Tail ---
                         // Current point: (bubbleBodyWidth, bubbleBodyHeight - cornerRadiusPx)
@@ -115,6 +146,24 @@ class CurvedChatBubbleShape(
                         )
                         // Bottom edge leading to tail
                         lineTo(bubbleBodyStartX + cornerRadiusPx, bubbleBodyHeight) // End of bottom edge curve
+
+                        if (!hasTail) {
+                            // Plain bottom-left corner instead of the tail.
+                            arcTo(
+                                Rect(
+                                    bubbleBodyStartX,
+                                    bubbleBodyHeight - 2 * cornerRadiusPx,
+                                    bubbleBodyStartX + 2 * cornerRadiusPx,
+                                    bubbleBodyHeight,
+                                ),
+                                90f,
+                                90f,
+                                false,
+                            )
+                            lineTo(bubbleBodyStartX, cornerRadiusPx) // Left edge
+                            close()
+                            return@apply
+                        }
 
                         // --- BottomLeft Tail ---
                         // Current point: (bubbleBodyStartX + cornerRadiusPx, bubbleBodyHeight)

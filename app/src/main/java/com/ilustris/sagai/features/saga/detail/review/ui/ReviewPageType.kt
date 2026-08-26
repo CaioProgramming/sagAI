@@ -9,4 +9,5 @@ enum class ReviewPageType {
     CONCLUSION,
     SUMMARY,
     HOOK,
+    FAREWELLS,
 }

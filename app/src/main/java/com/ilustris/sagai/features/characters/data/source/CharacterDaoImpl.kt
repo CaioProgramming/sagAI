@@ -53,4 +53,7 @@ class CharacterDaoImpl
         ) = characterDao.getTopCharacters(sagaId, limit)
 
         override fun getCharactersCount(sagaId: Int): Flow<Int> = characterDao.getCharactersCount(sagaId)
+
+        override suspend fun getCharactersByFirstSceneId(timelineId: Int): List<Character> =
+            characterDao.getCharactersByFirstSceneId(timelineId)
     }

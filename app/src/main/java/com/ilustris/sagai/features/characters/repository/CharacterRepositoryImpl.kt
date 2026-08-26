@@ -58,4 +58,7 @@ class CharacterRepositoryImpl
         ): Flow<List<CharacterContent>> = dao.getTopCharacters(sagaId, limit)
 
         override fun getCharacterContent(characterId: Int): Flow<CharacterContent?> = dao.getCharacterContent(characterId)
+
+        override suspend fun getCharactersByFirstSceneId(timelineId: Int): List<Character> =
+            dao.getCharactersByFirstSceneId(timelineId)
     }

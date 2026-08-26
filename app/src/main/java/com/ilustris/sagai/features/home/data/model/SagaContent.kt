@@ -110,9 +110,9 @@ fun SagaContent.toSagaInfo() =
         icon = data.icon,
     )
 
-fun SagaContent.historySummary() =
+fun SagaContent.historySummary(showChapters: Boolean = true) =
     acts.joinToString(";\n---\n") {
-        "${acts.indexOf(it) + 1} - ${it.actSummary(false)}"
+        "${acts.indexOf(it) + 1} - ${it.actSummary(false, showChapters)}"
     }
 
 fun SagaContent.getCharacters(filterMainCharacter: Boolean = false) =
