@@ -149,19 +149,31 @@ the APK.
     - **Confirm**: Notify the user that the debug build has been distributed to alpha-testers.
 
 14. **Update FAQ**:
+    - **Source of truth is Remote Config, not this repo.** The FAQ lives in the `faq_data`
+      parameter of Firebase Remote Config (project `sagai-ilustris`) — EN in `defaultValue`,
+      PT-BR in the `PT-BR` conditional value, both carrying their own `version` field. There are
+      deliberately **no** FAQ JSON files in `docs/` — a copy in the repo just drifts and goes
+      stale (release 1.15.0 found local files at v5 while production was at v11).
+    - **Read current state**:
+      `firebase remoteconfig:get --project sagai-ilustris -o /tmp/rc_live.json`, then pull
+      `parameters.faq_data` out of it. Never draft against anything else.
     - **Analyze**: Using the features and changes identified in Step 6 and 9, determine what new
-      questions users might have.
-    - **Generate**: Create a draft list of new/updated FAQ items (Question & Answer) relevant to
-      this release.
-    - **Consult**: Ask the user to provide the path to the current FAQ JSON file (default:
-      `docs/faq/faq_data_en.json`).
-    - **Compare**: Read the specified file. Compare the generated draft with existing entries.
-    - **Refine**: Present the user with a list of suggested additions, updates, or removals.
-    - **Update PT-BR FAQ**:
-        - Repeat the process for the Portuguese FAQ file (default: `docs/faq/faq_data_pt.json`).
-        - Ensure translations capture the same tone and accuracy.
-    - **Apply**: Ask the user if they want to update the FAQ files with these changes. If yes, write
-      the updated JSON to the files.
+      questions users might have — and check them against what the live FAQ already covers.
+    - **Generate**: Draft the new/updated items (Question & Answer) in both EN and PT-BR. PT-BR is
+      natural copy in the same voice, not a literal translation.
+    - **Refine**: Present the user with the suggested additions, updates, or removals and let them
+      approve before you build the payload.
+    - **Build the payload**: Append the approved items to the right categories, bump the `version`
+      field in both EN and PT-BR, and re-embed them as stringified JSON in the template.
+    - **Validate before handing it over** — parameter count, parameterGroups count, group count and
+      condition count must be identical to the template you read, and `faq_data` must be the *only*
+      parameter that differs.
+    - **Do NOT publish it yourself.** Per `.cursor/skills/firebase-remote-config/SKILL.md`,
+      Remote Config is never published from CLI, MCP or REST — a bad template can wipe the whole
+      project's config. Hand the user the validated JSON and let them upload it in the console.
+      Note that the console's *Import* has been known to reject valid JSON; pasting the `faq_data`
+      parameter values directly is the reliable path.
+    - **Confirm**: Remind the user to check **Version history** in the console after publishing.
 
 15. **Finalize**:
     - Notify the user that Release **[new_version]** is ready.
