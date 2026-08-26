@@ -79,6 +79,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -288,6 +289,10 @@ fun ChatBubble(
         )
     val constraintDecorationBackground =
         genre.chatBubbleConstraintBackgroundDecoration(bubbleShape, isUser, bubbleStyle.backgroundColor)
+    // Heroes' decoration is the comic-panel drop-shadow/ink outline — every panel in a page has
+    // one, so a split message should carry it on every block. Other genres' decorations read as a
+    // single accent for the whole message, so they stay tail-only to avoid visual noise.
+    val decorateAllBlocks = genre == Genre.HEROES
     val characterColor = avatarCharacter?.hexColor?.hexToColor() ?: resolvedColor
     val nameTagContent =
         avatarCharacter
@@ -568,20 +573,27 @@ fun ChatBubble(
                                 }
 
                                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                    val bubbleContentModifierFor: @Composable (Shape) -> Modifier = { shape ->
-                                        bubbleModifierFor(shape)
-                                            .graphicsLayer {
-                                                scaleX = finalScale
-                                                scaleY = finalScale
-                                            }.border(
-                                                2.dp,
-                                                borderColorAnimation,
-                                                shape,
-                                            ).padding(paddingAnimation)
-                                            .clip(shape)
-                                            .padding(vertical = 4.dp)
-                                            .animateContentSize(BUBBLE_RESIZE_SPEC)
-                                    }
+                                    // topPadding/bottomPadding default to the original single-bubble
+                                    // spacing (4dp both sides). Grouped blocks pass tighter values so
+                                    // consecutive blocks of the same message read as one utterance
+                                    // instead of separate messages — the first/last block in the
+                                    // group keeps the full 4dp on its outward-facing edge, since
+                                    // that's the breathing room against the *next* message.
+                                    val bubbleContentModifierFor: @Composable (shape: Shape, topPadding: Dp, bottomPadding: Dp) -> Modifier =
+                                        { shape, topPadding, bottomPadding ->
+                                            bubbleModifierFor(shape)
+                                                .graphicsLayer {
+                                                    scaleX = finalScale
+                                                    scaleY = finalScale
+                                                }.border(
+                                                    2.dp,
+                                                    borderColorAnimation,
+                                                    shape,
+                                                ).padding(paddingAnimation)
+                                                .clip(shape)
+                                                .padding(top = topPadding, bottom = bottomPadding)
+                                                .animateContentSize(BUBBLE_RESIZE_SPEC)
+                                        }
                                     val bubbleTooltipContent: @Composable TooltipScope.() -> Unit =
                                         {
                                             tooltipData?.let {
@@ -782,7 +794,10 @@ fun ChatBubble(
                                             tooltip = bubbleTooltipContent,
                                         ) {
                                             Column(
-                                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                                                // No extra gap here — the grouping tightness comes
+                                                // from each block's own top/bottom padding
+                                                // (bubbleContentModifierFor) instead, so it can taper
+                                                // per block position rather than being uniform.
                                                 horizontalAlignment =
                                                     if (isUser) Alignment.End else Alignment.Start,
                                             ) {
@@ -808,21 +823,47 @@ fun ChatBubble(
                                                                 duration = blockDurations[index],
                                                                 isLast = index == blocks.lastIndex,
                                                             )
+                                                        // Genre decorations only dress the tail block
+                                                        // by default; repeating them on every block in
+                                                        // a group reads as noise and multiplies the
+                                                        // draw cost — Heroes opts out via
+                                                        // decorateAllBlocks since its comic-panel
+                                                        // shadow/outline belongs to every panel, not
+                                                        // just the last. Recomputed here against
+                                                        // blockShape (not the outer bubbleShape,
+                                                        // which always has the tail) so a non-tail
+                                                        // block's outline/shadow traces its own
+                                                        // flat-cornered outline instead of a tail
+                                                        // that isn't actually drawn there.
+                                                        val showBlockDecoration = isTailBlock || decorateAllBlocks
+                                                        val blockDecorationBackground =
+                                                            if (showBlockDecoration) genre.chatBubbleBackgroundDecoration(blockShape, isUser) else null
+                                                        val blockDecorationOverlay =
+                                                            if (showBlockDecoration) genre.chatBubbleDecorationOverlay(blockShape, isUser) else null
+                                                        val blockConstraintDecorationBackground =
+                                                            if (showBlockDecoration) {
+                                                                genre.chatBubbleConstraintBackgroundDecoration(blockShape, isUser, bubbleStyle.backgroundColor)
+                                                            } else {
+                                                                null
+                                                            }
+                                                        val blockConstraintDecorationOverlay =
+                                                            if (showBlockDecoration) {
+                                                                genre.chatBubbleConstraintDecorationOverlay(blockShape, isUser, bubbleStyle.backgroundColor)
+                                                            } else {
+                                                                null
+                                                            }
                                                         BubbleBlockContainer(
                                                             genre = genre,
-                                                            // Genre decorations only dress the tail
-                                                            // block; repeating them on every block in
-                                                            // a group reads as noise and multiplies
-                                                            // the draw cost.
-                                                            decorationBackground =
-                                                                decorationBackground.takeIf { isTailBlock },
-                                                            decorationOverlay =
-                                                                decorationOverlay.takeIf { isTailBlock },
-                                                            constraintDecorationBackground =
-                                                                constraintDecorationBackground.takeIf { isTailBlock },
-                                                            constraintDecorationOverlay =
-                                                                constraintDecorationOverlay.takeIf { isTailBlock },
-                                                            contentModifier = bubbleContentModifierFor(blockShape),
+                                                            decorationBackground = blockDecorationBackground,
+                                                            decorationOverlay = blockDecorationOverlay,
+                                                            constraintDecorationBackground = blockConstraintDecorationBackground,
+                                                            constraintDecorationOverlay = blockConstraintDecorationOverlay,
+                                                            contentModifier =
+                                                                bubbleContentModifierFor(
+                                                                    blockShape,
+                                                                    if (index == 0) 4.dp else 1.dp,
+                                                                    if (block.isLast) 4.dp else 1.dp,
+                                                                ),
                                                             content = { bubbleTextContent(block) },
                                                         )
                                                     }
@@ -1197,7 +1238,10 @@ data class BubbleStyle(
             isUser: Boolean,
         ): Color =
             when (this) {
-                Genre.HEROES -> if (!isUser) default.copy(alpha = 0.75f) else default
+                // Was alpha 0.75f — reducing opacity let the near-black page bleed through and
+                // wash the fill out. darker() keeps it a fully opaque, solid comic-panel color,
+                // just a shade dimmer than the user's own bubble.
+                Genre.HEROES -> if (!isUser) default.darker(0.25f) else default
                 else -> default
             }
 
