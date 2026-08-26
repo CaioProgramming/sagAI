@@ -55,11 +55,14 @@ data class ActContent(
             put("ActEmotionalConclusion", data.emotionalReview)
         }.toJsonFormat()
 
-    fun actSummary(showEvents: Boolean = true) =
-        buildString {
-            appendLine(
-                data.toAINormalize(LorePrompts.ACT_EXCLUDED_FIELDS),
-            )
+    fun actSummary(
+        showEvents: Boolean = true,
+        includeChapters: Boolean = true,
+    ) = buildString {
+        appendLine(
+            data.toAINormalize(LorePrompts.ACT_EXCLUDED_FIELDS),
+        )
+        if (includeChapters) {
             appendLine("CHAPTERS: ")
             chapters.forEach { chapter ->
                 appendLine("Chapter ${chapters.indexOf(chapter) + 1}")
@@ -77,6 +80,7 @@ data class ActContent(
                 }
             }
         }
+    }
 
     fun getChapterCovers(): List<String> = chapters.map { it.data.coverImage }.filter { it.isNotEmpty() }
 

@@ -10,6 +10,7 @@ import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
+import com.ilustris.sagai.core.ai.services.ArtworkConceptService
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
@@ -31,6 +32,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getDirectiveKey
@@ -65,6 +67,7 @@ class ChapterUseCaseImpl
         private val remoteConfigService: RemoteConfigService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val actRepository: com.ilustris.sagai.features.act.data.repository.ActRepository,
+        private val artworkConceptService: ArtworkConceptService,
     ) : ChapterUseCase {
         private suspend fun fetchContext(chapterId: Int): Pair<SagaContent, ChapterContent> {
             val chapterContent =
@@ -100,6 +103,7 @@ class ChapterUseCaseImpl
                             promptSplit =
                                 prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
+                                    artworkConceptService.artworkInstructions(),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -122,7 +126,7 @@ class ChapterUseCaseImpl
                             introduction = chapterContent.data.introduction, // Keep existing introduction
                             featuredCharacters = genChapter.featuredCharacters.take(2),
                             emotionalReview = genChapter.emotionalReview,
-                            artwork = genChapter.artwork,
+                            artwork = genChapter.artwork ?: chapterContent.data.artwork,
                             currentEventId = null,
                         ),
                     )
@@ -146,6 +150,7 @@ class ChapterUseCaseImpl
                             promptSplit =
                                 prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
+                                    artworkConceptService.artworkInstructions(),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -170,7 +175,10 @@ class ChapterUseCaseImpl
                                             coverImage = chapterContent.data.coverImage,
                                             introduction = chapterContent.data.introduction,
                                             createdAt = chapterContent.data.createdAt,
-                                        ),
+                                            artwork =
+                                                genChapter.artwork
+                                                    ?: chapterContent.data.artwork,
+                                                ),
                                     )
                                 CoroutineScope(Dispatchers.IO).launch {
                                     generateChapterCover(updatedChapter.id)
@@ -224,12 +232,13 @@ class ChapterUseCaseImpl
         override suspend fun generateChapterCover(chapterId: Int): RequestResult<Chapter> =
             executeRequest {
                 val (saga, chapter) = fetchContext(chapterId)
+                val chapterWithArtwork = ensureChapterArtwork(chapter.data, saga.data)
                 val characters =
                     chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
                 val context =
                     buildCoverPromptContext(
-                        chapter.data.narrativeGuide,
-                        chapter.data.artwork,
+                        chapterWithArtwork.narrativeGuide,
+                        chapterWithArtwork.artwork,
                         characters,
                         saga,
                     )
@@ -242,17 +251,17 @@ class ChapterUseCaseImpl
                             context = context,
                             imageType = ImageType.COVER,
                             variationId = saga.data.variationId,
-                            label = chapter.data.title,
+                            label = chapterWithArtwork.title,
                             showReveal = true,
                         ),
                     ) { bitmap ->
                         val coverFile =
                             fileHelper.saveFile(
-                                chapter.data.title,
+                                chapterWithArtwork.title,
                                 bitmap,
                                 path = "${saga.data.id}/chapters/",
                             ) ?: error("Failed to save chapter cover")
-                        val newChapter = chapter.data.copy(coverImage = coverFile.path)
+                        val newChapter = chapterWithArtwork.copy(coverImage = coverFile.path)
                         chapterRepository.updateChapter(newChapter)
                     }.getOrThrow()
             }
@@ -262,12 +271,13 @@ class ChapterUseCaseImpl
             flow {
                 try {
                     val (saga, chapter) = fetchContext(chapterId)
+                    val chapterWithArtwork = ensureChapterArtwork(chapter.data, saga.data)
                     val characters =
                         chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
                     val context =
                         buildCoverPromptContext(
-                            chapter.data.narrativeGuide,
-                            chapter.data.artwork,
+                            chapterWithArtwork.narrativeGuide,
+                            chapterWithArtwork.artwork,
                             characters,
                             saga,
                         )
@@ -280,17 +290,17 @@ class ChapterUseCaseImpl
                                 context = context,
                                 imageType = ImageType.COVER,
                                 variationId = saga.data.variationId,
-                                label = chapter.data.title,
+                                label = chapterWithArtwork.title,
                                 showReveal = true,
                             ),
                         ) { bitmap ->
                             val coverFile =
                                 fileHelper.saveFile(
-                                    chapter.data.title,
+                                    chapterWithArtwork.title,
                                     bitmap,
                                     path = "${saga.data.id}/chapters/",
                                 ) ?: error("Failed to save chapter cover")
-                            val newChapter = chapter.data.copy(coverImage = coverFile.path)
+                            val newChapter = chapterWithArtwork.copy(coverImage = coverFile.path)
                             chapterRepository.updateChapter(newChapter)
                         }.fold(
                             onSuccess = { updated ->
@@ -316,6 +326,40 @@ class ChapterUseCaseImpl
                     emit(StreamingState.Error(e.message ?: "Error generating chapter cover stream"))
                 }
             }
+
+        private suspend fun ensureChapterArtwork(
+            chapter: Chapter,
+            saga: Saga,
+        ): Chapter {
+            if (!chapter.artwork.isNullOrBlank()) return chapter
+            val artwork =
+                artworkConceptService
+                    .ensureArtwork(
+                        contentType = "Chapter",
+                        genre = saga.genre,
+                        context = chapterArtworkContext(chapter),
+                        currentArtwork = chapter.artwork,
+                    ).onFailure {
+                        Timber.w(
+                            it,
+                            "ensureChapterArtwork: failed to generate artwork for chapter ${chapter.id}",
+                        )
+                    }.getSuccess()
+                    ?.takeIf { it.isNotBlank() }
+                    ?: return chapter
+            val updatedChapter = chapter.copy(artwork = artwork)
+            chapterRepository.updateChapter(updatedChapter)
+            return updatedChapter
+        }
+
+        private fun chapterArtworkContext(chapter: Chapter): String =
+            buildString {
+                appendLine(chapter.content)
+                chapter.emotionalReview?.takeIf { it.isNotBlank() }?.let {
+                appendLine()
+                appendLine("EMOTIONAL ARC: $it")
+            }
+        }
 
         private fun buildCoverPromptContext(
             narrativeContext: String?,
@@ -492,6 +536,7 @@ class ChapterUseCaseImpl
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                             actContext.renderInstructions(),
+                                            artworkConceptService.artworkInstructions(),
                                         ),
                                     requirement = ModelRequirement.HIGH,
                                 ),

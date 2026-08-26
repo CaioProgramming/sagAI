@@ -48,8 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -61,10 +59,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.brain.ui.components.UniverseConstellationEntry
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.components.CharacterAbilitiesSection
 import com.ilustris.sagai.features.characters.ui.components.CharacterAppearanceSection
@@ -92,7 +90,6 @@ import com.ilustris.sagai.ui.components.views.heroBottomCluster
 import com.ilustris.sagai.ui.theme.PaletteTheme
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.genreCrtScreen
@@ -349,7 +346,10 @@ private fun CharacterDetailsLoaded(
                                                     .padding(32.dp)
                                                     .size(100.dp)
                                                     .themeVfx()
-                                                    .reactiveShimmer(true, repeatMode = RepeatMode.Restart),
+                                                    .reactiveShimmer(
+                                                        true,
+                                                        repeatMode = RepeatMode.Restart,
+                                                    ),
                                         )
                                     }
 
@@ -362,7 +362,7 @@ private fun CharacterDetailsLoaded(
                                     )
 
                                     heroBottomCluster(
-                                        title = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
+                                        title = character.fullName(),
                                         genre = genre,
                                         adaptiveColor = adaptiveColor,
                                         adaptiveTextColor = adaptiveTextColor,
@@ -427,14 +427,13 @@ private fun CharacterDetailsLoaded(
                                     )
 
                                     genre.stylisedText(
-                                        text = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
+                                        text = character.fullName(),
                                         modifier =
                                             Modifier
                                                 .sharedElement(
                                                     rememberSharedContentState(key = "character_${character.id}_icon"),
                                                     animatedVisibilityScope,
                                                 ).fillMaxWidth()
-                                                .gradientFill(Brush.verticalGradient(characterColor.darkerPalette()))
                                                 .reactiveShimmer(true),
                                     )
 

@@ -77,11 +77,17 @@ fun Review.withStep(
     val base = this
     return when (step) {
         ReviewSteps.INTRO -> base.copy(introduction = stage)
+
         ReviewSteps.EXPRESSIVENESS -> base.copy(expressiveness = stage)
+
         ReviewSteps.PLAYSTYLE -> base.copy(playstyle = stage)
+
         ReviewSteps.CHARACTERS_STEP -> base.copy(topCharacters = stage)
+
         ReviewSteps.ACTS_INSIGHT -> base.copy(actsInsight = stage)
+
         ReviewSteps.CONCLUSION -> base.copy(conclusion = stage)
+
         // Farewells persists its own FarewellSet directly in SagaReviewUseCaseImpl.generateStep;
         // this branch is unreachable.
         ReviewSteps.FAREWELLS -> base
@@ -148,13 +154,15 @@ suspend fun ReviewSteps.buildArgs(saga: SagaContent): Map<String, String> {
 
         ReviewSteps.CONCLUSION -> {
             buildMap {
-                put("FullStory", saga.historySummary())
+                put("FullStory", saga.historySummary(false))
                 put("endMessage", saga.data.endMessage)
             }
         }
 
         // Farewells builds its own args (top character context) directly in
         // SagaReviewUseCaseImpl.generateStep; this branch is unreachable.
-        ReviewSteps.FAREWELLS -> emptyMap()
+        ReviewSteps.FAREWELLS -> {
+            emptyMap()
+        }
     }
 }

@@ -2,14 +2,13 @@ package com.ilustris.sagai.features.characters.data.usecase
 
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
-import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
+import com.ilustris.sagai.core.ai.services.ArtworkConceptService
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
@@ -40,6 +39,8 @@ import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.hasConflictingCharacterIdentity
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -69,6 +70,7 @@ class CharacterUseCaseImpl
         private val genreConfigService: GenreConfigService,
         private val promptService: PromptService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
+        private val artworkConceptService: ArtworkConceptService,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
 
@@ -93,7 +95,8 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest(true) {
-                val contextString = characterImageContext(character)
+                val characterWithArtwork = ensureCharacterArtwork(character, saga)
+                val contextString = characterImageContext(characterWithArtwork)
                 val result =
                     imageGenerationService.enqueue(
                         ImageGenerationRequest(
@@ -102,17 +105,17 @@ class CharacterUseCaseImpl
                             context = contextString,
                             imageType = ImageType.ICON,
                             variationId = saga.variationId,
-                            label = character.name,
+                            label = characterWithArtwork.name,
                             showReveal = true,
                         ),
                     ) { bitmap ->
                         val file =
                             fileHelper.saveFile(
-                                character.name,
+                                characterWithArtwork.name,
                                 bitmap,
                                 path = "${saga.id}/characters/",
                             ) ?: error("Failed to save generated image")
-                        val newCharacter = character.copy(image = file.path)
+                        val newCharacter = characterWithArtwork.copy(image = file.path)
                         repository.updateCharacter(newCharacter)
                         newCharacter
                     }
@@ -126,7 +129,8 @@ class CharacterUseCaseImpl
         ): Flow<StreamingState<GeneratedContent<Pair<Character, String>>>> =
             flow {
                 try {
-                    val contextString = characterImageContext(character)
+                    val characterWithArtwork = ensureCharacterArtwork(character, saga)
+                    val contextString = characterImageContext(characterWithArtwork)
                     val result =
                         imageGenerationService.enqueue(
                             ImageGenerationRequest(
@@ -135,17 +139,17 @@ class CharacterUseCaseImpl
                                 context = contextString,
                                 imageType = ImageType.ICON,
                                 variationId = saga.variationId,
-                                label = character.name,
+                                label = characterWithArtwork.name,
                                 showReveal = true,
                             ),
                         ) { bitmap ->
                             val file =
                                 fileHelper.saveFile(
-                                    character.name,
+                                    characterWithArtwork.name,
                                     bitmap,
                                     path = "${saga.id}/characters/",
                                 ) ?: error("Failed to save generated image")
-                            val newCharacter = character.copy(image = file.path)
+                            val newCharacter = characterWithArtwork.copy(image = file.path)
                             repository.updateCharacter(newCharacter)
                             newCharacter
                         }
@@ -179,6 +183,31 @@ class CharacterUseCaseImpl
                     )
                 }
             }
+
+        private suspend fun ensureCharacterArtwork(
+            character: Character,
+            saga: Saga,
+        ): Character {
+            if (!character.artwork.isNullOrBlank()) return character
+            val artwork =
+                artworkConceptService
+                    .ensureArtwork(
+                        contentType = ImageType.ICON.name,
+                        genre = saga.genre,
+                        context = character.backstory,
+                        currentArtwork = character.artwork,
+                    ).onFailure {
+                        Timber.w(
+                            it,
+                            "ensureCharacterArtwork: failed to generate artwork for character ${character.id}",
+                        )
+                    }.getSuccess()
+                    ?.takeIf { it.isNotBlank() }
+                    ?: return character
+            val updatedCharacter = character.copy(artwork = artwork)
+            repository.updateCharacter(updatedCharacter)
+        return updatedCharacter
+    }
 
         private fun characterImageContext(character: Character): String =
             buildString {
