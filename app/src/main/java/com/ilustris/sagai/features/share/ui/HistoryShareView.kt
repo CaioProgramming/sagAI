@@ -70,7 +70,7 @@ fun HistoryShareView(
                             coroutineScope.launch {
                                 delay(2.seconds)
                                 graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
-                                    viewModel.saveBitmap(bitmap, ShareType.EMOTIONS.name)
+                                    viewModel.saveBitmap(bitmap, ShareType.HISTORY.name)
                                 }
                             }
                         }.drawWithContent {

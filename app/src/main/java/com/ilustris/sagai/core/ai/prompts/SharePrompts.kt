@@ -6,7 +6,6 @@ import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.emotionalSummary
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 
@@ -17,20 +16,9 @@ data class SharePlaystyleArgs(
     val sagaMainContext: String,
 )
 
-data class ShareEmotionalArgs(
-    val emotionalReview: String,
-    val historyEmotionalSummary: String,
-    val characterArchetype: String,
-)
-
 data class ShareHistoryArgs(
     val sagaMainContext: String,
     val historyContext: String,
-)
-
-data class ShareRelationsArgs(
-    val sagaMainContext: String,
-    val relationshipContext: String,
 )
 
 data class ShareCharacterArgs(
@@ -43,10 +31,8 @@ data class ShareCharacterArgs(
 
 object SharePrompts {
     const val SHARE_CHARACTER_BLUEPRINT = "share_character_blueprint"
-    const val SHARE_EMOTIONAL_BLUEPRINT = "share_emotional_blueprint"
     const val SHARE_HISTORY_BLUEPRINT = "share_history_blueprint"
     const val SHARE_PLAYSTYLE_BLUEPRINT = "share_playstyle_blueprint"
-    const val SHARE_RELATIONS_BLUEPRINT = "share_relations_blueprint"
 
     val sagaExcludedFields =
         listOf(
@@ -89,23 +75,6 @@ object SharePrompts {
         return promptService.buildSplitBlueprint(SHARE_PLAYSTYLE_BLUEPRINT, args)
     }
 
-    suspend fun emotionalPrompt(
-        promptService: PromptService,
-        saga: SagaContent,
-    ): SplitPrompt {
-        val args =
-            ShareEmotionalArgs(
-                emotionalReview = saga.data.emotionalReview ?: "",
-                historyEmotionalSummary = saga.emotionalSummary(),
-                characterArchetype =
-                    saga.mainCharacter
-                        ?.data
-                        ?.profile
-                        ?.toAINormalize() ?: "",
-            )
-        return promptService.buildSplitBlueprint(SHARE_EMOTIONAL_BLUEPRINT, args)
-    }
-
     suspend fun historyPrompt(
         promptService: PromptService,
         saga: SagaContent,
@@ -116,18 +85,6 @@ object SharePrompts {
                 historyContext = saga.acts.joinToString(".\n") { it.actSummary(false) },
             )
         return promptService.buildSplitBlueprint(SHARE_HISTORY_BLUEPRINT, args)
-    }
-
-    suspend fun relationsPrompt(
-        promptService: PromptService,
-        saga: SagaContent,
-    ): SplitPrompt {
-        val args =
-            ShareRelationsArgs(
-                sagaMainContext = SagaPrompts.mainContext(saga),
-                relationshipContext = saga.mainCharacter?.summarizeRelationships() ?: "",
-            )
-        return promptService.buildSplitBlueprint(SHARE_RELATIONS_BLUEPRINT, args)
     }
 
     suspend fun characterPrompt(

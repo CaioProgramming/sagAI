@@ -74,24 +74,12 @@ fun ShareSheet(
                         }
                     }
 
-                    ShareType.EMOTIONS -> {
-                        EmotionShareView(saga, viewModel)
-                    }
-
-                    ShareType.RELATIONS -> {
-                        content?.let { sagaContent ->
-                            RelationsShareView(sagaContent, viewModel)
-                        }
-                    }
-
                     ShareType.CONVERSATION -> {
                         ConversationShareView(
                             sagaContent = saga,
                             messages = chatViewModel.getSelectedMessages(),
                         )
                     }
-
-                    else -> {}
                 }
             }
         }

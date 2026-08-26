@@ -99,22 +99,8 @@ class SharePlayUseCaseImpl
                             )
                         }
 
-                        ShareType.EMOTIONS -> {
-                            SharePrompts.emotionalPrompt(
-                                promptService,
-                                fullSaga,
-                            )
-                        }
-
                         ShareType.HISTORY -> {
                             SharePrompts.historyPrompt(
-                                promptService,
-                                fullSaga,
-                            )
-                        }
-
-                        ShareType.RELATIONS -> {
-                            SharePrompts.relationsPrompt(
                                 promptService,
                                 fullSaga,
                             )

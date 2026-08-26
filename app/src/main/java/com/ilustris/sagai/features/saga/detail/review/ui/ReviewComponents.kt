@@ -34,6 +34,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -1115,6 +1117,35 @@ fun ReviewStepLoadingPage(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+        }
+    }
+}
+
+/**
+ * The single share affordance of the review experience — it opens the share card
+ * built from the page the reader is on, and leaves no trace inside that card.
+ */
+@Composable
+fun ReviewShareButton(
+    modifier: Modifier = Modifier,
+    visible: Boolean = true,
+    onClick: () -> Unit,
+) {
+    if (LocalReviewCapture.current) return
+
+    AnimatedVisibility(
+        visible = visible,
+        modifier = modifier,
+    ) {
+        Button(
+            onClick = onClick,
+            colors =
+                ButtonDefaults.elevatedButtonColors().copy(
+                    containerColor = MaterialTheme.colorScheme.onBackground,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ),
+        ) {
+            Text(stringResource(R.string.share))
         }
     }
 }

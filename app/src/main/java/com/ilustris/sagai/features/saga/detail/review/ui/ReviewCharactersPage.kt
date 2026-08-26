@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,7 +41,6 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
-import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.theme.sagaBrush
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -69,8 +66,10 @@ class ReviewCharactersPage(
             mutableStateOf(false)
         }
 
+        // A capture opens straight on the ranking — the state the share button belongs to.
+        val isCapture = LocalReviewCapture.current
         var showCharacters by remember {
-            mutableStateOf(false)
+            mutableStateOf(isCapture)
         }
 
         var shareCharactersButton by remember {
@@ -207,20 +206,10 @@ class ReviewCharactersPage(
 
                             if (shareCharactersButton) {
                                 item {
-                                    Button(
-                                        onClick = {
-                                            onAction(ReviewAction.Share(ShareType.RELATIONS))
-                                        },
-                                        colors =
-                                            ButtonDefaults.elevatedButtonColors().copy(
-                                                containerColor = MaterialTheme.colorScheme.onBackground,
-                                                contentColor = MaterialTheme.colorScheme.primary,
-                                            ),
+                                    ReviewShareButton(
                                         modifier = Modifier.padding(16.dp),
                                     ) {
-                                        Text(
-                                            stringResource(R.string.share),
-                                        )
+                                        onAction(ReviewAction.Share)
                                     }
                                 }
                             }

@@ -9,9 +9,6 @@ data class ShareText(
 enum class ShareType {
     PLAYSTYLE,
     HISTORY,
-    RELATIONS,
-    EMOTIONS,
     CHARACTER,
     CONVERSATION,
-    REVIEW_ACTIVITY,
 }

@@ -48,6 +48,25 @@ The final page acts as an interactive retrospective hub:
 - **Robust Navigation**: Tapping any card uses an Enum-based navigation system (`ReviewPageType`) to
   jump back to that specific moment in the Wrapped experience.
 
+## 📤 Sharing
+
+Sharing a review is a snapshot of the page the reader is on — no parallel share layout, no extra AI
+call.
+
+- **The card is the page**: `ReviewShareCard` re-renders the current `ReviewPage` (its background
+  included) inside a fixed **9:16** frame, so the shared image inherits the genre styling of the
+  experience automatically.
+- **Fixed proportion**: the card is laid out at full screen width and captured at that resolution,
+  then scaled down for the preview — the exported bitmap keeps the story-friendly ratio on any
+  device, however tall the screen is.
+- **Signature footer**: a reserved band at the bottom carries the saga title and the SagAI wordmark
+  over a fade, so the page content never collides with the branding.
+- **Capture mode**: `LocalReviewCapture` tells pages they are being rendered into a card — they
+  settle into their final state (no reveal choreography, static linework) and drop the share button
+  itself, which never lands in the exported image.
+- **No generated copy**: the review text on the page is already the AI's voice, so the share flow
+  only saves the bitmap (`ReviewShareViewModel`) and hands the uri to the system chooser.
+
 ## 🛠️ Technical Implementation Highlights
 
 - **Architecture**: Decoupled `ReviewExperience` factory pattern allows for conditional page

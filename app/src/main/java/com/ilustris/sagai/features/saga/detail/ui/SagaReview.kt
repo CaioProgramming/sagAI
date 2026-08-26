@@ -38,8 +38,8 @@ import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationSta
 import com.ilustris.sagai.features.saga.detail.review.presentation.SagaReviewViewModel
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperienceFactory
-import com.ilustris.sagai.features.share.domain.model.ShareType
-import com.ilustris.sagai.features.share.ui.ShareSheet
+import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
+import com.ilustris.sagai.features.saga.detail.review.ui.ReviewShareCard
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.levitate
@@ -94,7 +94,7 @@ fun SagaReview(
         }
 
         var paused by remember { mutableStateOf(false) }
-        var shareType by remember { mutableStateOf<ShareType?>(null) }
+        var sharePage by remember { mutableStateOf<ReviewPage?>(null) }
 
         suspend fun handleAction(action: ReviewAction) {
             when (action) {
@@ -122,8 +122,8 @@ fun SagaReview(
                     }
                 }
 
-                is ReviewAction.Share -> {
-                    shareType = action.shareType
+                ReviewAction.Share -> {
+                    sharePage = pages.getOrNull(pagerState.currentPage)
                 }
             }
         }
@@ -227,14 +227,10 @@ fun SagaReview(
             }
         }
 
-        shareType?.let {
-            ShareSheet(
-                currentContent.data,
-                true,
-                it,
-                onDismiss = {
-                    shareType = null
-                },
+        sharePage?.let { page ->
+            ReviewShareCard(
+                page = page,
+                onDismiss = { sharePage = null },
             )
         }
     }

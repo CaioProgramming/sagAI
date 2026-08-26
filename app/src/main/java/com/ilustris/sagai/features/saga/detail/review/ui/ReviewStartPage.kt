@@ -110,7 +110,7 @@ class ReviewStartPage(
                 color = MaterialTheme.colorScheme.primary,
                 lineCount = lineCount,
                 strokeWidth = 4.dp,
-                enabled = true,
+                enabled = !LocalReviewCapture.current,
                 modifier =
                     Modifier
                         .fillMaxSize()
