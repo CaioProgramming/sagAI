@@ -6,13 +6,14 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,8 +29,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,15 +39,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -59,7 +63,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
-import com.ilustris.sagai.features.brain.ui.components.UniverseConstellationEntry
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.data.model.fullName
@@ -82,7 +85,6 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.animations.imageStroke
 import com.ilustris.sagai.ui.animations.rememberStopMotionFrame
-import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.components.views.HeroMenuAction
 import com.ilustris.sagai.ui.components.views.HeroOverflowMenu
@@ -93,14 +95,10 @@ import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.genreCrtScreen
-import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.shimmerize
-import com.ilustris.sagai.ui.theme.themePainter
-import com.ilustris.sagai.ui.theme.themeVfx
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -215,7 +213,6 @@ private fun CharacterDetailsLoaded(
         val characterRelations = detailData.relationships
         val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
         val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
-        val completedActsCount by viewModel.completedActsCount.collectAsStateWithLifecycle()
         var showCharacterShare by remember { mutableStateOf(false) }
 
         // Lite wrapper to satisfy legacy components that still need SagaContent
@@ -237,6 +234,32 @@ private fun CharacterDetailsLoaded(
                     characterDetailsTitleGradient(adaptiveTextColor, characterColor)
                 }
 
+            // Fixed fraction of the screen, not a measured value: the LazyColumn's first item
+            // (the spacer below) needs this before the background photo below it ever reports a
+            // size, or the whole list would jump on first frame.
+            val screenHeightDp = LocalConfiguration.current.screenHeightDp
+            val heroHeightDp = remember(screenHeightDp) { (screenHeightDp * 0.55f).dp }
+            val heroHeightPx = with(LocalDensity.current) { heroHeightDp.toPx() }
+
+            // The background photo blurs progressively as the name/actions scroll up past it,
+            // echoing the iOS Contacts card. Independent of effectForGenre's own static fade —
+            // that one still handles the soft edge of the photo itself.
+            val scrollFraction by remember(heroHeightPx) {
+                derivedStateOf {
+                    val offsetPx =
+                        if (listState.firstVisibleItemIndex == 0) {
+                            listState.firstVisibleItemScrollOffset.toFloat()
+                        } else {
+                            heroHeightPx
+                        }
+                    (offsetPx / heroHeightPx).coerceIn(0f, 1f)
+                }
+            }
+            val headerBlurRadius by animateDpAsState(
+                targetValue = (scrollFraction * 24).dp,
+                label = "headerBlur",
+            )
+
             with(sharedTransitionScope) {
                 Box(
                     modifier =
@@ -244,6 +267,102 @@ private fun CharacterDetailsLoaded(
                             adaptiveColor,
                         ),
                 ) {
+                    if (characterData.image.isNotBlank() && !imageError) {
+                        // The hero art gets the Punk Rock poster's cutout treatment: an
+                        // outline traced around the segmented subject itself rather than
+                        // its bounding box, which is what lifts the character off the
+                        // scene behind them. The accent is the character's own colour, so
+                        // the halo identifies *this* character instead of restating the
+                        // genre the whole screen is already themed by.
+                        val heroImageModifier =
+                            Modifier
+                                .clipToBounds()
+                                .fillMaxSize()
+                                .effectForGenre(
+                                    genre = genre,
+                                    progressiveBlurRadius = 160f,
+                                    progressiveBlurRange = 0.6f to 0.98f,
+                                    enableSelectiveHighlight = true,
+                                )
+                                // Space Opera's portraits arrive as if read off a console
+                                // panel. No-ops for every other genre, which keep theirs.
+                                .genreCrtScreen(genre)
+                        val strokeWidthPx = with(LocalDensity.current) { 4.dp.toPx() }
+                        // Only ticks for the genre that draws a trembling outline; the
+                        // rest would be paying a redraw every 240ms for nothing.
+                        val strokeFrame =
+                            rememberStopMotionFrame(isActive = genre == Genre.PUNK_ROCK)
+                        val strokeJitterPx = with(LocalDensity.current) { 1.6.dp.toPx() }
+
+                        // Purely decorative background layer, fixed behind the whole screen —
+                        // the LazyColumn below is a sibling, not nested inside DepthLayout's
+                        // content slot (that slot sits *between* background and the segmented
+                        // foreground cutout, so screen content would render underneath it).
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .blur(headerBlurRadius),
+                        ) {
+                            DepthLayout(
+                                imagePath = characterData.image,
+                                onLoadError = { imageError = true },
+                                modifier =
+                                    Modifier
+                                        .sharedElement(
+                                            rememberSharedContentState(key = "character_${character.id}_icon"),
+                                            animatedVisibilityScope,
+                                            renderInOverlayDuringTransition = false,
+                                        ).fillMaxSize()
+                                        .clickable(
+                                            enabled =
+                                                BuildConfig.DEBUG ||
+                                                    characterData.emojified ||
+                                                    characterData.image.isEmpty(),
+                                        ) {
+                                            viewModel.regenerate(
+                                                sagaInfo,
+                                                characterData,
+                                            )
+                                        },
+                                imageModifier = heroImageModifier,
+                                // Punk Rock only. The trembling hand-cut outline is that
+                                // template's own signature — every other genre keeps the
+                                // plain portrait it had before.
+                                //
+                                // Only the cut-out foreground is stroked: the raw photo
+                                // behind it has no silhouette to trace. The strokes sit
+                                // innermost so they hug the unblurred subject and the
+                                // genre effect then washes over outline and art alike.
+                                foregroundImageModifier =
+                                    if (genre == Genre.PUNK_ROCK) {
+                                        heroImageModifier
+                                            .imageStroke(
+                                                color = adaptiveColor,
+                                                widthPx = strokeWidthPx,
+                                                jitterFrame = strokeFrame,
+                                                jitterAmountPx = strokeJitterPx,
+                                            ).imageStroke(
+                                                color = characterColor,
+                                                widthPx = strokeWidthPx * 1.3f,
+                                                jitterFrame = strokeFrame,
+                                                jitterAmountPx = strokeJitterPx,
+                                            )
+                                    } else {
+                                        heroImageModifier
+                                    },
+                            ) {}
+
+                            Box(
+                                Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .height(160.dp)
+                                    .background(fadeGradientBottom(adaptiveColor)),
+                            )
+                        }
+                    }
+
                     LazyColumn(
                         modifier =
                             Modifier
@@ -251,220 +370,89 @@ private fun CharacterDetailsLoaded(
                         state = listState,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
+                        item { Spacer(Modifier.height(heroHeightDp)) }
+
                         item {
-                            if (characterData.image.isNotBlank() && !imageError) {
-                                // The hero art gets the Punk Rock poster's cutout treatment: an
-                                // outline traced around the segmented subject itself rather than
-                                // its bounding box, which is what lifts the character off the
-                                // scene behind them. The accent is the character's own colour, so
-                                // the halo identifies *this* character instead of restating the
-                                // genre the whole screen is already themed by.
-                                val heroImageModifier =
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                heroBottomCluster(
+                                    title = character.fullName(),
+                                    genre = genre,
+                                    adaptiveColor = adaptiveColor,
+                                    adaptiveTextColor = adaptiveTextColor,
+                                    titleGradient = titleGradient,
+                                    shimmerColors = characterColor.shimmerize(),
+                                    accentColor = characterColor,
+                                    onAccentColor = adaptiveTextColor,
+                                )
+
+                                Text(
+                                    characterData.profile.occupation,
+                                    style =
+                                        MaterialTheme.typography.titleSmall.copy(
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                            color = adaptiveTextColor,
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                )
+
+                                characterData.nicknames?.let {
+                                    if (it.isNotEmpty()) {
+                                        Text(
+                                            text =
+                                                stringResource(
+                                                    id = R.string.character_details_aka,
+                                                    it.joinToString(", "),
+                                                ),
+                                            style =
+                                                MaterialTheme.typography.titleMedium.copy(
+                                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                                    color = adaptiveTextColor,
+                                                    textAlign = TextAlign.Center,
+                                                ),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        item {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier =
                                     Modifier
-                                        .clipToBounds()
-                                        .fillMaxSize()
-                                        .effectForGenre(
-                                            genre = genre,
-                                            progressiveBlurRadius = 160f,
-                                            progressiveBlurRange = 0.6f to 0.98f,
-                                            enableSelectiveHighlight = true,
-                                        )
-                                        // Space Opera's portraits arrive as if read off a console
-                                        // panel. No-ops for every other genre, which keep theirs.
-                                        .genreCrtScreen(genre)
-                                val strokeWidthPx = with(LocalDensity.current) { 4.dp.toPx() }
-                                // Only ticks for the genre that draws a trembling outline; the
-                                // rest would be paying a redraw every 240ms for nothing.
-                                val strokeFrame =
-                                    rememberStopMotionFrame(isActive = genre == Genre.PUNK_ROCK)
-                                val strokeJitterPx = with(LocalDensity.current) { 1.6.dp.toPx() }
-
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .fillParentMaxHeight(.6f),
-                                ) {
-                                    DepthLayout(
-                                        imagePath = characterData.image,
-                                        onLoadError = { imageError = true },
-                                        modifier =
-                                            Modifier
-                                                .sharedElement(
-                                                    rememberSharedContentState(key = "character_${character.id}_icon"),
-                                                    animatedVisibilityScope,
-                                                    renderInOverlayDuringTransition = false,
-                                                ).fillParentMaxHeight(.6f)
-                                                .fillMaxSize()
-                                                .clickable(
-                                                    enabled =
-                                                        BuildConfig.DEBUG ||
-                                                            characterData.emojified ||
-                                                            characterData.image.isEmpty(),
-                                                ) {
-                                                    viewModel.regenerate(
-                                                        sagaInfo,
-                                                        characterData,
-                                                    )
-                                                },
-                                        imageModifier = heroImageModifier,
-                                        // Punk Rock only. The trembling hand-cut outline is that
-                                        // template's own signature — every other genre keeps the
-                                        // plain portrait it had before.
-                                        //
-                                        // Only the cut-out foreground is stroked: the raw photo
-                                        // behind it has no silhouette to trace. The strokes sit
-                                        // innermost so they hug the unblurred subject and the
-                                        // genre effect then washes over outline and art alike.
-                                        foregroundImageModifier =
-                                            if (genre == Genre.PUNK_ROCK) {
-                                                heroImageModifier
-                                                    .imageStroke(
-                                                        color = adaptiveColor,
-                                                        widthPx = strokeWidthPx,
-                                                        jitterFrame = strokeFrame,
-                                                        jitterAmountPx = strokeJitterPx,
-                                                    ).imageStroke(
-                                                        color = characterColor,
-                                                        widthPx = strokeWidthPx * 1.3f,
-                                                        jitterFrame = strokeFrame,
-                                                        jitterAmountPx = strokeJitterPx,
-                                                    )
-                                            } else {
-                                                heroImageModifier
-                                            },
-                                    ) {
-                                        Icon(
-                                            themePainter(),
-                                            null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier =
-                                                Modifier
-                                                    .alpha(0.4f)
-                                                    .align(Alignment.TopCenter)
-                                                    .padding(32.dp)
-                                                    .size(100.dp)
-                                                    .themeVfx()
-                                                    .reactiveShimmer(
-                                                        true,
-                                                        repeatMode = RepeatMode.Restart,
-                                                    ),
-                                        )
-                                    }
-
-                                    Box(
-                                        Modifier
-                                            .align(Alignment.BottomCenter)
-                                            .fillMaxWidth()
-                                            .height(160.dp)
-                                            .background(fadeGradientBottom(adaptiveColor)),
-                                    )
-
-                                    heroBottomCluster(
-                                        title = character.fullName(),
-                                        genre = genre,
-                                        adaptiveColor = adaptiveColor,
-                                        adaptiveTextColor = adaptiveTextColor,
-                                        titleGradient = titleGradient,
-                                        shimmerColors = characterColor.shimmerize(),
-                                        accentColor = characterColor,
-                                        onAccentColor = adaptiveTextColor,
-                                        modifier = Modifier.align(Alignment.BottomCenter),
-                                    )
-                                }
-
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                                ) {
-                                    Text(
-                                        characterData.profile.occupation,
-                                        style =
-                                            MaterialTheme.typography.titleSmall.copy(
-                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                color = adaptiveTextColor,
-                                                textAlign = TextAlign.Center,
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                            ) {
+                                if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
+                                    CircularCharacterAction(
+                                        icon = painterResource(R.drawable.talk_bubble),
+                                        contentDescription =
+                                            stringResource(
+                                                R.string.talk_to_character_again,
+                                                characterData.name,
                                             ),
+                                        color = characterColor,
+                                        onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },
                                     )
-
-                                    characterData.nicknames?.let {
-                                        if (it.isNotEmpty()) {
-                                            Text(
-                                                text =
-                                                    stringResource(
-                                                        id = R.string.character_details_aka,
-                                                        it.joinToString(", "),
-                                                    ),
-                                                style =
-                                                    MaterialTheme.typography.titleMedium.copy(
-                                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                        color = adaptiveTextColor,
-                                                        textAlign = TextAlign.Center,
-                                                    ),
-                                            )
-                                        }
-                                    }
                                 }
-                            } else {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Image(
-                                        painterResource(genre.icon),
-                                        null,
-                                        Modifier
-                                            .statusBarsPadding()
-                                            .clickable {
-                                                viewModel.regenerate(
-                                                    sagaInfo,
-                                                    characterData,
-                                                )
-                                            }.padding(16.dp)
-                                            .size(100.dp)
-                                            .gradientFill(characterColor.gradientFade()),
-                                    )
 
-                                    genre.stylisedText(
-                                        text = character.fullName(),
-                                        modifier =
-                                            Modifier
-                                                .sharedElement(
-                                                    rememberSharedContentState(key = "character_${character.id}_icon"),
-                                                    animatedVisibilityScope,
-                                                ).fillMaxWidth()
-                                                .reactiveShimmer(true),
-                                    )
+                                CircularCharacterAction(
+                                    icon = painterResource(R.drawable.ic_cosmos),
+                                    contentDescription = stringResource(R.string.character_brain_open),
+                                    color = characterColor,
+                                    onClick = { onOpenCharacterBrain(sagaInfo.id, characterData.id) },
+                                )
 
-                                    Text(
-                                        characterData.profile.occupation,
-                                        style =
-                                            MaterialTheme.typography.titleSmall.copy(
-                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                color = characterColor,
-                                                textAlign = TextAlign.Center,
-                                            ),
-                                    )
-
-                                    characterData.nicknames?.let {
-                                        if (it.isNotEmpty()) {
-                                            Text(
-                                                text =
-                                                    stringResource(
-                                                        id = R.string.character_details_aka,
-                                                        it.joinToString(", "),
-                                                    ),
-                                                style =
-                                                    MaterialTheme.typography.titleMedium.copy(
-                                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                        color = characterColor.copy(alpha = 0.8f),
-                                                        textAlign = TextAlign.Center,
-                                                    ),
-                                            )
-                                        }
-                                    }
-                                }
+                                CircularCharacterAction(
+                                    icon = painterResource(R.drawable.ic_share),
+                                    contentDescription = stringResource(id = R.string.share_character_cd),
+                                    color = characterColor,
+                                    onClick = { showCharacterShare = true },
+                                )
                             }
                         }
 
@@ -473,18 +461,6 @@ private fun CharacterDetailsLoaded(
                                 character = characterData,
                                 genre = genre,
                                 contentColor = adaptiveTextColor,
-                            )
-                        }
-
-                        item {
-                            UniverseConstellationEntry(
-                                completedActsCount = completedActsCount,
-                                genre = genre,
-                                magical = true,
-                                onClick = {
-                                    onOpenCharacterBrain(sagaInfo.id, characterData.id)
-                                },
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             )
                         }
 
@@ -577,30 +553,6 @@ private fun CharacterDetailsLoaded(
                                     CharacterDetailText(
                                         text = characterData.profile.personality,
                                         contentColor = adaptiveTextColor,
-                                    )
-                                }
-                            }
-                        }
-
-                        if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
-                            item {
-                                Button(
-                                    onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },
-                                    colors =
-                                        ButtonDefaults.buttonColors(
-                                            containerColor = characterColor,
-                                            contentColor = adaptiveColor,
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                                            .fillMaxWidth(),
-                                ) {
-                                    Text(
-                                        stringResource(
-                                            R.string.talk_to_character_again,
-                                            characterData.name,
-                                        ),
                                     )
                                 }
                             }
@@ -769,20 +721,6 @@ private fun CharacterDetailsLoaded(
 
                         Spacer(Modifier.weight(1f))
 
-                        IconButton(
-                            onClick = { showCharacterShare = true },
-                            colors =
-                                IconButtonDefaults.iconButtonColors().copy(
-                                    containerColor = adaptiveColor.copy(alpha = .5f),
-                                ),
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_share),
-                                contentDescription = stringResource(id = R.string.share_character_cd),
-                                tint = adaptiveTextColor,
-                            )
-                        }
-
                         if (BuildConfig.DEBUG) {
                             HeroOverflowMenu(
                                 tint = adaptiveTextColor,
@@ -814,5 +752,34 @@ private fun CharacterDetailsLoaded(
                 onDismiss = { showCharacterShare = false },
             )
         }
+    }
+}
+
+@Composable
+private fun CircularCharacterAction(
+    icon: Painter,
+    contentDescription: String,
+    color: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(color.copy(alpha = .2f), CircleShape)
+                .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            icon,
+            contentDescription = contentDescription,
+            tint = color,
+            modifier =
+                Modifier
+                    .padding(14.dp)
+                    .fillMaxSize(),
+        )
     }
 }
