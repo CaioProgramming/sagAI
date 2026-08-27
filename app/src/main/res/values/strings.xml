@@ -430,6 +430,7 @@
     <string name="recap_characters_found">%d characters found</string>
     <string name="recap_chapters_lived">%d chapters lived</string>
     <string name="recap_revisit_now">Revisit your saga now</string>
+    <string name="saga_detail_recap_cta">See your recap now</string>
     <!-- Label-only variants of the three counted stats. The genre recap cards render the count and
          its label separately (a number on a sticker, a column of terminal output), which a single
          "%d messages sent" string can't be split back into. -->

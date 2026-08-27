@@ -379,6 +379,7 @@
     <string name="recap_characters_found">%d personagens encontrados</string>
     <string name="recap_chapters_lived">%d capítulos vividos</string>
     <string name="recap_revisit_now">Revisite sua saga agora</string>
+    <string name="saga_detail_recap_cta">Veja agora seu recap</string>
     <string name="recap_stat_messages">mensagens trocadas</string>
     <string name="recap_stat_characters">personagens encontrados</string>
     <string name="recap_stat_chapters">capítulos vividos</string>
