@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.detail.review.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.hasViewablePages
@@ -23,7 +24,19 @@ class SagaReviewViewModel
     constructor(
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val sagaRepository: SagaRepository,
+        private val sagaThemeManager: SagaThemeManager,
     ) : ViewModel() {
+        /**
+         * The genre's own signature sound and haptics, fired as the reader moves between pages.
+         *
+         * Reuses the existing entry VFX rather than introducing a page-turn sound: the review is
+         * the one place where every screen is the same genre, so the sound that identifies that
+         * genre is exactly the right thing to punctuate a turn with.
+         */
+        fun playPageTurn() {
+            sagaThemeManager.playVfx()
+        }
+
         private val _isGenerating = MutableStateFlow(false)
         val isGenerating: StateFlow<Boolean> = _isGenerating.asStateFlow()
 

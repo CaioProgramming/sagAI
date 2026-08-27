@@ -2,10 +2,9 @@ package com.ilustris.sagai.features.saga.chat.repository
 
 import android.icu.util.Calendar
 import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
-import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.services.ArtworkConceptService
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.BackupService
@@ -16,9 +15,12 @@ import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.saga.datasource.SagaDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import timber.log.Timber
 import javax.inject.Inject
 
 class SagaRepositoryImpl
@@ -31,6 +33,7 @@ class SagaRepositoryImpl
         private val fileHelper: FileHelper,
         private val imageGenerationService: ImageGenerationService,
         private val backupService: BackupService,
+        private val artworkConceptService: ArtworkConceptService,
     ) : SagaRepository {
         private val sagaDao: SagaDao by lazy {
             database.sagaDao()
@@ -75,26 +78,27 @@ class SagaRepositoryImpl
             saga: Saga,
             characters: List<Character>,
         ) = executeRequest {
-            val context = generateIconContext(saga, characters)
+            val sagaWithArtwork = ensureSagaArtwork(saga)
+            val context = generateIconContext(sagaWithArtwork, characters)
             imageGenerationService
                 .enqueue(
                     ImageGenerationRequest(
-                        genre = saga.genre,
+                        genre = sagaWithArtwork.genre,
                         imageReference = null,
                         context = context,
                         imageType = ImageType.COVER,
-                        variationId = saga.variationId,
-                        label = saga.title,
+                        variationId = sagaWithArtwork.variationId,
+                        label = sagaWithArtwork.title,
                         showReveal = true,
                     ),
                 ) { bitmap ->
                     val file =
                         fileHelper.saveFile(
-                            fileName = saga.title,
+                            fileName = sagaWithArtwork.title,
                             data = bitmap,
-                            path = "${saga.id}",
+                            path = "${sagaWithArtwork.id}",
                         ) ?: error("Failed to save saga icon")
-                    updateSaga(saga.copy(icon = file.absolutePath))
+                    updateSaga(sagaWithArtwork.copy(icon = file.absolutePath))
                 }.getOrThrow()
         }
 
@@ -104,26 +108,27 @@ class SagaRepositoryImpl
         ): Flow<StreamingState<Saga>> =
             kotlinx.coroutines.flow.flow {
                 try {
-                    val context = generateIconContext(saga, characters)
+                    val sagaWithArtwork = ensureSagaArtwork(saga)
+                    val context = generateIconContext(sagaWithArtwork, characters)
                     imageGenerationService
                         .enqueue(
                             ImageGenerationRequest(
-                                genre = saga.genre,
+                                genre = sagaWithArtwork.genre,
                                 imageReference = null,
                                 context = context,
                                 imageType = ImageType.COVER,
-                                variationId = saga.variationId,
-                                label = saga.title,
+                                variationId = sagaWithArtwork.variationId,
+                                label = sagaWithArtwork.title,
                                 showReveal = true,
                             ),
                         ) { bitmap ->
                             val file =
                                 fileHelper.saveFile(
-                                    fileName = saga.title,
+                                    fileName = sagaWithArtwork.title,
                                     data = bitmap,
-                                    path = "${saga.id}",
+                                    path = "${sagaWithArtwork.id}",
                                 ) ?: error("Failed to save saga icon")
-                            updateSaga(saga.copy(icon = file.absolutePath))
+                            updateSaga(sagaWithArtwork.copy(icon = file.absolutePath))
                         }.fold(
                             onSuccess = { updatedSaga ->
                                 emit(StreamingState.Success(updatedSaga))
@@ -141,6 +146,26 @@ class SagaRepositoryImpl
                     emit(StreamingState.Error(e.message ?: "Failed to generate saga icon stream", e))
                 }
             }
+
+        private suspend fun ensureSagaArtwork(saga: Saga): Saga {
+            if (!saga.artwork.isNullOrBlank()) return saga
+            val artwork =
+                artworkConceptService
+                    .ensureArtwork(
+                        contentType = ImageType.COVER.name,
+                        genre = saga.genre,
+                        context = saga.description,
+                        currentArtwork = saga.artwork,
+                    ).onFailure {
+                        Timber.w(
+                            it,
+                            "ensureSagaArtwork: failed to generate artwork for saga ${saga.id}",
+                        )
+                    }.getSuccess()
+                    ?.takeIf { it.isNotBlank() }
+                    ?: return saga
+            return updateSaga(saga.copy(artwork = artwork))
+    }
 
         private fun generateIconContext(
             saga: Saga,

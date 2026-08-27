@@ -71,6 +71,8 @@ object LorePrompts {
             "coverImage",
             "createdAt",
             "emotionalReview",
+            "artwork",
+            "narrativeGuide",
         )
 
     val ACT_EXCLUDED_FIELDS =

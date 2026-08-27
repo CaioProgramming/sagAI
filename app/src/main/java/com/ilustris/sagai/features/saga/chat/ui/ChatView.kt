@@ -619,6 +619,10 @@ fun ChatContent(
                                                 ?.message
                                         onAction(ChatUiAction.OpenMessageOptions(message))
                                     }
+
+                                    is MessageAction.MarkViewed -> {
+                                        onAction(ChatUiAction.MarkMessageViewed(action.messageId))
+                                    }
                                 }
                             }
                         },
@@ -1356,7 +1360,13 @@ fun ChatList(
                             wikis = wikis,
                             genre = activeGenre ?: genre,
                             flatEvents = flatEvents,
-                            canAnimate = true,
+                            // Only messages that haven't been revealed yet animate (typewriter +
+                            // sequential block pop-in) — already-seen ones render in full
+                            // instantly. Safe to re-tie this to the persisted viewed flag now:
+                            // the earlier regression was <think>'s hide/reveal riding on this same
+                            // signal (ExpressiveText.kt now hardcodes that independently), not this
+                            // value itself being wrong.
+                            canAnimate = !it.message.viewed,
                             messageEffectsEnabled = messageEffectsEnabled,
                             audioPlaybackState = audioPlaybackState,
                             modifier = Modifier,

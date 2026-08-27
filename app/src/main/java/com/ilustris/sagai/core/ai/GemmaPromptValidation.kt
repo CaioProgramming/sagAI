@@ -62,6 +62,13 @@ fun isInputTokenLimitError(
     message: String?,
     errorResponse: GeminiErrorResponse?,
 ): Boolean {
+    // A 429 is rate limiting, never a request that was too big — an oversized request comes back
+    // as a 400. This matters because the per-minute input-token quota is reported as a violation on
+    // `..._input_token_count`, which the quota-violation branch below happily matches on
+    // "input" + "token". Classifying that as PromptTooLarge threw away the API's own RetryInfo
+    // ("Please retry in 46.9s") and reported a wait as an unfixable size problem.
+    if (statusCode == 429) return false
+
     val normalizedMessage = message?.lowercase().orEmpty()
     if (normalizedMessage.contains("input token") ||
         normalizedMessage.contains("too many tokens") ||

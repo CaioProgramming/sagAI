@@ -22,6 +22,8 @@ class CowboysChatBubbleShape(
     @Suppress("UNUSED_PARAMETER") private val tailHeight: Dp = 12.dp,
     private val tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
     private val isNarrator: Boolean = false,
+    /** When false the ticket clip is dropped, leaving a plain stub. Used for grouped bubbles. */
+    private val drawTail: Boolean = true,
 ) : Shape {
     override fun createOutline(
         size: Size,
@@ -79,6 +81,21 @@ class CowboysChatBubbleShape(
             path.quadraticTo(0f, 0f, radius, 0f)
             path.close()
 
+            return Outline.Generic(path)
+        }
+
+        if (!drawTail) {
+            // Plain rounded ticket stub — no clip on either side.
+            path.moveTo(radius, 0f)
+            path.lineTo(size.width - radius, 0f)
+            path.quadraticTo(size.width, 0f, size.width, radius)
+            path.lineTo(size.width, size.height - radius)
+            path.quadraticTo(size.width, size.height, size.width - radius, size.height)
+            path.lineTo(radius, size.height)
+            path.quadraticTo(0f, size.height, 0f, size.height - radius)
+            path.lineTo(0f, radius)
+            path.quadraticTo(0f, 0f, radius, 0f)
+            path.close()
             return Outline.Generic(path)
         }
 

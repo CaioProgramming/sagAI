@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import MessageStatus
+import androidx.room.withTransaction
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
@@ -16,8 +17,9 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.AVATAR_ICON_TARGET_PX
+import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.globalshell.NewMessageEffect
@@ -80,6 +82,7 @@ class MessageUseCaseImpl
         private val timelineUseCase: TimelineUseCase,
         private val sagaContentManager: SagaContentManager,
         private val globalShellService: GlobalShellService,
+        private val database: SagaDatabase,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -150,6 +153,8 @@ class MessageUseCaseImpl
                     message.copy(
                         status = MessageStatus.OK,
                         timestamp = System.currentTimeMillis(),
+                        // Nobody wants to watch their own text get typed back at them.
+                        viewed = isFromUser,
                     ),
                 )
             if (saved.senderType == SenderType.CHARACTER) {
@@ -254,6 +259,12 @@ class MessageUseCaseImpl
                             updateLimit = narrativeRules.loreUpdateLimit,
                             narrativeRules = narrativeRules,
                             characterArcsById = characterArcsById,
+                            maxMessageLimit =
+                                remoteConfigService
+                                    .getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)
+                                    ?.toInt()
+                                    ?.takeIf { it > 0 }
+                                    ?: ChatPrompts.DEFAULT_CHAT_INPUT_LIMIT,
                         )
                     val conversationInstructions =
                         genreConfigService
@@ -314,21 +325,39 @@ class MessageUseCaseImpl
                                         ?: saga
                                 val existingCharacter =
                                     resolveExistingCharacterForReply(freshSaga, reply)
+                                // Everything the reply writes to the DB goes in one transaction so
+                                // Room's invalidation tracker fires once at commit instead of once
+                                // per statement — otherwise the chat list re-emits 3-5x per turn and
+                                // the new bubble visibly stutters as it replays its entrance.
+                                // resolveReplyCharacterLinks stays outside: it can hit the network to
+                                // generate a character, and holding a DB transaction across that is
+                                // how you get lock contention/ANRs.
                                 val savedMessage =
-                                    persistAiReplyMessage(
-                                        saga,
-                                        reply,
-                                        character = existingCharacter,
-                                    )
-                                withContext(Dispatchers.IO) {
-                                    handleAIReplyReactions(saga, savedMessage, reply.reactions)
-                                    reply.userTone?.let { tone ->
-                                        updateMessage(message.message.copy(emotionalTone = tone))
+                                    withContext(Dispatchers.IO) {
+                                        database.withTransaction {
+                                            val saved =
+                                                insertAiReplyMessage(
+                                                    saga,
+                                                    reply,
+                                                    character = existingCharacter,
+                                                )
+                                            handleAIReplyReactions(saga, saved, reply.reactions)
+                                            reply.userTone?.let { tone ->
+                                                updateMessage(
+                                                    message.message.copy(emotionalTone = tone),
+                                                )
+                                            }
+                                            reply.userReactions?.let { reactions ->
+                                                handleAIReplyReactions(
+                                                    saga,
+                                                    message.message,
+                                                    reactions,
+                                                )
+                                            }
+                                            saved
+                                        }
                                     }
-                                    reply.userReactions?.let { reactions ->
-                                        handleAIReplyReactions(saga, message.message, reactions)
-                                    }
-                                }
+                                postNewMessageEffect(saga, savedMessage, existingCharacter)
                                 sagaContentManager.resolveReplyCharacterLinks(
                                     saga = saga,
                                     reply = reply,
@@ -358,12 +387,22 @@ class MessageUseCaseImpl
             character: Character?,
         ): RequestResult<Message> =
             executeRequest {
-                val savedMessage = persistAiReplyMessage(saga, reply, character)
-                handleAIReplyReactions(saga, savedMessage, reply.reactions)
+                val savedMessage =
+                    database.withTransaction {
+                        val saved = insertAiReplyMessage(saga, reply, character)
+                        handleAIReplyReactions(saga, saved, reply.reactions)
+                        saved
+                    }
+                postNewMessageEffect(saga, savedMessage, character)
                 savedMessage
             }
 
-        private suspend fun persistAiReplyMessage(
+        /**
+         * Pure DB write — safe to call inside a Room transaction. The bitmap decode and global-shell
+         * post that used to live here moved to [postNewMessageEffect] so a transaction never has to
+         * wrap image I/O.
+         */
+        private suspend fun insertAiReplyMessage(
             saga: SagaMetadata,
             reply: AIReply,
             character: Character?,
@@ -372,44 +411,50 @@ class MessageUseCaseImpl
                 character?.fullName()
                     ?: reply.message.speakerName
                     ?: reply.newCharacter?.name
-            val savedMessage =
-                messageRepository.saveMessage(
-                    Message(
-                        id = 0,
-                        sagaId = saga.data.id,
-                        text = reply.message.text,
-                        senderType = reply.message.senderType,
-                        timelineId = saga.getCurrentTimeLine()!!.data.id,
-                        status = MessageStatus.OK,
-                        speakerName = speakerName,
-                        characterId = character?.id,
-                    ),
-                )
-            if (savedMessage.senderType == SenderType.CHARACTER) {
-                val icon =
-                    character
-                        ?.image
-                        ?.takeIf { it.isNotBlank() }
-                        ?.let { image ->
-                            withContext(Dispatchers.IO) {
-                                imageHelper.getImageBitmap(image, cropToCircle = true, targetSizePx = AVATAR_ICON_TARGET_PX).getSuccess()
-                            }
+            return messageRepository.saveMessage(
+                Message(
+                    id = 0,
+                    sagaId = saga.data.id,
+                    text = reply.message.text,
+                    senderType = reply.message.senderType,
+                    timelineId = saga.getCurrentTimeLine()!!.data.id,
+                    status = MessageStatus.OK,
+                    speakerName = speakerName,
+                    characterId = character?.id,
+                    viewed = false,
+                ),
+            )
+        }
+
+        /** Side effect for a freshly persisted reply. Must run *outside* any DB transaction. */
+        private suspend fun postNewMessageEffect(
+            saga: SagaMetadata,
+            savedMessage: Message,
+            character: Character?,
+        ) {
+            if (savedMessage.senderType != SenderType.CHARACTER) return
+            val icon =
+                character
+                    ?.image
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { image ->
+                        withContext(Dispatchers.IO) {
+                            imageHelper.getImageBitmap(image, cropToCircle = true, targetSizePx = AVATAR_ICON_TARGET_PX).getSuccess()
                         }
-                globalShellService.post(
-                    NewMessageEffect(
-                        messageId = savedMessage.id,
-                        sagaId = saga.data.id,
-                        sagaTitle = saga.data.title,
-                        genre = saga.data.genre,
-                        speakerName = savedMessage.speakerName ?: emptyString(),
-                        rawText = savedMessage.text,
-                        character = character,
-                        icon = icon,
-                        deepLink = "saga://chat/${saga.data.id}/false",
-                    ),
-                )
-            }
-            return savedMessage
+                    }
+            globalShellService.post(
+                NewMessageEffect(
+                    messageId = savedMessage.id,
+                    sagaId = saga.data.id,
+                    sagaTitle = saga.data.title,
+                    genre = saga.data.genre,
+                    speakerName = savedMessage.speakerName ?: emptyString(),
+                    rawText = savedMessage.text,
+                    character = character,
+                    icon = icon,
+                    deepLink = "saga://chat/${saga.data.id}/false",
+                ),
+            )
         }
 
         private fun resolveExistingCharacterForReply(
@@ -598,6 +643,10 @@ class MessageUseCaseImpl
             executeRequest {
                 messageRepository.updateMessage(message)
             }
+
+        override suspend fun markViewed(messageId: Int) {
+            messageRepository.markViewed(messageId)
+        }
 
         override suspend fun generateExtraContent(
             saga: SagaMetadata,

@@ -101,6 +101,7 @@ class GemmaClient
                 val params =
                     prepared.toSyncParams(
                         model = modelName(requirement),
+                        thinkingLevel = thinkingLevel(requirement),
                         requirement = requirement,
                         useCore = useCore,
                         logEnabled = logEnabled,
@@ -140,6 +141,7 @@ class GemmaClient
                 val params =
                     prepared.toSyncParams(
                         model = modelName(requirement),
+                        thinkingLevel = thinkingLevel(requirement),
                         requirement = requirement,
                         useCore = useCore,
                         logEnabled = logEnabled,
@@ -212,6 +214,7 @@ class GemmaClient
                 val params =
                     prepared.toSyncParams(
                         model = modelName(requirement),
+                        thinkingLevel = thinkingLevel(requirement),
                         requirement = requirement,
                         useCore = useCore,
                         logEnabled = logEnabled,
@@ -265,6 +268,7 @@ class GemmaClient
                     streamingGenerationFlow<T>(
                         prepared.toStreamingParams(
                             model = modelName(requirement),
+                            thinkingLevel = thinkingLevel(requirement),
                             requirement = requirement,
                             useCore = useCore,
                             logEnabled = logEnabled,
@@ -304,6 +308,7 @@ class GemmaClient
                     streamingGenerationFlow<T>(
                         prepared.toStreamingParams(
                             model = modelName(requirement),
+                            thinkingLevel = thinkingLevel(requirement),
                             requirement = requirement,
                             useCore = useCore,
                             logEnabled = logEnabled,

@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -172,7 +173,7 @@ fun Modifier.gradientFill(
     brush: Brush,
     blendMode: BlendMode = BlendMode.SrcAtop,
 ) = this
-    .graphicsLayer(alpha = 0.90f)
+    .graphicsLayer(alpha = 0.90f, compositingStrategy = CompositingStrategy.Offscreen)
     .drawWithCache {
         onDrawWithContent {
             drawContent()

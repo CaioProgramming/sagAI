@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.ui
 
+import com.ilustris.sagai.ui.genre.DynamicCard
+import com.ilustris.sagai.ui.genre.DynamicLinework
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.RepeatMode

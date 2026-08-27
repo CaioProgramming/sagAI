@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.chapter.data.usecase
 
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import kotlinx.coroutines.flow.Flow
@@ -36,5 +37,5 @@ interface ChapterUseCase {
 
     suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>>
 
-    fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>>
+    fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContentWithLore<Chapter>?>>
 }

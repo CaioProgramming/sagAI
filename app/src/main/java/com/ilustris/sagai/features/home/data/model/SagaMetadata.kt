@@ -104,6 +104,8 @@ data class ActMetadata(
         }
 }
 
+fun ActMetadata.getChapterCovers() = chapters.map { it.data.coverImage }
+
 data class ChapterMetadata(
     @Embedded val data: Chapter,
     @Relation(

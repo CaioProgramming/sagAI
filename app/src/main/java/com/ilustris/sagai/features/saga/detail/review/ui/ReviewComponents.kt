@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.ui
 
+import com.ilustris.sagai.ui.genre.DynamicCard
+import com.ilustris.sagai.ui.genre.DynamicLinework
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -75,6 +77,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.playthrough.CounterText
+import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
@@ -113,113 +116,9 @@ fun StoryProgressIndicator(
                 .clip(RoundedCornerShape(2.dp)),
         color = color,
         trackColor = color.copy(alpha = 0.3f),
+        gapSize = 0.dp,
         strokeCap = StrokeCap.Round,
     )
-}
-
-@Composable
-fun DynamicLinework(
-    color: Color,
-    lineCount: Int,
-    strokeWidth: Dp = 1.dp,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier,
-) {
-    var size by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
-
-    // Generate minimalist, sweeping paths
-    val paths =
-        remember(size, lineCount) {
-            if (size == androidx.compose.ui.unit.IntSize.Zero) return@remember emptyList<Path>()
-            val width = size.width.toFloat()
-            val height = size.height.toFloat()
-            val random = Random(lineCount.toLong())
-
-            List(lineCount) {
-                val path = Path()
-                // Randomly start from any of the 4 sides, well outside the view
-                val startSide = random.nextInt(4)
-                val endSide = (startSide + random.nextInt(1, 3)) % 4
-
-                fun getPoint(side: Int): Offset {
-                    val padding = 200f
-                    return when (side) {
-                        0 -> Offset(random.nextFloat() * width, -padding)
-
-                        // Top
-                        1 -> Offset(width + padding, random.nextFloat() * height)
-
-                        // Right
-                        2 -> Offset(random.nextFloat() * width, height + padding)
-
-                        // Bottom
-                        else -> Offset(-padding, random.nextFloat() * height) // Left
-                    }
-                }
-
-                val start = getPoint(startSide)
-                val end = getPoint(endSide)
-
-                // Control points are deeply randomized to create wide, sweeping curves
-                val cp1 = Offset(random.nextFloat() * width, random.nextFloat() * height)
-                val cp2 = Offset(random.nextFloat() * width, random.nextFloat() * height)
-
-                path.moveTo(start.x, start.y)
-                path.cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y)
-                path
-            }
-        }
-
-    val animProgresses =
-        remember(paths) {
-            paths.map { Animatable(if (enabled) 0f else 1f) }
-        }
-
-    LaunchedEffect(paths, enabled) {
-        if (enabled) {
-            animProgresses.forEachIndexed { index, anim ->
-                launch {
-                    delay(index * 300L + Random.nextLong(0, 500))
-                    anim.animateTo(
-                        1f,
-                        animationSpec =
-                            tween(
-                                durationMillis = 3000 + Random.nextInt(0, 2000),
-                                easing = EaseOutCubic,
-                            ),
-                    )
-                }
-            }
-        }
-    }
-
-    Canvas(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .onSizeChanged { size = it },
-    ) {
-        paths.forEachIndexed { index, path ->
-            val progress = animProgresses[index].value
-            if (progress > 0f) {
-                val pathMeasure = PathMeasure()
-                pathMeasure.setPath(path, false)
-                val segmentPath = Path()
-                pathMeasure.getSegment(0f, pathMeasure.length * progress, segmentPath)
-
-                drawPath(
-                    path = segmentPath,
-                    color = color,
-                    style =
-                        Stroke(
-                            width = strokeWidth.toPx(),
-                            cap = StrokeCap.Round,
-                            join = StrokeJoin.Round,
-                        ),
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -323,12 +222,7 @@ fun HeroSummaryCard(
                 .rankTopCharacters(content.getCharacters(true))
                 .take(5)
         }
-    val playTime =
-        content.data.playTimeMs.let {
-            val minutes = it / 60000
-            val hours = minutes / 60
-            if (hours > 0) "${hours}h ${minutes % 60}m" else "${minutes}m"
-        }
+    val playTime = content.data.playTimeMs.toPlaytimeFormat()
 
     val shape = genre.bubble(isNarrator = true)
     val contentColor = MaterialTheme.colorScheme.background
@@ -535,53 +429,6 @@ fun HeroSummaryCard(
 }
 
 @Composable
-fun DynamicCard(
-    title: String,
-    subtitle: String,
-    titleStyle: TextStyle,
-    subtitleStyle: TextStyle,
-    lineColor: Color,
-    modifier: Modifier,
-) {
-    val lineCount = Random.nextInt(1, 5)
-    Box(modifier, contentAlignment = Alignment.Center) {
-        DynamicLinework(lineColor, lineCount, modifier = Modifier.fillMaxSize(), strokeWidth = 2.dp)
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier =
-                Modifier
-                    .align(Alignment.Center)
-                    .padding(8.dp),
-        ) {
-            AnimatedContent(title, transitionSpec = {
-                fadeIn(animationSpec = tween(500)) +
-                    slideInVertically { it } togetherWith
-                    fadeOut(animationSpec = tween(500)) +
-                    slideOutVertically { -it }
-            }) {
-                Text(
-                    text = it,
-                    style = titleStyle,
-                )
-            }
-
-            AnimatedContent(subtitle, transitionSpec = {
-                fadeIn(animationSpec = tween(500)) +
-                    slideInVertically { it } togetherWith
-                    fadeOut(animationSpec = tween(500)) +
-                    slideOutVertically { -it }
-            }) {
-                Text(
-                    text = it,
-                    style = subtitleStyle,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun SummaryMetricItem(
     label: String,
     value: String,
@@ -774,6 +621,8 @@ fun SagaLegendLayout(
     supportingCharacters: List<Character>,
     sagaIcon: String,
     modifier: Modifier = Modifier,
+    cellBorderColor: Color = Color.Black,
+    cellShape: androidx.compose.ui.graphics.Shape = androidx.compose.ui.graphics.RectangleShape,
 ) {
     // 3x3 Grid Items
     val items =
@@ -795,24 +644,26 @@ fun SagaLegendLayout(
                 .aspectRatio(0.75f),
     ) {
         Row(modifier = Modifier.weight(1f)) {
-            PopIn(0, Modifier.weight(1.1f)) { GtaCell(items[0], Modifier.fillMaxSize()) }
-            PopIn(1, Modifier.weight(1f)) { GtaCell(items[1], Modifier.fillMaxSize()) }
-            PopIn(2, Modifier.weight(1.2f)) { GtaCell(items[2], Modifier.fillMaxSize()) }
+            PopIn(0, Modifier.weight(1.1f)) { GtaCell(items[0], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
+            PopIn(1, Modifier.weight(1f)) { GtaCell(items[1], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
+            PopIn(2, Modifier.weight(1.2f)) { GtaCell(items[2], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
         }
         Row(modifier = Modifier.weight(1.3f)) {
-            PopIn(3, Modifier.weight(1f)) { GtaCell(items[3], Modifier.fillMaxSize()) }
+            PopIn(3, Modifier.weight(1f)) { GtaCell(items[3], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
             PopIn(4, Modifier.weight(1.4f)) {
                 GtaCell(
                     items[4],
                     Modifier.fillMaxSize(),
+                    cellBorderColor,
+                    cellShape,
                 )
             } // Protagonist Cell
-            PopIn(5, Modifier.weight(1.1f)) { GtaCell(items[5], Modifier.fillMaxSize()) }
+            PopIn(5, Modifier.weight(1.1f)) { GtaCell(items[5], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
         }
         Row(modifier = Modifier.weight(1.1f)) {
-            PopIn(6, Modifier.weight(1.2f)) { GtaCell(items[6], Modifier.fillMaxSize()) }
-            PopIn(7, Modifier.weight(1.1f)) { GtaCell(items[7], Modifier.fillMaxSize()) }
-            PopIn(8, Modifier.weight(1f)) { GtaCell(items[8], Modifier.fillMaxSize()) }
+            PopIn(6, Modifier.weight(1.2f)) { GtaCell(items[6], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
+            PopIn(7, Modifier.weight(1.1f)) { GtaCell(items[7], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
+            PopIn(8, Modifier.weight(1f)) { GtaCell(items[8], Modifier.fillMaxSize(), cellBorderColor, cellShape) }
         }
     }
 }
@@ -821,13 +672,16 @@ fun SagaLegendLayout(
 private fun GtaCell(
     url: String,
     modifier: Modifier = Modifier,
+    borderColor: Color = Color.Black,
+    shape: androidx.compose.ui.graphics.Shape = androidx.compose.ui.graphics.RectangleShape,
 ) {
     Box(
         modifier =
             modifier
                 .fillMaxSize()
-                .border(2.dp, Color.Black)
-                .background(Color.Black),
+                .clip(shape)
+                .border(2.dp, borderColor, shape)
+                .background(borderColor, shape),
     ) {
         AsyncImage(
             model = url,

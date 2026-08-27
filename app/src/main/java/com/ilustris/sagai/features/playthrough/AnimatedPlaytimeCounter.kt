@@ -32,34 +32,34 @@ fun AnimatedPlaytimeCounter(
     textStyle: TextStyle = MaterialTheme.typography.titleLarge,
     labelStyle: TextStyle = MaterialTheme.typography.labelMedium,
     animationDuration: Duration = 5.seconds,
+    isAnimated: Boolean = true,
     onAnimationFinished: () -> Unit = {},
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     modifier: Modifier = Modifier,
 ) {
-    val hours = (playtimeMs / 3600000).toInt()
-    val minutes = ((playtimeMs % 3600000) / 60000).toInt()
+    val breakdown = remember(playtimeMs) { playtimeMs.toPlaytimeBreakdown() }
 
-    var targetHours by remember { mutableIntStateOf(0) }
-    var targetMinutes by remember { mutableIntStateOf(0) }
+    var targetPrimary by remember { mutableIntStateOf(0) }
+    var targetSecondary by remember { mutableIntStateOf(0) }
 
-    val animatedHours by animateIntAsState(
-        targetValue = targetHours,
-        animationSpec = tween(durationMillis = animationDuration.toInt(DurationUnit.MILLISECONDS)),
-        label = "hours_animation",
+    val animatedPrimary by animateIntAsState(
+        targetValue = targetPrimary,
+        animationSpec = tween(durationMillis = if (isAnimated) animationDuration.toInt(DurationUnit.MILLISECONDS) else 0),
+        label = "primary_unit_animation",
         finishedListener = {
             onAnimationFinished()
         },
     )
 
-    val animatedMinutes by animateIntAsState(
-        targetValue = targetMinutes,
-        animationSpec = tween(durationMillis = 1000),
-        label = "minutes_animation",
+    val animatedSecondary by animateIntAsState(
+        targetValue = targetSecondary,
+        animationSpec = tween(durationMillis = if (isAnimated) 1000 else 0),
+        label = "secondary_unit_animation",
     )
 
     LaunchedEffect(playtimeMs) {
-        targetHours = hours
-        targetMinutes = minutes
+        targetPrimary = breakdown.primary.value
+        targetSecondary = breakdown.secondary.value
     }
 
     Column(
@@ -69,7 +69,11 @@ fun AnimatedPlaytimeCounter(
                 .padding(16.dp),
     ) {
         Text(
-            text = "${animatedHours}h ${animatedMinutes}m",
+            text =
+                PlaytimeBreakdown(
+                    PlaytimeUnit(animatedPrimary, breakdown.primary.unit),
+                    PlaytimeUnit(animatedSecondary, breakdown.secondary.unit),
+                ).format(),
             style =
                 textStyle.copy(
                     fontWeight = FontWeight.Normal,

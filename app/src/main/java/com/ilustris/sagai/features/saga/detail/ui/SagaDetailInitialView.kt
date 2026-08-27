@@ -8,6 +8,7 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
@@ -82,6 +84,7 @@ import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
+import com.ilustris.sagai.ui.theme.filters.genreCrtScreen
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -421,11 +424,11 @@ fun sagaHeaderComponent(
     val adaptiveColor = MaterialTheme.colorScheme.primaryContainer
     val adaptiveTextColor = MaterialTheme.colorScheme.onPrimary
     val accentColor by animateColorAsState(
-        targetValue = imagePalette?.vibrant ?: imagePalette?.dominant ?: MaterialTheme.colorScheme.primary,
+        targetValue = imagePalette?.vibrant ?: imagePalette?.dominant ?: MaterialTheme.colorScheme.background,
         animationSpec = tween(1000),
     )
     val onAccentColor by animateColorAsState(
-        targetValue = imagePalette?.onVibrant ?: imagePalette?.onDominant ?: MaterialTheme.colorScheme.onPrimary,
+        targetValue = imagePalette?.onVibrant ?: imagePalette?.onDominant ?: MaterialTheme.colorScheme.onBackground,
         animationSpec = tween(1000),
     )
     val titleGradient =
@@ -481,7 +484,7 @@ fun sagaHeaderComponent(
                             progressiveBlurRadius = 160f,
                             progressiveBlurRange = 0.6f to 0.98f,
                             enableSelectiveHighlight = true,
-                        ),
+                        ).genreCrtScreen(genre),
                 contentScale = ContentScale.Crop,
             )
 
@@ -525,82 +528,88 @@ fun sagaHeaderComponent(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (saga.isEnded.not()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Box(
                             modifier =
                                 Modifier
-                                    .size(64.dp)
+                                    .size(32.dp)
                                     .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .15f), CircleShape)
                                     .clickable {
                                         onAction(DetailAction.OpenSection(RequestSection.BRAIN))
                                     },
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                themePainter(),
+                                painterResource(R.drawable.ic_cosmos),
                                 contentDescription = stringResource(R.string.saga_brain_title),
-                                tint = onAccentColor,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier =
                                     Modifier
                                         .padding(8.dp)
                                         .fillMaxSize(),
                             )
                         }
-                    } else {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(accentColor.copy(alpha = .2f), CircleShape)
-                                        .clickable {
-                                            onAction(DetailAction.OpenSection(RequestSection.BRAIN))
-                                        },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_cosmos),
-                                    contentDescription = stringResource(R.string.saga_brain_title),
-                                    tint = accentColor,
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxSize(),
-                                )
-                            }
 
-                            Box(
+                        saga.review?.let {
+                            val primary = MaterialTheme.colorScheme.primary
+                            Row(
                                 modifier =
                                     Modifier
-                                        .size(64.dp)
-                                        .clip(CircleShape)
+                                        .dropShadow(sagaShape()) {
+                                            color = primary
+                                            radius = 15f
+                                            spread = 1f
+                                            alpha = .7f
+                                        }.border(
+                                            1.dp,
+                                            MaterialTheme.colorScheme.primary.gradientFade(),
+                                            sagaShape(),
+                                        ).clip(sagaShape())
                                         .clickable {
                                             onAction(DetailAction.OpenReview)
-                                        },
-                                contentAlignment = Alignment.Center,
+                                        }.background(
+                                            MaterialTheme.colorScheme.onBackground,
+                                            sagaShape(),
+                                        ).gradientFill(sagaBrush())
+                                        .padding(16.dp),
                             ) {
                                 Icon(
                                     themePainter(),
                                     contentDescription = stringResource(R.string.saga_detail_recap_button),
-                                    tint = accentColor,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier =
                                         Modifier
-                                            .padding(8.dp)
-                                            .fillMaxSize()
-                                            .themeVfx(),
+                                            .reactiveShimmer(
+                                                isPlaying = true,
+                                                repeatMode = RepeatMode.Restart,
+                                            ).size(24.dp),
+                                )
+
+                                Text(
+                                    stringResource(R.string.saga_detail_recap_cta),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier =
+                                        Modifier
+                                            .reactiveShimmer(
+                                                isPlaying = true,
+                                                repeatMode = RepeatMode.Restart,
+                                            ).padding(horizontal = 8.dp),
                                 )
                             }
+                        }
 
+                        saga.emotionalProfile?.let {
                             Box(
                                 modifier =
                                     Modifier
                                         .size(32.dp)
                                         .clip(CircleShape)
-                                        .background(accentColor.copy(alpha = .2f), CircleShape)
+                                        .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .15f), CircleShape)
                                         .clickable {
                                             onAction(DetailAction.OpenEmotionalReview)
                                         },
@@ -609,7 +618,7 @@ fun sagaHeaderComponent(
                                 Icon(
                                     painterResource(R.drawable.ic_emotional),
                                     contentDescription = stringResource(R.string.emotional_card_title),
-                                    tint = accentColor,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier =
                                         Modifier
                                             .padding(8.dp)

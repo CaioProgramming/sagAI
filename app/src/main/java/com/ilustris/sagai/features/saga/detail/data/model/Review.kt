@@ -25,6 +25,13 @@ data class Review(
     val expressiveness: ReviewStage? = null,
     @Embedded(prefix = "conclusion_")
     val conclusion: ReviewStage? = null,
+    /**
+     * "The Send-Off" — a short farewell message per top character, shown between
+     * [conclusion] and the summary card. Not `@Embedded`: a variable-length list can't
+     * flatten into fixed columns, so it's stored as a single Gson-serialized column
+     * (see [com.ilustris.sagai.core.database.converters.FarewellListConverter]).
+     */
+    val farewells: List<Farewell>? = null,
 )
 
 data class ReviewStage(
@@ -39,6 +46,33 @@ data class ReviewText(
     val subtitle: String? = null,
 )
 
+data class Farewell(
+    val characterId: Int = 0,
+    val message: String = "",
+)
+
+/**
+ * The AI sometimes opens its message with the character's own name, as if writing a
+ * dialogue line (e.g. "Lyra: Caio, ..."), which duplicates the name the UI already shows
+ * alongside it. Strips a leading "Name:"/"Name,"/"Name -" if present; otherwise unchanged.
+ */
+fun Farewell.cleanMessage(characterName: String): String {
+    val namePrefix = Regex("^\\s*${Regex.escape(characterName)}\\s*[:,-]\\s*", RegexOption.IGNORE_CASE)
+    return namePrefix.replaceFirst(message, "")
+}
+
+/**
+ * AI response wrapper for the farewells step — mirrors
+ * [com.ilustris.sagai.features.saga.chat.data.model.SuggestionGen]. Deliberately just a flat
+ * list of strings, not [Farewell]: the model is asked for one message per character in the
+ * exact order they were listed in the prompt, and [SagaReviewUseCaseImpl.generateStep] zips
+ * that order back onto the real character ids in code — asking the model to echo back a
+ * numeric `characterId` itself would be a needless source of mismatches.
+ */
+data class FarewellSet(
+    val messages: List<String> = emptyList(),
+)
+
 fun Review?.isComplete(): Boolean {
     if (this == null) return false
     return introduction != null &&
@@ -46,7 +80,8 @@ fun Review?.isComplete(): Boolean {
         playstyle != null &&
         topCharacters != null &&
         actsInsight != null &&
-        conclusion != null
+        conclusion != null &&
+        farewells != null
 }
 
 fun Review?.hasViewablePages(): Boolean = this?.introduction != null
@@ -59,4 +94,5 @@ fun Review.completedStepCount(): Int =
         topCharacters,
         actsInsight,
         conclusion,
+        farewells,
     ).count { it != null }

@@ -2,14 +2,17 @@ package com.ilustris.sagai.features.saga.chat.data.manager
 
 import android.content.Context
 import android.net.Uri
+import androidx.room.withTransaction
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.data.isFlowCancellation
+import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.AVATAR_ICON_TARGET_PX
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.ImageHelper
@@ -126,6 +129,7 @@ class SagaContentManagerImpl
         private val imageHelper: ImageHelper,
         private val genreConfigService: GenreConfigService,
         private val messageDao: MessageDao,
+        private val database: SagaDatabase,
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val narrativeCoordinator: NarrativeCoordinator,
@@ -1203,7 +1207,7 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeAction.EvolveTimeline -> {
-                    val generatedContent = resultValue as? GeneratedContent<Timeline>
+                    val generatedContent = resultValue as? GeneratedContentWithLore<Timeline>
                     val timeline = generatedContent?.data ?: resultValue as? Timeline
                     val message = generatedContent?.finalMessage
                     timeline?.let { t ->
@@ -1227,6 +1231,8 @@ class SagaContentManagerImpl
                                     emotionalMascot = mascotIcon,
                                     messageText = message,
                                     sagaContent = fullSaga,
+                                    characters = generatedContent?.characters ?: emptyList(),
+                                    wikis = generatedContent?.wikis ?: emptyList(),
                                 ),
                             )
                         }
@@ -1234,22 +1240,37 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeAction.GenerateChapter -> {
-                    val generatedContent = resultValue as? GeneratedContent<Chapter>
+                    val generatedContent = resultValue as? GeneratedContentWithLore<Chapter>
                     val chapter = generatedContent?.data ?: resultValue as? Chapter
                     val message = generatedContent?.finalMessage
                     chapter?.let { c ->
                         getSagaContent()?.let { fullSaga ->
-                            emitMilestone(SagaMilestone.ChapterFinished(c, message, fullSaga))
+                            emitMilestone(
+                                SagaMilestone.ChapterFinished(
+                                    chapter = c,
+                                    messageText = message,
+                                    sagaContent = fullSaga,
+                                    characters = generatedContent?.characters ?: emptyList(),
+                                    wikis = generatedContent?.wikis ?: emptyList(),
+                                ),
+                            )
                         }
                     } ?: dismissMilestone()
                 }
 
                 is NarrativeAction.GenerateAct -> {
-                    val generatedContent = resultValue as? GeneratedContent<Act>
+                    val generatedContent = resultValue as? GeneratedContentWithLore<Act>
                     val act = generatedContent?.data ?: resultValue as? Act
                     val message = generatedContent?.finalMessage
                     act?.let { a ->
-                        emitMilestone(SagaMilestone.ActFinished(a, message))
+                        emitMilestone(
+                            SagaMilestone.ActFinished(
+                                act = a,
+                                messageText = message,
+                                characters = generatedContent?.characters ?: emptyList(),
+                                wikis = generatedContent?.wikis ?: emptyList(),
+                            ),
+                        )
                     } ?: dismissMilestone()
                 }
 
@@ -1474,15 +1495,15 @@ class SagaContentManagerImpl
                 ) {
                     is RequestResult.Success -> {
                         val character = result.value
+                        // No manual content.value re-publish here: the write below already
+                        // invalidates the messages table, and loadSaga()'s collector re-emits on
+                        // its own. Doing both meant two UI updates for one change.
                         messageDao.updateMessage(
                             savedMessage.copy(
                                 characterId = character.id,
                                 speakerName = character.fullName(),
                             ),
                         )
-                        sagaHistoryUseCase.getSagaMetadata(savedMessage.sagaId).first()?.let {
-                            content.value = it
-                        }
                     }
 
                     is RequestResult.Error -> {
@@ -1511,19 +1532,25 @@ class SagaContentManagerImpl
                 sagaHistoryUseCase.getSagaMetadata(saga.data.id).first()
                     ?: content.value
                     ?: saga
-            for (messageContent in latestSaga.flatMessages()) {
-                val message = messageContent.message
-                if (message.characterId != null ||
-                    message.senderType != SenderType.CHARACTER ||
-                    message.speakerName.isNullOrBlank()
-                ) {
-                    continue
+            val unlinked =
+                latestSaga.flatMessages().filter { messageContent ->
+                    val message = messageContent.message
+                    message.characterId == null &&
+                        message.senderType == SenderType.CHARACTER &&
+                        !message.speakerName.isNullOrBlank()
                 }
-                linkMessageToExistingCharacter(
-                    saga = latestSaga,
-                    message = message,
-                    candidateName = message.speakerName,
-                )
+            if (unlinked.isEmpty()) return
+            // One transaction for the whole backfill. Left as separate writes this loop fired one
+            // Room invalidation per message, and each of those pushed a full chat-list rebuild.
+            database.withTransaction {
+                for (messageContent in unlinked) {
+                    val message = messageContent.message
+                    linkMessageToExistingCharacter(
+                        saga = latestSaga,
+                        message = message,
+                        candidateName = message.speakerName,
+                    )
+                }
             }
         }
 
@@ -1538,13 +1565,14 @@ class SagaContentManagerImpl
                     ?: saga.findCharacter(candidateName)
                     ?: return false
             if (message.characterId == character.id) return true
+            // The Room flow in loadSaga() picks this write up by itself — re-publishing
+            // content.value here just doubled every emission.
             messageDao.updateMessage(
                 message.copy(
                     characterId = character.id,
                     speakerName = character.fullName(),
                 ),
             )
-            sagaHistoryUseCase.getSagaMetadata(message.sagaId).first()?.let { content.value = it }
             return true
         }
 
@@ -1553,7 +1581,7 @@ class SagaContentManagerImpl
             timelineUseCase.updateTimeline(currentTimeline.data.copy(sceneSummary = sceneSummary))
         }
 
-        private suspend fun handleStreamingState(state: StreamingState<GeneratedContent<*>>) {
+        private suspend fun handleStreamingState(state: StreamingState<GeneratedContentWithLore<*>>) {
             when (state) {
                 is StreamingState.Reasoning -> {
                     contentReasoning.value = state.chunk
@@ -1565,10 +1593,12 @@ class SagaContentManagerImpl
                     if (data is Timeline) {
                         emitMilestone(
                             SagaMilestone.NewEvent(
-                                data,
-                                null,
-                                state.data.finalMessage,
+                                timeline = data,
+                                emotionalMascot = null,
+                                messageText = state.data.finalMessage,
                                 sagaContent = getSagaContent()!!,
+                                characters = state.data.characters,
+                                wikis = state.data.wikis,
                             ),
                         )
                     }

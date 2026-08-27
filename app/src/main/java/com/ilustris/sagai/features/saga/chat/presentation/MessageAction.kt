@@ -37,4 +37,9 @@ sealed class MessageAction {
     data class LongPress(
         val messageId: Int,
     ) : MessageAction()
+
+    /** Fired once a message has fully typed itself out, so it never animates again. */
+    data class MarkViewed(
+        val messageId: Int,
+    ) : MessageAction()
 }

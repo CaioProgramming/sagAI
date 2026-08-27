@@ -49,6 +49,10 @@ class MessageRepositoryImpl
             return message
         }
 
+        override suspend fun markViewed(messageId: Int) {
+            messageDao.markViewed(messageId)
+        }
+
         override suspend fun getLastMessage(sagaId: Int): Message? = messageDao.getLastMessageWithContent(sagaId)?.message
 
         override fun getMessagesCount(sagaId: Int) = messageDao.getMessagesCount(sagaId)

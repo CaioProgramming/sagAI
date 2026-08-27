@@ -34,17 +34,22 @@ fun VibeShapeDrawing(
     strokeWidth: Dp = 2.dp,
     showEntranceLine: Boolean = true,
     showExitLine: Boolean = true,
+    isAnimated: Boolean = true,
     onFinishDraw: () -> Unit = {},
 ) {
     val targetShape = remember(emotionalTone) { emotionalTone.starShape() }
-    val animProgress = remember { Animatable(0f) }
+    val animProgress = remember { Animatable(if (isAnimated) 0f else 1f) }
 
-    LaunchedEffect(emotionalTone) {
-        animProgress.snapTo(0f)
-        animProgress.animateTo(
-            1f,
-            animationSpec = tween(duration, easing = EaseInBounce),
-        )
+    LaunchedEffect(emotionalTone, isAnimated) {
+        if (isAnimated) {
+            animProgress.snapTo(0f)
+            animProgress.animateTo(
+                1f,
+                animationSpec = tween(duration, easing = EaseInBounce),
+            )
+        } else {
+            animProgress.snapTo(1f)
+        }
     }
 
     Canvas(modifier = modifier) {

@@ -107,6 +107,7 @@ fun PreparedGenerationInstructions.toSyncParams(
     logEnabled: Boolean,
     references: List<ImageReference?>,
     temperatureRandomness: Float,
+    thinkingLevel: String?,
 ): GeminiSyncGenerationParams =
     GeminiSyncGenerationParams(
         model = model,
@@ -117,6 +118,7 @@ fun PreparedGenerationInstructions.toSyncParams(
         systemInstruction = normalizedSystemInstruction,
         references = references,
         temperatureRandomness = temperatureRandomness,
+        thinkingLevel = thinkingLevel,
         audit = toAuditContext(),
         promptForFailureLog = taskPrompt,
     )
@@ -128,6 +130,7 @@ fun PreparedGenerationInstructions.toStreamingParams(
     logEnabled: Boolean,
     references: List<ImageReference?>,
     temperatureRandomness: Float,
+    thinkingLevel: String?,
     includeSystemInFullPrompt: Boolean = true,
     onGuardrailBlock: (suspend (GuardrailsException) -> Unit)? = null,
 ): GeminiStreamingGenerationParams =
@@ -140,6 +143,7 @@ fun PreparedGenerationInstructions.toStreamingParams(
         systemInstruction = normalizedSystemInstruction,
         references = references,
         temperatureRandomness = temperatureRandomness,
+        thinkingLevel = thinkingLevel,
         audit = toAuditContext(),
         includeSystemInFullPrompt = includeSystemInFullPrompt,
         onGuardrailBlock = onGuardrailBlock,

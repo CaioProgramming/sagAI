@@ -22,6 +22,8 @@ import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.data.model.WikiType
 
 object DesignSystemMocks {
     fun mockSaga(
@@ -107,6 +109,25 @@ object DesignSystemMocks {
 
     fun mockSagaContent(genre: Genre) = SagaContent(data = mockSaga(genre))
 
+    fun mockWiki(
+        id: Int,
+        title: String,
+        content: String,
+        type: WikiType = WikiType.LOCATION,
+    ) = Wiki(
+        id = id,
+        title = title,
+        content = content,
+        type = type,
+        sagaId = 1,
+    )
+
+    fun mockActCoverImages() =
+        listOf(
+            "https://i.pinimg.com/564x/0a/92/7d/0a927df0b8a6a12a5276e03882775739.jpg",
+            "https://i.pinimg.com/564x/0a/92/7d/0a927df0b8a6a12a5276e03882775739.jpg",
+        )
+
     fun mockNewEventMilestone(genre: Genre) =
         SagaMilestone.NewEvent(
             timeline =
@@ -119,6 +140,8 @@ object DesignSystemMocks {
             emotionalMascot = null,
             messageText = "The static clears just long enough for you to make out a single word before the signal dies again.",
             sagaContent = mockSagaContent(genre),
+            characters = listOf(mockCharacter(3, "The Signal Keeper")),
+            wikis = listOf(mockWiki(1, "The Static Line", "A dead frequency that isn't quite dead — something on the other end keeps answering.")),
         )
 
     fun mockChapterFinishedMilestone(genre: Genre) =
@@ -132,6 +155,8 @@ object DesignSystemMocks {
                 ),
             messageText = "Every thread from this chapter converges here — nothing that happened was wasted.",
             sagaContent = mockSagaContent(genre),
+            characters = listOf(mockCharacter(4, "The Old Guard")),
+            wikis = listOf(mockWiki(2, "The Fractured Hall", "Where the Old Guard made its last stand — the walls still remember.")),
         )
 
     fun mockActFinishedMilestone() =
@@ -143,6 +168,8 @@ object DesignSystemMocks {
                     emotionalReview = "This act asked what loyalty actually costs, and the Traveler paid every price without flinching once.",
                 ),
             messageText = "The dust settles on everything you fought for in this act.",
+            characters = listOf(mockCharacter(5, "The Fractured Ally")),
+            wikis = listOf(mockWiki(3, "The Fracture", "The line every alliance in this act was drawn across, whether anyone admitted it or not.")),
         )
 
     fun mockIntroductionMilestone() =

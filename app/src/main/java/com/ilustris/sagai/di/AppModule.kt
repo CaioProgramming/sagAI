@@ -109,6 +109,8 @@ import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManage
 import com.ilustris.sagai.features.saga.chat.data.manager.NarrativeActionExecutorImpl
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManagerImpl
+import com.ilustris.sagai.features.saga.chat.data.usecase.EpilogueChatUseCase
+import com.ilustris.sagai.features.saga.chat.data.usecase.EpilogueChatUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
@@ -583,6 +585,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesMessageUseCase(messageUseCaseImpl: MessageUseCaseImpl): MessageUseCase
+
+    @Binds
+    abstract fun providesEpilogueChatUseCase(epilogueChatUseCaseImpl: EpilogueChatUseCaseImpl): EpilogueChatUseCase
 
     @Binds
     abstract fun providesChapterUseCase(chapterUseCaseImpl: ChapterUseCaseImpl): ChapterUseCase

@@ -22,6 +22,7 @@
 
 # AI / Gson models used with reflection
 -keep class com.ilustris.sagai.core.ai.model.** { *; }
+-keep class com.ilustris.sagai.core.ai.prompts.** { *; }
 -keep class com.ilustris.sagai.features.**.data.model.** { *; }
 -keep class com.ilustris.sagai.features.**.domain.model.** { *; }
 

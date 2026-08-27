@@ -1,0 +1,144 @@
+uniform shader composable_shader;
+uniform float2 iResolution;
+uniform float iTime;
+
+// Barrel distortion. Off by default — a flat panel, not a fishbowl.
+uniform float u_curvature;
+// Spacing of the phosphor dot grid, in physical pixels.
+uniform float u_dotPitch;
+// How dark the gaps between dots get, 0..1.
+uniform float u_dotIntensity;
+// Radius of each lit dot, as a fraction of its cell.
+uniform float u_dotRadius;
+// Depth of the horizontal scanline gaps, 0..1.
+uniform float u_scanlineIntensity;
+// Horizontal RGB split, in physical pixels.
+uniform float u_aberration;
+// How far light bleeds from a lit dot, in physical pixels.
+uniform float u_bloomRadius;
+// Strength of that bleed, 0..1+.
+uniform float u_bloomIntensity;
+// Sensor noise, 0..1.
+uniform float u_grain;
+// Brightness of the drifting refresh band, 0..1.
+uniform float u_rollIntensity;
+// Corner darkening, 0..1.
+uniform float u_vignette;
+// Mains-hum brightness wobble, 0..1.
+uniform float u_flicker;
+
+const float TUBE_EDGE_SOFTNESS = 0.004;
+
+float2 curveUv(float2 uv, float amount) {
+    if (amount <= 0.0) {
+        return uv;
+    }
+    float2 centered = uv * 2.0 - 1.0;
+    float2 offset = centered.yx * centered.yx * amount;
+    centered += centered * offset;
+    return centered * 0.5 + 0.5;
+}
+
+// Clamped on purpose. Reading past the layer's bounds returns nothing, and since the channels are
+// sampled at different offsets, only *some* of them fell outside near an edge — which painted a
+// pure teal seam down the right border and a yellow one down the left, exactly one channel wide.
+// Clamping makes an edge pixel repeat itself instead of dropping a channel.
+half4 sampleScreen(float2 uv) {
+    return composable_shader.eval(clamp(uv, float2(0.0), float2(1.0)) * iResolution);
+}
+
+float hash(float2 p) {
+    return fract(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+half4 main(float2 fragCoord) {
+    float2 uv = fragCoord / iResolution;
+    float2 curved = curveUv(uv, u_curvature);
+
+    float2 edge = smoothstep(float2(0.0), float2(TUBE_EDGE_SOFTNESS), curved) *
+                  smoothstep(float2(0.0), float2(TUBE_EDGE_SOFTNESS), 1.0 - curved);
+    float inside = edge.x * edge.y;
+    if (inside <= 0.0) {
+        return half4(0.0);
+    }
+
+    // Three fetches only when the channels are actually being split. With no aberration those
+    // three reads land on the same texel, so the branch turns three identical full-resolution
+    // samples into one — the single biggest cost in this shader, paid on every pixel of a
+    // full-screen effect.
+    // Alpha is carried through rather than forced opaque. Returning 1.0 here painted a solid
+    // rectangle behind anything with transparency around it — a title's own bounding box turning
+    // into a black slab. Skia hands these samples to us premultiplied, so every additive term
+    // below has to be scaled by alpha to keep transparent pixels transparent.
+    half4 src = sampleScreen(curved);
+    float alpha = float(src.a);
+    if (alpha <= 0.0) {
+        return half4(0.0);
+    }
+
+    float3 base;
+    if (u_aberration > 0.0) {
+        // Flat horizontal split rather than radial: on a panel the channels are offset by the
+        // signal, not by the geometry of a tube, so the error is the same everywhere.
+        float2 split = float2(u_aberration / iResolution.x, 0.0);
+        base.r = float(sampleScreen(curved + split).r);
+        base.g = float(sampleScreen(curved).g);
+        base.b = float(sampleScreen(curved - split).b);
+    } else {
+        base = float3(src.rgb);
+    }
+
+    // The halo is gathered *before* the dot mask and added *after* it, which is the whole trick:
+    // light bleeding across the unlit gaps is what makes a grid of dots read as glowing emitters
+    // rather than as a screen door laid over an image. Masking first would darken the glow with
+    // the same grid it is supposed to spill over.
+    float3 halo = float3(0.0);
+    if (u_bloomIntensity > 0.0) {
+        float2 r = u_bloomRadius / iResolution;
+        float3 ring =
+            float3(sampleScreen(curved + float2(r.x, r.y)).rgb) +
+            float3(sampleScreen(curved + float2(-r.x, r.y)).rgb) +
+            float3(sampleScreen(curved + float2(r.x, -r.y)).rgb) +
+            float3(sampleScreen(curved + float2(-r.x, -r.y)).rgb);
+        halo = ring * 0.25 * u_bloomIntensity * alpha;
+    }
+
+    // Phosphor dots, laid out in physical pixels so the grid stays a fixed size on screen.
+    float2 gridPos = curved * iResolution / max(u_dotPitch, 1.0);
+    float2 cell = fract(gridPos) - 0.5;
+
+    float3 colour = base;
+    if (u_dotIntensity > 0.0) {
+        float dotFalloff = 1.0 - smoothstep(u_dotRadius, u_dotRadius + 0.14, length(cell));
+        colour *= mix(1.0 - u_dotIntensity, 1.0, dotFalloff);
+    }
+
+    // Scanlines are taken from the dot grid's own row phase rather than from a pitch of their own.
+    // Two independent near-frequencies beat against each other, and that interference was showing
+    // up as broad horizontal bands drifting across flat areas — a moiré, not a scanline. Sharing
+    // the grid means the line always lands on the row it belongs to.
+    if (u_scanlineIntensity > 0.0) {
+        colour *= 1.0 - u_scanlineIntensity * (0.5 + 0.5 * cos(gridPos.y * 6.28318));
+    }
+
+    colour += halo;
+
+    if (u_grain > 0.0) {
+        colour += (hash(fragCoord + fract(iTime) * 100.0) - 0.5) * u_grain * alpha;
+    }
+
+    if (u_rollIntensity > 0.0) {
+        float band = fract(curved.y - iTime * 0.12);
+        float roll = smoothstep(0.0, 0.06, band) * (1.0 - smoothstep(0.06, 0.18, band));
+        colour += roll * u_rollIntensity * alpha;
+    }
+
+    colour *= 1.0 + u_flicker * sin(iTime * 47.0) * 0.5;
+
+    float radius = length(curved - 0.5);
+    colour *= 1.0 - u_vignette * smoothstep(0.25, 0.85, radius);
+    colour *= inside;
+
+    // Premultiplied colour is only valid up to its own alpha.
+    return half4(half3(clamp(colour, 0.0, alpha)), half(alpha));
+}

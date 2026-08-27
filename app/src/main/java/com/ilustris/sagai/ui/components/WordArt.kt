@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -48,15 +47,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.SagAIScaffold
+import com.ilustris.sagai.ui.theme.components.HandwrittenText
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.lighter
 import com.ilustris.sagai.ui.theme.themeBrushColors
@@ -206,6 +206,8 @@ fun RansomNoteText(
     fontFamily: FontFamily? = null,
     primaryColor: Color = Color.White,
     secondaryColor: Color = Color.Black,
+    strokeWidth: Dp = 3.5.dp,
+    strokeColor: Color = Color.Black,
 ) {
     if (rememberLifecycleAnimationsActive()) {
         RansomNoteTextAnimated(
@@ -216,6 +218,8 @@ fun RansomNoteText(
             fontFamily = fontFamily,
             primaryColor = primaryColor,
             secondaryColor = secondaryColor,
+            strokeWidth = strokeWidth,
+            strokeColor = strokeColor,
         )
     } else {
         FlowRow(
@@ -233,11 +237,12 @@ fun RansomNoteText(
                         index = index,
                         colorFrame = 0,
                         jitterFrame = 0,
-                        genre = genre,
                         fontSize = fontSize,
                         fontFamily = fontFamily,
                         primaryColor = primaryColor,
                         secondaryColor = secondaryColor,
+                        strokeWidth = strokeWidth,
+                        strokeColor = strokeColor,
                     )
                 }
             }
@@ -254,6 +259,8 @@ private fun RansomNoteTextAnimated(
     fontFamily: FontFamily?,
     primaryColor: Color,
     secondaryColor: Color,
+    strokeWidth: Dp,
+    strokeColor: Color,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "punkPulse")
     val ticker by
@@ -287,11 +294,12 @@ private fun RansomNoteTextAnimated(
                     index = index,
                     colorFrame = colorFrame,
                     jitterFrame = jitterFrame,
-                    genre = genre,
                     fontSize = fontSize,
                     fontFamily = fontFamily,
                     primaryColor = primaryColor,
                     secondaryColor = secondaryColor,
+                    strokeWidth = strokeWidth,
+                    strokeColor = strokeColor,
                 )
             }
         }
@@ -304,11 +312,12 @@ private fun RansomLetter(
     index: Int,
     colorFrame: Int,
     jitterFrame: Int,
-    genre: Genre,
     fontSize: TextUnit,
     fontFamily: FontFamily?,
     primaryColor: Color,
     secondaryColor: Color,
+    strokeWidth: Dp,
+    strokeColor: Color,
 ) {
     // VISUAL IDENTITY: Only changes every 10 seconds (Slow Cycle)
     val visualIdentity =
@@ -320,17 +329,20 @@ private fun RansomLetter(
             val scaleBase = 0.85f + r.nextFloat() * 0.25f
 
             object {
-                val bg = if (isReversed) secondaryColor else primaryColor
-                val text = if (isReversed) primaryColor else secondaryColor
+                val color = if (isReversed) secondaryColor else primaryColor
                 val upper = isUpper
                 val size = sizeMult
                 val scale = scaleBase
             }
         }
 
+    val density = LocalDensity.current
+    val strokeWidthPx = with(density) { strokeWidth.toPx() }
+    val displayText = if (visualIdentity.upper) char.uppercase() else char.lowercase()
+
     // JITTER: Fast cycle (2 FPS stop-motion)
-    // We use graphicsLayer lambda to avoid recomposing the Text/Surface content for simple jitters
-    Surface(
+    // We use graphicsLayer lambda to avoid recomposing the Text content for simple jitters
+    Box(
         modifier =
             Modifier
                 .padding(horizontal = 1.dp, vertical = 2.dp)
@@ -342,15 +354,24 @@ private fun RansomLetter(
                     scaleX = visualIdentity.scale
                     scaleY = visualIdentity.scale
                 },
-        color = visualIdentity.bg,
-        shape = genre.bubble(isNarrator = true),
     ) {
+        if (strokeWidth > 0.dp) {
+            Text(
+                text = displayText,
+                style =
+                    TextStyle(
+                        color = strokeColor,
+                        fontSize = fontSize * visualIdentity.size,
+                        fontFamily = fontFamily,
+                        drawStyle = Stroke(width = strokeWidthPx, join = StrokeJoin.Round),
+                    ),
+            )
+        }
         Text(
-            text = if (visualIdentity.upper) char.uppercase() else char.lowercase(),
-            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+            text = displayText,
             style =
                 TextStyle(
-                    color = visualIdentity.text,
+                    color = visualIdentity.color,
                     fontSize = fontSize * visualIdentity.size,
                     fontFamily = fontFamily,
                     fontWeight = FontWeight.Black,
@@ -376,20 +397,41 @@ fun Genre.stylisedText(
         )
     when (this) {
         Genre.FANTASY -> {
-            AutoResizeText(
+            HandwrittenText(
                 text = text,
                 modifier =
                     modifier
                         .genreVfx(this, resolvedColor, resolvedIconColor),
-                style =
-                    style.copy(
-                        brush = Brush.verticalGradient(palette),
-                        shadow =
-                            Shadow(
-                                palette.last().darker(),
-                                blurRadius = 15f,
-                                offset = Offset(0f, 2f),
-                            ),
+                color = resolvedColor,
+                fontSize = fontSize,
+                isBold = true,
+                isItalic = false,
+                centered = true,
+                shadow =
+                    Shadow(
+                        palette.last().darker(),
+                        blurRadius = 15f,
+                        offset = Offset(0f, 2f),
+                    ),
+            )
+        }
+
+        Genre.CRIME -> {
+            HandwrittenText(
+                text = text,
+                modifier =
+                    modifier
+                        .genreVfx(this, resolvedColor, resolvedIconColor),
+                color = resolvedColor,
+                fontSize = fontSize,
+                isBold = true,
+                isItalic = false,
+                centered = true,
+                shadow =
+                    Shadow(
+                        resolvedColor,
+                        blurRadius = 10f,
+                        offset = Offset(0f, 2f),
                     ),
             )
         }
@@ -450,25 +492,6 @@ fun Genre.stylisedText(
             )
         }
 
-        Genre.CRIME -> {
-            AutoResizeText(
-                text = text,
-                modifier =
-                    modifier
-                        .genreVfx(this, resolvedColor),
-                style =
-                    style.copy(
-                        brush = Brush.verticalGradient(palette),
-                        shadow =
-                            Shadow(
-                                color = resolvedColor.copy(alpha = 0.8f),
-                                offset = Offset(0f, 0f),
-                                blurRadius = 20f,
-                            ),
-                    ),
-            )
-        }
-
         Genre.HEROES -> {
             WordArtText(
                 text = text,
@@ -522,17 +545,18 @@ fun Genre.stylisedText(
         }
 
         Genre.PUNK_ROCK -> {
-            AutoResizeText(
+            RansomNoteText(
                 text = text,
+                genre = this,
                 modifier =
                     modifier
                         .genreVfx(this)
                         .padding(8.dp),
-                style =
-                    style.copy(
-                        brush = Brush.verticalGradient(palette),
-                        shadow = Shadow(resolvedColor.darker(), blurRadius = 15f),
-                    ),
+                fontSize = fontSize,
+                fontFamily = style.fontFamily,
+                primaryColor = palette.first(),
+                secondaryColor = palette.last(),
+                strokeWidth = 5.dp,
             )
         }
 

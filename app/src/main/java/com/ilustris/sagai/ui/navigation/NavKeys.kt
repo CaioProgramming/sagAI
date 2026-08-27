@@ -85,6 +85,12 @@ data class CharacterDetailKey(
 ) : NavKey
 
 @Serializable
+data class EpilogueChatKey(
+    val sagaId: String,
+    val characterId: Int,
+) : NavKey
+
+@Serializable
 data class SagaChaptersKey(
     val sagaId: String,
 ) : NavKey
@@ -137,6 +143,8 @@ fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
 
         this is SagaChaptersKey && other is SagaChaptersKey -> sagaId == other.sagaId
         this is CharacterDetailKey && other is CharacterDetailKey -> characterId == other.characterId
+        this is EpilogueChatKey && other is EpilogueChatKey ->
+            sagaId == other.sagaId && characterId == other.characterId
         this is LoreDebugKey && other is LoreDebugKey -> sagaId == other.sagaId
         this is BookReaderKey && other is BookReaderKey ->
             sagaId == other.sagaId && initialActId == other.initialActId
@@ -248,6 +256,15 @@ fun String.findNavKey(): NavKey? {
             val parts = this.removePrefix("saga://character_brain/").split("/")
             if (parts.size >= 2) {
                 CharacterBrainKey(parts[0], parts[1].toIntOrNull() ?: 0)
+            } else {
+                null
+            }
+        }
+
+        this.startsWith("saga://epilogue_chat/") -> {
+            val parts = this.removePrefix("saga://epilogue_chat/").split("/")
+            if (parts.size >= 2) {
+                EpilogueChatKey(parts[0], parts[1].toIntOrNull() ?: 0)
             } else {
                 null
             }

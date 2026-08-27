@@ -32,6 +32,7 @@ class GeminiRequestBuilder internal constructor() {
     private var requirement: ModelRequirement = ModelRequirement.MEDIUM
     private var temperatureRandomness: Float = 0.5f
     private var includeSystemInFullPrompt: Boolean = true
+    private var thinkingLevel: String? = null
 
     fun task(value: String) {
         taskPrompt = value
@@ -51,6 +52,15 @@ class GeminiRequestBuilder internal constructor() {
     ) {
         this.requirement = requirement
         this.temperatureRandomness = temperatureRandomness
+    }
+
+    /**
+     * The Gemini `thinkingLevel` for this request, already resolved to a value the API accepts.
+     * Null omits `thinkingConfig` entirely — for a tier with thinking switched off, or a model
+     * that doesn't support it.
+     */
+    fun thinking(level: String?) {
+        thinkingLevel = level
     }
 
     /** Whether [buildFullPromptText] should embed the system instruction (token diagnostics). */
@@ -84,10 +94,12 @@ class GeminiRequestBuilder internal constructor() {
                                 temperatureRandomness,
                             ),
                         thinkingConfig =
-                            GeminiThinkingConfig(
-                                includeThoughts = true,
-                                thinkingLevel = requirement.name,
-                            ),
+                            thinkingLevel?.let { level ->
+                                GeminiThinkingConfig(
+                                    includeThoughts = true,
+                                    thinkingLevel = level,
+                                )
+                            },
                     ),
             )
 

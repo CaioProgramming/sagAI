@@ -8,6 +8,7 @@ import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.home.data.model.getChapterCovers
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
@@ -76,6 +77,18 @@ class MilestoneViewModel
                     ?.coverImage
                     ?.takeIf { it.isNotBlank() }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+        val actChapterCovers: StateFlow<List<String>> =
+            combine(uiState, sagaContentManager.content) { state, saga ->
+                val actId =
+                    ((state as? MilestoneUiState.ClosureStep)?.milestone as? SagaMilestone.ActFinished)?.act?.id
+                        ?: return@combine emptyList()
+                saga
+                    ?.acts
+                    ?.find { it.data.id == actId }
+                    ?.getChapterCovers()
+                    ?: emptyList()
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
         val bookGenerationState: StateFlow<BookGenerationUiState> = bookGenerationService.uiState
 

@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.narrative.NarrativeRules
@@ -113,6 +114,7 @@ class ChatViewModel
         private var lastEventId: Int = 0
         private var lastMessageCount: Int = 0
         private var lastMessagesFingerprint: Long = 0L
+        private val viewedMessageIds = mutableSetOf<Int>()
         private var wikiObserverJob: kotlinx.coroutines.Job? = null
 
         private var sagaObserverJob: kotlinx.coroutines.Job? = null
@@ -273,6 +275,10 @@ class ChatViewModel
 
                 is ChatUiAction.ToggleMessageSelection -> {
                     stateManager.toggleMessageSelection(action.messageId)
+                }
+
+                is ChatUiAction.MarkMessageViewed -> {
+                    markMessageViewed(action.messageId)
                 }
 
                 is ChatUiAction.ClearSelection -> {
@@ -468,8 +474,10 @@ class ChatViewModel
 
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
-                val limit = remoteConfigService.getLong("chat_input_limit") ?: 2000L
-                stateManager.updateState { it.copy(maxContentLength = limit.toInt()) }
+                val limit =
+                    remoteConfigService.getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)?.toInt()
+                        ?: ChatPrompts.DEFAULT_CHAT_INPUT_LIMIT
+                stateManager.updateState { it.copy(maxContentLength = limit) }
             }
 
             wikiObserverJob?.cancel()
@@ -647,6 +655,18 @@ class ChatViewModel
         fun checkSaga() {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.checkNarrativeProgression(uiState.value.sagaContent)
+            }
+        }
+
+        /**
+         * Persists that a message finished revealing itself. Guarded by an in-memory set because
+         * the bubble can re-emit this on recomposition, and every redundant write would invalidate
+         * the messages table and push another emission through the chat flow for nothing.
+         */
+        private fun markMessageViewed(messageId: Int) {
+            if (!viewedMessageIds.add(messageId)) return
+            viewModelScope.launch(Dispatchers.IO) {
+                messageUseCase.markViewed(messageId)
             }
         }
 

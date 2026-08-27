@@ -14,6 +14,8 @@ class FantasyChatBubbleShape(
     private val tailWidth: Dp = 20.dp,
     private val tailHeight: Dp = 20.dp,
     private val tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
+    /** When false the torn flap is dropped and the ragged edge runs straight through. */
+    private val drawTail: Boolean = true,
 ) : Shape {
     override fun createOutline(
         size: Size,
@@ -48,17 +50,21 @@ class FantasyChatBubbleShape(
                 path.lineTo(w - raggedPx, h * 0.3f)
                 path.lineTo(w + raggedPx * 0.5f, h * 0.6f)
 
-                // Tail (Bottom-Right Corner)
-                // A "torn flap" hanging down
-                val tailStart = h - tailHeightPx
-                path.lineTo(w, tailStart)
+                if (drawTail) {
+                    // Tail (Bottom-Right Corner)
+                    // A "torn flap" hanging down
+                    val tailStart = h - tailHeightPx
+                    path.lineTo(w, tailStart)
 
-                // Tail Out
-                path.lineTo(w + raggedPx, h) // Tip (slightly out)
+                    // Tail Out
+                    path.lineTo(w + raggedPx, h) // Tip (slightly out)
 
-                // Tail Return (Raggedly back to bottom edge)
-                path.lineTo(w - tailWidthPx * 0.5f, h - raggedPx)
-                path.lineTo(w - tailWidthPx, h)
+                    // Tail Return (Raggedly back to bottom edge)
+                    path.lineTo(w - tailWidthPx * 0.5f, h - raggedPx)
+                    path.lineTo(w - tailWidthPx, h)
+                } else {
+                    path.lineTo(w, h) // Bottom-Right, no flap
+                }
 
                 // Bottom Edge (Ragged, moving left)
                 path.lineTo(w * 0.6f, h - raggedPx)
@@ -91,17 +97,21 @@ class FantasyChatBubbleShape(
                 path.lineTo(w * 0.7f, h - raggedPx)
                 path.lineTo(w * 0.4f, h + raggedPx * 0.5f)
 
-                // Tail (Bottom-Left Corner)
-                // We are approaching the left side.
-                // Tail starts at tailWidthPx
-                path.lineTo(tailWidthPx, h)
+                if (drawTail) {
+                    // Tail (Bottom-Left Corner)
+                    // We are approaching the left side.
+                    // Tail starts at tailWidthPx
+                    path.lineTo(tailWidthPx, h)
 
-                // Tail Out (The flap)
-                path.lineTo(tailWidthPx * 0.5f, h - raggedPx) // Inner notch
-                path.lineTo(-raggedPx, h) // Tip (slightly out left)
+                    // Tail Out (The flap)
+                    path.lineTo(tailWidthPx * 0.5f, h - raggedPx) // Inner notch
+                    path.lineTo(-raggedPx, h) // Tip (slightly out left)
 
-                // Tail Return (Up to side)
-                path.lineTo(0f, h - tailHeightPx)
+                    // Tail Return (Up to side)
+                    path.lineTo(0f, h - tailHeightPx)
+                } else {
+                    path.lineTo(0f, h) // Bottom-Left, no flap
+                }
 
                 // Left Edge (Ragged, moving up)
                 path.lineTo(raggedPx, h * 0.6f)

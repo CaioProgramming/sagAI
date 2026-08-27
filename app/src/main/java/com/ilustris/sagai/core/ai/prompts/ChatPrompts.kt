@@ -70,6 +70,14 @@ object ChatPrompts {
     const val SCENE_SUMMARIZATION_BLUEPRINT = "scene_summarization_blueprint"
 
     /**
+     * Character ceiling for a single chat message, shared by the composer and the AI reply so both
+     * sides of the conversation obey the same limit. Measured on clean text — expressive tags
+     * (`<action>`, `<think>`, `<narrator>`) don't count against it, matching `getCleanTextLength`.
+     */
+    const val CHAT_INPUT_LIMIT_KEY = "chat_input_limit"
+    const val DEFAULT_CHAT_INPUT_LIMIT = 2000
+
+    /**
      * Remote Config blueprint expectations for hierarchical narrative memory:
      *
      * - [REPLY_GENERATION_BLUEPRINT]: `worldContext.narrativeContinuity` carries layered canon
@@ -82,6 +90,9 @@ object ChatPrompts {
      *   (must match a name in `charactersPresent`, or be omitted for a narrator-voiced hook) so the
      *   app can attribute the correct avatar/name — never leave the hook set without it when a
      *   specific character is speaking.
+     *   Also receives `maxMessageLimit`: the character ceiling for `message.text`, counted on prose
+     *   only (expressive tags are markup and don't count). The blueprint must compose within it
+     *   rather than write long and cut — a message ending mid-sentence or mid-tag is a failure.
      *
      * - [SCENE_SUMMARIZATION_BLUEPRINT]: `sagaContext.narrativeContinuity` must inform scene facts
      *   without overwriting long-range canon.
@@ -102,6 +113,9 @@ object ChatPrompts {
             "audible",
             "status",
             "reasoning",
+            // Read-receipt state for the UI. The model has no use for it and it rode along on
+            // every message in the history.
+            "viewed",
         )
     val sagaExclusions =
         listOf(
@@ -145,6 +159,7 @@ object ChatPrompts {
         updateLimit: Int,
         narrativeRules: NarrativeRules,
         characterArcsById: Map<Int, List<CharacterArc>> = emptyMap(),
+        maxMessageLimit: Int = DEFAULT_CHAT_INPUT_LIMIT,
     ): SplitPrompt {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
@@ -186,9 +201,9 @@ object ChatPrompts {
                 if (narrativeContinuity.isNotEmpty()) {
                     put("narrativeContinuity", narrativeContinuity)
                 }
-                saga.data.worldState?.takeIf { it.isNotBlank() }?.let {
-                    put("globalWorldState", it)
-                }
+                // No globalWorldState here on purpose: buildChatContinuityContext already emits it,
+                // and sagaContext carries the same string as `worldState`. Putting it a third time
+                // just paid for the same paragraph twice more.
 
                 put(
                     "storyCharacters",
@@ -221,11 +236,16 @@ object ChatPrompts {
                             put(
                                 "relationshipsWithPresentCharacters",
                                 charactersInScene
-                                    .mapNotNull {
+                                    // The sender is in charactersPresent too, and findRelationship
+                                    // matches either side of a pair — so asking for the sender and
+                                    // then for the other party returned the same relation twice.
+                                    .filter { inScene -> inScene.data.id != it.data.id }
+                                    .mapNotNull { inScene ->
                                         messageSender
-                                            .findRelationship(it.data.id)
+                                            .findRelationship(inScene.data.id)
                                             ?.summarizeRelation()
-                                    }.normalizetoAIItems(),
+                                    }.distinct()
+                                    .normalizetoAIItems(),
                             )
                         }.toAINormalize(CHARACTER_EXCLUSIONS),
                     )
@@ -239,8 +259,12 @@ object ChatPrompts {
         val argsMap =
             mutableMapOf(
                 "worldContext" to worldContext,
-                "conversationHistory" to conversationHistory(updateLimit, saga),
+                // Excluding the turn we're answering: it's sent whole as `latestMessage`, and
+                // conversationHistory used to end with a byte-identical copy of it.
+                "conversationHistory" to
+                    conversationHistory(updateLimit, saga, excludingMessageId = message.id),
                 "latestMessage" to message.toAINormalize(messageExclusions),
+                "maxMessageLimit" to maxMessageLimit,
             )
 
         return promptService
@@ -419,6 +443,7 @@ object ChatPrompts {
         loreUpdateLimit: Int,
         saga: SagaContent,
         threshold: Int = loreUpdateLimit,
+        excludingMessageId: Int? = null,
     ) = buildString {
         val currentTimeline = saga.getCurrentTimeLine()
         val currentMessages =
@@ -433,6 +458,7 @@ object ChatPrompts {
             }
         appendLine(
             currentMessages
+                .filterNot { excludingMessageId != null && it.id == excludingMessageId }
                 .takeLast(threshold)
                 .normalizetoAIItems(excludingFields = messageExclusions),
         )
