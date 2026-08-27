@@ -13,7 +13,7 @@ This document tracks all the AI prompt blueprints used in the Sagas application.
 | Blueprint Key | Description | Category | Implemented? |
 | :--- | :--- | :--- | :---: |
 | `dynamic_saga_creation_blueprint` | Generates CTA cards to inspire new story creation. | Home | ✅ |
-| `reply_generation_blueprint` | The "Storyteller"—main narrative generation engine. | Chat | ✅ |
+| `reply_generation_blueprint` | The "Storyteller"—main narrative generation engine. Also receives `maxMessageLimit` (from the `chat_input_limit` parameter) and must compose within that character ceiling instead of writing long and cutting. | Chat | ✅ |
 | `epilogue_chat_intro_blueprint` | Ephemeral post-ending epilogue chat—character's opening line, warm reunion, never advances plot. | Chat | 📝 |
 | `epilogue_chat_reply_blueprint` | Ephemeral post-ending epilogue chat—ongoing replies, never advances plot, never persisted. | Chat | 📝 |
 | `chat_writing_pal_blueprint` | The "Ghostwriter"—checks messages for character style/typos. | Chat | ✅ |

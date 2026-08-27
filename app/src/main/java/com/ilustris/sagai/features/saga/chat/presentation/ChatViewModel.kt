@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.narrative.NarrativeRules
@@ -473,8 +474,10 @@ class ChatViewModel
 
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
-                val limit = remoteConfigService.getLong("chat_input_limit") ?: 2000L
-                stateManager.updateState { it.copy(maxContentLength = limit.toInt()) }
+                val limit =
+                    remoteConfigService.getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)?.toInt()
+                        ?: ChatPrompts.DEFAULT_CHAT_INPUT_LIMIT
+                stateManager.updateState { it.copy(maxContentLength = limit) }
             }
 
             wikiObserverJob?.cancel()

@@ -18,8 +18,8 @@ import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.AVATAR_ICON_TARGET_PX
+import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.globalshell.NewMessageEffect
@@ -259,6 +259,12 @@ class MessageUseCaseImpl
                             updateLimit = narrativeRules.loreUpdateLimit,
                             narrativeRules = narrativeRules,
                             characterArcsById = characterArcsById,
+                            maxMessageLimit =
+                                remoteConfigService
+                                    .getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)
+                                    ?.toInt()
+                                    ?.takeIf { it > 0 }
+                                    ?: ChatPrompts.DEFAULT_CHAT_INPUT_LIMIT,
                         )
                     val conversationInstructions =
                         genreConfigService
