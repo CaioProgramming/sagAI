@@ -422,6 +422,10 @@ class MessageUseCaseImpl
                     speakerName = speakerName,
                     characterId = character?.id,
                     viewed = false,
+                    // The model fills this on every reply and it was being dropped here, so every
+                    // character message persisted with a null tone — which is exactly what the
+                    // review's expressiveness pages count.
+                    emotionalTone = reply.message.emotionalTone,
                 ),
             )
         }
