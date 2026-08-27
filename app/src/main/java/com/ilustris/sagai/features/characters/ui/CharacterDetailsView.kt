@@ -7,6 +7,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -49,7 +50,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -259,6 +259,13 @@ private fun CharacterDetailsLoaded(
                 targetValue = (scrollFraction * 24).dp,
                 label = "headerBlur",
             )
+            // Blur alone doesn't guarantee contrast on a busy or light photo — a rising tint of
+            // the palette's own background colour does, and keeps the transition read as "the
+            // card settling" rather than "the text struggling against the art".
+            val headerOverlayAlpha by animateFloatAsState(
+                targetValue = scrollFraction * 0.7f,
+                label = "headerOverlayAlpha",
+            )
 
             with(sharedTransitionScope) {
                 Box(
@@ -313,12 +320,13 @@ private fun CharacterDetailsLoaded(
                                             rememberSharedContentState(key = "character_${character.id}_icon"),
                                             animatedVisibilityScope,
                                             renderInOverlayDuringTransition = false,
-                                        ).fillMaxSize()
+                                        )
+                                        .fillMaxSize()
                                         .clickable(
                                             enabled =
                                                 BuildConfig.DEBUG ||
-                                                    characterData.emojified ||
-                                                    characterData.image.isEmpty(),
+                                                        characterData.emojified ||
+                                                        characterData.image.isEmpty(),
                                         ) {
                                             viewModel.regenerate(
                                                 sagaInfo,
@@ -342,7 +350,8 @@ private fun CharacterDetailsLoaded(
                                                 widthPx = strokeWidthPx,
                                                 jitterFrame = strokeFrame,
                                                 jitterAmountPx = strokeJitterPx,
-                                            ).imageStroke(
+                                            )
+                                            .imageStroke(
                                                 color = characterColor,
                                                 widthPx = strokeWidthPx * 1.3f,
                                                 jitterFrame = strokeFrame,
@@ -352,6 +361,12 @@ private fun CharacterDetailsLoaded(
                                         heroImageModifier
                                     },
                             ) {}
+
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(adaptiveColor.copy(alpha = headerOverlayAlpha)),
+                            )
 
                             Box(
                                 Modifier
@@ -422,10 +437,7 @@ private fun CharacterDetailsLoaded(
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp),
+                                modifier = Modifier.padding(vertical = 8.dp),
                             ) {
                                 if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
                                     CircularCharacterAction(
@@ -435,7 +447,6 @@ private fun CharacterDetailsLoaded(
                                                 R.string.talk_to_character_again,
                                                 characterData.name,
                                             ),
-                                        color = characterColor,
                                         onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },
                                     )
                                 }
@@ -443,14 +454,12 @@ private fun CharacterDetailsLoaded(
                                 CircularCharacterAction(
                                     icon = painterResource(R.drawable.ic_cosmos),
                                     contentDescription = stringResource(R.string.character_brain_open),
-                                    color = characterColor,
                                     onClick = { onOpenCharacterBrain(sagaInfo.id, characterData.id) },
                                 )
 
                                 CircularCharacterAction(
                                     icon = painterResource(R.drawable.ic_share),
                                     contentDescription = stringResource(id = R.string.share_character_cd),
-                                    color = characterColor,
                                     onClick = { showCharacterShare = true },
                                 )
                             }
@@ -538,7 +547,8 @@ private fun CharacterDetailsLoaded(
                                                     isSummarizing,
                                                     targetValue = 1000f,
                                                     repeatMode = RepeatMode.Restart,
-                                                ).padding(vertical = 16.dp),
+                                                )
+                                                .padding(vertical = 16.dp),
                                     )
                                 }
                             }
@@ -724,7 +734,7 @@ private fun CharacterDetailsLoaded(
                         if (BuildConfig.DEBUG) {
                             HeroOverflowMenu(
                                 tint = adaptiveTextColor,
-                                containerColor = adaptiveColor.copy(alpha = .5f),
+                                containerColor = adaptiveColor.copy(alpha = .75f),
                                 actions =
                                     listOf(
                                         HeroMenuAction(
@@ -759,26 +769,25 @@ private fun CharacterDetailsLoaded(
 private fun CircularCharacterAction(
     icon: Painter,
     contentDescription: String,
-    color: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier =
             modifier
-                .size(56.dp)
+                .size(32.dp)
                 .clip(CircleShape)
-                .background(color.copy(alpha = .2f), CircleShape)
+                .background(MaterialTheme.colorScheme.primary, CircleShape)
                 .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             icon,
             contentDescription = contentDescription,
-            tint = color,
+            tint = MaterialTheme.colorScheme.onPrimary,
             modifier =
                 Modifier
-                    .padding(14.dp)
+                    .padding(8.dp)
                     .fillMaxSize(),
         )
     }
