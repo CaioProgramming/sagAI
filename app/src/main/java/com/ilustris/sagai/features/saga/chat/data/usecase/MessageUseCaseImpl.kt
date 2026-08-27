@@ -46,6 +46,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.Reaction
+import com.ilustris.sagai.features.saga.chat.data.model.ReplyFallout
 import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -282,7 +283,7 @@ class MessageUseCaseImpl
                                     actContext.renderInstructions(),
                                 ),
                             userInteraction = true,
-                            filterOutputFields = ChatPrompts.messageExclusions,
+                            filterOutputFields = ChatPrompts.messageOutputExclusions,
                             requirement = ModelRequirement.HIGH,
                             useCore = true,
                         )
@@ -341,23 +342,24 @@ class MessageUseCaseImpl
                                                     reply,
                                                     character = existingCharacter,
                                                 )
-                                            handleAIReplyReactions(saga, saved, reply.reactions)
                                             reply.userTone?.let { tone ->
                                                 updateMessage(
                                                     message.message.copy(emotionalTone = tone),
-                                                )
-                                            }
-                                            reply.userReactions?.let { reactions ->
-                                                handleAIReplyReactions(
-                                                    saga,
-                                                    message.message,
-                                                    reactions,
                                                 )
                                             }
                                             saved
                                         }
                                     }
                                 postNewMessageEffect(saga, savedMessage, existingCharacter)
+                                // Detached on purpose: reactions and the notification hook are a
+                                // beat behind by design, and nothing about them should hold up the
+                                // bubble the player is already reading.
+                                resolveReplyFallout(
+                                    saga = saga,
+                                    userMessage = message.message,
+                                    replyMessage = savedMessage,
+                                    sceneSummary = reply.sceneSummary ?: sceneSummary,
+                                )
                                 sagaContentManager.resolveReplyCharacterLinks(
                                     saga = saga,
                                     reply = reply,
@@ -390,12 +392,72 @@ class MessageUseCaseImpl
                 val savedMessage =
                     database.withTransaction {
                         val saved = insertAiReplyMessage(saga, reply, character)
-                        handleAIReplyReactions(saga, saved, reply.reactions)
                         saved
                     }
                 postNewMessageEffect(saga, savedMessage, character)
                 savedMessage
             }
+
+        /**
+         * Resolves reactions and the notification hook for a turn that is already persisted and on
+         * screen, on the LOW tier — a different model from the reply, and therefore a separate
+         * per-minute token quota.
+         *
+         * Failures are swallowed: a turn without reactions reads as a quiet room, which is a far
+         * better outcome than surfacing an error over a reply that arrived perfectly well.
+         */
+        private suspend fun resolveReplyFallout(
+            saga: SagaMetadata,
+            userMessage: Message,
+            replyMessage: Message,
+            sceneSummary: SceneSummary?,
+        ) {
+            val result =
+                executeRequest {
+                    val sagaContent =
+                        sagaRepository.getSagaById(saga.data.id).first() as SagaContent
+                    val prompt =
+                        ChatPrompts.replyFalloutPrompt(
+                            promptService = promptService,
+                            saga = sagaContent,
+                            userMessage = userMessage,
+                            replyMessage = replyMessage,
+                            sceneSummary = sceneSummary,
+                        )
+                    gemmaClient.generate<ReplyFallout>(
+                        promptSplit =
+                            prompt.mergeInstructions(
+                                genreConfigService.conversationInstructions(saga.data.genre),
+                            ),
+                        requirement = ModelRequirement.LOW,
+                    )
+                }
+
+            val fallout = result.getSuccess() ?: return
+
+            database.withTransaction {
+                handleAIReplyReactions(saga, replyMessage, fallout.replyReactions)
+                handleAIReplyReactions(saga, userMessage, fallout.userReactions)
+            }
+
+            // Patched onto the scene the reply just wrote rather than written wholesale, so the
+            // hook lands without clobbering the state the HIGH model established this turn.
+            fallout.notificationHook?.takeIf { it.isNotBlank() }?.let { hook ->
+                saga.getCurrentTimeLine()?.let { timeline ->
+                    timeline.data.sceneSummary?.let { scene ->
+                        timelineUseCase.updateTimeline(
+                            timeline.data.copy(
+                                sceneSummary =
+                                    scene.copy(
+                                        notificationHook = hook,
+                                        notificationCharacterName = fallout.notificationCharacterName,
+                                    ),
+                            ),
+                        )
+                    }
+                }
+            }
+        }
 
         /**
          * Pure DB write — safe to call inside a Room transaction. The bitmap decode and global-shell

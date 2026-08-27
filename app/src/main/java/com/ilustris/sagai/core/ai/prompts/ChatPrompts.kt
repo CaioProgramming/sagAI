@@ -70,6 +70,13 @@ object ChatPrompts {
     const val SCENE_SUMMARIZATION_BLUEPRINT = "scene_summarization_blueprint"
 
     /**
+     * Reactions and the notification hook, resolved after the reply is already on screen. Runs on a
+     * cheaper tier — which is a different model, and therefore a different per-minute token quota
+     * than the one the reply spends from.
+     */
+    const val REPLY_FALLOUT_BLUEPRINT = "reply_fallout_blueprint"
+
+    /**
      * Character ceiling for a single chat message, shared by the composer and the AI reply so both
      * sides of the conversation obey the same limit. Measured on clean text — expressive tags
      * (`<action>`, `<think>`, `<narrator>`) don't count against it, matching `getCleanTextLength`.
@@ -117,6 +124,21 @@ object ChatPrompts {
             // every message in the history.
             "viewed",
         )
+    /**
+     * Applied to the *output* schema only, never to the context we send in.
+     *
+     * `emotionalTone` has to stay in the input: the history showing that the player was DETERMINED
+     * three turns ago is real signal. The notification fields are the opposite — they are described
+     * to the model purely so it can fill them, and now that [REPLY_FALLOUT_BLUEPRINT] owns them,
+     * describing them here would be asking twice for the same thing.
+     */
+    val messageOutputExclusions =
+        messageExclusions +
+            listOf(
+                "notificationHook",
+                "notificationCharacterName",
+            )
+
     val sagaExclusions =
         listOf(
             "id",
@@ -296,6 +318,66 @@ object ChatPrompts {
             )
 
         return promptService.buildSplitBlueprint(CHAT_WRITING_PAL_BLUEPRINT, args)
+    }
+
+    /**
+     * Prompt for [REPLY_FALLOUT_BLUEPRINT]: the reactions and the notification hook for a turn that
+     * has already been written and persisted.
+     *
+     * Deliberately narrower than [replyMessagePrompt] — no continuity layers, no distant canon, no
+     * conversation history beyond the two messages being reacted to. What it does carry is per
+     * character stake (occupation, backstory, relationship to the people involved), because without
+     * that the reactions come back interchangeable, which is the failure REACTION_NOT_TRANSFERABLE
+     * exists to catch.
+     */
+    suspend fun replyFalloutPrompt(
+        promptService: PromptService,
+        saga: SagaContent,
+        userMessage: Message,
+        replyMessage: Message,
+        sceneSummary: SceneSummary?,
+    ): SplitPrompt {
+        val present =
+            sceneSummary
+                ?.charactersPresent
+                ?.mapNotNull { saga.findCharacter(it) }
+                .orEmpty()
+
+        val speakerNames =
+            listOfNotNull(userMessage.speakerName, replyMessage.speakerName)
+                .map { it.trim().lowercase() }
+                .toSet()
+
+        // Whoever just spoke doesn't react to themselves, so they don't need a stake block either.
+        val reactingCast =
+            present.filterNot { it.data.fullName().trim().lowercase() in speakerNames }
+
+        val castWithStake =
+            reactingCast.joinToString("\n") { character ->
+                buildString {
+                    append("${character.data.fullName()} — ${character.data.profile.occupation}")
+                    character.data.profile.personality
+                        .takeIf { it.isNotBlank() }
+                        ?.let { append("\n  personality: $it") }
+                    reactingCast
+                        .filterNot { other -> other.data.id == character.data.id }
+                        .mapNotNull { other ->
+                            character.findRelationship(other.data.id)?.summarizeRelation(1)
+                        }.distinct()
+                        .takeIf { it.isNotEmpty() }
+                        ?.let { append("\n  relations: ${it.joinToString("; ")}") }
+                }
+            }
+
+        return promptService.buildSplitBlueprint(
+            REPLY_FALLOUT_BLUEPRINT,
+            mapOf(
+                "sceneContext" to (sceneSummary?.toAINormalize().orEmpty()),
+                "reactingCast" to castWithStake,
+                "playerMessage" to userMessage.toAINormalize(messageExclusions),
+                "characterReply" to replyMessage.toAINormalize(messageExclusions),
+            ),
+        )
     }
 
     suspend fun generateReactionPrompt(
