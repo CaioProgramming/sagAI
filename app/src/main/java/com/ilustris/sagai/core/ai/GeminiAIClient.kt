@@ -88,7 +88,7 @@ abstract class GeminiAIClient(
         error: GeminiError,
         fullPromptText: String,
     ) {
-        if (isInputTokenLimitError(null, error.message, GeminiErrorResponse(error))) {
+        if (isInputTokenLimitError(error.code, error.message, GeminiErrorResponse(error))) {
             throw PromptTooLargeException(
                 message =
                     buildPromptTooLargeMessage(

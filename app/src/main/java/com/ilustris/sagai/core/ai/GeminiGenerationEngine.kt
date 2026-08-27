@@ -238,127 +238,136 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
         val maxAttempts = GeminiGenerationPolicy.maxAttempts(params.requirement)
         val startTime = System.currentTimeMillis()
 
-        for (currentAttempt in 1..maxAttempts) {
-            try {
-                val assembly = buildGenerationAssembly(params)
-                val fullPromptText = assembly.fullPromptText
-                lastFullPromptText.clear()
-                lastFullPromptText.append(fullPromptText)
-                lastRequestParts.clear()
-                lastRequestParts.addAll(assembly.contentParts)
-                val geminiRequest = assembly.request
-                val formattedModel = params.model.replace("models/", "")
+        // Same per-model lock the sync path takes. Streaming ran outside it, so a reply could go
+        // out while a sync generation on the same model was already in flight — and both spend
+        // from one per-minute input-token quota. Held across the whole stream on purpose: the
+        // budget is only free again once the response is fully drained.
+        // Safe against the reasoning synthesizer that runs during collection: it launches in its
+        // own coroutine and asks for a different tier's model, so it never waits on this lock in a
+        // way that could hold the stream up.
+        requestMutexes.getOrPut(params.model) { Mutex() }.withLock {
+            for (currentAttempt in 1..maxAttempts) {
+                try {
+                    val assembly = buildGenerationAssembly(params)
+                    val fullPromptText = assembly.fullPromptText
+                    lastFullPromptText.clear()
+                    lastFullPromptText.append(fullPromptText)
+                    lastRequestParts.clear()
+                    lastRequestParts.addAll(assembly.contentParts)
+                    val geminiRequest = assembly.request
+                    val formattedModel = params.model.replace("models/", "")
 
-                ensurePromptWithinTokenLimit(
-                    model = formattedModel,
-                    apiKey = apiConfig(params.useCore),
-                    request = geminiRequest,
-                    parts = lastRequestParts,
-                    fullPromptText = fullPromptText,
-                    systemInstruction = params.systemInstruction,
-                )
-
-                logGenerateRequest(
-                    logEnabled = params.logEnabled,
-                    model = params.model,
-                    fullPromptTextLength = fullPromptText.length,
-                    instructions = params.systemInstruction,
-                    prompt = params.taskPrompt,
-                )
-
-                val responseBody =
-                    callStreamGenerateContent(
-                        formattedModel,
-                        apiConfig(params.useCore),
-                        geminiRequest,
-                    )
-
-                val streamResult =
-                    consumeStreamingResponse(
-                        responseBody = responseBody,
+                    ensurePromptWithinTokenLimit(
+                        model = formattedModel,
+                        apiKey = apiConfig(params.useCore),
+                        request = geminiRequest,
+                        parts = lastRequestParts,
                         fullPromptText = fullPromptText,
-                        logEnabled = params.logEnabled,
-                        geminiRequest = geminiRequest,
-                        onReasoning = { chunk -> emit(StreamingState.Reasoning(chunk)) },
-                    )
-
-                val parsed =
-                    parseGenerationJson<T>(
-                        streamResult.fullText,
-                        streamResult.fullThoughts,
-                        streamResult.usageMetadata,
-                    )
-
-                val duration = System.currentTimeMillis() - startTime
-                recordAudit(
-                    AIAuditSnapshot.success(
-                        model = params.model,
-                        blueprintKey = params.audit.blueprintKey,
-                        dataType = params.audit.dataType,
-                        reasoning = streamResult.fullThoughts,
-                        rawResponse = streamResult.fullText,
-                        responseTimeMs = duration,
-                        systemInstruction = params.audit.systemInstruction,
-                        sentVariables = params.audit.sentVariables,
-                        usageMetadata = streamResult.usageMetadata,
-                    ),
-                    logEnabled = params.logEnabled,
-                )
-                if (params.logEnabled) {
-                    Timber.i("Generation Streaming Bench: ${params.model} took ${duration}ms")
-                    Timber.d(
-                        "generateStreaming: final state on streaming:\n${streamResult.fullText}",
-                    )
-                }
-                emit(StreamingState.Success(parsed.data))
-                return@flow
-            } catch (e: Exception) {
-                if (e.isFlowCancellation() || e is CancellationException) throw e
-                classifyPromptLimitFailure(
-                    e,
-                    lastFullPromptText.toString(),
-                    GeminiAIClient.INPUT_TOKEN_LIMIT,
-                )?.let { throw it }
-
-                GeminiGenerationPolicy.recordGenerationFailure(
-                    dataType = params.audit.dataType,
-                    model = params.model,
-                    attempt = currentAttempt,
-                    maxAttempts = maxAttempts,
-                    throwable = e,
-                )
-
-                if (e is GuardrailsException) {
-                    params.onGuardrailBlock?.invoke(e)
-                }
-
-                val shouldRetry =
-                    handleGenerationRetry(
-                        throwable = e,
-                        currentAttempt = currentAttempt,
-                        maxAttempts = maxAttempts,
-                        model = params.model,
-                        logEnabled = params.logEnabled,
-                        lastRequestParts = lastRequestParts,
                         systemInstruction = params.systemInstruction,
-                        context = "generateStreaming",
                     )
-                if (!shouldRetry) {
+
+                    logGenerateRequest(
+                        logEnabled = params.logEnabled,
+                        model = params.model,
+                        fullPromptTextLength = fullPromptText.length,
+                        instructions = params.systemInstruction,
+                        prompt = params.taskPrompt,
+                    )
+
+                    val responseBody =
+                        callStreamGenerateContent(
+                            formattedModel,
+                            apiConfig(params.useCore),
+                            geminiRequest,
+                        )
+
+                    val streamResult =
+                        consumeStreamingResponse(
+                            responseBody = responseBody,
+                            fullPromptText = fullPromptText,
+                            logEnabled = params.logEnabled,
+                            geminiRequest = geminiRequest,
+                            onReasoning = { chunk -> emit(StreamingState.Reasoning(chunk)) },
+                        )
+
+                    val parsed =
+                        parseGenerationJson<T>(
+                            streamResult.fullText,
+                            streamResult.fullThoughts,
+                            streamResult.usageMetadata,
+                        )
+
                     val duration = System.currentTimeMillis() - startTime
                     recordAudit(
-                        AIAuditSnapshot.error(
+                        AIAuditSnapshot.success(
                             model = params.model,
                             blueprintKey = params.audit.blueprintKey,
                             dataType = params.audit.dataType,
-                            errorMessage = "${e.javaClass.simpleName}: ${e.message}",
+                            reasoning = streamResult.fullThoughts,
+                            rawResponse = streamResult.fullText,
                             responseTimeMs = duration,
-                            safetyStatus = if (e is GuardrailsException) e.status.name else null,
                             systemInstruction = params.audit.systemInstruction,
                             sentVariables = params.audit.sentVariables,
+                            usageMetadata = streamResult.usageMetadata,
                         ),
                         logEnabled = params.logEnabled,
                     )
-                    throw e
+                    if (params.logEnabled) {
+                        Timber.i("Generation Streaming Bench: ${params.model} took ${duration}ms")
+                        Timber.d(
+                            "generateStreaming: final state on streaming:\n${streamResult.fullText}",
+                        )
+                    }
+                    emit(StreamingState.Success(parsed.data))
+                    return@flow
+                } catch (e: Exception) {
+                    if (e.isFlowCancellation() || e is CancellationException) throw e
+                    classifyPromptLimitFailure(
+                        e,
+                        lastFullPromptText.toString(),
+                        GeminiAIClient.INPUT_TOKEN_LIMIT,
+                    )?.let { throw it }
+
+                    GeminiGenerationPolicy.recordGenerationFailure(
+                        dataType = params.audit.dataType,
+                        model = params.model,
+                        attempt = currentAttempt,
+                        maxAttempts = maxAttempts,
+                        throwable = e,
+                    )
+
+                    if (e is GuardrailsException) {
+                        params.onGuardrailBlock?.invoke(e)
+                    }
+
+                    val shouldRetry =
+                        handleGenerationRetry(
+                            throwable = e,
+                            currentAttempt = currentAttempt,
+                            maxAttempts = maxAttempts,
+                            model = params.model,
+                            logEnabled = params.logEnabled,
+                            lastRequestParts = lastRequestParts,
+                            systemInstruction = params.systemInstruction,
+                            context = "generateStreaming",
+                        )
+                    if (!shouldRetry) {
+                        val duration = System.currentTimeMillis() - startTime
+                        recordAudit(
+                            AIAuditSnapshot.error(
+                                model = params.model,
+                                blueprintKey = params.audit.blueprintKey,
+                                dataType = params.audit.dataType,
+                                errorMessage = "${e.javaClass.simpleName}: ${e.message}",
+                                responseTimeMs = duration,
+                                safetyStatus = if (e is GuardrailsException) e.status.name else null,
+                                systemInstruction = params.audit.systemInstruction,
+                                sentVariables = params.audit.sentVariables,
+                            ),
+                            logEnabled = params.logEnabled,
+                        )
+                        throw e
+                    }
                 }
             }
         }
@@ -400,6 +409,7 @@ internal fun GeminiAIClient.buildGenerationAssembly(params: GeminiSyncGeneration
         system(params.systemInstruction)
         references(params.references)
         generation(params.requirement, params.temperatureRandomness)
+        thinking(params.thinkingLevel)
         if (!params.includeSystemInFullPrompt) {
             fullPrompt(includeSystemInstruction = false)
         }
@@ -412,6 +422,7 @@ internal fun GeminiAIClient.buildGenerationAssembly(params: GeminiStreamingGener
         system(params.systemInstruction)
         references(params.references)
         generation(params.requirement, params.temperatureRandomness)
+        thinking(params.thinkingLevel)
         if (!params.includeSystemInFullPrompt) {
             fullPrompt(includeSystemInstruction = false)
         }

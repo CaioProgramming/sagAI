@@ -21,6 +21,24 @@ enum class ModelRequirement {
     HIGH,
 }
 
+/**
+ * Maps a tier onto a `thinkingLevel` the Gemini API actually accepts.
+ *
+ * The API's values are lowercase `low`/`medium`/`high`, so the enum name can't be sent raw —
+ * it only ever looked harmless because Gemma ignores `thinkingConfig` outright, which meant an
+ * invalid level went unnoticed until a tier was pointed at a Gemini 3 model.
+ *
+ * [ModelRequirement.MINIMAL] maps down to `low` rather than `minimal`: not every Gemini 3 model
+ * offers the minimal level, and asking for a level a model doesn't have is how this broke in the
+ * first place.
+ */
+fun ModelRequirement.toGeminiThinkingLevel(): String =
+    when (this) {
+        ModelRequirement.MINIMAL, ModelRequirement.LOW -> "low"
+        ModelRequirement.MEDIUM -> "medium"
+        ModelRequirement.HIGH -> "high"
+    }
+
 abstract class AIClient(
     protected val remoteConfigService: RemoteConfigService,
     protected val promptService: PromptService,
@@ -73,8 +91,7 @@ abstract class AIClient(
             }
         }
 
-    suspend fun buildSafetyPrompt() {
-    }
+
 
     suspend fun buildCorePrompt(
         requirement: ModelRequirement,
@@ -177,6 +194,24 @@ abstract class AIClient(
         } else {
             "core_${requirement.name.lowercase()}_blueprint"
         }
+
+    /**
+     * The `thinkingLevel` to send for [requirement], or null when the tier has thinking switched
+     * off in `model_configs` — in which case no `thinkingConfig` is sent at all.
+     *
+     * `thinkingEnabled` has been in `model_configs` all along but nothing ever read it, so every
+     * tier requested thoughts regardless of its own configuration. Defaults to enabled when the
+     * key is absent, matching the behaviour that shipped.
+     */
+    suspend fun thinkingLevel(requirement: ModelRequirement): String? {
+        val tierConfig =
+            remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap()
+        val enabled =
+            (tierConfig[requirement.name] as? Map<*, *>)
+                ?.get("thinkingEnabled") as? Boolean
+                ?: true
+        return requirement.toGeminiThinkingLevel().takeIf { enabled }
+    }
 
     suspend fun modelName(requirement: ModelRequirement): String {
         val tierConfig =
