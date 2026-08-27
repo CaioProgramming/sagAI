@@ -351,15 +351,11 @@ class MessageUseCaseImpl
                                         }
                                     }
                                 postNewMessageEffect(saga, savedMessage, existingCharacter)
-                                // Detached on purpose: reactions and the notification hook are a
-                                // beat behind by design, and nothing about them should hold up the
-                                // bubble the player is already reading.
-                                resolveReplyFallout(
-                                    saga = saga,
-                                    userMessage = message.message,
-                                    replyMessage = savedMessage,
-                                    sceneSummary = reply.sceneSummary ?: sceneSummary,
-                                )
+                                // The fallout is NOT launched here. It has to run outside this
+                                // flow's job: ChatGenerationService drops a new generate() call
+                                // while jobs[sagaId] is still active, so anything left running here
+                                // would silently swallow the player's next message. It is fired
+                                // from there instead, on its own job.
                                 sagaContentManager.resolveReplyCharacterLinks(
                                     saga = saga,
                                     reply = reply,
@@ -406,7 +402,7 @@ class MessageUseCaseImpl
          * Failures are swallowed: a turn without reactions reads as a quiet room, which is a far
          * better outcome than surfacing an error over a reply that arrived perfectly well.
          */
-        private suspend fun resolveReplyFallout(
+        override suspend fun resolveReplyFallout(
             saga: SagaMetadata,
             userMessage: Message,
             replyMessage: Message,

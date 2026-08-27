@@ -99,6 +99,20 @@ class ChatGenerationService
                                 val reply = state.data
                                 if (reply != null) {
                                     _outcomes.tryEmit(ChatGenerationOutcome.Success(sagaId, reply))
+                                    // Deliberately a separate job, not part of jobs[sagaId]: the
+                                    // guard at the top of generate() drops the player's next
+                                    // message while that job is alive, so the fallout must not
+                                    // extend it. It is also why this isn't awaited — reactions and
+                                    // the hook land a beat later, and the player can keep writing
+                                    // through it.
+                                    scope.launch {
+                                        messageUseCase.resolveReplyFallout(
+                                            saga = saga,
+                                            userMessage = message.message,
+                                            replyMessage = reply.message,
+                                            sceneSummary = reply.sceneSummary ?: sceneSummary,
+                                        )
+                                    }
                                 }
                             }
 
