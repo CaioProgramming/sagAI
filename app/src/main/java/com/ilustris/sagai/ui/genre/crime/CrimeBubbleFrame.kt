@@ -70,7 +70,7 @@ internal val CRIME_BUBBLE_ROW_PADDING = 16.dp
  * uses (`Modifier.weight(1f).padding(end = 50.dp)`) rather than a dp constant that would either
  * waste space or look identical on a phone and a tablet.
  *
- * [showTail]/[showAvatar] exist for [com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CrimeTextMessagePage]'s
+ * [showTail]/[showAvatar] exist for [com.ilustris.sagai.ui.genre.surface.crime.CrimeStoryBeat]'s
  * message-block splitting: a long message renders as several consecutive [CrimeBubbleFrame] calls,
  * only the last of which should draw the tail or the avatar (the avatar's reserved space still
  * needs to hold on every block, or the blocks without one would sit at a different left edge).
