@@ -55,6 +55,19 @@ interface MessageUseCase {
         message: String,
     ): RequestResult<TypoFix?>
 
+    /**
+     * Reactions and the notification hook for a turn that is already persisted and on screen.
+     *
+     * Must be called outside the generation flow's own job — see [ChatGenerationService]. Never
+     * throws: a turn without fallout reads as a quiet room.
+     */
+    suspend fun resolveReplyFallout(
+        saga: SagaMetadata,
+        userMessage: Message,
+        replyMessage: Message,
+        sceneSummary: SceneSummary?,
+    )
+
     suspend fun getSceneContext(saga: SagaMetadata): RequestResult<SceneSummary?>
 
     suspend fun generateReaction(

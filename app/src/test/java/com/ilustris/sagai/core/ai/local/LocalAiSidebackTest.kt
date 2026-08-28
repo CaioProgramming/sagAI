@@ -19,6 +19,7 @@ class LocalAiEligibilityTest {
             systemInstruction = "system",
             references = emptyList(),
             temperatureRandomness = 0.1f,
+            thinkingLevel = null,
             audit =
                 GeminiGenerationAuditContext(
                     dataType = "TestType",
