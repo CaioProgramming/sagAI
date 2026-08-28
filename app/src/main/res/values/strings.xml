@@ -547,6 +547,9 @@
     <string name="settings_debug_section">Debug</string>
     <string name="settings_audit_logs_subtitle">Inspect AI requests</string>
     <string name="settings_design_system_subtitle">Validate design system</string>
+    <string name="test_ad_event_subtitle">Standard interstitial</string>
+    <string name="test_ad_chapter_act_subtitle">Rewarded interstitial (video)</string>
+    <string name="loading">Loading…</string>
     <string name="settings_test_starry_loader">Test Starry Loader</string>
     <string name="settings_test_starry_loader_message">Weaving the next chapter…</string>
     <string name="settings_test_starry_loader_subtitle">This may take a few seconds</string>
@@ -791,6 +794,8 @@
     <!-- AI Audit Logs -->
     <string name="audit_logs_title">AI Audit Logs</string>
     <string name="design_system_preview_title">Design System</string>
+    <string name="test_ad_event_title">Test Event Ad</string>
+    <string name="test_ad_chapter_act_title">Test Chapter/Act Ad</string>
     <string name="design_system_preview_header_font_label">Header font (remote, falls back while resolving)</string>
     <string name="design_system_preview_bubble_label">Chat bubble shape</string>
     <string name="design_system_preview_bubble_sample_text">A saga speaks in %1$s\'s voice.</string>

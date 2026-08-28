@@ -61,6 +61,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
+import com.google.android.gms.ads.MobileAds
 import com.google.firebase.installations.FirebaseInstallations
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.data.SideEffect
@@ -73,6 +74,8 @@ import com.ilustris.sagai.core.navigation.SagaNavigationTracker
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
+import com.ilustris.sagai.core.services.AdsConsentService
+import com.ilustris.sagai.core.services.AdsService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.act.BookGenerationService
@@ -132,6 +135,14 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var sideEffectService: SideEffectService
 
+    // Injected eagerly (rather than only used where needed) so AdsService's
+    // ActivityLifecycleCallbacks registers before this Activity's own onResume fires.
+    @Inject
+    lateinit var adsService: AdsService
+
+    @Inject
+    lateinit var adsConsentService: AdsConsentService
+
     @Inject
     lateinit var imageGenerationService: ImageGenerationService
 
@@ -170,6 +181,15 @@ class MainActivity : ComponentActivity() {
         val initialDeepLinkString = intent?.getStringExtra("deepLink")
         intent?.removeExtra("deepLink")
         Timber.i("onCreate: deeplinkExtra: $initialDeepLinkString")
+
+        // UMP consent must resolve before any ad request; MobileAds.initialize() only after,
+        // per Google's documented ordering.
+        lifecycleScope.launch {
+            adsConsentService.requestConsentIfNeeded(this@MainActivity)
+            if (adsConsentService.canRequestAds()) {
+                MobileAds.initialize(this@MainActivity)
+            }
+        }
         setContent {
             Timber.d("MainActivity: setContent")
             val connectivityObserver = remember { ConnectivityObserver(applicationContext) }

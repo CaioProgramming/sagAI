@@ -9,6 +9,8 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.services.AdTier
+import com.ilustris.sagai.core.services.AdsService
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.restartApp
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -39,6 +41,7 @@ class SettingsViewModel
         private val stringHelper: StringResourceHelper,
         private val chatIslandService: ChatIslandService,
         val debugImageFallbackService: DebugImageFallbackService,
+        private val adsService: AdsService,
         @ApplicationContext private val context: Context,
     ) : ViewModel() {
         val notificationsEnabled = settingsUseCase.getNotificationsEnabled()
@@ -233,6 +236,20 @@ class SettingsViewModel
          * without needing to reach the real feature (chapter advance, image generation, etc.) live. */
         fun testIsland(content: IslandContent?) {
             chatIslandService.setTop(content)
+        }
+
+        private val _adTestLoading = MutableStateFlow<AdTier?>(null)
+        val adTestLoading = _adTestLoading.asStateFlow()
+
+        /** Debug-only: loads and shows an ad tier directly, bypassing the real milestone flow's
+         * premium/remote-config/consent gating, to verify the AdMob unit IDs are wired correctly. */
+        fun testAd(tier: AdTier) {
+            viewModelScope.launch {
+                _adTestLoading.value = tier
+                adsService.debugShowTestAd(tier) {
+                    _adTestLoading.value = null
+                }
+            }
         }
     }
 

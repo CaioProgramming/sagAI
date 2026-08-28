@@ -65,6 +65,7 @@ import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSettings
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.rememberPermissionLauncher
+import com.ilustris.sagai.core.services.AdTier
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.formatFileSize
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
@@ -107,6 +108,7 @@ fun SettingsView(
     val showTutorials by viewModel.showTutorials.collectAsStateWithLifecycle(true)
     val musicEnabled by viewModel.musicEnabled.collectAsStateWithLifecycle(true)
 
+    val adTestLoading by viewModel.adTestLoading.collectAsStateWithLifecycle()
     val memoryUsage by viewModel.memoryUsage.collectAsStateWithLifecycle()
     val isUserPro by viewModel.isUserPro.collectAsState(false)
     val storageInfo by viewModel.sagaStorageInfo.collectAsStateWithLifecycle(emptyList())
@@ -722,6 +724,41 @@ fun SettingsView(
                                 navToDesignSystemPreview()
                             },
                             isActivated =  true
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                            thickness = 1.dp,
+                        )
+
+                        PreferencesContainer(
+                            stringResource(R.string.test_ad_event_title),
+                            if (adTestLoading == AdTier.EVENT) {
+                                stringResource(R.string.loading)
+                            } else {
+                                stringResource(R.string.test_ad_event_subtitle)
+                            },
+                            showSwitch = false,
+                            onClickSwitch = { _: Boolean -> viewModel.testAd(AdTier.EVENT) }.takeIf { adTestLoading == null },
+                            isActivated = true,
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                            thickness = 1.dp,
+                        )
+
+                        PreferencesContainer(
+                            stringResource(R.string.test_ad_chapter_act_title),
+                            if (adTestLoading == AdTier.CHAPTER_OR_ACT) {
+                                stringResource(R.string.loading)
+                            } else {
+                                stringResource(R.string.test_ad_chapter_act_subtitle)
+                            },
+                            showSwitch = false,
+                            onClickSwitch =
+                                { _: Boolean -> viewModel.testAd(AdTier.CHAPTER_OR_ACT) }.takeIf { adTestLoading == null },
+                            isActivated = true,
                         )
                     }
                 }

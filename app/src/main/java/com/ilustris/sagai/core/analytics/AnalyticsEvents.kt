@@ -30,3 +30,34 @@ data class ImageQualityEvent(
     val violations: Int,
     val violationTypes: String? = null,
 )
+
+/** Ad lifecycle events — `tier` is [com.ilustris.sagai.core.services.AdTier]'s name (EVENT / CHAPTER_OR_ACT). */
+data class AdRequestedEvent(
+    val tier: String,
+)
+
+data class AdLoadedEvent(
+    val tier: String,
+)
+
+data class AdFailedToLoadEvent(
+    val errorCode: Int,
+    val errorMessage: String,
+)
+
+data class AdShownEvent(
+    val tier: String,
+)
+
+data class AdDismissedEvent(
+    val tier: String,
+)
+
+data class AdClickedEvent(
+    val tier: String,
+)
+
+data class AdFailedToShowEvent(
+    val errorCode: Int,
+    val errorMessage: String,
+)
