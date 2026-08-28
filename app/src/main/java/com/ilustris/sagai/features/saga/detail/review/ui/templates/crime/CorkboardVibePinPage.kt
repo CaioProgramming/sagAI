@@ -1,41 +1,36 @@
 package com.ilustris.sagai.features.saga.detail.review.ui.templates.crime
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
-import com.ilustris.sagai.ui.genre.crime.CrimeBackground
-import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
+import com.ilustris.sagai.ui.genre.crime.CorkPin
+import com.ilustris.sagai.ui.genre.crime.CorkboardBackground
+import com.ilustris.sagai.ui.theme.components.HandwrittenText
 import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
 
 /**
- * The "emotional vibe" attachment — sent right after the Expressiveness content bubble, same side.
- * Reuses [VibeShapeDrawing], the same shape [com.ilustris.sagai.features.saga.detail.review.ui.templates.book.BookExpressivenessPage]
- * inks, drawn small enough to read as a photo-sized card rather than a full page.
+ * The board's "vibe" pin — [VibeShapeDrawing] pinned like a sketch in an evidence folder, with the
+ * Expressiveness stage's own caption underneath. Reuses the same shape
+ * [com.ilustris.sagai.features.saga.detail.review.ui.templates.book.BookExpressivenessPage] inks.
  */
-class CrimeVibeStatPage(
+class CorkboardVibePinPage(
     override val content: SagaContent,
     private val tone: EmotionalTone,
-    private val isMe: Boolean,
-) : ReviewPage {
+    private val caption: String?,
+) : ReviewPage, CorkboardPinPage {
     override val pageType: ReviewPageType = ReviewPageType.EXPRESSIVENESS
-
-    /** No typing to wait for, just the pop-in plus a beat for the shape to trace itself. */
-    override val estimatedRevealDurationMs: Long = 1200L
 
     @Composable
     override fun Show(
@@ -43,40 +38,43 @@ class CrimeVibeStatPage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val genre = content.data.genre
-
-        CrimeBubbleFrame(
-            isMe = isMe,
-            genre = genre,
-            useSpeechShape = false,
-            canAnimate = canAnimate,
-            modifier = modifier,
-        ) { contentColor ->
+        CorkPin(
+            modifier = modifier.padding(16.dp),
+            seed = tone.ordinal,
+            pinColor = tone.color,
+        ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.width(160.dp).padding(vertical = 4.dp),
+                modifier = Modifier.width(170.dp),
             ) {
                 VibeShapeDrawing(
                     emotionalTone = tone,
                     strokeWidth = 2.dp,
-                    color = contentColor,
+                    color = tone.color,
                     isAnimated = canAnimate,
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                 )
-
-                Text(
+                HandwrittenText(
                     text = tone.getTitle(),
-                    fontWeight = FontWeight.Bold,
-                    color = tone.color,
-                    style = MaterialTheme.typography.labelMedium,
+                    fontSize = 15.sp,
+                    isBold = true,
+                    centered = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 )
+                caption?.let {
+                    HandwrittenText(
+                        text = it,
+                        fontSize = 12.sp,
+                        centered = true,
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    )
+                }
             }
         }
     }
 
     @Composable
     override fun Background(modifier: Modifier) {
-        CrimeBackground(modifier)
+        CorkboardBackground(modifier)
     }
 }
