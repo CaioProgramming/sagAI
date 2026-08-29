@@ -647,6 +647,15 @@ class SagaContentManagerImpl
          * back on SagaContentManager (via MessageUseCase), so injecting it here is a Dagger
          * dependency cycle. That gating lives in MainActivity's collector instead, which can see
          * both without the cycle.
+         *
+         * Also recombined with [SagaNavigationTracker.currentKey] rather than only with the
+         * readiness edge: the emitted signal has no replay, so if it fired while the user was on a
+         * different screen (mid-reply, on another saga, on the home screen), MainActivity's
+         * isOnChatForSaga gate silently swallowed it and nothing ever asked again — the only way
+         * back in was a fresh ChatViewModel (leave the saga, come back) forcing a full re-init.
+         * Folding navigation into this combine means returning to this saga's chat re-derives
+         * "ready" from the persisted coordinator/milestone state and re-emits, instead of relying
+         * on a one-shot pulse that's already been discarded.
          */
         private fun observeMilestoneChainReadiness() =
             managerScope.launch {
@@ -663,14 +672,21 @@ class SagaContentManagerImpl
                                 milestone !is SagaMilestone.NewCharacter
                         }.distinctUntilChanged()
 
-                combine(awaitingAdvance, freshReveal) { advance, reveal -> advance || reveal }
-                    .distinctUntilChanged()
-                    .collectLatest { ready ->
-                        if (ready) {
-                            content.value
-                                ?.data
-                                ?.id
-                                ?.let { _milestoneChainReady.emit(it) }
+                val ready =
+                    combine(awaitingAdvance, freshReveal) { advance, reveal -> advance || reveal }
+                        .distinctUntilChanged()
+
+                combine(ready, content, sagaNavigationTracker.currentKey) { isReady, saga, _ ->
+                    val sagaId = saga?.data?.id
+                    if (isReady && sagaId != null && sagaNavigationTracker.isOnChatForSaga(sagaId)) {
+                        sagaId
+                    } else {
+                        null
+                    }
+                }.distinctUntilChanged()
+                    .collectLatest { sagaId ->
+                        if (sagaId != null) {
+                            _milestoneChainReady.emit(sagaId)
                         }
                     }
             }
