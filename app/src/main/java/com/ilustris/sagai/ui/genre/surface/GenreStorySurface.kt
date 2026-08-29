@@ -16,7 +16,7 @@ import com.ilustris.sagai.ui.genre.book.CowboyBurnMarks
 import com.ilustris.sagai.ui.genre.book.HorrorPoliceTapeOverlay
 import com.ilustris.sagai.ui.genre.book.ShinobiInkBlooms
 import com.ilustris.sagai.ui.genre.collage.PunkScribbleOverlay
-import com.ilustris.sagai.ui.genre.crime.CrimeBackground
+import com.ilustris.sagai.ui.genre.crime.CorkboardBackground
 import com.ilustris.sagai.ui.genre.surface.book.BookStoryBeat
 import com.ilustris.sagai.ui.genre.surface.collage.CollageStoryBeat
 import com.ilustris.sagai.ui.genre.surface.comic.ComicStoryBeat
@@ -93,7 +93,9 @@ fun GenreStoryBackground(
     when (genre?.surfaceStyle() ?: GenreSurfaceStyle.DEFAULT) {
         GenreSurfaceStyle.BOOK -> BookBackground(modifier)
         GenreSurfaceStyle.TERMINAL -> TerminalBackground(modifier)
-        GenreSurfaceStyle.CRIME -> CrimeBackground(modifier)
+        // The corkboard's own surface, so a milestone and the finished saga's review are lit in
+        // the same room. CrimeBackground belonged to the messaging-app era this genre has left.
+        GenreSurfaceStyle.CRIME -> CorkboardBackground(modifier)
         GenreSurfaceStyle.COLLAGE,
         GenreSurfaceStyle.COMIC,
         GenreSurfaceStyle.DEFAULT,

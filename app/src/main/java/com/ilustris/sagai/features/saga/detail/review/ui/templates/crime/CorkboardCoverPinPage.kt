@@ -11,29 +11,41 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.PanelSpan
 import com.ilustris.sagai.ui.genre.crime.CorkPin
+import com.ilustris.sagai.ui.genre.crime.PinBackNote
+import com.ilustris.sagai.ui.genre.crime.PinCaption
+import com.ilustris.sagai.ui.genre.crime.PinProse
+import com.ilustris.sagai.ui.genre.crime.PinSignature
+import com.ilustris.sagai.ui.genre.crime.PinTitle
 import com.ilustris.sagai.ui.genre.crime.CorkboardBackground
-import com.ilustris.sagai.ui.theme.components.HandwrittenText
+import com.ilustris.sagai.ui.theme.filters.dreamyHaze
+import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.sagaBrush
+
+/** A cover caption is the line or two that fits under the photo; the rest is on the back. */
+private const val CAPTION_MAX_LINES = 3
 
 /**
- * The board's opening pin: the saga's own icon tacked up like a case-file photo, the
- * introduction stage's hook+content merged into one caption underneath — replaces
- * [CrimeTitleCardPage]'s standalone title card now that there's no chat thread to precede.
+ * The table's opening photo: the saga's own icon, laid down like the case file's first exhibit.
+ *
+ * The saga title is the one place the handwritten face earns its impact, so it keeps it. The
+ * introduction's prose does not fit under a photo, so the short [caption] rides on the front and
+ * [fullIntroduction] goes on the back — see [CorkPin]'s flip.
  */
 class CorkboardCoverPinPage(
     override val content: SagaContent,
     private val caption: String?,
-) : ReviewPage, CorkboardPinPage {
+    private val fullIntroduction: String? = null,
+) : ReviewPage,
+    CorkboardPinPage {
     override val pageType: ReviewPageType = ReviewPageType.INTRO
-    override val panelSpan: PanelSpan = PanelSpan.SPLASH
+    override val pinSize: CorkPinSize = CorkPinSize.COVER
 
     @Composable
     override fun Show(
@@ -45,10 +57,14 @@ class CorkboardCoverPinPage(
         val accent = genre.compiledColorPalette().firstOrNull() ?: MaterialTheme.colorScheme.primary
 
         CorkPin(
-            modifier = modifier.padding(20.dp),
+            modifier = modifier,
             seed = content.data.id,
             pinColor = accent,
-        ) {
+            back =
+                fullIntroduction?.let { prose ->
+                    { ink -> PinBackNote(text = prose, ink = ink, title = content.data.title) }
+                },
+        ) { ink ->
             Column {
                 AsyncImage(
                     model = content.data.icon,
@@ -58,21 +74,22 @@ class CorkboardCoverPinPage(
                         Modifier
                             .fillMaxWidth()
                             .aspectRatio(0.85f)
-                            .clip(RoundedCornerShape(2.dp)),
+                            .clip(RoundedCornerShape(2.dp))
+                            .dreamyHaze(),
                 )
-                HandwrittenText(
+                PinTitle(
                     text = content.data.title,
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                    fontSize = 20.sp,
-                    centered = true,
+                    ink = ink,
+                    isAnimated = canAnimate,
+                    modifier = Modifier.padding(top = 10.dp).gradientFill(sagaBrush()),
                 )
                 caption?.let {
-                    HandwrittenText(
+                    PinProse(
                         text = it,
-                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                        fontSize = 13.sp,
-                        isBold = false,
+                        ink = ink,
                         centered = true,
+                        maxLines = CAPTION_MAX_LINES,
+                        modifier = Modifier.padding(top = 6.dp),
                     )
                 }
             }

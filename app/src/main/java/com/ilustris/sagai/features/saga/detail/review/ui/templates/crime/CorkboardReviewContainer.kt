@@ -26,10 +26,9 @@ import com.ilustris.sagai.ui.genre.crime.CorkboardBackground
 import com.ilustris.sagai.ui.theme.themeFilter
 
 /**
- * Wires [CorkboardBoard] into [com.ilustris.sagai.features.saga.detail.ui.SagaReview] the same
- * way [com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicBoardReviewContainer]
- * wires up Heroes' comic board — genre chrome (background, dismiss icon) around a board that owns
- * its own navigation, so `Continue`/page-sequence actions have nothing to bubble up to here.
+ * Wires [CorkboardStrip] into [com.ilustris.sagai.features.saga.detail.ui.SagaReview] — genre
+ * chrome (cork surface, dismiss icon) around a strip that owns its own navigation, so
+ * `Continue`/page-sequence actions have nothing to bubble up to here.
  */
 @Composable
 fun CorkboardReviewContainer(
@@ -51,11 +50,11 @@ fun CorkboardReviewContainer(
     ) {
         CorkboardBackground(Modifier.fillMaxSize())
 
-        CorkboardBoard(
+        CorkboardStrip(
             pages = pages,
             modifier = Modifier.fillMaxSize(),
             onFinished = { finished = true },
-            onPanelAction = { action ->
+            onPinAction = { action ->
                 when (action) {
                     is ReviewAction.Share -> onShare(action.shareType)
                     ReviewAction.Finish -> onDismiss()

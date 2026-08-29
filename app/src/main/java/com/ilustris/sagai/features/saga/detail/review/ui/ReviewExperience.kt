@@ -38,13 +38,15 @@ sealed class ReviewNavigationStyle {
     data object ComicBoard : ReviewNavigationStyle()
 
     /**
-     * A detective's corkboard instead of a chat thread: the saga icon, chapter stills and
-     * character portraits are pinned across one board, connected by a hand-drawn route line that
-     * grows as the camera visits each pin — the travelling red line across a map, the way an
-     * Indiana Jones intro opens a journey, rather than another simulated conversation. Shares
-     * [ComicBoard]'s camera model (auto-plays pin to pin, a tap flies to one or pulls back to the
-     * overview, swipes walk the order) since that already reads as a distinct set piece rather
-     * than more chat. Replaces Crime's old simulated-iMessage-thread template.
+     * The saga spread out as photos on a table, panning steadily past: the saga icon, chapter
+     * stills and character portraits laid along one long horizontal strip, threaded together by a
+     * red string — the travelling line across a map an Indiana Jones intro opens on, rather than
+     * another simulated conversation.
+     *
+     * Deliberately *not* [ComicBoard]'s camera. It started as a reuse of it, and the two genres
+     * ended up moving identically; a constant, un-zooming drift is what makes this read as leafing
+     * through an album instead of reading a comic page. Replaces Crime's old simulated-iMessage
+     * thread template. Used by Crime.
      */
     data object Corkboard : ReviewNavigationStyle()
 }

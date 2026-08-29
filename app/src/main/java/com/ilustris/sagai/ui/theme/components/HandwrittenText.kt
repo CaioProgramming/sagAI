@@ -79,6 +79,8 @@ fun HandwrittenText(
     isItalic: Boolean = true,
     isBold: Boolean = false,
     centered: Boolean = false,
+    /** Caps the wrapped block, ellipsizing the last kept line. Unbounded by default. */
+    maxLines: Int = Int.MAX_VALUE,
     strokeWidth: Dp = 1.4.dp,
     lineSpacing: Float = 1.25f,
     duration: Duration = 3800.milliseconds,
@@ -136,8 +138,8 @@ fun HandwrittenText(
             }
 
         val (glyphs, totalLength, blockHeightPx) =
-            remember(text, maxWidthPx, fontSizePx, resolvedTypeface, centered, lineSpacing) {
-                buildHandwrittenGlyphs(text, paint, maxWidthPx, lineSpacing, centered)
+            remember(text, maxWidthPx, fontSizePx, resolvedTypeface, centered, lineSpacing, maxLines) {
+                buildHandwrittenGlyphs(text, paint, maxWidthPx, lineSpacing, centered, maxLines)
             }
 
         val heightDp = with(density) { blockHeightPx.toDp() }
@@ -186,6 +188,17 @@ private fun wrapText(
 }
 
 /**
+ * Caps a wrapped block at [maxLines], marking the cut with an ellipsis. Trailing punctuation on the
+ * last kept line is dropped first, so a truncated sentence reads as "…" rather than ",…".
+ */
+private fun List<String>.ellipsizeTo(maxLines: Int): List<String> {
+    if (maxLines <= 0 || size <= maxLines) return this
+    return take(maxLines).mapIndexed { index, line ->
+        if (index == maxLines - 1) line.trimEnd(' ', ',', ';', ':', '.') + "…" else line
+    }
+}
+
+/**
  * Wraps [text] to [maxWidthPx] and extracts each character's own glyph outline (split into its
  * individual contours in reading order, since a letter with a hole like "e" or "a" is more than
  * one contour). Per-glyph — rather than per-line — grouping lets the reveal fill each letter
@@ -199,8 +212,9 @@ private fun buildHandwrittenGlyphs(
     maxWidthPx: Float,
     lineSpacing: Float,
     centered: Boolean,
+    maxLines: Int,
 ): Triple<List<RevealGlyph>, Float, Float> {
-    val lines = wrapText(text, paint, maxWidthPx)
+    val lines = wrapText(text, paint, maxWidthPx).ellipsizeTo(maxLines)
     if (lines.isEmpty()) return Triple(emptyList(), 0f, 0f)
 
     val metrics = paint.fontMetrics

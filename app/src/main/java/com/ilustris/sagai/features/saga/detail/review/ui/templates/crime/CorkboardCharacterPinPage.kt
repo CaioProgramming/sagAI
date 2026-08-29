@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
@@ -16,24 +16,33 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.PanelSpan
 import com.ilustris.sagai.ui.genre.crime.CorkPin
+import com.ilustris.sagai.ui.genre.crime.PinBackNote
+import com.ilustris.sagai.ui.genre.crime.PinCaption
+import com.ilustris.sagai.ui.genre.crime.PinProse
+import com.ilustris.sagai.ui.genre.crime.PinSignature
+import com.ilustris.sagai.ui.genre.crime.PinTitle
 import com.ilustris.sagai.ui.genre.crime.CorkboardBackground
-import com.ilustris.sagai.ui.theme.components.HandwrittenText
+import com.ilustris.sagai.ui.theme.themeFilter
 
 /**
- * One suspect photo per top character, pinned in a shared cluster ([PanelSpan.GRID], grouped
- * under [GROUP_KEY]) — replaces the single collapsed "shared group link" card the old chat
- * thread used to send.
+ * One suspect photo per top character, dealt along the table with the rest of the case.
+ *
+ * [castNote] is the cast stage's own write-up, which the review generates once for the whole group.
+ * It rides on the back of the first portrait — the same job
+ * [com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicCastLeadPanel] does for
+ * the comic page. Without it that prose was simply dropped: this template used to read
+ * `review.topCharacters` only to decide *whether* to show portraits, and never showed a word of it.
  */
 class CorkboardCharacterPinPage(
     override val content: SagaContent,
     private val character: Character,
     private val messageCount: Int,
-) : ReviewPage, CorkboardPinPage {
+    private val castNote: String? = null,
+) : ReviewPage,
+    CorkboardPinPage {
     override val pageType: ReviewPageType = ReviewPageType.CHARACTERS
-    override val panelSpan: PanelSpan = PanelSpan.GRID
-    override val groupKey: String = GROUP_KEY
+    override val pinSize: CorkPinSize = CorkPinSize.PHOTO
 
     @Composable
     override fun Show(
@@ -42,29 +51,33 @@ class CorkboardCharacterPinPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val genre = content.data.genre
+        val fullName = "${character.name} ${character.lastName.orEmpty()}".trim()
 
         CorkPin(
-            modifier = modifier.padding(14.dp),
+            modifier = modifier,
             seed = character.id,
-        ) {
+            back =
+                castNote?.let { note ->
+                    { ink -> PinBackNote(text = note, ink = ink) }
+                },
+        ) { ink ->
             Column {
-                CharacterAvatar(
-                    character,
-                    genre = genre,
-                    modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+                AsyncImage(
+                    model = character.image,
+                    contentDescription = character.name,
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).themeFilter(),
                 )
-                HandwrittenText(
-                    text = "${character.name} ${character.lastName.orEmpty()}".trim(),
-                    fontSize = 14.sp,
-                    isBold = true,
-                    centered = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                PinCaption(
+                    text = fullName,
+                    ink = ink,
+                    emphasized = true,
+                    modifier = Modifier.padding(top = 8.dp),
                 )
-                HandwrittenText(
+                PinCaption(
                     text = stringResource(R.string.messages_count_label, messageCount),
-                    fontSize = 11.sp,
-                    centered = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    ink = ink,
+                    maxLines = 1,
+                    modifier = Modifier.padding(top = 2.dp),
                 )
             }
         }
@@ -73,9 +86,5 @@ class CorkboardCharacterPinPage(
     @Composable
     override fun Background(modifier: Modifier) {
         CorkboardBackground(modifier)
-    }
-
-    private companion object {
-        const val GROUP_KEY = "characters"
     }
 }
