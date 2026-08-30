@@ -1478,27 +1478,45 @@ class SagaContentManagerImpl
 
                 linkUnlinkedCharacterMessagesInternal(freshSaga)
 
-                if (savedMessage.characterId != null) return@launch
+                val discovery = reply.newCharacter
+                val speaker = savedMessage.speakerName
+                // Whether the newcomer is also the one holding this line. They often are, but not
+                // always: a character can enter the fiction on a turn where someone else speaks —
+                // the player touches a stranger's shoulder and that stranger now exists, without
+                // having said a word yet. Treating the two as the same event is what made this
+                // function either lose the newcomer or hand them somebody else's dialogue.
+                val discoveryIsSpeaker =
+                    discovery != null &&
+                        speaker != null &&
+                        speaker.trim().equals(discovery.name.trim(), ignoreCase = true)
 
                 val linkCandidates =
                     listOfNotNull(
                         savedMessage.speakerName,
-                        reply.newCharacter?.name,
+                        discovery?.name.takeIf { discoveryIsSpeaker },
                     ).distinctBy { it.trim().lowercase() }
 
-                for (candidateName in linkCandidates) {
-                    if (
-                        linkMessageToExistingCharacter(
-                            saga = freshSaga,
-                            message = savedMessage,
-                            candidateName = candidateName,
-                        )
-                    ) {
-                        return@launch
+                var lineAttributed = savedMessage.characterId != null
+                if (!lineAttributed) {
+                    for (candidateName in linkCandidates) {
+                        if (
+                            linkMessageToExistingCharacter(
+                                saga = freshSaga,
+                                message = savedMessage,
+                                candidateName = candidateName,
+                            )
+                        ) {
+                            lineAttributed = true
+                            break
+                        }
                     }
                 }
 
-                val discovery = reply.newCharacter ?: return@launch
+                if (discovery == null) return@launch
+                // Attributing the line to an existing speaker used to end the whole routine, which
+                // silently dropped any newcomer introduced on that same turn.
+                if (lineAttributed && discoveryIsSpeaker) return@launch
+                if (freshSaga.findCharacter(discovery.name) != null) return@launch
                 if (reply.message.senderType == SenderType.NARRATOR) return@launch
 
                 when (
@@ -1511,15 +1529,20 @@ class SagaContentManagerImpl
                 ) {
                     is RequestResult.Success -> {
                         val character = result.value
-                        // No manual content.value re-publish here: the write below already
-                        // invalidates the messages table, and loadSaga()'s collector re-emits on
-                        // its own. Doing both meant two UI updates for one change.
-                        messageDao.updateMessage(
-                            savedMessage.copy(
-                                characterId = character.id,
-                                speakerName = character.fullName(),
-                            ),
-                        )
+                        // The line only becomes theirs when they are the one who spoke. Relabelling
+                        // unconditionally is how a newcomer ended up credited with dialogue another
+                        // character had just delivered.
+                        if (discoveryIsSpeaker && !lineAttributed) {
+                            // No manual content.value re-publish here: the write below already
+                            // invalidates the messages table, and loadSaga()'s collector re-emits on
+                            // its own. Doing both meant two UI updates for one change.
+                            messageDao.updateMessage(
+                                savedMessage.copy(
+                                    characterId = character.id,
+                                    speakerName = character.fullName(),
+                                ),
+                            )
+                        }
                     }
 
                     is RequestResult.Error -> {
@@ -1527,6 +1550,7 @@ class SagaContentManagerImpl
                             result.value,
                             "Failed to generate character for reply message ${savedMessage.id}",
                         )
+                        if (lineAttributed) return@launch
                         for (candidateName in linkCandidates) {
                             if (
                                 linkMessageToExistingCharacter(
