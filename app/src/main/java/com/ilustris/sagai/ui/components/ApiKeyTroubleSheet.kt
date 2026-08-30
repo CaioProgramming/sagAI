@@ -1,5 +1,7 @@
 package com.ilustris.sagai.ui.components
 
+import android.content.Intent
+import android.net.Uri
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +40,15 @@ import com.ilustris.sagai.core.ai.key.ApiKeyState
 import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusViewModel
 import java.util.Date
+
+/**
+ * Where a user sees the limits that actually apply to them.
+ *
+ * Taken from the API's own 429 body rather than a docs page: the published rate-limit tables moved
+ * behind this panel, and the numbers are per account, so a static doc could not answer "why did it
+ * stop for me".
+ */
+const val AI_STUDIO_RATE_LIMIT_URL = "https://ai.dev/rate-limit"
 
 /**
  * One global explanation for "the key can't generate right now", mirroring the guardrail sheet.
@@ -130,7 +142,19 @@ fun ApiKeyTroubleSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Spacer(Modifier.size(32.dp))
+            Spacer(Modifier.size(8.dp))
+
+            TextButton(
+                onClick = {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse(AI_STUDIO_RATE_LIMIT_URL)),
+                    )
+                },
+            ) {
+                Text(stringResource(R.string.api_key_learn_more))
+            }
+
+            Spacer(Modifier.size(16.dp))
 
             Button(
                 onClick = {

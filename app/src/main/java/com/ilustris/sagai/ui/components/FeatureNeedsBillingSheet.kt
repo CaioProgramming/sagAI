@@ -1,5 +1,7 @@
 package com.ilustris.sagai.ui.components
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,10 +15,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +41,7 @@ import com.ilustris.sagai.R
 @Composable
 fun FeatureNeedsBillingSheet(onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState()
+    val context = LocalContext.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -82,7 +87,19 @@ fun FeatureNeedsBillingSheet(onDismiss: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Spacer(Modifier.size(32.dp))
+            Spacer(Modifier.size(8.dp))
+
+            TextButton(
+                onClick = {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse(AI_STUDIO_RATE_LIMIT_URL)),
+                    )
+                },
+            ) {
+                Text(stringResource(R.string.api_key_learn_more))
+            }
+
+            Spacer(Modifier.size(16.dp))
 
             Button(
                 onClick = onDismiss,

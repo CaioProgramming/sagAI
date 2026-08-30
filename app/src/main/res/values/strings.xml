@@ -1000,4 +1000,5 @@
     <string name="quota_daily_notice_message">New generations come back at %1$s. Your sagas stay readable in the meantime.</string>
     <string name="feature_needs_billing_title">Image generation needs a paid Google project</string>
     <string name="feature_needs_billing_message">Google does not include image generation in the Gemini free tier — no image model is available there. Your key still writes the story fine; illustrations need billing enabled on its Google Cloud project.</string>
+    <string name="api_key_learn_more">See your usage limits</string>
 </resources>

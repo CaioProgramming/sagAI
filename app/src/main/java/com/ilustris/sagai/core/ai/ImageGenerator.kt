@@ -17,7 +17,6 @@ import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.network.GeminiHttpException
-import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -46,7 +45,6 @@ interface ImageGenerator {
 class ImageGeneratorImpl
     @Inject
     constructor(
-        private val billingService: BillingService,
         private val remoteConfigService: RemoteConfigService,
         private val debugImageFallbackService: DebugImageFallbackService,
         private val geminiApiClient: GeminiApiClient,
@@ -77,12 +75,12 @@ class ImageGeneratorImpl
             Timber.tag(TAG).i(trimmedPrompt)
             Timber.tag(TAG).i("--- COPY END ---")
 
-            if (BuildConfig.DEBUG && !billingService.isPremium()) {
-                return debugImageFallbackService.awaitManualImage(trimmedPrompt)
-            }
-
+            // No premium gate here any more. A subscription cannot deliver this: image models are
+            // "Not available" on the Gemini free tier, so whether it works depends on billing on
+            // the user's own Google Cloud project, not on anything we sell. Charging for it would
+            // be selling a promise we are not the ones keeping.
             val apiBitmap =
-                billingService.runPremiumRequest {
+                run {
                     val request =
                         GeminiRequest(
                             contents =
@@ -117,6 +115,11 @@ class ImageGeneratorImpl
                                         BillableFeature.IMAGE_GENERATION,
                                     ),
                                 )
+                                // In debug this is the common case, not an exception — a dev key is
+                                // usually free tier. Falling through to the manual island keeps the
+                                // rest of the flow testable instead of dead-ending on a limit that
+                                // has nothing to do with the code under test.
+                                if (BuildConfig.DEBUG) return@run null
                             }
                             throw e
                         }

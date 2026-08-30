@@ -985,6 +985,7 @@
     <string name="quota_daily_notice_message">Novas gerações voltam às %1$s. Suas sagas continuam legíveis enquanto isso.</string>
     <string name="feature_needs_billing_title">Gerar imagem exige projeto Google pago</string>
     <string name="feature_needs_billing_message">O Google não inclui geração de imagem no free tier do Gemini — nenhum modelo de imagem está disponível lá. Sua chave continua escrevendo a história normalmente; as ilustrações precisam de faturamento ativo no projeto do Google Cloud dela.</string>
+    <string name="api_key_learn_more">Ver seus limites de uso</string>
 </resources>
 
 

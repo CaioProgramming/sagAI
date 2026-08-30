@@ -443,7 +443,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideImageGenerator(
-        billingService: BillingService,
         remoteConfigService: RemoteConfigService,
         debugImageFallbackService: DebugImageFallbackService,
         geminiApiClient: GeminiApiClient,
@@ -452,7 +451,6 @@ object AppModule {
         sideEffectService: SideEffectService,
     ): ImageGenerator =
         ImageGeneratorImpl(
-            billingService,
             remoteConfigService,
             debugImageFallbackService,
             geminiApiClient,
