@@ -54,12 +54,6 @@ data class Character(
     @ColumnInfo(index = true)
     val firstSceneId: Int? = null,
     val emojified: Boolean = false,
-    @Deprecated(
-        message = "Smart zoom is no longer applied in UI. Kept for DB compatibility only.",
-        level = DeprecationLevel.WARNING,
-    )
-    @Embedded(prefix = "zoom_")
-    val smartZoom: SmartZoom? = null,
     @ColumnInfo(defaultValue = "")
     val voice: String? = null,
     @ColumnInfo(defaultValue = "")
@@ -116,15 +110,4 @@ data class FacialFeatures(
     val mouth: String = "",
     val distinctiveMarks: String = "",
     val jawline: String = "",
-)
-
-@Deprecated(
-    message = "Portrait segmentation zoom is deprecated; avatars use ContentScale.Crop only.",
-    level = DeprecationLevel.WARNING,
-)
-data class SmartZoom(
-    val scale: Float = 1f,
-    val translationX: Float = 0f,
-    val translationY: Float = 0f,
-    val needsZoom: Boolean = false,
 )

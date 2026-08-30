@@ -352,6 +352,91 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_29_30 =
+        object : Migration(29, 30) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Smart zoom was dropped, so the four embedded zoom_* columns have to go. SQLite
+                // only learned ALTER TABLE DROP COLUMN in 3.35 (API 34) and minSdk here is 27, so
+                // the table has to be rebuilt instead.
+                //
+                // Six tables reference Characters with ON DELETE CASCADE (messages among them), and
+                // DROP TABLE fires those cascades whenever foreign keys are enforced. That is safe
+                // here only because Room enables enforcement in onOpen, which runs after migrations
+                // — the same reason Room's own auto-migrations recreate tables this way.
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `Characters_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `lastName` TEXT,
+                        `nicknames` TEXT,
+                        `knowledge` TEXT DEFAULT null,
+                        `backstory` TEXT NOT NULL,
+                        `image` TEXT NOT NULL,
+                        `hexColor` TEXT NOT NULL,
+                        `sagaId` INTEGER NOT NULL,
+                        `joinedAt` INTEGER NOT NULL,
+                        `firstSceneId` INTEGER,
+                        `emojified` INTEGER NOT NULL,
+                        `voice` TEXT DEFAULT '',
+                        `artwork` TEXT DEFAULT '',
+                        `race` TEXT NOT NULL,
+                        `gender` TEXT NOT NULL,
+                        `ethnicity` TEXT NOT NULL,
+                        `age` INTEGER NOT NULL,
+                        `height` REAL NOT NULL,
+                        `weight` REAL NOT NULL,
+                        `hair` TEXT NOT NULL,
+                        `eyes` TEXT NOT NULL,
+                        `mouth` TEXT NOT NULL,
+                        `distinctiveMarks` TEXT NOT NULL,
+                        `jawline` TEXT NOT NULL,
+                        `buildAndPosture` TEXT NOT NULL,
+                        `skinAppearance` TEXT NOT NULL,
+                        `distinguishFeatures` TEXT NOT NULL,
+                        `outfitDescription` TEXT NOT NULL,
+                        `accessories` TEXT NOT NULL,
+                        `carriedItems` TEXT NOT NULL,
+                        `skillsAndProficiencies` TEXT NOT NULL,
+                        `uniqueOrSignatureTalents` TEXT NOT NULL,
+                        `occupation` TEXT NOT NULL,
+                        `personality` TEXT NOT NULL,
+                        FOREIGN KEY(`sagaId`) REFERENCES `sagas`(`id`)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO `Characters_new` (
+                        `id`, `name`, `lastName`, `nicknames`, `knowledge`, `backstory`, `image`,
+                        `hexColor`, `sagaId`, `joinedAt`, `firstSceneId`, `emojified`, `voice`,
+                        `artwork`, `race`, `gender`, `ethnicity`, `age`, `height`, `weight`, `hair`,
+                        `eyes`, `mouth`, `distinctiveMarks`, `jawline`, `buildAndPosture`,
+                        `skinAppearance`, `distinguishFeatures`, `outfitDescription`, `accessories`,
+                        `carriedItems`, `skillsAndProficiencies`, `uniqueOrSignatureTalents`,
+                        `occupation`, `personality`
+                    )
+                    SELECT
+                        `id`, `name`, `lastName`, `nicknames`, `knowledge`, `backstory`, `image`,
+                        `hexColor`, `sagaId`, `joinedAt`, `firstSceneId`, `emojified`, `voice`,
+                        `artwork`, `race`, `gender`, `ethnicity`, `age`, `height`, `weight`, `hair`,
+                        `eyes`, `mouth`, `distinctiveMarks`, `jawline`, `buildAndPosture`,
+                        `skinAppearance`, `distinguishFeatures`, `outfitDescription`, `accessories`,
+                        `carriedItems`, `skillsAndProficiencies`, `uniqueOrSignatureTalents`,
+                        `occupation`, `personality`
+                    FROM `Characters`
+                    """.trimIndent(),
+                )
+                db.execSQL("DROP TABLE `Characters`")
+                db.execSQL("ALTER TABLE `Characters_new` RENAME TO `Characters`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_Characters_sagaId` ON `Characters` (`sagaId`)")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_Characters_firstSceneId` ON `Characters` (`firstSceneId`)",
+                )
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -382,5 +467,6 @@ object DatabaseMigrations {
             MIGRATION_26_27,
             MIGRATION_27_28,
             MIGRATION_28_29,
+            MIGRATION_29_30,
         )
 }

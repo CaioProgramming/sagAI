@@ -154,7 +154,6 @@ dependencies {
     implementation(libs.coil.network)
     implementation(libs.gson)
     implementation(libs.lottie.compose)
-    implementation(libs.face.detection)
     implementation(libs.mlkit.genai.prompt)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)

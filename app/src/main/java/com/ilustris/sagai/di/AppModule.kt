@@ -37,7 +37,6 @@ import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.FileManager
 import com.ilustris.sagai.core.file.GenreReferenceHelper
-import com.ilustris.sagai.core.file.ImageCropHelper
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManagerImpl
 import com.ilustris.sagai.core.media.MediaPlayerManager
@@ -198,10 +197,6 @@ object AppModule {
     ) = ImageSegmentationHelper(
         context,
     )
-
-    @Provides
-    @Singleton
-    fun provideImageCropHelper(): ImageCropHelper = ImageCropHelper()
 
     @Provides
     @Singleton

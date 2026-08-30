@@ -174,7 +174,6 @@ object CharacterPrompts {
                     "hexColor",
                     "firstSceneId",
                     "emojified",
-                    "smartZoom",
                     "artwork",
                 )
             appendLine("CURRENT SAGA CAST OVERVIEW:")
@@ -409,7 +408,8 @@ object CharacterPrompts {
                 characterIdentity =
                     """
                     Name: ${characterData.name} ${characterData.lastName ?: ""}
-                    Age: ${characterData.details.physicalTraits.age.takeIf { it > 0 } ?: "Unknown"}
+                    Age: ${characterData.details.physicalTraits.age
+                        .takeIf { it > 0 } ?: "Unknown"}
                     Personality: ${characterData.profile.personality}
                     Visual Profile: ${characterData.details.physicalTraits.ethnicity} ${characterData.details.physicalTraits.gender}, ${characterData.details.physicalTraits.race}. ${characterData.details.physicalTraits.facialDetails.hair} hair, ${characterData.details.physicalTraits.facialDetails.eyes} eyes. ${characterData.details.physicalTraits.bodyFeatures.buildAndPosture}.
                     Style: ${characterData.details.clothing.outfitDescription}
