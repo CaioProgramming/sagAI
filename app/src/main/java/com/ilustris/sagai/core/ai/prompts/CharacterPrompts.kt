@@ -260,6 +260,7 @@ object CharacterPrompts {
         description: String,
         themeColor: String? = null,
         sceneSummary: SceneSummary? = null,
+        aesthetic: String? = null,
     ): SplitPrompt {
         val latestMessages =
             if (saga.flatMessages().isEmpty()) {
@@ -278,7 +279,9 @@ object CharacterPrompts {
                     buildMap {
                         put(
                             "SagaContext",
-                            saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
+                            saga.data
+                                .toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS)
+                                .replace(saga.data.genre.name, aesthetic ?: saga.data.genre.name),
                         )
                         put(
                             "CharactersCast",

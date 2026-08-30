@@ -260,6 +260,7 @@ class CharacterUseCaseImpl
                         description,
                         themeColor,
                         sceneSummary,
+                        genreConfigService.aesthetic(sagaContent.data.genre),
                     )
                 Timber.d(
                     "generateCharacter: Starting character generation with theme color $themeColor...",
@@ -326,6 +327,7 @@ class CharacterUseCaseImpl
                             description,
                             themeColor,
                             sceneSummary,
+                            genreConfigService.aesthetic(sagaContent.data.genre),
                         )
 
                     val request =
