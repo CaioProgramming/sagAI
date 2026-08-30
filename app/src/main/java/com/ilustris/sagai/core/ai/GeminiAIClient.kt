@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.model.GeminiErrorResponse
 import com.ilustris.sagai.core.ai.model.GeminiPart
 import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
+import com.ilustris.sagai.core.ai.key.ApiUsageTracker
 import com.ilustris.sagai.core.ai.key.QuotaStatusService
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -29,6 +30,7 @@ abstract class GeminiAIClient(
     userApiKeyStore: UserApiKeyStore,
     quotaStatusService: QuotaStatusService,
     modelCatalog: ModelCatalog,
+    apiUsageTracker: ApiUsageTracker,
 ) : AIClient(
         remoteConfigService,
         promptService,
@@ -37,6 +39,7 @@ abstract class GeminiAIClient(
         userApiKeyStore,
         quotaStatusService,
         modelCatalog,
+        apiUsageTracker,
     ) {
     @PublishedApi
     internal val requestMutexes = ConcurrentHashMap<String, Mutex>()

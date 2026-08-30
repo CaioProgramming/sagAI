@@ -103,6 +103,11 @@ data class GeminiUsageMetadata(
     val promptTokenCount: Int?,
     val candidatesTokenCount: Int?,
     val totalTokenCount: Int?,
+    /**
+     * Reasoning tokens. Routinely the largest share of the output — measured at 943 against 164 of
+     * content on one reply — and they count against the user's quota like any other.
+     */
+    val thoughtsTokenCount: Int? = null,
 )
 
 data class GeminiError(

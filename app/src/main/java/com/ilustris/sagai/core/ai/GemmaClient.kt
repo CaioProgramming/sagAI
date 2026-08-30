@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.ai.local.LocalAiExecutor
 import com.ilustris.sagai.core.ai.local.LocalAiSidebackRouting
 import com.ilustris.sagai.core.ai.local.LocalAiSidebackStep
 import com.ilustris.sagai.core.ai.local.LocalAiTelemetry
+import com.ilustris.sagai.core.ai.key.ApiUsageTracker
 import com.ilustris.sagai.core.ai.key.QuotaStatusService
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.ImageReference
@@ -44,6 +45,7 @@ class GemmaClient
         userApiKeyStore: UserApiKeyStore,
         quotaStatusService: QuotaStatusService,
         modelCatalog: ModelCatalog,
+        apiUsageTracker: ApiUsageTracker,
         @PublishedApi
         internal val localAiExecutor: LocalAiExecutor,
         @PublishedApi
@@ -57,6 +59,7 @@ class GemmaClient
             userApiKeyStore,
             quotaStatusService,
             modelCatalog,
+            apiUsageTracker,
         ) {
         companion object {
             /** @see GeminiGenerationPolicy.lastGenerateFailure */

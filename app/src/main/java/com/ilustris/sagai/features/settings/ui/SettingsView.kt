@@ -77,6 +77,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeySetupScreen
 import com.ilustris.sagai.features.settings.ui.components.ApiKeySettingsSection
+import com.ilustris.sagai.features.settings.ui.components.ApiUsageBoard
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -568,6 +569,17 @@ fun SettingsView(
                     onClick = {
                         showPremiumSheet = true
                     },
+                )
+            }
+
+            item {
+                ApiUsageBoard(
+                    modifier =
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                RoundedCornerShape(15.dp),
+                            ),
                 )
             }
 

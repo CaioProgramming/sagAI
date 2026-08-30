@@ -8,7 +8,9 @@ import com.ilustris.sagai.core.database.converters.EnumConverters
 import com.ilustris.sagai.core.database.converters.FarewellListConverter
 import com.ilustris.sagai.core.database.converters.IntListConverter
 import com.ilustris.sagai.core.database.converters.StringListConverter
+import com.ilustris.sagai.core.database.model.ApiUsageDay
 import com.ilustris.sagai.core.database.model.AIAuditLog
+import com.ilustris.sagai.core.database.source.ApiUsageDao
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.Book
@@ -40,6 +42,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
 @Database(
     entities = [
         Saga::class,
+        ApiUsageDay::class,
         Message::class,
         Chapter::class,
         Character::class,
@@ -54,7 +57,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         AIAuditLog::class,
         CharacterArc::class,
     ],
-    version = 30,
+    version = 31,
     exportSchema = true,
 )
 @TypeConverters(
@@ -66,6 +69,8 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
+
+    abstract fun apiUsageDao(): ApiUsageDao
 
     abstract fun messageDao(): MessageDao
 

@@ -1001,4 +1001,12 @@
     <string name="feature_needs_billing_title">Image generation needs a paid Google project</string>
     <string name="feature_needs_billing_message">Google does not include image generation in the Gemini free tier — no image model is available there. Your key still writes the story fine; illustrations need billing enabled on its Google Cloud project.</string>
     <string name="api_key_learn_more">See your usage limits</string>
+    <!-- BYOK: usage board -->
+    <string name="api_usage_title">Usage today</string>
+    <string name="api_usage_disclaimer">Estimate of what this app used. Calls made with the same key elsewhere are not counted, and the limits shown are the free tier\'s — if you enabled billing on your project, yours are higher.</string>
+    <string name="api_usage_requests">%1$d of ~%2$d requests</string>
+    <string name="api_usage_requests_unknown">%1$d requests</string>
+    <string name="api_usage_tokens">%1$s tokens · %2$s of them reasoning</string>
+    <string name="api_usage_reset_relative">Resets in %1$s</string>
+    <string name="api_usage_empty">No calls yet today.</string>
 </resources>

@@ -352,6 +352,27 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_30_31 =
+        object : Migration(30, 31) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Local accounting of what this app spends of the user's API key. Keyed by the
+                // Pacific date because that is when Google's daily counters reset.
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `api_usage_days` (
+                        `day` TEXT NOT NULL,
+                        `model` TEXT NOT NULL,
+                        `requests` INTEGER NOT NULL DEFAULT 0,
+                        `promptTokens` INTEGER NOT NULL DEFAULT 0,
+                        `candidatesTokens` INTEGER NOT NULL DEFAULT 0,
+                        `thoughtsTokens` INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY(`day`, `model`)
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
     val MIGRATION_29_30 =
         object : Migration(29, 30) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -468,5 +489,6 @@ object DatabaseMigrations {
             MIGRATION_27_28,
             MIGRATION_28_29,
             MIGRATION_29_30,
+            MIGRATION_30_31,
         )
 }

@@ -39,6 +39,7 @@ class ReasoningSynthesizerService
         userApiKeyStore: UserApiKeyStore,
         quotaStatusService: QuotaStatusService,
         modelCatalog: com.ilustris.sagai.core.ai.ModelCatalog,
+        apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
         @PublishedApi internal val genreConfigService: GenreConfigService,
     ) : AIClient(
             remoteConfigService,
@@ -48,6 +49,7 @@ class ReasoningSynthesizerService
             userApiKeyStore,
             quotaStatusService,
             modelCatalog,
+            apiUsageTracker,
         ) {
         @OptIn(ExperimentalCoroutinesApi::class)
         inline fun <reified T> synthesizeReasoning(

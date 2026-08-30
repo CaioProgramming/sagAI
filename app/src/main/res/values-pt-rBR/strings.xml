@@ -986,6 +986,14 @@
     <string name="feature_needs_billing_title">Gerar imagem exige projeto Google pago</string>
     <string name="feature_needs_billing_message">O Google não inclui geração de imagem no free tier do Gemini — nenhum modelo de imagem está disponível lá. Sua chave continua escrevendo a história normalmente; as ilustrações precisam de faturamento ativo no projeto do Google Cloud dela.</string>
     <string name="api_key_learn_more">Ver seus limites de uso</string>
+    <!-- BYOK: painel de uso -->
+    <string name="api_usage_title">Uso de hoje</string>
+    <string name="api_usage_disclaimer">Estimativa do que este app usou. Chamadas feitas com a mesma chave em outros lugares não entram na conta, e os limites mostrados são os do plano gratuito — se você ativou faturamento no seu projeto, os seus são maiores.</string>
+    <string name="api_usage_requests">%1$d de ~%2$d requisições</string>
+    <string name="api_usage_requests_unknown">%1$d requisições</string>
+    <string name="api_usage_tokens">%1$s tokens · %2$s de raciocínio</string>
+    <string name="api_usage_reset_relative">Reseta em %1$s</string>
+    <string name="api_usage_empty">Nenhuma chamada hoje ainda.</string>
 </resources>
 
 

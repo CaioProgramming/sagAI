@@ -247,6 +247,7 @@ object GeminiApiCodec {
             promptTokenCount = obj.optInt("promptTokenCount"),
             candidatesTokenCount = obj.optInt("candidatesTokenCount"),
             totalTokenCount = obj.optInt("totalTokenCount"),
+            thoughtsTokenCount = obj.optInt("thoughtsTokenCount"),
         )
 
     private fun decodeError(obj: JsonObject): GeminiError =

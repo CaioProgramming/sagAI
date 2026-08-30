@@ -160,6 +160,8 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                         blueprintKey = params.audit.blueprintKey,
                     )
 
+                apiUsageTracker.record(params.model, parsed.usageMetadata)
+
                 recordAudit(
                     AIAuditSnapshot.success(
                         model = params.model,
@@ -584,6 +586,8 @@ internal suspend fun GeminiAIClient.consumeStreamingResponse(
             }
         }
     }
+
+    apiUsageTracker.record(model, usageMetadata)
 
     val fullText = accumulatedText.toString()
     val fullThoughts = accumulatedThoughts.toString()

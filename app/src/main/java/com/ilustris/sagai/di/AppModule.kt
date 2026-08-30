@@ -242,6 +242,11 @@ object AppModule {
     fun provideAIAuditLogDao(database: SagaDatabase): AIAuditLogDao = database.aiAuditLogDao()
 
     @Provides
+    fun provideApiUsageDao(
+        database: SagaDatabase,
+    ): com.ilustris.sagai.core.database.source.ApiUsageDao = database.apiUsageDao()
+
+    @Provides
     @Singleton
     fun provideBookDao(database: SagaDatabase): com.ilustris.sagai.features.act.data.source.BookDao = database.bookDao()
 
@@ -331,6 +336,7 @@ object AppModule {
         userApiKeyStore: UserApiKeyStore,
         quotaStatusService: QuotaStatusService,
         modelCatalog: com.ilustris.sagai.core.ai.ModelCatalog,
+        apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
     ): GemmaClient =
         GemmaClient(
             remoteConfig = remoteConfigService,
@@ -342,6 +348,7 @@ object AppModule {
             userApiKeyStore = userApiKeyStore,
             quotaStatusService = quotaStatusService,
             modelCatalog = modelCatalog,
+            apiUsageTracker = apiUsageTracker,
             localAiExecutor = localAiExecutor,
             localAiConfigLoader = localAiConfigLoader,
         )

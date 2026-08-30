@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai
 
 import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.core.ai.key.ApiUsageTracker
 import com.ilustris.sagai.core.ai.key.QuotaStatusService
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.SplitPrompt
@@ -53,6 +54,7 @@ abstract class AIClient(
     @PublishedApi internal val userApiKeyStore: UserApiKeyStore,
     @PublishedApi internal val quotaStatusService: QuotaStatusService,
     @PublishedApi internal val modelCatalog: ModelCatalog,
+    @PublishedApi internal val apiUsageTracker: ApiUsageTracker,
 ) {
     fun getLanguage(requireTranslation: Boolean = true): String {
         val locale = if (requireTranslation) Locale.getDefault() else Locale.US
