@@ -294,21 +294,7 @@ class MessageUseCaseImpl
                             genre = saga.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val reply = state.data!!
-                                reply.newCharacter?.let { discovery ->
-                                    val speaker = reply.message.speakerName
-                                    if (speaker != null &&
-                                        !speaker.equals(
-                                            discovery.name,
-                                            ignoreCase = true,
-                                        )
-                                    ) {
-                                        Timber.w(
-                                            "AIReply newCharacter.name (${discovery.name}) " +
-                                                "does not match message.speakerName ($speaker)",
-                                        )
-                                    }
-                                }
+                                val reply = state.data!!.withValidatedDiscovery()
                                 reply.sceneSummary?.let { summary ->
                                     saga.getCurrentTimeLine()?.let { timeline ->
                                         if (timeline.data.sceneSummary != summary) {
@@ -752,3 +738,27 @@ class MessageUseCaseImpl
                 }.filterValues { it.isNotEmpty() }
         }
     }
+
+/**
+ * Drops a `newCharacter` that did not actually speak.
+ *
+ * The blueprint requires a discovery's name to match `message.speakerName` — the only way a new
+ * character enters is by taking the turn. A reply that introduces someone while the line belongs to
+ * another speaker has broken that rule, and keeping the discovery is expensive twice over: it adds
+ * a cast member who never said anything, and `resolveReplyCharacterLinks` then spends a whole
+ * generation building their profile — a request off a daily quota that is now the user's.
+ *
+ * The malformed reply itself is kept. Its prose is usually fine, and discarding it would cost
+ * another request to regenerate; the phantom cast member is the part worth throwing away.
+ */
+private fun AIReply.withValidatedDiscovery(): AIReply {
+    val discovery = newCharacter ?: return this
+    val speaker = message.speakerName
+    if (speaker == null || speaker.equals(discovery.name, ignoreCase = true)) return this
+
+    Timber.w(
+        "Discarding newCharacter '${discovery.name}': the line belongs to '$speaker'. " +
+            "A discovery is only valid when the new character is the one speaking.",
+    )
+    return copy(newCharacter = null)
+}
