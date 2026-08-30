@@ -72,6 +72,26 @@ object GeminiApiCodec {
             }.toString()
     }
 
+    /**
+     * Maps each model name to the context window the API reports for it.
+     *
+     * The ceiling comes from the API rather than a constant so it stays right as tiers move
+     * between model families — Gemma reports 262144, Gemini 1048576, and a hardcoded number would
+     * be wrong for at least one of them the moment `model_configs` straddles both.
+     */
+    fun decodeModelTokenLimits(json: String): Map<String, Int> {
+        if (json.isBlank()) return emptyMap()
+        val models = JsonParser.parseString(json).asJsonObject.optJsonArray("models")
+            ?: return emptyMap()
+        return models.mapNotNull { element ->
+            val obj = element as? JsonObject ?: return@mapNotNull null
+            val name = obj.optString("name")?.removePrefix("models/") ?: return@mapNotNull null
+            val limit = obj.get("inputTokenLimit")?.takeIf { !it.isJsonNull }?.asInt
+                ?: return@mapNotNull null
+            name to limit
+        }.toMap()
+    }
+
     fun decodeErrorResponse(json: String): com.ilustris.sagai.core.ai.model.GeminiErrorResponse {
         if (json.isBlank()) return com.ilustris.sagai.core.ai.model.GeminiErrorResponse(error = null)
         val root = JsonParser.parseString(json).asJsonObject

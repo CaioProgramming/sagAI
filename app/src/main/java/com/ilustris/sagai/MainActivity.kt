@@ -72,6 +72,11 @@ import com.ilustris.sagai.core.globalshell.ImageGenerationWorkEffect
 import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.core.navigation.SagaNavigationTracker
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
+import com.ilustris.sagai.core.ai.key.ApiKeyState
+import com.ilustris.sagai.ui.components.ApiKeyTroubleSheet
+import com.ilustris.sagai.ui.components.FeatureNeedsBillingSheet
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
+import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeySetupScreen
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.AdsConsentService
@@ -127,6 +132,24 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
+/**
+ * What the app is allowed to show right now.
+ *
+ * A missing API key blanks the shell exactly like a missing connection — both mean nothing can be
+ * generated, and a half-usable app is worse than an honest wall. [Resolving] covers the frame or
+ * two before the encrypted store answers: showing either branch on a guess would flash the setup
+ * screen at users who already have a key.
+ *
+ * Deliberately excludes a rejected key and a spent quota. Those keep the app up — the user still
+ * has sagas to read — and are surfaced in place instead.
+ */
+private enum class AppGate {
+    Resolving,
+    Offline,
+    NeedsApiKey,
+    Ready,
+}
+
 @OptIn(ExperimentalAnimationApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -134,6 +157,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var sideEffectService: SideEffectService
+
+    @Inject
+    lateinit var userApiKeyStore: UserApiKeyStore
 
     // Injected eagerly (rather than only used where needed) so AdsService's
     // ActivityLifecycleCallbacks registers before this Activity's own onResume fires.
@@ -194,6 +220,18 @@ class MainActivity : ComponentActivity() {
             Timber.d("MainActivity: setContent")
             val connectivityObserver = remember { ConnectivityObserver(applicationContext) }
             val isOnline by connectivityObserver.observe().collectAsState(initial = true)
+            // Null until the store answers: rendering the setup screen during that gap would
+            // flash it at every user who already has a key.
+            val apiKeyState by userApiKeyStore
+                .observeState()
+                .collectAsState(initial = null)
+            val appGate =
+                when {
+                    apiKeyState == null -> AppGate.Resolving
+                    !isOnline -> AppGate.Offline
+                    apiKeyState is ApiKeyState.Missing -> AppGate.NeedsApiKey
+                    else -> AppGate.Ready
+                }
 
             val navigationState =
                 rememberNavigationState(
@@ -500,10 +538,10 @@ class MainActivity : ComponentActivity() {
                                     // SagaBottomNavigation(navController, route)
                                 },
                             ) { padding ->
-                                AnimatedContent(isOnline, transitionSpec = {
+                                AnimatedContent(appGate, transitionSpec = {
                                     fadeIn() togetherWith fadeOut()
-                                }) {
-                                    if (it) {
+                                }) { gate ->
+                                    if (gate == AppGate.Ready) {
                                         SharedTransitionLayout {
                                             val entryProvider =
                                                 remember(
@@ -641,8 +679,10 @@ class MainActivity : ComponentActivity() {
                                                 },
                                             )
                                         }
-                                    } else {
+                                    } else if (gate == AppGate.Offline) {
                                         NoInternetScreen()
+                                    } else if (gate == AppGate.NeedsApiKey) {
+                                        ApiKeySetupScreen()
                                     }
                                 }
                             }
@@ -746,6 +786,21 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+
+                        if (activeSideEffect is SideEffect.FeatureNeedsBilling) {
+                            FeatureNeedsBillingSheet(
+                                onDismiss = { activeSideEffect = null },
+                            )
+                        }
+
+                        // Key trouble is state, not an event: a rejected key or a spent daily
+                        // quota is still true after a backgrounded app comes back, so these read
+                        // from the store rather than from SideEffectService's replay-less flow,
+                        // which would drop the notice if it fired while the app was away.
+                        ApiKeyTroubleSheet(
+                            apiKeyState = apiKeyState,
+                            onOpenSettings = { navigator.navigate(SettingsKey) },
+                        )
                     }
                 }
             }

@@ -942,6 +942,49 @@
     <string name="player_name_hint">Seu nome...</string>
     <string name="player_name_save">Salvar</string>
     <string name="player_name_skip">Pular</string>
+    <!-- BYOK: chave de API do usuário -->
+    <string name="api_key_invalid_title">Sua chave de API não é mais válida</string>
+    <string name="api_key_invalid_message">O Google recusou a chave guardada neste aparelho. Gere uma nova no Google AI Studio e adicione abaixo para continuar jogando.</string>
+    <string name="api_key_forbidden_title">Esta chave não acessa a API do Gemini</string>
+    <string name="api_key_forbidden_message">A chave é válida, mas não tem acesso à API do Gemini. Ative a Generative Language API no projeto do Google Cloud dela, ou verifique se a chave tem restrições de uso.</string>
+    <string name="api_key_quota_daily_title">Limite diário atingido</string>
+    <string name="api_key_quota_daily_message">Sua chave esgotou a cota gratuita de hoje. Ela volta às %1$s. Para tirar o limite, ative o faturamento no projeto do Google Cloud da chave.</string>
+
+    <!-- BYOK: configuração e onboarding -->
+    <string name="api_key_setup_title">O Sagas roda na sua própria chave</string>
+    <string name="api_key_setup_body">Cada história, personagem e ilustração daqui é gerada por IA, e IA cobra por token. Em vez de colocar uma assinatura entre você e suas sagas, o Sagas usa uma chave de API do Gemini que é sua: você cria de graça, o uso é cobrado no seu próprio projeto Google, e nada do que você escreve passa pelos nossos servidores.</string>
+    <string name="api_key_setup_storage_note">A chave fica criptografada neste aparelho. Nunca é enviada para nós e nunca sai em backup.</string>
+    <string name="api_key_setup_step_one">Abra o Google AI Studio e entre com sua conta Google.</string>
+    <string name="api_key_setup_step_two">Toque em “Create API key” e copie a chave gerada.</string>
+    <string name="api_key_setup_step_three">Cole aqui embaixo. Ela começa com “AIza”.</string>
+    <string name="api_key_setup_open_studio">Pegar uma chave no Google AI Studio</string>
+    <string name="api_key_setup_field_label">Cole sua chave de API</string>
+    <string name="api_key_setup_save">Salvar chave</string>
+    <string name="api_key_setup_validating">Conferindo a chave…</string>
+    <string name="api_key_setup_valid">Chave aceita. Boas sagas!</string>
+    <string name="api_key_setup_error_empty">Cole uma chave para continuar.</string>
+    <string name="api_key_setup_error_rejected">O Google recusou esta chave. Confira se você copiou ela inteira.</string>
+    <string name="api_key_setup_error_network">Não deu para falar com o Google para conferir a chave. Verifique sua conexão e tente de novo.</string>
+
+    <!-- BYOK: migração de instalações existentes -->
+    <string name="api_key_migration_title">O Sagas mudou como se conecta à IA</string>
+    <string name="api_key_migration_body">Suas sagas, personagens e capítulos continuam aqui — nada foi perdido. Desta versão em diante o Sagas roda com uma chave de API do Gemini que é sua, para o app seguir gratuito e suas histórias seguirem suas. Adicione sua chave para retomar de onde parou.</string>
+
+    <!-- BYOK: ajustes -->
+    <string name="api_key_settings_section">Chave de API</string>
+    <string name="api_key_settings_replace">Atualizar chave</string>
+    <string name="api_key_settings_remove">Remover chave</string>
+    <string name="api_key_settings_test">Testar chave</string>
+    <string name="api_key_settings_test_ok">A chave está funcionando.</string>
+    <string name="api_key_settings_remove_confirm">Remover a chave? O Sagas não vai conseguir gerar nada até você adicionar outra.</string>
+    <string name="api_key_settings_quota_active">Limite diário atingido em %1$s. Volta às %2$s.</string>
+
+    <!-- BYOK: aviso de cota nas telas de geração -->
+    <string name="quota_cooldown_reasoning">Limite por minuto da sua chave — retomando em %1$s</string>
+    <string name="quota_daily_notice_title">Limite diário da sua chave atingido</string>
+    <string name="quota_daily_notice_message">Novas gerações voltam às %1$s. Suas sagas continuam legíveis enquanto isso.</string>
+    <string name="feature_needs_billing_title">Gerar imagem exige projeto Google pago</string>
+    <string name="feature_needs_billing_message">O Google não inclui geração de imagem no free tier do Gemini — nenhum modelo de imagem está disponível lá. Sua chave continua escrevendo a história normalmente; as ilustrações precisam de faturamento ativo no projeto do Google Cloud dela.</string>
 </resources>
 
 

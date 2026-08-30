@@ -73,6 +73,10 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeySetupScreen
+import com.ilustris.sagai.features.settings.ui.components.ApiKeySettingsSection
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -127,6 +131,7 @@ fun SettingsView(
     var showBackupSheet by remember { mutableStateOf(false) }
     var showBackups by remember { mutableStateOf(true) }
     var showPremiumSheet by remember { mutableStateOf(false) }
+    var showApiKeySetup by remember { mutableStateOf(false) }
 
     val exportLauncher =
         PermissionService.rememberDatabaseExportLauncher { uri ->
@@ -567,6 +572,18 @@ fun SettingsView(
             }
 
             item {
+                ApiKeySettingsSection(
+                    onReplaceKey = { showApiKeySetup = true },
+                    modifier =
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                RoundedCornerShape(15.dp),
+                            ),
+                )
+            }
+
+            item {
                 PreferencesContainer(
                     stringResource(R.string.settings_help_center_title),
                     stringResource(R.string.settings_help_center_subtitle),
@@ -802,6 +819,17 @@ fun SettingsView(
             showBackupSheet = false
             showBackups = false
         })
+    }
+
+    // Replacing rather than removing-then-adding: the current key keeps working until a new one
+    // validates, so a typo in the replacement does not leave the user locked out of their sagas.
+    if (showApiKeySetup) {
+        Dialog(
+            onDismissRequest = { showApiKeySetup = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            ApiKeySetupScreen(onKeySaved = { showApiKeySetup = false })
+        }
     }
 
     if (showPremiumSheet && isWiping.not()) {

@@ -2,6 +2,8 @@ package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.AIClient
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.key.QuotaStatusService
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
@@ -34,12 +36,18 @@ class ReasoningSynthesizerService
         remoteConfigService: RemoteConfigService,
         ageVerificationService: AgeVerificationService,
         aiAuditLogDao: AIAuditLogDao,
+        userApiKeyStore: UserApiKeyStore,
+        quotaStatusService: QuotaStatusService,
+        modelCatalog: com.ilustris.sagai.core.ai.ModelCatalog,
         @PublishedApi internal val genreConfigService: GenreConfigService,
     ) : AIClient(
             remoteConfigService,
             promptService,
             ageVerificationService,
             aiAuditLogDao,
+            userApiKeyStore,
+            quotaStatusService,
+            modelCatalog,
         ) {
         @OptIn(ExperimentalCoroutinesApi::class)
         inline fun <reified T> synthesizeReasoning(

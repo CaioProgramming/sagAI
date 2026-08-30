@@ -4,6 +4,8 @@ import android.util.Base64
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.createAudioGenerationRequest
 import timber.log.Timber
+import com.ilustris.sagai.core.ai.key.QuotaStatusService
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -25,6 +27,8 @@ class AudioGenClientImpl
         private val billingService: BillingService,
         private val remoteConfigService: RemoteConfigService,
         private val geminiApiClient: GeminiApiClient,
+        private val userApiKeyStore: UserApiKeyStore,
+        private val quotaStatusService: QuotaStatusService,
     ) : AudioGenClient {
         companion object {
             const val AUDIO_GEN_MODEL_FLAG = "audioGenModel"
@@ -35,9 +39,13 @@ class AudioGenClientImpl
             remoteConfigService.getString(AUDIO_GEN_MODEL_FLAG)
                 ?: error("Couldn't find model for Audio generation")
 
-        private suspend fun apiKey() =
-            remoteConfigService.getString(KEY_FLAG)
-                ?: error("Couldn't fetch API key for Audio generation")
+        private suspend fun apiKey(): String {
+            quotaStatusService.activeDailyBlock()?.let { block ->
+                throw QuotaExhaustedException(until = block.until, model = block.model)
+            }
+            return userApiKeyStore.getKeyNow()?.takeIf { it.isNotBlank() }
+                ?: throw MissingApiKeyException()
+        }
 
         override suspend fun generateAudio(audioConfig: AudioConfig): ByteArray? {
             val modelName = modelName()

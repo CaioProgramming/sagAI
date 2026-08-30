@@ -102,6 +102,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.key.QuotaStatus
+import com.ilustris.sagai.core.ai.key.QuotaStatusViewModel
+import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
 import com.ilustris.sagai.core.file.BACKUP_PERMISSION
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
@@ -426,6 +429,9 @@ fun ChatContent(
     val content = uiState.sagaContent ?: stableContent ?: return
     val saga = remember(content) { content.data }
     val listState = rememberLazyListState()
+    val quotaStatus by hiltViewModel<QuotaStatusViewModel>()
+        .status
+        .collectAsStateWithLifecycle()
 
     var showReactions by remember {
         mutableStateOf<MessageContent?>(null)
@@ -712,7 +718,23 @@ fun ChatContent(
                                 enter = slideInVertically(),
                                 exit = slideOutVertically { it },
                             ) {
-                                ChatInputView(
+                                // A spent daily quota can't answer anything until midnight
+                                // Pacific, so the composer is replaced rather than disabled —
+                                // letting someone write a message that will bounce is worse than
+                                // saying so up front. Other generation surfaces are covered by the
+                                // pre-flight check and the global sheet.
+                                val dailyBlock =
+                                    quotaStatus as? QuotaStatus.DailyExhausted
+                                if (dailyBlock != null) {
+                                    QuotaLimitNotice(
+                                        until = dailyBlock.until,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    )
+                                } else {
+                                    ChatInputView(
                                     content = content,
                                     characters = uiState.characters,
                                     isGenerating = uiState.isGenerating || uiState.isLoading,
@@ -736,7 +758,8 @@ fun ChatContent(
                                     onCancelEdit = onCancelEdit,
                                     maxContentLength = uiState.maxContentLength,
                                     onStopGeneration = { onAction(ChatUiAction.StopGeneration) },
-                                )
+                                    )
+                                }
                             }
                         }
 

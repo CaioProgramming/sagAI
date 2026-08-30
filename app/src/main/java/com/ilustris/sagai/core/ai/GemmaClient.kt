@@ -7,6 +7,8 @@ import com.ilustris.sagai.core.ai.local.LocalAiExecutor
 import com.ilustris.sagai.core.ai.local.LocalAiSidebackRouting
 import com.ilustris.sagai.core.ai.local.LocalAiSidebackStep
 import com.ilustris.sagai.core.ai.local.LocalAiTelemetry
+import com.ilustris.sagai.core.ai.key.QuotaStatusService
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -39,6 +41,9 @@ class GemmaClient
         promptService: PromptService,
         aiAuditLogDao: AIAuditLogDao,
         ageVerificationService: AgeVerificationService,
+        userApiKeyStore: UserApiKeyStore,
+        quotaStatusService: QuotaStatusService,
+        modelCatalog: ModelCatalog,
         @PublishedApi
         internal val localAiExecutor: LocalAiExecutor,
         @PublishedApi
@@ -49,10 +54,11 @@ class GemmaClient
             ageVerificationService,
             aiAuditLogDao,
             geminiApiClient,
+            userApiKeyStore,
+            quotaStatusService,
+            modelCatalog,
         ) {
         companion object {
-            const val CORE_FLAG = "SAGA_CORE"
-
             /** @see GeminiGenerationPolicy.lastGenerateFailure */
             val lastGenerateFailure: String?
                 get() = GeminiGenerationPolicy.lastGenerateFailure
@@ -101,7 +107,7 @@ class GemmaClient
                 val params =
                     prepared.toSyncParams(
                         model = modelName(requirement),
-                        thinkingLevel = thinkingLevel(requirement),
+                        thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
                         requirement = requirement,
                         useCore = useCore,
                         logEnabled = logEnabled,
@@ -141,7 +147,7 @@ class GemmaClient
                 val params =
                     prepared.toSyncParams(
                         model = modelName(requirement),
-                        thinkingLevel = thinkingLevel(requirement),
+                        thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
                         requirement = requirement,
                         useCore = useCore,
                         logEnabled = logEnabled,
@@ -214,7 +220,7 @@ class GemmaClient
                 val params =
                     prepared.toSyncParams(
                         model = modelName(requirement),
-                        thinkingLevel = thinkingLevel(requirement),
+                        thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
                         requirement = requirement,
                         useCore = useCore,
                         logEnabled = logEnabled,
@@ -268,7 +274,7 @@ class GemmaClient
                     streamingGenerationFlow<T>(
                         prepared.toStreamingParams(
                             model = modelName(requirement),
-                            thinkingLevel = thinkingLevel(requirement),
+                            thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
                             requirement = requirement,
                             useCore = useCore,
                             logEnabled = logEnabled,
@@ -308,7 +314,7 @@ class GemmaClient
                     streamingGenerationFlow<T>(
                         prepared.toStreamingParams(
                             model = modelName(requirement),
-                            thinkingLevel = thinkingLevel(requirement),
+                            thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
                             requirement = requirement,
                             useCore = useCore,
                             logEnabled = logEnabled,
@@ -417,5 +423,3 @@ class GemmaClient
             }
         }
     }
-
-const val KEY_FLAG = "FIREBASE_KEY"

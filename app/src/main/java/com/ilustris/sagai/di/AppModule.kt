@@ -17,6 +17,9 @@ import com.ilustris.sagai.core.ai.ImageGeneratorImpl
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
+import com.ilustris.sagai.core.ai.key.QuotaStatusService
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
+import com.ilustris.sagai.core.ai.key.UserApiKeyStoreImpl
 import com.ilustris.sagai.core.ai.local.LocalAiConfigLoader
 import com.ilustris.sagai.core.ai.local.LocalAiExecutor
 import com.ilustris.sagai.core.ai.local.MlKitLocalAiExecutor
@@ -325,6 +328,9 @@ object AppModule {
         ageVerificationService: AgeVerificationService,
         localAiExecutor: LocalAiExecutor,
         localAiConfigLoader: LocalAiConfigLoader,
+        userApiKeyStore: UserApiKeyStore,
+        quotaStatusService: QuotaStatusService,
+        modelCatalog: com.ilustris.sagai.core.ai.ModelCatalog,
     ): GemmaClient =
         GemmaClient(
             remoteConfig = remoteConfigService,
@@ -333,6 +339,9 @@ object AppModule {
             promptService = promptService,
             aiAuditLogDao = aiAuditLogDao,
             ageVerificationService = ageVerificationService,
+            userApiKeyStore = userApiKeyStore,
+            quotaStatusService = quotaStatusService,
+            modelCatalog = modelCatalog,
             localAiExecutor = localAiExecutor,
             localAiConfigLoader = localAiConfigLoader,
         )
@@ -437,7 +446,20 @@ object AppModule {
         billingService: BillingService,
         remoteConfigService: RemoteConfigService,
         debugImageFallbackService: DebugImageFallbackService,
-    ): ImageGenerator = ImageGeneratorImpl(billingService, remoteConfigService, debugImageFallbackService)
+        geminiApiClient: GeminiApiClient,
+        userApiKeyStore: UserApiKeyStore,
+        quotaStatusService: QuotaStatusService,
+        sideEffectService: SideEffectService,
+    ): ImageGenerator =
+        ImageGeneratorImpl(
+            billingService,
+            remoteConfigService,
+            debugImageFallbackService,
+            geminiApiClient,
+            userApiKeyStore,
+            quotaStatusService,
+            sideEffectService,
+        )
 
     @Provides
     @Singleton
@@ -470,7 +492,16 @@ object AppModule {
         billingService: BillingService,
         remoteConfigService: RemoteConfigService,
         geminiApiClient: GeminiApiClient,
-    ): AudioGenClient = AudioGenClientImpl(billingService, remoteConfigService, geminiApiClient)
+        userApiKeyStore: UserApiKeyStore,
+        quotaStatusService: QuotaStatusService,
+    ): AudioGenClient =
+        AudioGenClientImpl(
+            billingService,
+            remoteConfigService,
+            geminiApiClient,
+            userApiKeyStore,
+            quotaStatusService,
+        )
 
     @Provides
     @Singleton
@@ -642,6 +673,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesUserIdentityUseCase(userIdentityUseCaseImpl: UserIdentityUseCaseImpl): UserIdentityUseCase
+
+    @Binds
+    abstract fun providesUserApiKeyStore(userApiKeyStoreImpl: UserApiKeyStoreImpl): UserApiKeyStore
 
     @Binds
     abstract fun providesPlayerProfileUseCase(playerProfileUseCaseImpl: PlayerProfileUseCaseImpl): PlayerProfileUseCase
