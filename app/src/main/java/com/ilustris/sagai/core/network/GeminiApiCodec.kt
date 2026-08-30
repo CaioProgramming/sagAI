@@ -167,6 +167,23 @@ object GeminiApiCodec {
             }
             config.temperature?.let { obj.addProperty("temperature", it) }
             config.responseMimeType?.let { obj.addProperty("response_mime_type", it) }
+            // Was silently dropped here: the builder assembled a thinkingConfig and the encoder
+            // never wrote it, so no request ever carried a thinking level or asked for a summary.
+            // Every model simply thought at its own default and returned no thought parts, which
+            // read from the outside as "the API does not send reasoning".
+            config.thinkingConfig?.let { thinking ->
+                obj.add(
+                    "thinkingConfig",
+                    JsonObject().also { thinkingObj ->
+                        thinking.includeThoughts?.let {
+                            thinkingObj.addProperty("includeThoughts", it)
+                        }
+                        thinking.thinkingLevel?.let {
+                            thinkingObj.addProperty("thinkingLevel", it)
+                        }
+                    },
+                )
+            }
             config.speechConfig?.let { speech ->
                 obj.add(
                     "speech_config",
