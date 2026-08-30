@@ -200,6 +200,9 @@ class ReasoningSynthesizerService
             )
         }
 
+        /** How long each holding line stays up before the next one replaces it. */
+        private val FALLBACK_ROTATION_MS = 2.seconds.inWholeMilliseconds
+
         @PublishedApi
         internal suspend fun <T> useFallback(
             genre: Genre?,
@@ -213,18 +216,29 @@ class ReasoningSynthesizerService
                     remoteConfigService.getJson<ReasoningFallbacks>(
                         REASONING_FALLBACKS_KEY,
                     )
-                val fallbackMessage =
+                val pool =
                     if (genre != null && fallbacks?.genres?.containsKey(genre.name) == true) {
-                        fallbacks.genres[genre.name]?.randomOrNull()
+                        fallbacks.genres[genre.name]
                     } else {
-                        fallbacks?.default?.randomOrNull()
-                    }
+                        fallbacks?.default
+                    }.orEmpty()
+                if (pool.isEmpty()) return
 
-                fallbackMessage?.let {
-                    if (!terminal.get() && !scope.isClosedForSend) {
-                        scope.send(StreamingState.Reasoning(it))
-                    }
+                // Keeps cycling until the request lands. This used to send a single line, which
+                // meant one frozen sentence for however long generation took — around fifty
+                // seconds on the HIGH tier, with nothing else to look at, since a JSON reply has
+                // no partial text to stream and the API sends no reasoning while streaming.
+                var previous: String? = null
+                while (!terminal.get() && !scope.isClosedForSend) {
+                    val next =
+                        pool.filterNot { it == previous }.randomOrNull()
+                            ?: pool.random()
+                    previous = next
+                    scope.send(StreamingState.Reasoning(next))
+                    delay(FALLBACK_ROTATION_MS)
                 }
+            } catch (_: CancellationException) {
+                // The request finished or the collector went away — nothing to clean up.
             } catch (e: Exception) {
                 Timber.e("Error fetching fallbacks: ${e.message}")
             }

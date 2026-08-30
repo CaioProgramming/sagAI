@@ -275,18 +275,32 @@ class MessageUseCaseImpl
                             saga.getDirectiveKey(),
                             emptyMap(),
                         )
+                    // Deliberately the sync call, not generateStreaming. Streaming bought nothing
+                    // here: the reply is one JSON object, so no partial text can be rendered, and
+                    // the collector below only ever acts on Success. Worse, `alt=sse` does not
+                    // carry thought parts at all — measured on gemini-3.5-flash-lite, the same
+                    // request returns a reasoning summary when called normally and zero when
+                    // streamed, while burning the thought tokens either way. The sync call gets
+                    // that reasoning back, which is what makes it reviewable in the AI audit.
+                    // The visible "thinking" text comes from the synthesizer's fallback regardless.
                     val generateStream =
-                        gemmaClient.generateStreaming<AIReply>(
-                            promptSplit =
-                                prompt.mergeInstructions(
-                                    conversationInstructions,
-                                    actContext.renderInstructions(),
+                        flow {
+                            emit(
+                                StreamingState.Success(
+                                    gemmaClient.generate<AIReply>(
+                                        promptSplit =
+                                            prompt.mergeInstructions(
+                                                conversationInstructions,
+                                                actContext.renderInstructions(),
+                                            ),
+                                        userInteraction = true,
+                                        filterOutputFields = ChatPrompts.messageOutputExclusions,
+                                        requirement = ModelRequirement.HIGH,
+                                        useCore = true,
+                                    ),
                                 ),
-                            userInteraction = true,
-                            filterOutputFields = ChatPrompts.messageOutputExclusions,
-                            requirement = ModelRequirement.HIGH,
-                            useCore = true,
-                        )
+                            )
+                        }
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             generateStream,
