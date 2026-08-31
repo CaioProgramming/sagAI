@@ -561,15 +561,6 @@ fun SettingsView(
             }
 
             item {
-                PremiumCard(
-                    isUserPro = isUserPro,
-                    onClick = {
-                        showPremiumSheet = true
-                    },
-                )
-            }
-
-            item {
                 PreferencesContainer(
                     stringResource(R.string.api_settings_entry_title),
                     stringResource(R.string.api_settings_entry_subtitle),
@@ -582,6 +573,15 @@ fun SettingsView(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
                             ).padding(8.dp),
+                )
+            }
+
+            item {
+                PremiumCard(
+                    isUserPro = isUserPro,
+                    onClick = {
+                        showPremiumSheet = true
+                    },
                 )
             }
 

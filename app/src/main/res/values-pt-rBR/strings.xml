@@ -1000,9 +1000,10 @@
     <string name="api_key_pasted_hint">Encontramos uma chave na área de transferência.</string>
     <string name="api_key_manage_title">Sua chave de API</string>
     <string name="api_key_status_checking">Conferindo sua chave…</string>
-    <string name="api_key_status_valid">Chave funcionando</string>
+    <string name="api_key_status_valid">Chave verificada</string>
     <string name="api_key_status_invalid">Esta chave não é mais válida</string>
     <string name="api_key_status_unreachable">Não deu pra conferir a chave agora</string>
+    <string name="api_key_docs">Ver a documentação da chave</string>
 </resources>
 
 

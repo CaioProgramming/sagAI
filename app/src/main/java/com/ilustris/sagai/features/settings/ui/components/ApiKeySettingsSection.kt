@@ -130,7 +130,7 @@ fun ApiKeySettingsSection(
             Icon(
                 painterResource(R.drawable.ic_key),
                 stringResource(R.string.api_key_settings_section),
-                modifier = Modifier.size(24.dp).alpha(.5f),
+                modifier = Modifier.size(12.dp).alpha(.5f),
             )
             Text(
                 maskedKey,

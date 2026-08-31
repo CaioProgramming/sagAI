@@ -32,6 +32,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalContext
+import com.ilustris.sagai.ui.components.AI_STUDIO_DOCS_URL
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
@@ -56,6 +61,7 @@ fun ApiSettingsView(
 ) {
     var showApiKeySetup by remember { mutableStateOf(false) }
     var showOnboarding by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -109,6 +115,18 @@ fun ApiSettingsView(
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+
+            item {
+                TextButton(
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(AI_STUDIO_DOCS_URL)),
+                        )
+                    },
+                ) {
+                    Text(stringResource(R.string.api_key_docs))
+                }
             }
 
             item {

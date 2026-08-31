@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -27,7 +26,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,6 +47,9 @@ import java.util.Date
  * stop for me".
  */
 const val AI_STUDIO_RATE_LIMIT_URL = "https://ai.dev/rate-limit"
+
+/** Google's own explanation of what an API key is and how to make one. */
+const val AI_STUDIO_DOCS_URL = "https://ai.google.dev/gemini-api/docs/api-key"
 
 /**
  * One global explanation for "the key can't generate right now", mirroring the guardrail sheet.
@@ -112,15 +113,6 @@ fun ApiKeyTroubleSheet(
                     .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(
-                painter = painterResource(failure.iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = failure.color(MaterialTheme.colorScheme),
-            )
-
-            Spacer(Modifier.size(16.dp))
-
             Text(
                 text = stringResource(failure.titleRes),
                 style = MaterialTheme.typography.headlineSmall,
@@ -146,12 +138,26 @@ fun ApiKeyTroubleSheet(
 
             TextButton(
                 onClick = {
-                    context.startActivity(
-                        Intent(Intent.ACTION_VIEW, Uri.parse(AI_STUDIO_RATE_LIMIT_URL)),
-                    )
+                    // Quota sends you to your own numbers; a rejected key sends you to what a key
+                    // is and how to make another. Same slot, different question being asked.
+                    val url =
+                        if (failure.requiresNewKey) {
+                            AI_STUDIO_DOCS_URL
+                        } else {
+                            AI_STUDIO_RATE_LIMIT_URL
+                        }
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                 },
             ) {
-                Text(stringResource(R.string.api_key_learn_more))
+                Text(
+                    stringResource(
+                        if (failure.requiresNewKey) {
+                            R.string.api_key_docs
+                        } else {
+                            R.string.api_key_learn_more
+                        },
+                    ),
+                )
             }
 
             Spacer(Modifier.size(16.dp))

@@ -116,6 +116,7 @@ import com.ilustris.sagai.ui.navigation.MilestoneKey
 import com.ilustris.sagai.ui.navigation.Navigator
 import com.ilustris.sagai.ui.navigation.NewSagaKey
 import com.ilustris.sagai.ui.navigation.PlaythroughKey
+import com.ilustris.sagai.ui.navigation.ApiSettingsKey
 import com.ilustris.sagai.ui.navigation.SettingsKey
 import com.ilustris.sagai.ui.navigation.createSagaEntryProvider
 import com.ilustris.sagai.ui.navigation.findNavKey
@@ -807,7 +808,7 @@ class MainActivity : ComponentActivity() {
                         // which would drop the notice if it fired while the app was away.
                         ApiKeyTroubleSheet(
                             apiKeyState = apiKeyState,
-                            onOpenSettings = { navigator.navigate(SettingsKey) },
+                            onOpenSettings = { navigator.navigate(ApiSettingsKey) },
                         )
                     }
                 }
