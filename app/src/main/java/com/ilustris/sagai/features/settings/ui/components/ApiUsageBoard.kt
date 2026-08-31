@@ -142,12 +142,6 @@ fun ApiUsageBoard(modifier: Modifier = Modifier) {
                 )
             }
         }
-
-        Text(
-            stringResource(R.string.api_usage_disclaimer),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-        )
     }
 }
 

@@ -35,6 +35,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
+import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyManageSheet
 import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
 import com.ilustris.sagai.features.settings.ui.components.ApiKeySettingsSection
 import com.ilustris.sagai.features.settings.ui.components.ApiUsageBoard
@@ -149,21 +150,19 @@ fun ApiSettingsView(
                         ),
                 )
             }
+
+            item {
+                Text(
+                    stringResource(R.string.api_usage_disclaimer),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+                )
+            }
         }
     }
 
     if (showApiKeySetup) {
-        Dialog(
-            onDismissRequest = { showApiKeySetup = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-        ) {
-            OnboardingHost(
-                type = OnboardingType.API_KEY_SETUP,
-                presentation = OnboardingPresentation.Sheet,
-                force = true,
-                onDismiss = { showApiKeySetup = false },
-            )
-        }
+        ApiKeyManageSheet(onDismiss = { showApiKeySetup = false })
     }
 
     if (showOnboarding) {

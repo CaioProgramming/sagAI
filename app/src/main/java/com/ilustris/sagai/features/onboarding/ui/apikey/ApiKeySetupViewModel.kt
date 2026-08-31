@@ -149,6 +149,13 @@ class ApiKeySetupViewModel
             }
         }
 
+        fun removeKey() {
+            viewModelScope.launch {
+                userApiKeyStore.clear()
+                _uiState.value = ApiKeySetupUiState.Idle
+            }
+        }
+
         fun resetError() {
             if (_uiState.value != ApiKeySetupUiState.Saved) {
                 _uiState.value = ApiKeySetupUiState.Idle

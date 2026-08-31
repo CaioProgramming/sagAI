@@ -998,6 +998,7 @@
     <string name="api_key_onboarding_next">Continuar</string>
     <string name="api_key_paste">Colar chave</string>
     <string name="api_key_pasted_hint">Encontramos uma chave na área de transferência.</string>
+    <string name="api_key_manage_title">Sua chave de API</string>
 </resources>
 
 

@@ -1012,4 +1012,5 @@
     <string name="api_key_onboarding_next">Continue</string>
     <string name="api_key_paste">Paste key</string>
     <string name="api_key_pasted_hint">Key found on your clipboard.</string>
+    <string name="api_key_manage_title">Your API key</string>
 </resources>

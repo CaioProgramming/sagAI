@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.settings.ui.components
 
 import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -64,8 +66,6 @@ class ApiKeySettingsViewModel
         private val _maskedKey = MutableStateFlow("")
         val maskedKey: StateFlow<String> = _maskedKey.asStateFlow()
 
-        private val _testResult = MutableStateFlow<Boolean?>(null)
-        val testResult: StateFlow<Boolean?> = _testResult.asStateFlow()
 
         val quotaStatus: StateFlow<QuotaStatus> =
             quotaStatusService.status.stateIn(
@@ -75,32 +75,17 @@ class ApiKeySettingsViewModel
             )
 
         init {
+            // Observed rather than read once: the key can be replaced or removed from the sheet
+            // while this row is on screen, and a stale mask would name a key that is gone.
             viewModelScope.launch {
-                _maskedKey.value = userApiKeyStore.getKeyNow()?.let(ApiKeyShape::mask).orEmpty()
-            }
-        }
-
-        fun testKey() {
-            viewModelScope.launch {
-                _testResult.value = null
-                val key = userApiKeyStore.getKeyNow()
-                if (key == null) {
-                    _testResult.value = false
-                    return@launch
+                userApiKeyStore.observeState().collect {
+                    _maskedKey.value =
+                        userApiKeyStore.getKeyNow()?.let(ApiKeyShape::mask).orEmpty()
                 }
-                _testResult.value =
-                    executeRequest(reportCrash = false) {
-                        geminiApiClient.listModels(key)
-                    }.isSuccess
             }
         }
 
-        fun removeKey() {
-            viewModelScope.launch {
-                userApiKeyStore.clear()
-                _maskedKey.value = ""
-            }
-        }
+
 
         private fun String.mask(): String = if (length <= 12) "••••••" else "${take(4)}••••••${takeLast(4)}"
     }
@@ -119,71 +104,31 @@ fun ApiKeySettingsSection(
 ) {
     val viewModel: ApiKeySettingsViewModel = hiltViewModel()
     val maskedKey by viewModel.maskedKey.collectAsStateWithLifecycle()
-    val testResult by viewModel.testResult.collectAsStateWithLifecycle()
     val quotaStatus by viewModel.quotaStatus.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    var showRemoveConfirm by remember { mutableStateOf(false) }
 
     Column(
         modifier =
             modifier
-                .fillMaxWidth()
+                .clickable {
+                    onReplaceKey()
+                }.fillMaxWidth()
                 .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-
-
-            IconButton(
-                onClick = { showRemoveConfirm = true },
-                colors =
-                    IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
-                modifier = Modifier.alpha(.5f),
-            ) {
-                Icon(
-                    painterResource(R.drawable.ic_delete),
-                    stringResource(R.string.api_key_settings_remove),
-                    modifier = Modifier.size(12.dp),
-                )
-            }
-        }
-
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            IconButton(onClick = {
-                viewModel.testKey()
-            }, modifier = Modifier.size(24.dp)) {
-                AnimatedContent(quotaStatus) {
-                    val icon =
-                        when (it) {
-                            QuotaStatus.Clear -> R.drawable.baseline_refresh_24
-                            is QuotaStatus.CoolingDown -> R.drawable.ic_lamp
-                            is QuotaStatus.DailyExhausted -> R.drawable.round_close_24
-                        }
-                    Icon(
-                        painterResource(icon),
-                        stringResource(R.string.api_key_settings_test),
-                    )
-                }
-            }
+            Icon(
+                painterResource(R.drawable.ic_key),
+                stringResource(R.string.api_key_settings_section),
+                modifier = Modifier.size(24.dp).alpha(.5f),
+            )
             Text(
                 maskedKey,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f),
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f),
             )
-
-            IconButton(
-                onClick = onReplaceKey,
-                modifier = Modifier.size(24.dp),
-            ) {
-                Icon(
-                    painterResource(R.drawable.ic_edit),
-                    stringResource(R.string.api_key_settings_replace),
-                )
-            }
         }
 
         (quotaStatus as? QuotaStatus.DailyExhausted)?.let { block ->
@@ -202,48 +147,5 @@ fun ApiKeySettingsSection(
             )
         }
 
-        testResult?.let { passed ->
-            Text(
-                stringResource(
-                    if (passed) {
-                        R.string.api_key_settings_test_ok
-                    } else {
-                        R.string.api_key_setup_error_rejected
-                    },
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color =
-                    if (passed) {
-                        MaterialTheme.colorScheme.secondary
-                    } else {
-                        MaterialTheme.colorScheme.error
-                    },
-            )
-        }
-    }
-
-    if (showRemoveConfirm) {
-        AlertDialog(
-            onDismissRequest = { showRemoveConfirm = false },
-            text = { Text(stringResource(R.string.api_key_settings_remove_confirm)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showRemoveConfirm = false
-                        viewModel.removeKey()
-                    },
-                ) {
-                    Text(
-                        stringResource(R.string.api_key_settings_remove),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRemoveConfirm = false }) {
-                    Text(stringResource(R.string.guardrail_dismiss))
-                }
-            },
-        )
     }
 }

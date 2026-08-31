@@ -96,83 +96,16 @@ fun ApiKeyInputContent(page: OnboardingPage) {
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        // A plain field in a filled box rather than the app's centred, auto-sizing style. A key
-        // is one long unbroken token: shrinking the text to make it fit turns it illegible at
-        // exactly the moment the user wants to check what landed. Monospaced and scrolling
-        // sideways instead, with the container doing the work of saying "paste here".
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .background(
-                        MaterialTheme.colorScheme.surfaceContainerHighest,
-                        RoundedCornerShape(16.dp),
-                    ).padding(start = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Placeholder art: neither a key nor a paste glyph exists in the project yet.
-            Icon(
-                painterResource(R.drawable.ic_key),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(12.dp),
-            )
-
-            TextField(
-                value = apiKey,
-                onValueChange = {
-                    apiKey = it
-                    viewModel.resetError()
-                },
-                placeholder = {
-                    Text(
-                        stringResource(R.string.api_key_setup_field_label),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                singleLine = true,
-                visualTransformation = ApiKeyMaskTransformation,
-                enabled = uiState !is ApiKeySetupUiState.Validating,
-                isError = uiState.errorMessage() != null,
-                textStyle =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = FontFamily.Monospace,
-                    ),
-                keyboardOptions =
-                    KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done,
-                    ),
-                modifier = Modifier.weight(1f),
-                colors =
-                    TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        errorContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        errorIndicatorColor = Color.Transparent,
-                    ),
-            )
-
-            IconButton(
-                onClick = {
-                    clipboard.getText()?.text?.trim()?.let {
-                        apiKey = it
-                        viewModel.resetError()
-                    }
-                },
-            ) {
-                Icon(
-                    painterResource(R.drawable.ic_paste),
-                    contentDescription = stringResource(R.string.api_key_paste),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(12.dp),
-                )
-            }
-        }
+        ApiKeyField(
+            value = apiKey,
+            onValueChange = {
+                apiKey = it
+                viewModel.resetError()
+            },
+            isValidating = uiState is ApiKeySetupUiState.Validating,
+            isError = uiState.errorMessage() != null,
+            onPaste = { clipboard.getText()?.text?.trim()?.let { pasted -> apiKey = pasted } },
+        )
 
         if (pastedFromClipboard && uiState.errorMessage() == null) {
             Text(
@@ -225,7 +158,7 @@ fun ApiKeyInputContent(page: OnboardingPage) {
     }
 }
 
-private fun ApiKeySetupUiState.errorMessage(): Int? =
+internal fun ApiKeySetupUiState.errorMessage(): Int? =
     when (this) {
         ApiKeySetupUiState.Rejected -> R.string.api_key_setup_error_rejected
         ApiKeySetupUiState.Unreachable -> R.string.api_key_setup_error_network
@@ -254,5 +187,90 @@ fun ApiKeyNamePrompt() {
             onSaveName = viewModel::saveName,
             onDismiss = viewModel::skipName,
         )
+    }
+}
+
+/**
+ * The key field itself, shared by the onboarding page and the settings sheet.
+ *
+ * Extracted so the two cannot drift: they show the same secret, mask it the same way, and offer the
+ * same paste affordance, which would stop being true the first time one of them was tweaked alone.
+ */
+@Composable
+fun ApiKeyField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    isValidating: Boolean,
+    isError: Boolean,
+    onPaste: () -> Unit,
+) {
+    // A plain field in a filled box rather than the app's centred, auto-sizing style. A key
+    // is one long unbroken token: shrinking the text to make it fit turns it illegible at
+    // exactly the moment the user wants to check what landed. Monospaced and scrolling
+    // sideways instead, with the container doing the work of saying "paste here".
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.surfaceContainerHighest,
+                    RoundedCornerShape(16.dp),
+                ).padding(start = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Placeholder art: neither a key nor a paste glyph exists in the project yet.
+        Icon(
+            painterResource(R.drawable.ic_key),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(12.dp),
+        )
+
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = {
+                Text(
+                    stringResource(R.string.api_key_setup_field_label),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            singleLine = true,
+            visualTransformation = ApiKeyMaskTransformation,
+            enabled = !isValidating,
+            isError = isError,
+            textStyle =
+                MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.Monospace,
+                ),
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
+                ),
+            modifier = Modifier.weight(1f),
+            colors =
+                TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    errorContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    errorIndicatorColor = Color.Transparent,
+                ),
+        )
+
+        IconButton(
+            onClick = onPaste,
+        ) {
+            Icon(
+                painterResource(R.drawable.ic_paste),
+                contentDescription = stringResource(R.string.api_key_paste),
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(12.dp),
+            )
+        }
     }
 }
