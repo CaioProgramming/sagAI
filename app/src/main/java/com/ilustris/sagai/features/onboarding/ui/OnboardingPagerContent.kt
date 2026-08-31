@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.onboarding.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
@@ -261,6 +263,15 @@ fun OnboardingPagerContent(
 
                                     is OnboardingAction.Dismiss -> {
                                         onDismiss()
+                                    }
+
+                                    is OnboardingAction.OpenUrl -> {
+                                        context.startActivity(
+                                            Intent(
+                                                Intent.ACTION_VIEW,
+                                                Uri.parse(button.action.url),
+                                            ),
+                                        )
                                     }
 
                                     is OnboardingAction.DeactivateTutorials -> {

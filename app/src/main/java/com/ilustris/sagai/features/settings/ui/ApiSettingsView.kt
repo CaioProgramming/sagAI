@@ -34,7 +34,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
-import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyOnboarding
+import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
+import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
 import com.ilustris.sagai.features.settings.ui.components.ApiKeySettingsSection
 import com.ilustris.sagai.features.settings.ui.components.ApiUsageBoard
 
@@ -127,10 +128,11 @@ fun ApiSettingsView(
             onDismissRequest = { showApiKeySetup = false },
             properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
-            ApiKeyOnboarding(
+            OnboardingHost(
                 type = OnboardingType.API_KEY_SETUP,
-                dismissible = true,
-                onFinished = { showApiKeySetup = false },
+                presentation = OnboardingPresentation.Sheet,
+                force = true,
+                onDismiss = { showApiKeySetup = false },
             )
         }
     }
@@ -140,10 +142,11 @@ fun ApiSettingsView(
             onDismissRequest = { showOnboarding = false },
             properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
-            ApiKeyOnboarding(
+            OnboardingHost(
                 type = OnboardingType.API_KEY_SETUP,
-                dismissible = true,
-                onFinished = { showOnboarding = false },
+                presentation = OnboardingPresentation.Sheet,
+                force = true,
+                onDismiss = { showOnboarding = false },
             )
         }
     }

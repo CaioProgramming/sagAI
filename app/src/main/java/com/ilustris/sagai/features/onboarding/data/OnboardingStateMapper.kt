@@ -1,6 +1,9 @@
 package com.ilustris.sagai.features.onboarding.data
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
@@ -20,11 +23,18 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingUiPage
 import com.ilustris.sagai.features.onboarding.ui.OnboardingUiState
 import com.ilustris.sagai.features.onboarding.ui.PremiumBackground
 import com.ilustris.sagai.features.onboarding.ui.SparkBackground
+import com.ilustris.sagai.features.onboarding.ui.apikey.AI_STUDIO_URL
+import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyInputContent
 import com.ilustris.sagai.ui.animations.MorphingAvatarBackground
 import com.ilustris.sagai.ui.animations.StackedCardsBackground
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.FluidGradient
+import com.ilustris.sagai.ui.theme.fadeColors
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -64,7 +74,8 @@ class OnboardingStateMapper
                 remoteConfigService.getJsonMapStringString("mascot_full_body_designs")
                     ?: emptyMap()
 
-            return content.pages.mapIndexed { index, page ->
+            val copyPages =
+                content.pages.mapIndexed { index, page ->
                 val isLastPage = index == content.pages.size - 1
                 val mascotUrl =
                     when (type) {
@@ -89,11 +100,25 @@ class OnboardingStateMapper
                     }
                 val background: @Composable () -> Unit =
                     when (type) {
-                        // Never reached: ApiKeyOnboarding renders its own pages, since its
-                        // last one is an input field rather than copy. Present so the when
-                        // stays exhaustive.
                         OnboardingType.API_KEY_SETUP -> {
-                            { StarfieldBackground() }
+                                when(index) {
+                                    0 -> {
+                                        { FluidGradient(MaterialTheme.colorScheme.primary.fadeColors()) }
+                                    }
+                                    
+                                    1 -> {
+                                        { StarryTextPlaceholder(Modifier.fillMaxSize().reactiveShimmer(true)) }
+                                    }
+                                    
+                                    2 -> {
+                                        { StackedCardsBackground(assets = storyAssets) }
+                                    }
+                                    
+                                    else -> {
+                                        { SparkBackground() }
+                                }
+                                    
+                                }
                         }
 
                         OnboardingType.APP_INTRO -> {
@@ -271,14 +296,35 @@ class OnboardingStateMapper
                         )
                     }
 
-                OnboardingUiPage(
-                    background = background,
-                    content = {
-                        OnboardingStandardContent(page)
-                    },
-                    primaryButton = primaryButton,
-                    secondaryButton = secondaryButton,
-                )
+                    OnboardingUiPage(
+                        background = background,
+                        content = {
+                            OnboardingStandardContent(page)
+                        },
+                        primaryButton = primaryButton,
+                        secondaryButton = secondaryButton,
+                    )
+                }
+
+            // The key field is a page like any other — the type carries a composable, not a title
+            // and a paragraph. Appending it here rather than asking Remote Config to describe it
+            // keeps the copy free to change without someone having to remember that the last entry
+            // is load-bearing. It carries no buttons: the field owns its own submit, because only
+            // it knows whether what was typed is worth sending.
+            return if (type == OnboardingType.API_KEY_SETUP) {
+                copyPages +
+                    OnboardingUiPage(
+                        background = { SparkBackground() },
+                        content = { ApiKeyInputContent() },
+                        primaryButton = null,
+                        secondaryButton =
+                            OnboardingButton(
+                                stringResourceHelper.getString(R.string.api_key_setup_open_studio),
+                                OnboardingAction.OpenUrl(AI_STUDIO_URL),
+                            ),
+                    )
+            } else {
+                copyPages
             }
         }
     }

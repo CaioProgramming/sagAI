@@ -19,6 +19,11 @@ sealed class OnboardingAction {
     ) : OnboardingAction()
 
     data object DeactivateTutorials : OnboardingAction()
+
+    /** Sends the user somewhere outside the app — currently only the AI Studio key page. */
+    data class OpenUrl(
+        val url: String,
+    ) : OnboardingAction()
 }
 
 data class OnboardingButton(

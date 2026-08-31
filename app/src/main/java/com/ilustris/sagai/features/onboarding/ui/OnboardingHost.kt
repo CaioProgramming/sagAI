@@ -16,6 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,6 +53,12 @@ fun OnboardingHost(
     genre: Genre? = null,
     saga: Saga? = null,
     force: Boolean = false,
+    /**
+     * False while the app is gated on this onboarding — there is nowhere to dismiss to. The
+     * sheet then refuses the drag too, rather than sliding halfway down and springing back,
+     * which reads as the app struggling with the user.
+     */
+    dismissible: Boolean = true,
     onDismiss: () -> Unit = {},
 ) {
     val viewModel: OnboardingViewModel = hiltViewModel()
@@ -90,6 +97,7 @@ fun OnboardingHost(
                             state = uiState as OnboardingUiState.Content,
                             genre = genre,
                             isPurchaseInProgress = isPurchaseInProgress,
+                            dismissible = dismissible,
                             onDismiss = dismissOnboarding,
                         )
                     }
@@ -180,8 +188,13 @@ private fun OnboardingSheetPresentation(
     genre: Genre?,
     isPurchaseInProgress: Boolean,
     onDismiss: () -> Unit,
+    dismissible: Boolean = true,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState =
+        rememberModalBottomSheetState(
+            skipPartiallyExpanded = true,
+            confirmValueChange = { dismissible || it != SheetValue.Hidden },
+        )
     val shape =
         RoundedCornerShape(
             topStart = CornerSize(15.dp),
@@ -190,7 +203,7 @@ private fun OnboardingSheetPresentation(
             bottomEnd = CornerSize(0.dp),
         )
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (dismissible) onDismiss() },
         sheetState = sheetState,
         shape = shape,
         dragHandle = null,
