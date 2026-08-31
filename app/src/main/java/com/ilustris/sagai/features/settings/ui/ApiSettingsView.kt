@@ -118,18 +118,6 @@ fun ApiSettingsView(
             }
 
             item {
-                TextButton(
-                    onClick = {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse(AI_STUDIO_DOCS_URL)),
-                        )
-                    },
-                ) {
-                    Text(stringResource(R.string.api_key_docs))
-                }
-            }
-
-            item {
                 ApiKeySettingsSection(
                     onReplaceKey = { showApiKeySetup = true },
                     modifier =
@@ -175,6 +163,19 @@ fun ApiSettingsView(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                 )
+            }
+
+            item {
+                TextButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(AI_STUDIO_DOCS_URL)),
+                        )
+                    },
+                ) {
+                    Text(stringResource(R.string.api_key_docs))
+                }
             }
         }
     }
