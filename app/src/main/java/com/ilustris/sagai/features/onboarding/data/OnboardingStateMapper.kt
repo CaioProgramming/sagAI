@@ -82,15 +82,14 @@ class OnboardingStateMapper
                 remoteConfigService.getJsonMapStringString("mascot_full_body_designs")
                     ?: emptyMap()
 
-            // The key field is appended after these, so for that type no page of copy is ever the
-            // last one. Getting this wrong gave the final paragraph a Dismiss button, which closed
-            // the whole onboarding — marking it seen and clearing its state — one page before the
-            // field it exists to reach.
-            val hasAppendedPage = type == OnboardingType.API_KEY_SETUP
+            // The key field is the last page of this type, described in Remote Config like any
+            // other. It was briefly appended after them instead, which broke the assumption that
+            // the last configured page is the last page shown — and both things reading that
+            // assumption (the background's else branch, the finishing button) went wrong.
+            val isKeyOnboarding = type == OnboardingType.API_KEY_SETUP
 
-            val copyPages =
-                content.pages.mapIndexed { index, page ->
-                    val isLastPage = !hasAppendedPage && index == content.pages.size - 1
+            return content.pages.mapIndexed { index, page ->
+                    val isLastPage = index == content.pages.size - 1
                     val mascotUrl =
                         when (type) {
                             OnboardingType.APP_INTRO -> {
@@ -236,7 +235,11 @@ class OnboardingStateMapper
                         }
 
                     val primaryButton =
-                        if (isLastPage) {
+                        if (isKeyOnboarding && isLastPage) {
+                            // The field owns its own submit: only it knows whether what was typed
+                            // is worth sending, and the answer comes back asynchronously.
+                            null
+                        } else if (isLastPage) {
                             val action =
                                 when (type) {
                                     OnboardingType.PREMIUM_GUIDE -> {
@@ -296,7 +299,12 @@ class OnboardingStateMapper
                         }
 
                     val secondaryButton =
-                        if (isLastPage) {
+                        if (isKeyOnboarding && isLastPage) {
+                            OnboardingButton(
+                                stringResourceHelper.getString(R.string.api_key_setup_open_studio),
+                                OnboardingAction.OpenUrl(AI_STUDIO_URL),
+                            )
+                        } else if (isLastPage) {
                             when (type) {
                                 OnboardingType.PREMIUM_GUIDE -> {
                                     OnboardingButton(
@@ -326,32 +334,16 @@ class OnboardingStateMapper
                     OnboardingUiPage(
                         background = background,
                         content = {
-                            OnboardingStandardContent(page)
+                            if (isKeyOnboarding && isLastPage) {
+                                ApiKeyInputContent(page)
+                            } else {
+                                OnboardingStandardContent(page)
+                            }
                         },
                         primaryButton = primaryButton,
                         secondaryButton = secondaryButton,
                     )
                 }
 
-            // The key field is a page like any other — the type carries a composable, not a title
-            // and a paragraph. Appending it here rather than asking Remote Config to describe it
-            // keeps the copy free to change without someone having to remember that the last entry
-            // is load-bearing. It carries no buttons: the field owns its own submit, because only
-            // it knows whether what was typed is worth sending.
-            return if (type == OnboardingType.API_KEY_SETUP) {
-                copyPages +
-                    OnboardingUiPage(
-                        background = { SparkBackground() },
-                        content = { ApiKeyInputContent() },
-                        primaryButton = null,
-                        secondaryButton =
-                            OnboardingButton(
-                                stringResourceHelper.getString(R.string.api_key_setup_open_studio),
-                                OnboardingAction.OpenUrl(AI_STUDIO_URL),
-                            ),
-                    )
-            } else {
-                copyPages
-            }
         }
     }

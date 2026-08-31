@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.onboarding.data.model.OnboardingPage
 import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
 import com.ilustris.sagai.ui.components.AutoResizeTextField
 
@@ -52,10 +53,9 @@ const val AI_STUDIO_URL = "https://aistudio.google.com/apikey"
  * was typed is worth sending, and the answer arrives asynchronously.
  */
 @Composable
-fun ApiKeyInputContent() {
+fun ApiKeyInputContent(page: OnboardingPage) {
     val viewModel: ApiKeySetupViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val isMigration by viewModel.isMigration.collectAsStateWithLifecycle()
 
     var apiKey by remember { mutableStateOf("") }
 
@@ -67,9 +67,7 @@ fun ApiKeyInputContent() {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            stringResource(
-                if (isMigration) R.string.api_key_migration_title else R.string.api_key_setup_title,
-            ),
+            page.title,
             style =
                 MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,

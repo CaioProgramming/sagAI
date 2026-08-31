@@ -6,7 +6,6 @@ import com.ilustris.sagai.core.ai.key.ApiKeyDiagnosis
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.key.classifyApiKeyFailure
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.data.model.OnboardingContent
@@ -43,7 +42,6 @@ class ApiKeySetupViewModel
     constructor(
         private val userApiKeyStore: UserApiKeyStore,
         private val geminiApiClient: GeminiApiClient,
-        private val dataStorePreferences: DataStorePreferences,
         private val userIdentityUseCase: UserIdentityUseCase,
         private val onboardingUseCase: OnboardingUseCase,
     ) : ViewModel() {
@@ -68,13 +66,6 @@ class ApiKeySetupViewModel
             _uiState.value = ApiKeySetupUiState.Idle
         }
 
-        /**
-         * Whether this install has been through the app before, which decides between the
-         * first-run pitch and the "Sagas changed" migration copy. Anyone who got as far as the
-         * name prompt already has sagas worth reassuring them about.
-         */
-        private val _isMigration = MutableStateFlow(false)
-        val isMigration: StateFlow<Boolean> = _isMigration.asStateFlow()
 
         /**
          * Ask for a name before asking for a key.
@@ -89,8 +80,6 @@ class ApiKeySetupViewModel
 
         init {
             viewModelScope.launch {
-                _isMigration.value =
-                    dataStorePreferences.getBooleanNow("user_name_prompt_seen", false)
                 _needsName.value = userIdentityUseCase.shouldPromptName()
             }
         }
