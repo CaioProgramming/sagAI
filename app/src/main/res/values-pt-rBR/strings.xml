@@ -967,8 +967,6 @@
     <string name="api_key_setup_error_network">Não deu para falar com o Google para conferir a chave. Verifique sua conexão e tente de novo.</string>
 
     <!-- BYOK: migração de instalações existentes -->
-    <string name="api_key_migration_title">O Sagas mudou como se conecta à IA</string>
-    <string name="api_key_migration_body">Suas sagas, personagens e capítulos continuam aqui — nada foi perdido. Desta versão em diante o Sagas roda com uma chave de API do Gemini que é sua, para o app seguir gratuito e suas histórias seguirem suas. Adicione sua chave para retomar de onde parou.</string>
 
     <!-- BYOK: ajustes -->
     <string name="api_key_settings_section">Chave de API</string>
@@ -980,15 +978,15 @@
     <string name="api_key_settings_quota_active">Limite diário atingido em %1$s. Volta às %2$s.</string>
 
     <!-- BYOK: aviso de cota nas telas de geração -->
-    <string name="quota_cooldown_reasoning">Limite por minuto da sua chave — retomando em %1$s</string>
+    <string name="quota_cooldown_reasoning">Limite por minuto da sua chave. Retomando em %1$s</string>
     <string name="quota_daily_notice_title">Limite diário da sua chave atingido</string>
     <string name="quota_daily_notice_message">Novas gerações voltam às %1$s. Suas sagas continuam legíveis enquanto isso.</string>
     <string name="feature_needs_billing_title">Gerar imagem exige projeto Google pago</string>
-    <string name="feature_needs_billing_message">O Google não inclui geração de imagem no free tier do Gemini — nenhum modelo de imagem está disponível lá. Sua chave continua escrevendo a história normalmente; as ilustrações precisam de faturamento ativo no projeto do Google Cloud dela.</string>
+    <string name="feature_needs_billing_message">Gerar imagem não faz parte do plano gratuito, então nenhum modelo de imagem funciona nele. Sua chave continua escrevendo a história normalmente. As ilustrações precisam de faturamento ativo no seu projeto.</string>
     <string name="api_key_learn_more">Ver seus limites de uso</string>
     <!-- BYOK: painel de uso -->
     <string name="api_usage_title">Uso de hoje</string>
-    <string name="api_usage_disclaimer">Estimativa do que este app usou. Chamadas feitas com a mesma chave em outros lugares não entram na conta, e os limites mostrados são os do plano gratuito — se você ativou faturamento no seu projeto, os seus são maiores.</string>
+    <string name="api_usage_disclaimer">Estimativa do que este app usou. Chamadas feitas com a mesma chave em outros lugares não entram na conta. Os limites mostrados são os do plano gratuito, então se você ativou faturamento no seu projeto, os seus são maiores.</string>
     <string name="api_usage_requests">%1$d de ~%2$d requisições</string>
     <string name="api_usage_requests_unknown">%1$d requisições</string>
     <string name="api_usage_tokens">%1$s tokens · %2$s de raciocínio</string>

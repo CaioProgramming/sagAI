@@ -99,7 +99,7 @@ fun ApiKeyInputContent(page: OnboardingPage) {
                     modifier = Modifier.fillMaxWidth(),
                 )
             },
-            maxLines = 1,
+            maxLines = 2,
             enabled = uiState !is ApiKeySetupUiState.Validating,
             keyboardOptions =
                 KeyboardOptions(
