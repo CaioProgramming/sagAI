@@ -29,7 +29,6 @@ interface HomeUseCase {
 
     suspend fun autoBackup(): RequestResult<Unit>
 
-    fun canCreateNewSaga(activeSagaCount: Int): Boolean
 
     fun filterVisibleSagas(
         sagas: List<com.ilustris.sagai.features.home.data.model.SagaSummary>,

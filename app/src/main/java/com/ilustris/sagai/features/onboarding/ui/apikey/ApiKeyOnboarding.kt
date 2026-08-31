@@ -2,34 +2,33 @@ package com.ilustris.sagai.features.onboarding.ui.apikey
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -54,11 +53,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.data.model.OnboardingPage
-import com.ilustris.sagai.features.onboarding.ui.OnboardingStandardContent
-import com.ilustris.sagai.features.onboarding.ui.SparkBackground
 import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.holographicGradient
 import kotlinx.coroutines.launch
 
 private const val AI_STUDIO_URL = "https://aistudio.google.com/apikey"
@@ -77,6 +72,7 @@ private const val AI_STUDIO_URL = "https://aistudio.google.com/apikey"
  * @param dismissible false while the app is gated on a missing key — there is nowhere to dismiss
  *   to. True when opened from settings or the help button.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ApiKeyOnboarding(
     type: OnboardingType = OnboardingType.API_KEY_SETUP,
@@ -109,31 +105,42 @@ fun ApiKeyOnboarding(
     val pageCount = explanatoryPages.size + 1
     val pagerState = rememberPagerState { pageCount }
     val scope = rememberCoroutineScope()
+    val isKeyPage = pagerState.currentPage == pageCount - 1
 
-    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) {
-            SparkBackground(colors = holographicGradient)
-        }
-
+    ModalBottomSheet(
+        onDismissRequest = { if (dismissible) onFinished() },
+        sheetState =
+            rememberModalBottomSheetState(
+                // A sheet the user cannot dismiss must also refuse the drag, or it animates
+                // halfway down and springs back — which reads as the app fighting them.
+                confirmValueChange = { dismissible || it != SheetValue.Hidden },
+            ),
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        dragHandle = if (dismissible) ({ BottomSheetDefaults.DragHandle() }) else null,
+        modifier = modifier,
+    ) {
         Column(
             modifier =
                 Modifier
-                    .background(fadeGradientBottom())
-                    .fillMaxSize()
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
+                    .fillMaxWidth()
                     .imePadding()
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 8.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Bottom,
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            // Dots above the content, not under the button: they say where you are, so they belong
+            // with the thing that changes, not with the action.
+            PagerDots(current = pagerState.currentPage, total = pageCount)
+
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
             ) { index ->
                 if (index < explanatoryPages.size) {
-                    OnboardingStandardContent(explanatoryPages[index])
+                    ExplanatoryPage(explanatoryPages[index])
                 } else {
                     ApiKeyPage(
                         isMigration = isMigration,
@@ -144,35 +151,46 @@ fun ApiKeyOnboarding(
                 }
             }
 
-            PagerDots(current = pagerState.currentPage, total = pageCount)
-
-            Spacer(Modifier.height(16.dp))
-
-            AnimatedVisibility(
-                visible = pagerState.currentPage < explanatoryPages.size,
-                enter = fadeIn(),
-                exit = fadeOut(),
-            ) {
+            if (!isKeyPage) {
                 Button(
                     onClick = {
-                        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                        scope.launch {
+                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                        }
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                        ),
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = MaterialTheme.shapes.large,
                 ) {
                     Text(stringResource(R.string.api_key_onboarding_next))
                 }
             }
-
-            if (dismissible) {
-                TextButton(onClick = onFinished) {
-                    Text(stringResource(R.string.guardrail_dismiss))
-                }
-            }
         }
+    }
+}
+
+/** One idea, centred, with room to breathe. The pitch is short on purpose. */
+@Composable
+private fun ExplanatoryPage(page: OnboardingPage) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            page.title,
+            style =
+                MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                ),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            page.description,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

@@ -128,11 +128,6 @@ class HomeUseCaseImpl
                 }
             }
 
-        override fun canCreateNewSaga(activeSagaCount: Int): Boolean {
-            if (BuildConfig.DEBUG) return true
-            return activeSagaCount <= FREE_ACTIVE_SAGA_LIMIT || isPremium()
-        }
-
         override fun filterVisibleSagas(
             sagas: List<com.ilustris.sagai.features.home.data.model.SagaSummary>,
             includeDebugSagas: Boolean,
@@ -150,7 +145,5 @@ class HomeUseCaseImpl
 
         override fun isPremium(): Boolean = billingState.value is BillingService.BillingState.SignatureEnabled
 
-        companion object {
-            private const val FREE_ACTIVE_SAGA_LIMIT = 3
-        }
+
     }
