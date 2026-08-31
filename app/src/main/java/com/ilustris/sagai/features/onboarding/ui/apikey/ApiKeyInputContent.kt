@@ -105,6 +105,7 @@ fun ApiKeyInputContent(page: OnboardingPage) {
             isValidating = uiState is ApiKeySetupUiState.Validating,
             isError = uiState.errorMessage() != null,
             onPaste = { clipboard.getText()?.text?.trim()?.let { pasted -> apiKey = pasted } },
+            placeholder = stringResource(R.string.api_key_setup_field_label),
         )
 
         if (pastedFromClipboard && uiState.errorMessage() == null) {
@@ -203,6 +204,7 @@ fun ApiKeyField(
     isValidating: Boolean,
     isError: Boolean,
     onPaste: () -> Unit,
+    placeholder: String,
 ) {
     // A plain field in a filled box rather than the app's centred, auto-sizing style. A key
     // is one long unbroken token: shrinking the text to make it fit turns it illegible at
@@ -231,8 +233,11 @@ fun ApiKeyField(
             onValueChange = onValueChange,
             placeholder = {
                 Text(
-                    stringResource(R.string.api_key_setup_field_label),
-                    style = MaterialTheme.typography.bodyMedium,
+                    placeholder,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = FontFamily.Monospace,
+                        ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             },

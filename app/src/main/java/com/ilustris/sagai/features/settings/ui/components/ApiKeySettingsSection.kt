@@ -66,7 +66,6 @@ class ApiKeySettingsViewModel
         private val _maskedKey = MutableStateFlow("")
         val maskedKey: StateFlow<String> = _maskedKey.asStateFlow()
 
-
         val quotaStatus: StateFlow<QuotaStatus> =
             quotaStatusService.status.stateIn(
                 scope = viewModelScope,
@@ -84,8 +83,6 @@ class ApiKeySettingsViewModel
                 }
             }
         }
-
-
 
         private fun String.mask(): String = if (length <= 12) "••••••" else "${take(4)}••••••${takeLast(4)}"
     }
@@ -107,21 +104,20 @@ fun ApiKeySettingsSection(
     val quotaStatus by viewModel.quotaStatus.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-
     Column(
         modifier =
             modifier
                 .clickable {
                     onReplaceKey()
                 }.fillMaxWidth()
-                .padding(8.dp),
+                .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(
                 painterResource(R.drawable.ic_key),
                 stringResource(R.string.api_key_settings_section),
-                modifier = Modifier.size(24.dp).alpha(.5f),
+                modifier = Modifier.size(12.dp).alpha(.5f),
             )
             Text(
                 maskedKey,
@@ -146,6 +142,5 @@ fun ApiKeySettingsSection(
                 color = MaterialTheme.colorScheme.secondary,
             )
         }
-
     }
 }

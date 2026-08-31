@@ -50,12 +50,14 @@ fun ApiKeyManageSheet(onDismiss: () -> Unit) {
     val viewModel: ApiKeySetupViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val clipboard = LocalClipboardManager.current
+    val currentMaskedKey by viewModel.currentMaskedKey.collectAsStateWithLifecycle()
 
     var apiKey by remember { mutableStateOf("") }
     var confirmingRemoval by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.prepareForEntry()
+        viewModel.observeCurrentKey()
         viewModel.keySaved.collect { onDismiss() }
     }
 
@@ -90,6 +92,10 @@ fun ApiKeyManageSheet(onDismiss: () -> Unit) {
                 isValidating = uiState is ApiKeySetupUiState.Validating,
                 isError = uiState.errorMessage() != null,
                 onPaste = { clipboard.getText()?.text?.trim()?.let { pasted -> apiKey = pasted } },
+                placeholder =
+                    currentMaskedKey.ifEmpty {
+                        stringResource(R.string.api_key_setup_field_label)
+                    },
             )
 
             uiState.errorMessage()?.let {
@@ -105,6 +111,7 @@ fun ApiKeyManageSheet(onDismiss: () -> Unit) {
                 onClick = { viewModel.submit(apiKey) },
                 enabled = apiKey.isNotBlank() && uiState !is ApiKeySetupUiState.Validating,
                 modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
             ) {
                 if (uiState is ApiKeySetupUiState.Validating) {
                     CircularProgressIndicator(

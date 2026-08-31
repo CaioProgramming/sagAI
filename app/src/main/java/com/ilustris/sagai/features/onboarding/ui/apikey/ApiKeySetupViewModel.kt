@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.onboarding.ui.apikey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.key.ApiKeyDiagnosis
+import com.ilustris.sagai.core.ai.key.ApiKeyShape
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.key.classifyApiKeyFailure
 import com.ilustris.sagai.core.data.executeRequest
@@ -93,6 +94,15 @@ class ApiKeySetupViewModel
         private val _pages = MutableStateFlow<OnboardingContent>(OnboardingContent())
         val pages: StateFlow<OnboardingContent> = _pages.asStateFlow()
 
+        fun observeCurrentKey() {
+            viewModelScope.launch {
+                userApiKeyStore.observeState().collect {
+                    _currentMaskedKey.value =
+                        userApiKeyStore.getKeyNow()?.let(ApiKeyShape::mask).orEmpty()
+                }
+            }
+        }
+
         fun loadPages() {
             viewModelScope.launch {
                 onboardingUseCase
@@ -148,6 +158,13 @@ class ApiKeySetupViewModel
                 }
             }
         }
+
+        /**
+         * The stored key, masked. Shown as the field's placeholder rather than as its value: the
+         * mask is not a key, and putting it in the field would let it be saved as one.
+         */
+        private val _currentMaskedKey = MutableStateFlow("")
+        val currentMaskedKey: StateFlow<String> = _currentMaskedKey.asStateFlow()
 
         fun removeKey() {
             viewModelScope.launch {
