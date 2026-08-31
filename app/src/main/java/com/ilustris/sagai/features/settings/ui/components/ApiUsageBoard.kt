@@ -91,23 +91,6 @@ fun ApiUsageBoard(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxWidth().padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                stringResource(R.string.api_usage_title),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                stringResource(R.string.api_usage_reset_relative, rememberTimeUntilPacificMidnight()),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f),
-            )
-        }
-
         if (usage.isEmpty()) {
             Text(
                 stringResource(R.string.api_usage_empty),
@@ -176,7 +159,7 @@ fun ApiUsageBoard(modifier: Modifier = Modifier) {
  * while a duration is always unambiguous and needs no timezone explanation.
  */
 @Composable
-private fun rememberTimeUntilPacificMidnight(): String {
+fun rememberTimeUntilPacificMidnight(): String {
     val pacific = ZoneId.of("America/Los_Angeles")
     val now = ZonedDateTime.now(pacific)
     val reset = now.toLocalDate().plusDays(1).atStartOfDay(pacific)

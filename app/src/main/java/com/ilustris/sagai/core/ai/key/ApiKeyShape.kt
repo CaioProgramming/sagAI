@@ -17,6 +17,19 @@ object ApiKeyShape {
     private const val MIN_LENGTH = 30
     private const val MAX_LENGTH = 200
     private const val EXTRA_KEY_CHARS = "-_."
+    private const val MASKABLE_MIN_LENGTH = 12
+    private const val MASK = "••••••"
+
+    /**
+     * How a key is shown to the person who owns it: enough of both ends to recognise which key
+     * this is, never enough to use it. Shared so the settings row and the input field cannot drift
+     * into showing the same secret two different ways.
+     */
+    fun mask(key: String): String =
+        if (key.length <= MASKABLE_MIN_LENGTH) MASK else "${key.take(4)}$MASK${key.takeLast(4)}"
+
+    /** Below this a key is too short to reveal any of it. */
+    fun isMaskable(key: String): Boolean = key.length > MASKABLE_MIN_LENGTH
 
     fun looksLikeKey(candidate: String?): Boolean {
         val text = candidate?.trim().orEmpty()

@@ -416,7 +416,7 @@ fun SparkBackground(
 @Composable
 fun StarfieldBackground() {
     StarryTextPlaceholder(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().reactiveShimmer(true),
         starColor = MaterialTheme.colorScheme.onBackground,
     )
 }

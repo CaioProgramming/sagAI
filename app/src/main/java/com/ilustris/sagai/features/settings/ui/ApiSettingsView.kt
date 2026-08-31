@@ -38,6 +38,7 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
 import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
 import com.ilustris.sagai.features.settings.ui.components.ApiKeySettingsSection
 import com.ilustris.sagai.features.settings.ui.components.ApiUsageBoard
+import com.ilustris.sagai.features.settings.ui.components.rememberTimeUntilPacificMidnight
 
 /**
  * Everything about the user's key on one screen, out of Settings.
@@ -101,7 +102,17 @@ fun ApiSettingsView(
             }
 
             item {
-                ApiUsageBoard(
+                Text(
+                    stringResource(R.string.api_key_settings_section),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            item {
+                ApiKeySettingsSection(
+                    onReplaceKey = { showApiKeySetup = true },
                     modifier =
                         Modifier.background(
                             MaterialTheme.colorScheme.surfaceContainer,
@@ -111,8 +122,26 @@ fun ApiSettingsView(
             }
 
             item {
-                ApiKeySettingsSection(
-                    onReplaceKey = { showApiKeySetup = true },
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        stringResource(R.string.api_usage_title),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Text(
+                        stringResource(R.string.api_usage_reset_relative, rememberTimeUntilPacificMidnight()),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f),
+                    )
+                }
+            }
+
+            item {
+                ApiUsageBoard(
                     modifier =
                         Modifier.background(
                             MaterialTheme.colorScheme.surfaceContainer,

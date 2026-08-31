@@ -89,261 +89,256 @@ class OnboardingStateMapper
             val isKeyOnboarding = type == OnboardingType.API_KEY_SETUP
 
             return content.pages.mapIndexed { index, page ->
-                    val isLastPage = index == content.pages.size - 1
-                    val mascotUrl =
+                val isLastPage = index == content.pages.size - 1
+                val mascotUrl =
+                    when (type) {
+                        OnboardingType.APP_INTRO -> {
+                            if (index == 0) mascotDesigns["default"] else null
+                        }
+
+                        OnboardingType.GAMEPLAY_GUIDE -> {
+                            if (index == 0) {
+                                mascotDesigns[
+                                    saga?.genre?.name?.lowercase()
+                                        ?: "default",
+                                ]
+                            } else {
+                                null
+                            }
+                        }
+
+                        else -> {
+                            null
+                        }
+                    }
+                val background: @Composable () -> Unit =
+                    when (type) {
+                        OnboardingType.API_KEY_SETUP -> {
+                            when (index) {
+                                0 -> {
+                                    {
+                                        Box(
+                                            Modifier.fillMaxSize().background(
+                                                Brush.verticalGradient(
+                                                    morphingGradient(),
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                }
+
+                                1 -> {
+                                    { MorphingGenresBackground(visualConfigs = genreConfigs) }
+                                }
+
+                                2 -> {
+                                    { MorphingAvatarBackground(iconsAssets.map { it.image }) }
+                                }
+
+                                else -> {
+                                    {
+                                        StarfieldBackground()
+                                    }
+                                }
+                            }
+                        }
+
+                        OnboardingType.APP_INTRO -> {
+                            when (index) {
+                                0 -> {
+                                    { OnboardingMascotContent(mascotUrl) }
+                                }
+
+                                1 -> {
+                                    { FluidGradient(holographicGradient) }
+                                }
+
+                                2 -> {
+                                    { StackedCardsBackground(assets = storyAssets) }
+                                }
+
+                                else -> {
+                                    { SparkBackground() }
+                                }
+                            }
+                        }
+
+                        OnboardingType.CREATION_GUIDE -> {
+                            when (index) {
+                                0 -> {
+                                    { MorphingGenresBackground(visualConfigs = genreConfigs) }
+                                }
+
+                                1 -> {
+                                    { StackedCardsBackground(assets = storyAssets) }
+                                }
+
+                                2 -> {
+                                    { MorphingAvatarBackground(iconsAssets.map { it.image }) }
+                                }
+
+                                else -> {
+                                    { SparkBackground(holographicGradient) }
+                                }
+                            }
+                        }
+
+                        OnboardingType.GAMEPLAY_GUIDE -> {
+                            val genreConfig = saga?.genre?.let { genreConfigs[it] }
+                            val colors =
+                                genreConfig
+                                    ?.colorPalette
+                                    ?.mapNotNull { it.hexToColor() }
+                                    ?.ifEmpty { holographicGradient } ?: holographicGradient
+                            when (index) {
+                                0 -> {
+                                    {
+                                        OnboardingMascotContent(
+                                            mascotUrl,
+                                            saga?.genre,
+                                            genreConfig?.primaryColor?.hexToColor(),
+                                        )
+                                    }
+                                }
+
+                                1 -> {
+                                    { FluidGradient(colors = colors) }
+                                }
+
+                                else -> {
+                                    {
+                                        SparkBackground(colors, saga?.genre?.icon)
+                                    }
+                                }
+                            }
+                        }
+
+                        OnboardingType.PREMIUM_GUIDE -> {
+                            when (index) {
+                                0 -> {
+                                    { PremiumBackground() }
+                                }
+
+                                1 -> {
+                                    { StackedCardsBackground(assets = storyAssets) }
+                                }
+
+                                else -> {
+                                    { MorphingGenresBackground(visualConfigs = genreConfigs) }
+                                }
+                            }
+                        }
+                    }
+
+                val primaryButton =
+                    if (isKeyOnboarding && isLastPage) {
+                        // The field owns its own submit: only it knows whether what was typed
+                        // is worth sending, and the answer comes back asynchronously.
+                        null
+                    } else if (isLastPage) {
+                        val action =
+                            when (type) {
+                                OnboardingType.PREMIUM_GUIDE -> {
+                                    val product =
+                                        (billingService.state.value as? BillingService.BillingState.SignatureDisabled)
+                                            ?.products
+                                            ?.firstOrNull()
+                                    OnboardingAction.Subscribe(product?.productId ?: "")
+                                }
+
+                                else -> {
+                                    OnboardingAction.Dismiss
+                                }
+                            }
+                        val text =
+                            when (type) {
+                                OnboardingType.API_KEY_SETUP -> {
+                                    stringResourceHelper.getString(R.string.onboarding_finish)
+                                }
+
+                                OnboardingType.APP_INTRO -> {
+                                    stringResourceHelper.getString(R.string.onboarding_finish)
+                                }
+
+                                OnboardingType.CREATION_GUIDE -> {
+                                    stringResourceHelper.getString(R.string.onboarding_creation_guide_finish)
+                                }
+
+                                OnboardingType.GAMEPLAY_GUIDE -> {
+                                    stringResourceHelper.getString(R.string.onboarding_gameplay_guide_finish)
+                                }
+
+                                OnboardingType.PREMIUM_GUIDE -> {
+                                    val price =
+                                        (billingService.state.value as? BillingService.BillingState.SignatureDisabled)
+                                            ?.products
+                                            ?.firstOrNull()
+                                            ?.subscriptionOfferDetails
+                                            ?.firstOrNull()
+                                            ?.pricingPhases
+                                            ?.pricingPhaseList
+                                            ?.firstOrNull()
+                                            ?.formattedPrice
+                                    if (price.isNullOrBlank() && BuildConfig.DEBUG) {
+                                        stringResourceHelper.getString(R.string.subscribe_debug_fallback)
+                                    } else {
+                                        "${stringResourceHelper.getString(R.string.subscribe)} ${price.orEmpty()}"
+                                    }
+                                }
+                            }
+                        OnboardingButton(text, action)
+                    } else {
+                        OnboardingButton(
+                            stringResourceHelper.getString(R.string.continue_text),
+                            OnboardingAction.Next,
+                        )
+                    }
+
+                val secondaryButton =
+                    if (isKeyOnboarding && isLastPage) {
+                        OnboardingButton(
+                            stringResourceHelper.getString(R.string.api_key_setup_open_studio),
+                            OnboardingAction.OpenUrl(AI_STUDIO_URL),
+                        )
+                    } else if (isLastPage) {
                         when (type) {
-                            OnboardingType.APP_INTRO -> {
-                                if (index == 0) mascotDesigns["default"] else null
+                            OnboardingType.PREMIUM_GUIDE -> {
+                                OnboardingButton(
+                                    stringResourceHelper.getString(R.string.premium_not_now),
+                                    OnboardingAction.Dismiss,
+                                )
                             }
 
                             OnboardingType.GAMEPLAY_GUIDE -> {
-                                if (index == 0) {
-                                    mascotDesigns[
-                                        saga?.genre?.name?.lowercase()
-                                            ?: "default",
-                                    ]
-                                } else {
-                                    null
-                                }
+                                OnboardingButton(
+                                    stringResourceHelper.getString(R.string.onboarding_dont_show_again),
+                                    OnboardingAction.DeactivateTutorials,
+                                )
                             }
 
                             else -> {
                                 null
                             }
                         }
-                    val background: @Composable () -> Unit =
-                        when (type) {
-                            OnboardingType.API_KEY_SETUP -> {
-                                when (index) {
-                                    0 -> {
-                                        {
-                                            Box(
-                                                Modifier.fillMaxSize().background(
-                                                    Brush.verticalGradient(
-                                                        morphingGradient(),
-                                                    ),
-                                                ),
-                                            )
-                                        }
-                                    }
+                    } else {
+                        OnboardingButton(
+                            stringResourceHelper.getString(R.string.onboarding_skip),
+                            OnboardingAction.Skip,
+                        )
+                    }
 
-                                    1 -> {
-                                        { StarryTextPlaceholder(Modifier.fillMaxSize().reactiveShimmer(true)) }
-                                    }
-
-                                    2 -> {
-                                        { StackedCardsBackground(assets = storyAssets) }
-                                    }
-
-                                    else -> {
-                                        {
-                                            Box(
-                                                Modifier.fillMaxSize().background(
-                                                    fadeGradientBottom(morphingColor(holographicGradient)),
-                                                ),
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            OnboardingType.APP_INTRO -> {
-                                when (index) {
-                                    0 -> {
-                                        { OnboardingMascotContent(mascotUrl) }
-                                    }
-
-                                    1 -> {
-                                        { FluidGradient(holographicGradient) }
-                                    }
-
-                                    2 -> {
-                                        { StackedCardsBackground(assets = storyAssets) }
-                                    }
-
-                                    else -> {
-                                        { SparkBackground() }
-                                    }
-                                }
-                            }
-
-                            OnboardingType.CREATION_GUIDE -> {
-                                when (index) {
-                                    0 -> {
-                                        { MorphingGenresBackground(visualConfigs = genreConfigs) }
-                                    }
-
-                                    1 -> {
-                                        { StackedCardsBackground(assets = storyAssets) }
-                                    }
-
-                                    2 -> {
-                                        { MorphingAvatarBackground(iconsAssets.map { it.image }) }
-                                    }
-
-                                    else -> {
-                                        { SparkBackground(holographicGradient) }
-                                    }
-                                }
-                            }
-
-                            OnboardingType.GAMEPLAY_GUIDE -> {
-                                val genreConfig = saga?.genre?.let { genreConfigs[it] }
-                                val colors =
-                                    genreConfig
-                                        ?.colorPalette
-                                        ?.mapNotNull { it.hexToColor() }
-                                        ?.ifEmpty { holographicGradient } ?: holographicGradient
-                                when (index) {
-                                    0 -> {
-                                        {
-                                            OnboardingMascotContent(
-                                                mascotUrl,
-                                                saga?.genre,
-                                                genreConfig?.primaryColor?.hexToColor(),
-                                            )
-                                        }
-                                    }
-
-                                    1 -> {
-                                        { FluidGradient(colors = colors) }
-                                    }
-
-                                    else -> {
-                                        {
-                                            SparkBackground(colors, saga?.genre?.icon)
-                                        }
-                                    }
-                                }
-                            }
-
-                            OnboardingType.PREMIUM_GUIDE -> {
-                                when (index) {
-                                    0 -> {
-                                        { PremiumBackground() }
-                                    }
-
-                                    1 -> {
-                                        { StackedCardsBackground(assets = storyAssets) }
-                                    }
-
-                                    else -> {
-                                        { MorphingGenresBackground(visualConfigs = genreConfigs) }
-                                    }
-                                }
-                            }
-                        }
-
-                    val primaryButton =
+                OnboardingUiPage(
+                    background = background,
+                    content = {
                         if (isKeyOnboarding && isLastPage) {
-                            // The field owns its own submit: only it knows whether what was typed
-                            // is worth sending, and the answer comes back asynchronously.
-                            null
-                        } else if (isLastPage) {
-                            val action =
-                                when (type) {
-                                    OnboardingType.PREMIUM_GUIDE -> {
-                                        val product =
-                                            (billingService.state.value as? BillingService.BillingState.SignatureDisabled)
-                                                ?.products
-                                                ?.firstOrNull()
-                                        OnboardingAction.Subscribe(product?.productId ?: "")
-                                    }
-
-                                    else -> {
-                                        OnboardingAction.Dismiss
-                                    }
-                                }
-                            val text =
-                                when (type) {
-                                    OnboardingType.API_KEY_SETUP -> {
-                                        stringResourceHelper.getString(R.string.onboarding_finish)
-                                    }
-
-                                    OnboardingType.APP_INTRO -> {
-                                        stringResourceHelper.getString(R.string.onboarding_finish)
-                                    }
-
-                                    OnboardingType.CREATION_GUIDE -> {
-                                        stringResourceHelper.getString(R.string.onboarding_creation_guide_finish)
-                                    }
-
-                                    OnboardingType.GAMEPLAY_GUIDE -> {
-                                        stringResourceHelper.getString(R.string.onboarding_gameplay_guide_finish)
-                                    }
-
-                                    OnboardingType.PREMIUM_GUIDE -> {
-                                        val price =
-                                            (billingService.state.value as? BillingService.BillingState.SignatureDisabled)
-                                                ?.products
-                                                ?.firstOrNull()
-                                                ?.subscriptionOfferDetails
-                                                ?.firstOrNull()
-                                                ?.pricingPhases
-                                                ?.pricingPhaseList
-                                                ?.firstOrNull()
-                                                ?.formattedPrice
-                                        if (price.isNullOrBlank() && BuildConfig.DEBUG) {
-                                            stringResourceHelper.getString(R.string.subscribe_debug_fallback)
-                                        } else {
-                                            "${stringResourceHelper.getString(R.string.subscribe)} ${price.orEmpty()}"
-                                        }
-                                    }
-                                }
-                            OnboardingButton(text, action)
+                            ApiKeyInputContent(page)
                         } else {
-                            OnboardingButton(
-                                stringResourceHelper.getString(R.string.continue_text),
-                                OnboardingAction.Next,
-                            )
+                            OnboardingStandardContent(page)
                         }
-
-                    val secondaryButton =
-                        if (isKeyOnboarding && isLastPage) {
-                            OnboardingButton(
-                                stringResourceHelper.getString(R.string.api_key_setup_open_studio),
-                                OnboardingAction.OpenUrl(AI_STUDIO_URL),
-                            )
-                        } else if (isLastPage) {
-                            when (type) {
-                                OnboardingType.PREMIUM_GUIDE -> {
-                                    OnboardingButton(
-                                        stringResourceHelper.getString(R.string.premium_not_now),
-                                        OnboardingAction.Dismiss,
-                                    )
-                                }
-
-                                OnboardingType.GAMEPLAY_GUIDE -> {
-                                    OnboardingButton(
-                                        stringResourceHelper.getString(R.string.onboarding_dont_show_again),
-                                        OnboardingAction.DeactivateTutorials,
-                                    )
-                                }
-
-                                else -> {
-                                    null
-                                }
-                            }
-                        } else {
-                            OnboardingButton(
-                                stringResourceHelper.getString(R.string.onboarding_skip),
-                                OnboardingAction.Skip,
-                            )
-                        }
-
-                    OnboardingUiPage(
-                        background = background,
-                        content = {
-                            if (isKeyOnboarding && isLastPage) {
-                                ApiKeyInputContent(page)
-                            } else {
-                                OnboardingStandardContent(page)
-                            }
-                        },
-                        primaryButton = primaryButton,
-                        secondaryButton = secondaryButton,
-                    )
-                }
-
+                    },
+                    primaryButton = primaryButton,
+                    secondaryButton = secondaryButton,
+                )
+            }
         }
     }
