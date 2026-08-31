@@ -7,16 +7,14 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 
@@ -36,20 +34,38 @@ fun AutoResizeTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     cursorColor: Color = LocalContentColor.current
 ) {
-    var targetFontSize by remember(textStyle) { mutableStateOf(textStyle.fontSize) }
+    val textMeasurer = rememberTextMeasurer()
+    var containerWidth by remember { mutableStateOf(0) }
+    var targetFontSize by remember(textStyle.fontSize) { mutableStateOf(textStyle.fontSize) }
 
-    // Quando o texto muda, resetamos o alvo para o tamanho máximo para que ele possa "crescer" se houver espaço
-    val lastValue = remember { mutableStateOf(value) }
-    if (value != lastValue.value) {
-        targetFontSize = textStyle.fontSize
-        lastValue.value = value
+    // Calculamos o tamanho ideal baseado na largura real do componente
+    LaunchedEffect(value, containerWidth, textStyle) {
+        if (containerWidth > 0 && value.isNotEmpty()) {
+            val measuredWidth = textMeasurer.measure(
+                text = value,
+                style = textStyle,
+                maxLines = 1,
+                softWrap = false
+            ).size.width
+
+            if (measuredWidth > containerWidth) {
+                // Calcula a proporção necessária para caber
+                val ratio = containerWidth.toFloat() / measuredWidth.toFloat()
+                val newSize = (textStyle.fontSize.value * ratio).sp
+                targetFontSize = if (newSize < minFontSize) minFontSize else newSize
+            } else {
+                targetFontSize = textStyle.fontSize
+            }
+        } else {
+            targetFontSize = textStyle.fontSize
+        }
     }
 
     val animatedFontSize by animateFloatAsState(
         targetValue = targetFontSize.value,
         animationSpec = spring(
-            dampingRatio = 0.8f,
-            stiffness = 500f // Um pouco mais rápido para acompanhar a digitação
+            dampingRatio = 0.9f,
+            stiffness = 1000f
         ),
         label = "FontSizeAnimation"
     )
@@ -57,24 +73,16 @@ fun AutoResizeTextField(
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier,
+        modifier = modifier.onSizeChanged { containerWidth = it.width },
         textStyle = textStyle.copy(fontSize = animatedFontSize.sp),
         maxLines = maxLines,
+        singleLine = true,
         enabled = enabled,
         readOnly = readOnly,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         visualTransformation = visualTransformation,
         cursorBrush = SolidColor(cursorColor),
-        onTextLayout = { textLayoutResult ->
-            // Se o texto transbordar usando o tamanho atual (animado ou alvo),
-            // reduzimos o tamanho do ALVO.
-            if (textLayoutResult.didOverflowHeight || textLayoutResult.didOverflowWidth) {
-                if (targetFontSize > minFontSize) {
-                    targetFontSize = (targetFontSize.value - 1f).sp
-                }
-            }
-        },
         decorationBox = { innerTextField ->
             Box {
                 if (value.isEmpty() && placeholder != null) {

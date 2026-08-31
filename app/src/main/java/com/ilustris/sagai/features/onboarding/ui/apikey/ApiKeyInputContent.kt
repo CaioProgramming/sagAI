@@ -4,11 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
+import com.ilustris.sagai.ui.components.AutoResizeTextField
 
 /** Where a Gemini key is created. Used by the onboarding page's secondary button. */
 const val AI_STUDIO_URL = "https://aistudio.google.com/apikey"
@@ -75,36 +78,37 @@ fun ApiKeyInputContent() {
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        TextField(
+        AutoResizeTextField(
             value = apiKey,
             onValueChange = {
                 apiKey = it
                 viewModel.resetError()
             },
+            textStyle =
+                MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                ),
             placeholder = {
                 Text(
                     stringResource(R.string.api_key_setup_field_label),
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            textAlign = TextAlign.Center,
+                        ),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             },
-            singleLine = true,
+            maxLines = 1,
             enabled = uiState !is ApiKeySetupUiState.Validating,
-            isError = uiState.errorMessage() != null,
             keyboardOptions =
                 KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done,
                 ),
             modifier = Modifier.fillMaxWidth(),
-            colors =
-                TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                    unfocusedIndicatorColor =
-                        MaterialTheme.colorScheme.onBackground.copy(alpha = .3f),
-                ),
         )
 
         uiState.errorMessage()?.let {
@@ -126,7 +130,13 @@ fun ApiKeyInputContent() {
         Button(
             onClick = { viewModel.submit(apiKey) },
             enabled = apiKey.isNotBlank() && uiState !is ApiKeySetupUiState.Validating,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            shape = MaterialTheme.shapes.large,
         ) {
             if (uiState is ApiKeySetupUiState.Validating) {
                 CircularProgressIndicator(
