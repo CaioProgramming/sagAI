@@ -93,8 +93,8 @@ fun ApiSettingsView(
                         Icon(
                             painterResource(R.drawable.ic_faq),
                             contentDescription = stringResource(R.string.api_settings_help),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.size(24.dp),
                         )
                     }
                 }

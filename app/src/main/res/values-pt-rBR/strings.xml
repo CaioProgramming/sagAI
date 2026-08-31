@@ -954,9 +954,6 @@
     <string name="api_key_setup_title">O Sagas roda na sua própria chave</string>
     <string name="api_key_setup_body">Cada história, personagem e ilustração daqui é gerada por IA, e IA cobra por token. Em vez de colocar uma assinatura entre você e suas sagas, o Sagas usa uma chave de API do Gemini que é sua: você cria de graça, o uso é cobrado no seu próprio projeto Google, e nada do que você escreve passa pelos nossos servidores.</string>
     <string name="api_key_setup_storage_note">A chave fica criptografada neste aparelho. Nunca é enviada para nós e nunca sai em backup.</string>
-    <string name="api_key_setup_step_one">Abra o Google AI Studio e entre com sua conta Google.</string>
-    <string name="api_key_setup_step_two">Toque em “Create API key” e copie a chave gerada.</string>
-    <string name="api_key_setup_step_three">Cole aqui embaixo. Ela começa com “AIza”.</string>
     <string name="api_key_setup_open_studio">Pegar uma chave no Google AI Studio</string>
     <string name="api_key_setup_field_label">Cole sua chave de API</string>
     <string name="api_key_setup_save">Salvar chave</string>
@@ -999,6 +996,8 @@
     <string name="api_settings_help">Por que o Sagas precisa de uma chave</string>
     <string name="api_usage_metric_requests">Requisições hoje</string>
     <string name="api_key_onboarding_next">Continuar</string>
+    <string name="api_key_paste">Colar chave</string>
+    <string name="api_key_pasted_hint">Encontramos uma chave na área de transferência.</string>
 </resources>
 
 
