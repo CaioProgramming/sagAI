@@ -77,6 +77,7 @@ import com.ilustris.sagai.ui.components.ApiKeyTroubleSheet
 import com.ilustris.sagai.ui.components.FeatureNeedsBillingSheet
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
+import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyNamePrompt
 import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
@@ -689,6 +690,7 @@ class MainActivity : ComponentActivity() {
                                             force = true,
                                             dismissible = false,
                                         )
+                                        ApiKeyNamePrompt()
                                     }
                                 }
                             }

@@ -375,26 +375,34 @@ fun CinematicBackground(config: GenreVisualConfig?) {
     )
 }
 
+/**
+ * @param colors defaults to the brand gradient rather than an empty list. It used to default to
+ *   empty while the icon tint read `colors.first()`, so calling this with its own defaults threw
+ *   `NoSuchElementException` — and inside a pager's prefetch that surfaced as an unrelated
+ *   `Cannot disable reuse from root`, because the failed pausable composition leaves the reuse
+ *   state inconsistent and the next assertion is what gets reported.
+ */
 @Composable
 fun SparkBackground(
-    colors: List<Color> = emptyList(),
+    colors: List<Color> = holographicGradient,
     customIcon: Int? = null,
 ) {
+    val palette = colors.ifEmpty { holographicGradient }
     Box(
         Modifier
             .fillMaxSize()
-            .reactiveShimmer(true, colors, repeatMode = RepeatMode.Restart, targetValue = 1000f),
+            .reactiveShimmer(true, palette, repeatMode = RepeatMode.Restart, targetValue = 1000f),
     ) {
         StarryTextPlaceholder(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .gradientFill(Brush.verticalGradient(colors)),
+                    .gradientFill(Brush.verticalGradient(palette)),
         )
         Icon(
             painter = painterResource(customIcon ?: R.drawable.ic_spark),
             contentDescription = null,
-            tint = colors.first(),
+            tint = palette.first(),
             modifier =
                 Modifier
                     .size(120.dp)

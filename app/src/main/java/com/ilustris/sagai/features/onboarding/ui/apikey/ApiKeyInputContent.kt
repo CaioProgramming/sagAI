@@ -53,20 +53,10 @@ fun ApiKeyInputContent() {
     val viewModel: ApiKeySetupViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isMigration by viewModel.isMigration.collectAsStateWithLifecycle()
-    val needsName by viewModel.needsName.collectAsStateWithLifecycle()
 
     var apiKey by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) { viewModel.prepareForEntry() }
-
-    // Name first: a warm question with no stakes, before the one that sends the user to another
-    // app entirely.
-    if (needsName) {
-        UserNamePromptDialog(
-            onSaveName = viewModel::saveName,
-            onDismiss = viewModel::skipName,
-        )
-    }
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -160,3 +150,27 @@ private fun ApiKeySetupUiState.errorMessage(): Int? =
         ApiKeySetupUiState.Empty -> R.string.api_key_setup_error_empty
         else -> null
     }
+
+/**
+ * The name question, hosted outside the pager.
+ *
+ * Kept out of the page content deliberately, though not for the reason first suspected: the
+ * `Cannot disable reuse` crash came from [SparkBackground], not from here. It stays hoisted anyway,
+ * because a modal opened from inside a page the pager may be prefetching is a sub-composition built
+ * under machinery that does not expect one — a hazard worth not having, even unproven.
+ *
+ * Shares the ViewModel with the field through the activity's store, so answering here is what makes
+ * [ApiKeySetupViewModel.needsName] fall away for both.
+ */
+@Composable
+fun ApiKeyNamePrompt() {
+    val viewModel: ApiKeySetupViewModel = hiltViewModel()
+    val needsName by viewModel.needsName.collectAsStateWithLifecycle()
+
+    if (needsName) {
+        UserNamePromptDialog(
+            onSaveName = viewModel::saveName,
+            onDismiss = viewModel::skipName,
+        )
+    }
+}
