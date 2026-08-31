@@ -994,6 +994,13 @@
     <string name="api_usage_tokens">%1$s tokens · %2$s de raciocínio</string>
     <string name="api_usage_reset_relative">Reseta em %1$s</string>
     <string name="api_usage_empty">Nenhuma chamada hoje ainda.</string>
+    <!-- BYOK: tela dedicada de API -->
+    <string name="api_settings_title">API e uso</string>
+    <string name="api_settings_entry_title">Configurações de API</string>
+    <string name="api_settings_entry_subtitle">Sua chave, uso e limites.</string>
+    <string name="api_settings_help">Por que o Sagas precisa de uma chave</string>
+    <string name="api_usage_metric_requests">Requisições hoje</string>
+    <string name="api_key_onboarding_next">Continuar</string>
 </resources>
 
 

@@ -76,7 +76,7 @@ import com.ilustris.sagai.core.ai.key.ApiKeyState
 import com.ilustris.sagai.ui.components.ApiKeyTroubleSheet
 import com.ilustris.sagai.ui.components.FeatureNeedsBillingSheet
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
-import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeySetupScreen
+import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyOnboarding
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.AdsConsentService
@@ -682,7 +682,7 @@ class MainActivity : ComponentActivity() {
                                     } else if (gate == AppGate.Offline) {
                                         NoInternetScreen()
                                     } else if (gate == AppGate.NeedsApiKey) {
-                                        ApiKeySetupScreen()
+                                        ApiKeyOnboarding()
                                     }
                                 }
                             }

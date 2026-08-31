@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.onboarding.ui.MorphingGenresBackground
 import com.ilustris.sagai.features.onboarding.ui.OnboardingAction
 import com.ilustris.sagai.features.onboarding.ui.OnboardingButton
 import com.ilustris.sagai.features.onboarding.ui.OnboardingMascotContent
+import com.ilustris.sagai.features.onboarding.ui.StarfieldBackground
 import com.ilustris.sagai.features.onboarding.ui.OnboardingStandardContent
 import com.ilustris.sagai.features.onboarding.ui.OnboardingUiPage
 import com.ilustris.sagai.features.onboarding.ui.OnboardingUiState
@@ -88,6 +89,13 @@ class OnboardingStateMapper
                     }
                 val background: @Composable () -> Unit =
                     when (type) {
+                        // Never reached: ApiKeyOnboarding renders its own pages, since its
+                        // last one is an input field rather than copy. Present so the when
+                        // stays exhaustive.
+                        OnboardingType.API_KEY_SETUP -> {
+                            { StarfieldBackground() }
+                        }
+
                         OnboardingType.APP_INTRO -> {
                             when (index) {
                                 0 -> {
@@ -193,6 +201,10 @@ class OnboardingStateMapper
                             }
                         val text =
                             when (type) {
+                                OnboardingType.API_KEY_SETUP -> {
+                                    stringResourceHelper.getString(R.string.onboarding_finish)
+                                }
+
                                 OnboardingType.APP_INTRO -> {
                                     stringResourceHelper.getString(R.string.onboarding_finish)
                                 }

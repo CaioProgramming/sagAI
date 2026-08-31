@@ -8,6 +8,9 @@ import com.ilustris.sagai.core.ai.key.classifyApiKeyFailure
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.network.GeminiApiClient
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.data.model.OnboardingContent
+import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
 import com.ilustris.sagai.features.player.domain.UserIdentityUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -42,6 +45,7 @@ class ApiKeySetupViewModel
         private val geminiApiClient: GeminiApiClient,
         private val dataStorePreferences: DataStorePreferences,
         private val userIdentityUseCase: UserIdentityUseCase,
+        private val onboardingUseCase: OnboardingUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<ApiKeySetupUiState>(ApiKeySetupUiState.Idle)
         val uiState: StateFlow<ApiKeySetupUiState> = _uiState.asStateFlow()
@@ -88,6 +92,23 @@ class ApiKeySetupViewModel
                 _isMigration.value =
                     dataStorePreferences.getBooleanNow("user_name_prompt_seen", false)
                 _needsName.value = userIdentityUseCase.shouldPromptName()
+            }
+        }
+
+        /**
+         * The explanatory pages, from `onboarding_fallbacks` in Remote Config.
+         *
+         * Empty is a valid state, not an error: the key field is the part that cannot be skipped,
+         * so a missing or malformed config costs the pitch, never the ability to get in.
+         */
+        private val _pages = MutableStateFlow<OnboardingContent>(OnboardingContent())
+        val pages: StateFlow<OnboardingContent> = _pages.asStateFlow()
+
+        fun loadPages() {
+            viewModelScope.launch {
+                onboardingUseCase
+                    .getContent(OnboardingType.API_KEY_SETUP, null)
+                    .onSuccess { _pages.value = it }
             }
         }
 
