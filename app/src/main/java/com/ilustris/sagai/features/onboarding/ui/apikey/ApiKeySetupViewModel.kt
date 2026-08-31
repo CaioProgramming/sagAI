@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.key.ApiKeyDiagnosis
 import com.ilustris.sagai.core.ai.key.ApiKeyShape
+import com.ilustris.sagai.core.ai.key.ApiKeyVerification
+import com.ilustris.sagai.core.ai.key.ApiKeyVerificationService
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.key.classifyApiKeyFailure
 import com.ilustris.sagai.core.data.executeRequest
@@ -45,6 +47,7 @@ class ApiKeySetupViewModel
         private val geminiApiClient: GeminiApiClient,
         private val userIdentityUseCase: UserIdentityUseCase,
         private val onboardingUseCase: OnboardingUseCase,
+        private val verificationService: ApiKeyVerificationService,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<ApiKeySetupUiState>(ApiKeySetupUiState.Idle)
         val uiState: StateFlow<ApiKeySetupUiState> = _uiState.asStateFlow()
@@ -138,6 +141,7 @@ class ApiKeySetupViewModel
                     userApiKeyStore.save(key)
                 }.onSuccess {
                     _uiState.value = ApiKeySetupUiState.Saved
+                    verificationService.markVerified()
                     _keySaved.trySend(Unit)
                 }.onFailureAsync { error ->
                     _uiState.value =
@@ -165,6 +169,8 @@ class ApiKeySetupViewModel
          */
         private val _currentMaskedKey = MutableStateFlow("")
         val currentMaskedKey: StateFlow<String> = _currentMaskedKey.asStateFlow()
+
+        val verification: StateFlow<ApiKeyVerification> = verificationService.status
 
         fun removeKey() {
             viewModelScope.launch {

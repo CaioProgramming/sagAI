@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilustris.sagai.core.ai.key.ApiKeyVerification
 import com.ilustris.sagai.R
 
 /**
@@ -51,6 +52,7 @@ fun ApiKeyManageSheet(onDismiss: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val clipboard = LocalClipboardManager.current
     val currentMaskedKey by viewModel.currentMaskedKey.collectAsStateWithLifecycle()
+    val verification by viewModel.verification.collectAsStateWithLifecycle()
 
     var apiKey by remember { mutableStateOf("") }
     var confirmingRemoval by remember { mutableStateOf(false) }
@@ -97,6 +99,25 @@ fun ApiKeyManageSheet(onDismiss: () -> Unit) {
                         stringResource(R.string.api_key_setup_field_label)
                     },
             )
+
+            // The status the settings row already showed, carried in rather than checked again,
+            // so the two never disagree about the same key. Suppressed once the field has an error
+            // of its own, which is about what was just typed and outranks the stored key's state.
+            if (uiState.errorMessage() == null) {
+                verification.statusMessage()?.let { message ->
+                    Text(
+                        stringResource(message),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        color =
+                            if (verification == ApiKeyVerification.Valid) {
+                                MaterialTheme.colorScheme.secondary
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
+                    )
+                }
+            }
 
             uiState.errorMessage()?.let {
                 Text(
@@ -161,3 +182,12 @@ fun ApiKeyManageSheet(onDismiss: () -> Unit) {
         )
     }
 }
+
+private fun ApiKeyVerification.statusMessage(): Int? =
+    when (this) {
+        ApiKeyVerification.Checking -> R.string.api_key_status_checking
+        ApiKeyVerification.Valid -> R.string.api_key_status_valid
+        ApiKeyVerification.Invalid -> R.string.api_key_status_invalid
+        ApiKeyVerification.Unreachable -> R.string.api_key_status_unreachable
+        ApiKeyVerification.Unknown -> null
+    }

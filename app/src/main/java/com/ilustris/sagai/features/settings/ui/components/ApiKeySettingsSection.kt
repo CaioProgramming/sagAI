@@ -13,6 +13,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,11 +38,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.key.ApiKeyShape
+import com.ilustris.sagai.core.ai.key.ApiKeyVerification
+import com.ilustris.sagai.core.ai.key.ApiKeyVerificationService
 import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusService
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.network.GeminiApiClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -56,7 +59,7 @@ class ApiKeySettingsViewModel
     @Inject
     constructor(
         private val userApiKeyStore: UserApiKeyStore,
-        private val geminiApiClient: GeminiApiClient,
+        private val verificationService: ApiKeyVerificationService,
         quotaStatusService: QuotaStatusService,
     ) : ViewModel() {
         /**
@@ -72,6 +75,12 @@ class ApiKeySettingsViewModel
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = QuotaStatus.Clear,
             )
+
+        val verification: StateFlow<ApiKeyVerification> = verificationService.status
+
+        fun verifyKey() {
+            viewModelScope.launch { verificationService.verify() }
+        }
 
         init {
             // Observed rather than read once: the key can be replaced or removed from the sheet
@@ -101,6 +110,10 @@ fun ApiKeySettingsSection(
 ) {
     val viewModel: ApiKeySettingsViewModel = hiltViewModel()
     val maskedKey by viewModel.maskedKey.collectAsStateWithLifecycle()
+    val verification by viewModel.verification.collectAsStateWithLifecycle()
+
+    // Checked when the row appears, so the status is already there when the user looks at it.
+    LaunchedEffect(Unit) { viewModel.verifyKey() }
     val quotaStatus by viewModel.quotaStatus.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -117,13 +130,53 @@ fun ApiKeySettingsSection(
             Icon(
                 painterResource(R.drawable.ic_key),
                 stringResource(R.string.api_key_settings_section),
-                modifier = Modifier.size(12.dp).alpha(.5f),
+                modifier = Modifier.size(24.dp).alpha(.5f),
             )
             Text(
                 maskedKey,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f),
+            )
+            // Status sits at the end of the row, never in the way of tapping it. Blocking the row
+            // while the check runs would hold back the one action a broken key calls for.
+            AnimatedContent(verification, label = "key-verification") { status ->
+                when (status) {
+                    ApiKeyVerification.Checking -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    }
+
+                    ApiKeyVerification.Valid -> {
+                        Icon(
+                            painterResource(R.drawable.ic_check),
+                            stringResource(R.string.api_key_status_valid),
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+
+                    ApiKeyVerification.Invalid -> {
+                        Icon(
+                            painterResource(R.drawable.ic_violation),
+                            stringResource(R.string.api_key_status_invalid),
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+
+                    else -> Unit
+                }
+            }
+        }
+
+        if (verification == ApiKeyVerification.Invalid) {
+            Text(
+                stringResource(R.string.api_key_status_invalid),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
             )
         }
 
