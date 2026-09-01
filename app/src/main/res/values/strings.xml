@@ -1018,4 +1018,29 @@
     <string name="api_key_status_invalid">This key is no longer valid</string>
     <string name="api_key_status_unreachable">Could not check the key right now</string>
     <string name="api_key_docs">Read the API key docs</string>
+    <!-- Premium plans -->
+    <string name="plan_price_period">%1$s/%2$s</string>
+    <string name="plan_period_day">day</string>
+    <string name="plan_period_week">week</string>
+    <string name="plan_period_month">month</string>
+    <string name="plan_period_year">year</string>
+    <string name="plan_trial_then">%1$s free, then %2$s</string>
+    <string name="plan_intro_then">%1$s for %2$s, then %3$s</string>
+    <string name="plans_load_error">Could not load the plans right now.</string>
+    <plurals name="plan_duration_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="plan_duration_weeks">
+        <item quantity="one">%d week</item>
+        <item quantity="other">%d weeks</item>
+    </plurals>
+    <plurals name="plan_duration_months">
+        <item quantity="one">%d month</item>
+        <item quantity="other">%d months</item>
+    </plurals>
+    <plurals name="plan_duration_years">
+        <item quantity="one">%d year</item>
+        <item quantity="other">%d years</item>
+    </plurals>
 </resources>

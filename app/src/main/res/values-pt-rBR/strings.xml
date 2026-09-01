@@ -1004,6 +1004,31 @@
     <string name="api_key_status_invalid">Esta chave não é mais válida</string>
     <string name="api_key_status_unreachable">Não deu pra conferir a chave agora</string>
     <string name="api_key_docs">Ver a documentação da chave</string>
+    <!-- Planos premium -->
+    <string name="plan_price_period">%1$s/%2$s</string>
+    <string name="plan_period_day">dia</string>
+    <string name="plan_period_week">semana</string>
+    <string name="plan_period_month">mês</string>
+    <string name="plan_period_year">ano</string>
+    <string name="plan_trial_then">%1$s grátis, depois %2$s</string>
+    <string name="plan_intro_then">%1$s por %2$s, depois %3$s</string>
+    <string name="plans_load_error">Não deu para carregar os planos agora.</string>
+    <plurals name="plan_duration_days">
+        <item quantity="one">%d dia</item>
+        <item quantity="other">%d dias</item>
+    </plurals>
+    <plurals name="plan_duration_weeks">
+        <item quantity="one">%d semana</item>
+        <item quantity="other">%d semanas</item>
+    </plurals>
+    <plurals name="plan_duration_months">
+        <item quantity="one">%d mês</item>
+        <item quantity="other">%d meses</item>
+    </plurals>
+    <plurals name="plan_duration_years">
+        <item quantity="one">%d ano</item>
+        <item quantity="other">%d anos</item>
+    </plurals>
 </resources>
 
 
