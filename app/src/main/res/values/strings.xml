@@ -1043,4 +1043,6 @@
         <item quantity="one">%d year</item>
         <item quantity="other">%d years</item>
     </plurals>
+    <string name="plans_confirm">Continue</string>
+    <string name="plans_sample_warning">Sample plans (debug build). Play returned nothing.</string>
 </resources>

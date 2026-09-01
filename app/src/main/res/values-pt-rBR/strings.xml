@@ -1029,6 +1029,8 @@
         <item quantity="one">%d ano</item>
         <item quantity="other">%d anos</item>
     </plurals>
+    <string name="plans_confirm">Continuar</string>
+    <string name="plans_sample_warning">Planos de exemplo (build de debug). O Play não retornou nada.</string>
 </resources>
 
 

@@ -8,6 +8,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import com.ilustris.sagai.BuildConfig
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.platform.LocalContext
+import com.ilustris.sagai.MainActivity
+import com.ilustris.sagai.features.premium.ui.PremiumPlansContent
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.services.BillingService
@@ -87,6 +92,7 @@ class OnboardingStateMapper
             // the last configured page is the last page shown — and both things reading that
             // assumption (the background's else branch, the finishing button) went wrong.
             val isKeyOnboarding = type == OnboardingType.API_KEY_SETUP
+            val isPremiumOnboarding = type == OnboardingType.PREMIUM_GUIDE
 
             return content.pages.mapIndexed { index, page ->
                 val isLastPage = index == content.pages.size - 1
