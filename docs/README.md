@@ -10,6 +10,12 @@ Everything in `/docs` except `archive/` is meant to be **currently accurate**. I
 decision, a system, or a plan that's no longer true, it belongs in `archive/`, not left stale in a
 "live" folder. When you update a feature, update its doc in the same change — don't let this drift.
 
+## Start here
+
+[`project_overview.md`](project_overview.md) — a single-file technical and product overview of the
+whole project (scale, stack, AI architecture, shipped systems, engineering process). Written for
+external readers who need the full picture without touring the tree.
+
 ## Where to look
 
 | Folder | What's there | Read it when |
