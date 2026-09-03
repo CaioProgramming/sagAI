@@ -14,7 +14,12 @@ description: Create release notes for Google Play Store
    - Só blocos 🇺🇸 English e 🇧🇷 Português (2–4 frases cada; ~500 chars se for colar na Play)
    - `git add -f docs/release_notes/release_[version].md`
 
-3. **Handoff**
+3. **Scope boundary**
+   - Estas notas dizem **o que mudou**, para quem já joga. Elas nunca tocam o `README.md`.
+   - Se a release mudou **o que o app é** (e não só o que ele ganhou), isso é o passo 10 do
+     `.agent/workflows/create_release.md` — README, outra voz, outro julgamento.
+
+4. **Handoff**
    - Lembrar: colar na Play Console
    - Não publicar nada automaticamente
 

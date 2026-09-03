@@ -17,6 +17,14 @@ O usuário da Play Store **não quer changelog técnico**. Quer 3–5 frases com
 - listas longas de bullet com emoji demais
 - tom de documentação ou marketing corporativo
 
+## Fronteira com o README
+
+Release notes = **o que mudou**, para quem já tem o app. `README.md` = **o que o app é**, para quem
+nunca abriu. Nunca escreva changelog no README, nem descrição institucional na Play.
+
+Quando uma release muda o que o app *é* — e não só o que ele ganhou — o README entra pelo passo
+"README Reality Check" do `.agent/workflows/create_release.md`, não por aqui.
+
 ## Onde salvar
 
 `docs/release_notes/release_[MAJOR.MINOR.PATCH].md` — versão em `version.properties`.
