@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -65,6 +66,10 @@ class CorkboardCharacterPinPage(
                 AsyncImage(
                     model = character.image,
                     contentDescription = character.name,
+                    // Without this the default is Fit, which letterboxes a portrait inside the
+                    // square and leaves bare paper down both sides — the photo stops filling its
+                    // own polaroid. Every other pin's photo already crops.
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxWidth().aspectRatio(1f).themeFilter(),
                 )
                 PinCaption(

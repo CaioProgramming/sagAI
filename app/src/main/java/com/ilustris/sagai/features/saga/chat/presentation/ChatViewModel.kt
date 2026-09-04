@@ -178,6 +178,14 @@ class ChatViewModel
                             if (outcome.sagaId != sagaId) return@collect
                             sagaThemeManager.playHaptics()
                             outcome.reply.sceneSummary?.let { generateSuggestions(it) }
+                            // Primary progression recheck: outcomes is a buffered SharedFlow, so
+                            // unlike the activeGenerations StateFlow above it can't conflate away
+                            // the true->null edge under a fast burst — that edge going missing is
+                            // what let the chat sit past the message limit with nothing re-checking
+                            // until another send happened to retrigger it. The StateFlow-edge call
+                            // above stays as a second, redundant path; requestNarrativeProgression
+                            // already tolerates being asked twice in a row (progressionMutex).
+                            sagaContentManager.checkNarrativeProgression(uiState.value.sagaContent)
                         }
 
                         is ChatGenerationOutcome.GuardrailBlocked -> {

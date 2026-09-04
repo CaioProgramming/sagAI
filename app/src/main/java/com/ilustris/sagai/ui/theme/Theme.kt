@@ -92,6 +92,8 @@ import com.ilustris.sagai.ui.animations.scanLines
 import com.ilustris.sagai.ui.animations.spaceVoyage
 import com.ilustris.sagai.ui.animations.vhs
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.theme.filters.CrtSettings
+import com.ilustris.sagai.ui.theme.filters.crtScreen
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 
 const val SAGA_THEME_TRANSITION_MS = 500
@@ -228,6 +230,10 @@ fun Modifier.reviewVfx(isPlaying: Boolean = true): Modifier {
             Modifier
                 .glitch(glitchFrequency = 0.02f)
                 .chromaticAberration(intensity = .05f, blurRadius = 10f)
+        }
+
+        Genre.CRIME -> {
+            Modifier.crtScreen(settings = CrtSettings.Dream)
         }
 
         Genre.SHINOBI -> {

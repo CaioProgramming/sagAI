@@ -104,7 +104,6 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusViewModel
-import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
 import com.ilustris.sagai.core.file.BACKUP_PERMISSION
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
@@ -158,6 +157,8 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.QuotaLimitNotice
+import com.ilustris.sagai.ui.components.island.islandPadding
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -455,7 +456,8 @@ fun ChatContent(
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
                 .statusBarsPadding()
-                .imePadding(),
+                .imePadding()
+                .islandPadding(),
     ) {
         Box(contentAlignment = Alignment.Center) {
             val iconAnimating = uiState.isLoading || uiState.isGenerating
@@ -735,29 +737,29 @@ fun ChatContent(
                                     )
                                 } else {
                                     ChatInputView(
-                                    content = content,
-                                    characters = uiState.characters,
-                                    isGenerating = uiState.isGenerating || uiState.isLoading,
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .wrapContentHeight(),
-                                    selectedCharacter = uiState.selectedCharacter,
-                                    typoFix = uiState.typoFixMessage,
-                                    inputField = uiState.inputValue,
-                                    sendType = uiState.senderType,
-                                    isSendingPending = uiState.isSendingPending,
-                                    sendingProgress = uiState.sendingProgress,
-                                    onSendMessage = onSendMessage,
-                                    onUpdateInput = onUpdateInput,
-                                    onUpdateSender = onUpdateSender,
-                                    suggestions = uiState.suggestions,
-                                    onSelectCharacter = onSelectCharacter,
-                                    onRequestAudio = onRequestAudio,
-                                    isEditing = uiState.editingMessage != null,
-                                    onCancelEdit = onCancelEdit,
-                                    maxContentLength = uiState.maxContentLength,
-                                    onStopGeneration = { onAction(ChatUiAction.StopGeneration) },
+                                        content = content,
+                                        characters = uiState.characters,
+                                        isGenerating = uiState.isGenerating || uiState.isLoading,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .wrapContentHeight(),
+                                        selectedCharacter = uiState.selectedCharacter,
+                                        typoFix = uiState.typoFixMessage,
+                                        inputField = uiState.inputValue,
+                                        sendType = uiState.senderType,
+                                        isSendingPending = uiState.isSendingPending,
+                                        sendingProgress = uiState.sendingProgress,
+                                        onSendMessage = onSendMessage,
+                                        onUpdateInput = onUpdateInput,
+                                        onUpdateSender = onUpdateSender,
+                                        suggestions = uiState.suggestions,
+                                        onSelectCharacter = onSelectCharacter,
+                                        onRequestAudio = onRequestAudio,
+                                        isEditing = uiState.editingMessage != null,
+                                        onCancelEdit = onCancelEdit,
+                                        maxContentLength = uiState.maxContentLength,
+                                        onStopGeneration = { onAction(ChatUiAction.StopGeneration) },
                                     )
                                 }
                             }

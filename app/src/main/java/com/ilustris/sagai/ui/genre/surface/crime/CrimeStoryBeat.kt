@@ -48,6 +48,7 @@ import com.ilustris.sagai.ui.genre.crime.PinCaption
 import com.ilustris.sagai.ui.genre.crime.PinProse
 import com.ilustris.sagai.ui.genre.crime.PinSignature
 import com.ilustris.sagai.ui.genre.crime.PinTitle
+import com.ilustris.sagai.ui.genre.crime.PinVibeNote
 import com.ilustris.sagai.ui.genre.crime.rememberCorkboardPalette
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryAside
@@ -65,6 +66,9 @@ import kotlinx.coroutines.delay
 private const val PIN_STAGGER_MS = 420L
 
 private const val PIN_ENTER_MS = 480
+
+/** Wide enough that a pinned portrait reads as a photo rather than as a list thumbnail. */
+private val POLAROID_WIDTH = 156.dp
 
 /** A milestone body is read on one screen, so it gets room — but not an unbounded amount. */
 private const val BODY_MAX_LINES = 14
@@ -123,7 +127,7 @@ fun CrimeStoryBeat(
                 add { CrimeSuspectRow(cast = cast, label = beat.castLabel) }
             }
 
-            beat.aside?.let { aside -> add { CrimeMarginNote(aside, canAnimate) } }
+            beat.aside?.let { aside -> add { CrimeVibeCard(aside, canAnimate) } }
         }
 
     var pinned by remember(beat.key, canAnimate, cards.size) {
@@ -265,7 +269,7 @@ private fun CrimeSuspectRow(
         ) {
             cast.forEach { character ->
                 CorkPin(
-                    modifier = Modifier.width(112.dp),
+                    modifier = Modifier.width(POLAROID_WIDTH),
                     seed = character.id,
                 ) { ink ->
                     Column {
@@ -297,38 +301,54 @@ private fun CrimeSuspectRow(
 }
 
 /**
- * The aside as a note scribbled in the margin — handwriting, because unlike the beat's prose this
- * genuinely is someone's own hand commenting on what's pinned up, not part of the record.
+ * The emotional read, as the same vibe card the review pins to its table — [PinVibeNote], shared by
+ * both so the two can't drift apart.
  *
- * This carries the milestone's emotional review, which is a reflection of a sentence or three. It
- * is deliberately *not* [PinSignature]: that one caps at a single line because a signature is a
- * name, and running the aside through it silently truncated the reflection to its first line.
+ * Two earlier passes got this wrong in opposite directions. It first went through [PinSignature],
+ * which caps at one line because a signature is a name, so the whole reflection was truncated to
+ * its first line. Replacing that with plain handwriting fixed the truncation but left it as bare
+ * text on the cork, while the review gave the very same content a drawn shape and a card. Now the
+ * milestone shows what the review shows.
+ *
+ * Falls back to a written note when the beat carries no tone — not every milestone has one, and a
+ * card with an empty shape on it would be worse than the writing alone.
  */
 @Composable
-private fun CrimeMarginNote(
+private fun CrimeVibeCard(
     aside: StoryAside,
     canAnimate: Boolean,
 ) {
     val palette = rememberCorkboardPalette()
 
-    Column(
-        Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-        horizontalAlignment = Alignment.End,
-    ) {
-        Text(
-            text = aside.label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = palette.thread.copy(alpha = 0.8f),
-            textAlign = TextAlign.End,
-        )
-        HandwrittenText(
-            text = aside.text,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            fontSize = 16.sp,
-            centered = false,
-            isAnimated = canAnimate,
-        )
+    CorkPin(
+        modifier = Modifier.fillMaxWidth(0.92f),
+        seed = aside.text.hashCode(),
+        pinColor = aside.tone?.color ?: palette.pin,
+    ) { ink ->
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = aside.label.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = ink.copy(alpha = 0.55f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            aside.tone?.let { tone ->
+                PinVibeNote(
+                    tone = tone,
+                    ink = ink,
+                    caption = aside.text,
+                    canAnimate = canAnimate,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            } ?: PinProse(
+                text = aside.text,
+                ink = ink,
+                centered = true,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
     }
 }
 

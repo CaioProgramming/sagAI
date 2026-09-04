@@ -2,6 +2,7 @@ package com.ilustris.sagai.ui.genre.surface
 
 import androidx.compose.runtime.Immutable
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 /**
@@ -78,6 +79,14 @@ enum class StoryBeatTone { NARRATION, EPIGRAPH, ANNOUNCEMENT, PLAYER, SYSTEM }
 data class StoryAside(
     val label: String,
     val text: String,
+    /**
+     * The emotional read this aside is commenting on, where the beat knows it.
+     *
+     * Carried so a surface can draw the tone rather than only quote the write-up about it — Crime
+     * shows the same vibe card its review does. Optional: styles that have nothing to draw a tone
+     * with simply ignore it, and a beat with no tone still has its text.
+     */
+    val tone: EmotionalTone? = null,
 )
 
 @Immutable

@@ -919,11 +919,30 @@ class SagaContentManagerImpl
                         continue
                     }
 
+                    if (shouldReevaluateAgain) {
+                        // A concurrent caller found the mutex held and queued a reevaluation
+                        // instead of running its own check (the isLocked branch above) — loop
+                        // back and reread with fresh state while still holding the lock, instead
+                        // of releasing and recursing outside it. The previous version captured
+                        // shouldReevaluateAgain here and only acted on it after the lock let go;
+                        // a second caller's schedulePendingReevaluation() landing in that gap
+                        // (between this read and the actual release) was silently dropped, since
+                        // by then the local var was already fixed at whatever it read here. That
+                        // dropped signal is exactly what let the app sit past loreUpdateLimit with
+                        // nothing re-validating the timeline it had just crossed — no
+                        // AwaitingAdvance, no milestoneChainReady, no navigate to Milestone.
+                        continue
+                    }
+
                     return@withLock
                 }
             }
 
-            if (shouldReevaluateAgain) {
+            // Fallback for the two return@withLock escapes above that call
+            // schedulePendingReevaluation() directly (hydration failure, automatic-step-guard
+            // bailout) rather than looping — those intentionally want a fresh outer call to reset
+            // local loop state, so they don't flow through shouldReevaluateAgain.
+            if (shouldReevaluateAgain || narrativeCoordinator.consumePendingReevaluation()) {
                 requestNarrativeProgression(isRetry = false)
             }
         }
@@ -1270,6 +1289,12 @@ class SagaContentManagerImpl
                                     wikis = generatedContent?.wikis ?: emptyList(),
                                 ),
                             )
+                            // Title/artwork/wikis are already final at this point — no reason to
+                            // wait for the user to tap "continue" on the Milestone screen before
+                            // spending the cover's image generation call. handleChapterPostActions
+                            // still calls generateChapterCover on continue as a fallback; its own
+                            // guard skips it once this has already filled coverImage in.
+                            managerScope.launch { chapterUseCase.generateChapterCover(c.id) }
                         }
                     } ?: dismissMilestone()
                 }

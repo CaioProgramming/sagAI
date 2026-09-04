@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
+import com.ilustris.sagai.ui.theme.SagAITheme
 
 /**
  * Explains that the user's Google project tier, not their key, is what blocked this.
@@ -43,70 +44,64 @@ fun FeatureNeedsBillingSheet(onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState()
     val context = LocalContext.current
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-            )
-        },
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .padding(bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    SagAITheme(null) {
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                )
+            },
         ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_lightning_bolt),
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.secondary,
-            )
-
-            Spacer(Modifier.size(16.dp))
-
-            Text(
-                text = stringResource(R.string.feature_needs_billing_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-            )
-
-            Spacer(Modifier.size(8.dp))
-
-            Text(
-                text = stringResource(R.string.feature_needs_billing_message),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Spacer(Modifier.size(8.dp))
-
-            TextButton(
-                onClick = {
-                    context.startActivity(
-                        Intent(Intent.ACTION_VIEW, Uri.parse(AI_STUDIO_RATE_LIMIT_URL)),
-                    )
-                },
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(stringResource(R.string.api_key_learn_more))
-            }
+                Text(
+                    text = stringResource(R.string.feature_needs_billing_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                )
 
-            Spacer(Modifier.size(16.dp))
+                Spacer(Modifier.size(8.dp))
 
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Text(stringResource(R.string.guardrail_dismiss))
+                Text(
+                    text = stringResource(R.string.feature_needs_billing_message),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Thin,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Spacer(Modifier.size(8.dp))
+
+                TextButton(
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(AI_STUDIO_RATE_LIMIT_URL)),
+                        )
+                    },
+                ) {
+                    Text(stringResource(R.string.api_key_learn_more))
+                }
+
+                Spacer(Modifier.size(16.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Text(stringResource(R.string.guardrail_dismiss))
+                }
             }
         }
     }

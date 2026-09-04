@@ -64,6 +64,8 @@ import androidx.navigation3.ui.NavDisplay
 import com.google.android.gms.ads.MobileAds
 import com.google.firebase.installations.FirebaseInstallations
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
+import com.ilustris.sagai.core.ai.key.ApiKeyState
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.globalshell.BookGenerationWorkEffect
 import com.ilustris.sagai.core.globalshell.ChatGenerationWorkEffect
@@ -71,14 +73,6 @@ import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.globalshell.ImageGenerationWorkEffect
 import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.core.navigation.SagaNavigationTracker
-import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
-import com.ilustris.sagai.core.ai.key.ApiKeyState
-import com.ilustris.sagai.ui.components.ApiKeyTroubleSheet
-import com.ilustris.sagai.ui.components.FeatureNeedsBillingSheet
-import com.ilustris.sagai.core.ai.key.UserApiKeyStore
-import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
-import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyNamePrompt
-import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.AdsConsentService
@@ -91,9 +85,15 @@ import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
+import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
+import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyNamePrompt
+import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
+import com.ilustris.sagai.ui.components.ApiKeyTroubleSheet
 import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.components.BlurTarget
+import com.ilustris.sagai.ui.components.FeatureNeedsBillingSheet
 import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.ui.components.globalshell.GlobalShellHost
 import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
@@ -108,6 +108,7 @@ import com.ilustris.sagai.ui.components.island.IslandInsets
 import com.ilustris.sagai.ui.components.island.LocalIslandInsets
 import com.ilustris.sagai.ui.components.island.NotificationIslandContent
 import com.ilustris.sagai.ui.components.island.islandPadding
+import com.ilustris.sagai.ui.navigation.ApiSettingsKey
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
 import com.ilustris.sagai.ui.navigation.ChatKey
 import com.ilustris.sagai.ui.navigation.FAQKey
@@ -116,7 +117,6 @@ import com.ilustris.sagai.ui.navigation.MilestoneKey
 import com.ilustris.sagai.ui.navigation.Navigator
 import com.ilustris.sagai.ui.navigation.NewSagaKey
 import com.ilustris.sagai.ui.navigation.PlaythroughKey
-import com.ilustris.sagai.ui.navigation.ApiSettingsKey
 import com.ilustris.sagai.ui.navigation.SettingsKey
 import com.ilustris.sagai.ui.navigation.createSagaEntryProvider
 import com.ilustris.sagai.ui.navigation.findNavKey
@@ -586,8 +586,7 @@ class MainActivity : ComponentActivity() {
                                                         BlurTarget(
                                                             modifier =
                                                                 Modifier
-                                                                    .fillMaxSize()
-                                                                    .islandPadding(bottom = currentKey !is ChatKey),
+                                                                    .fillMaxSize(),
                                                         ) {
                                                             NavDisplay(
                                                                 entries =

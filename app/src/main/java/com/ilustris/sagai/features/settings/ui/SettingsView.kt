@@ -57,6 +57,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
@@ -73,8 +75,6 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -146,8 +146,7 @@ fun SettingsView(
                 Modifier
                     .background(MaterialTheme.colorScheme.background)
                     .statusBarsPadding()
-                    .fillMaxSize()
-                    .padding(16.dp),
+                    .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
@@ -155,6 +154,7 @@ fun SettingsView(
                     onClick = onBack,
                     modifier =
                         Modifier
+                            .padding(horizontal = 16.dp)
                             .clip(CircleShape)
                             .size(32.dp),
                     colors =
@@ -184,7 +184,7 @@ fun SettingsView(
                     modifier =
                         Modifier
                             .background(MaterialTheme.colorScheme.background)
-                            .padding(vertical = 16.dp)
+                            .padding(16.dp)
                             .fillMaxWidth(),
                 )
             }
@@ -196,7 +196,7 @@ fun SettingsView(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         modifier =
                             Modifier
-                                .padding(8.dp)
+                                .padding(16.dp)
                                 .reactiveShimmer(true)
                                 .gradientFill(Brush.horizontalGradient(holographicGradient)),
                     ) {
@@ -213,6 +213,7 @@ fun SettingsView(
                 Column(
                     modifier =
                         Modifier
+                            .padding(16.dp)
                             .fillMaxWidth()
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
@@ -255,6 +256,7 @@ fun SettingsView(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier =
                             Modifier
+                                .padding(16.dp)
                                 .clip(RoundedCornerShape(15.dp))
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
@@ -297,7 +299,10 @@ fun SettingsView(
                     Text(
                         text = stringResource(R.string.sagas_storage),
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.alpha(.5f),
+                        modifier =
+                            Modifier
+                                .padding(horizontal = 16.dp)
+                                .alpha(.5f),
                     )
                 }
 
@@ -305,6 +310,7 @@ fun SettingsView(
                     Column(
                         modifier =
                             Modifier
+                                .padding(16.dp)
                                 .fillMaxWidth()
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
@@ -379,6 +385,7 @@ fun SettingsView(
                     style = MaterialTheme.typography.titleMedium,
                     modifier =
                         Modifier
+                            .padding(horizontal = 16.dp)
                             .alpha(.5f)
                             .padding(8.dp),
                 )
@@ -387,6 +394,7 @@ fun SettingsView(
             item {
                 Column(
                     Modifier
+                        .padding(16.dp)
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
@@ -425,6 +433,7 @@ fun SettingsView(
                     PreferencesContainer(
                         stringResource(R.string.backup),
                         stringResource(R.string.storage_permission_description),
+                        modifier = Modifier.padding(16.dp),
                         isActivated = backupEnabled,
                         onClickSwitch = {
                             if (backupEnabled) {
@@ -441,7 +450,10 @@ fun SettingsView(
                                 showBackups = true
                                 showBackupSheet = true
                             },
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .align(Alignment.CenterHorizontally),
                             colors = ButtonDefaults.textButtonColors(),
                         ) {
                             Icon(
@@ -466,6 +478,7 @@ fun SettingsView(
                         Column(
                             modifier =
                                 Modifier
+                                    .padding(16.dp)
                                     .fillMaxWidth()
                                     .padding(horizontal = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -500,6 +513,7 @@ fun SettingsView(
                         onClickSwitch = {
                             viewModel.setSmartSuggestionsEnabled(!it)
                         },
+                        modifier = Modifier.padding(16.dp),
                     )
 
                     HorizontalDivider(
@@ -515,6 +529,7 @@ fun SettingsView(
                         onClickSwitch = {
                             viewModel.setMessageEffectsEnabled(!it)
                         },
+                        modifier = Modifier.padding(16.dp),
                     )
 
                     HorizontalDivider(
@@ -530,6 +545,7 @@ fun SettingsView(
                         onClickSwitch = {
                             viewModel.setShowTutorials(!it)
                         },
+                        modifier = Modifier.padding(16.dp),
                     )
 
                     HorizontalDivider(
@@ -545,6 +561,7 @@ fun SettingsView(
                         onClickSwitch = {
                             viewModel.setMusicEnabled(!it)
                         },
+                        modifier = Modifier.padding(16.dp),
                     )
                 }
             }
@@ -555,6 +572,7 @@ fun SettingsView(
                     style = MaterialTheme.typography.titleSmall,
                     modifier =
                         Modifier
+                            .padding(horizontal = 16.dp)
                             .alpha(.5f)
                             .padding(8.dp),
                 )
@@ -569,6 +587,7 @@ fun SettingsView(
                     onClickSwitch = { navToApiSettings() },
                     modifier =
                         Modifier
+                            .padding(16.dp)
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
@@ -582,6 +601,7 @@ fun SettingsView(
                     onClick = {
                         showPremiumSheet = true
                     },
+                    modifier = Modifier.padding(16.dp),
                 )
             }
 
@@ -596,6 +616,7 @@ fun SettingsView(
                     },
                     modifier =
                         Modifier
+                            .padding(16.dp)
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
@@ -606,7 +627,10 @@ fun SettingsView(
             item {
                 Button(
                     onClick = { viewModel.clearPreferences() },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -646,6 +670,7 @@ fun SettingsView(
                             contentColor = MaterialTheme.colorScheme.primary.darker(.3f),
                         ),
                     shape = RoundedCornerShape(15.dp),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
                 ) {
                     Text(
                         stringResource(R.string.export_database_button),
@@ -665,6 +690,7 @@ fun SettingsView(
                     },
                     colors = ButtonDefaults.textButtonColors(),
                     shape = RoundedCornerShape(15.dp),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
                 ) {
                     Text(
                         stringResource(R.string.import_database_button),
@@ -680,7 +706,7 @@ fun SettingsView(
             item {
                 Button(
                     onClick = { showClearDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -706,6 +732,7 @@ fun SettingsView(
                         style = MaterialTheme.typography.titleSmall,
                         modifier =
                             Modifier
+                                .padding(16.dp)
                                 .alpha(.5f)
                                 .padding(8.dp),
                     )
@@ -713,6 +740,8 @@ fun SettingsView(
                 item {
                     Column(
                         Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
@@ -726,15 +755,14 @@ fun SettingsView(
                             onClickSwitch = {
                                 navToAuditLogs()
                             },
-                           isActivated =  true
-
-                            )
+                            isActivated = true,
+                        )
                         HorizontalDivider(
                             modifier = Modifier.fillMaxWidth(),
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
                             thickness = 1.dp,
                         )
-                       
+
                         PreferencesContainer(
                             stringResource(R.string.design_system_preview_title),
                             stringResource(R.string.settings_design_system_subtitle),
@@ -742,7 +770,7 @@ fun SettingsView(
                             onClickSwitch = {
                                 navToDesignSystemPreview()
                             },
-                            isActivated =  true
+                            isActivated = true,
                         )
                         HorizontalDivider(
                             modifier = Modifier.fillMaxWidth(),
@@ -823,7 +851,6 @@ fun SettingsView(
         })
     }
 
-
     if (showPremiumSheet && isWiping.not()) {
         OnboardingDialog(
             type = OnboardingType.PREMIUM_GUIDE,
@@ -844,6 +871,7 @@ private fun ProfileCard(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
             Modifier
+                .padding(16.dp)
                 .fillMaxWidth()
                 .dropShadow(RoundedCornerShape(15.dp)) {
                     this.brush = brush

@@ -3,19 +3,23 @@ package com.ilustris.sagai.ui.genre.crime
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.ui.theme.components.HandwrittenText
+import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
 
 /**
  * The corkboard's typography rule, in one place so no pin has to re-decide it.
@@ -136,5 +140,51 @@ fun PinBackNote(
             ink = ink,
             modifier = Modifier.padding(top = if (title != null) 8.dp else 0.dp),
         )
+    }
+}
+
+/**
+ * The emotional read as it appears on the board: the tone's own shape sketched on the card, its
+ * name under it, and the write-up below that.
+ *
+ * Lives in the kit rather than in either caller because both the finished saga's review and the
+ * milestone show this same card, and "the same as the review" is the whole requirement — two
+ * hand-matched copies would drift the first time one of them was tuned.
+ */
+@Composable
+fun PinVibeNote(
+    tone: EmotionalTone,
+    ink: Color,
+    modifier: Modifier = Modifier,
+    caption: String? = null,
+    canAnimate: Boolean = true,
+    captionMaxLines: Int = Int.MAX_VALUE,
+) {
+    Column(
+        modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        VibeShapeDrawing(
+            emotionalTone = tone,
+            strokeWidth = 2.dp,
+            color = tone.color,
+            isAnimated = canAnimate,
+            modifier = Modifier.fillMaxWidth().height(100.dp),
+        )
+        PinTitle(
+            text = tone.getTitle(),
+            ink = ink,
+            isAnimated = canAnimate,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        caption?.takeIf { it.isNotBlank() }?.let {
+            PinProse(
+                text = it,
+                ink = ink,
+                centered = true,
+                maxLines = captionMaxLines,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        }
     }
 }
