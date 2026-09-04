@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.onboarding.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
@@ -196,8 +198,6 @@ fun OnboardingPagerContent(
                     }
 
                     uiPage.primaryButton?.let { button ->
-                        val isSubscribeLoading =
-                            button.action is OnboardingAction.Subscribe && isPurchaseInProgress
                         Button(
                             onClick = {
                                 if (button.action is OnboardingAction.Next) {
@@ -217,7 +217,6 @@ fun OnboardingPagerContent(
                                     )
                                 }
                             },
-                            enabled = !isSubscribeLoading,
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
@@ -229,22 +228,14 @@ fun OnboardingPagerContent(
                                 ),
                             shape = MaterialTheme.shapes.large,
                         ) {
-                            if (isSubscribeLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    strokeWidth = 2.dp,
+                            AnimatedContent(button) {
+                                Text(
+                                    text = it.text.uppercase(),
+                                    style =
+                                        MaterialTheme.typography.labelLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                        ),
                                 )
-                            } else {
-                                AnimatedContent(button) {
-                                    Text(
-                                        text = it.text.uppercase(),
-                                        style =
-                                            MaterialTheme.typography.labelLarge.copy(
-                                                fontWeight = FontWeight.Bold,
-                                            ),
-                                    )
-                                }
                             }
                         }
                     }
@@ -261,6 +252,15 @@ fun OnboardingPagerContent(
 
                                     is OnboardingAction.Dismiss -> {
                                         onDismiss()
+                                    }
+
+                                    is OnboardingAction.OpenUrl -> {
+                                        context.startActivity(
+                                            Intent(
+                                                Intent.ACTION_VIEW,
+                                                Uri.parse(button.action.url),
+                                            ),
+                                        )
                                     }
 
                                     is OnboardingAction.DeactivateTutorials -> {

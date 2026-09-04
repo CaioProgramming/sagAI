@@ -36,6 +36,7 @@ class NewSagaUseCaseImpl
                     reasoningSynthesizerService.synthesizeReasoning(
                         sourceFlow = sourceFlow,
                         context = "Curating your cosmic library",
+                        details = prompt,
                     ),
                 )
             }

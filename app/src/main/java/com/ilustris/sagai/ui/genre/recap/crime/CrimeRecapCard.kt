@@ -1,118 +1,79 @@
 package com.ilustris.sagai.ui.genre.recap.crime
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.genre.crime.CrimeBackground
-import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
+import androidx.compose.ui.unit.sp
+import com.ilustris.sagai.ui.genre.crime.CorkPin
 import com.ilustris.sagai.ui.genre.recap.RecapCard
-import com.ilustris.sagai.ui.theme.LocalSagaGenre
+import com.ilustris.sagai.ui.genre.recap.rememberRecapHeadline
+import com.ilustris.sagai.ui.theme.components.HandwrittenText
+
+/** How wide the pinned card sits in its slot — short of the edges, so it reads as a loose object. */
+private const val CARD_WIDTH_FRACTION = 0.86f
 
 /**
- * The recap as a message still sitting unread in the thread.
+ * The recap as the first card pinned from the case board — a taste of the table
+ * [com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CorkboardStrip] opens onto.
  *
- * This is the one genre whose own medium already says what a recap card is trying to say — there is
- * something here waiting for you to open it — so the card leans on that instead of inventing a
- * separate "call to action" affordance: one bubble carrying the counts, a read receipt under it,
- * and the unread dot in the corner that makes the whole thing ask to be tapped.
+ * It used to be an unread message in a thread, which was right while Crime's review *was* a
+ * simulated chat. Now that the review is a corkboard, a chat bubble here promises the wrong thing:
+ * the card should look like the object it opens.
  *
- * No [com.ilustris.sagai.ui.theme.themeVfx] here, unlike the other cards. Crime's is `vhs` plus
- * sparkle, and smearing tape noise over a messaging thread fights the one thing that makes this
- * treatment legible: that it looks like a real, clean app you already know how to read.
+ * Deliberately no cork behind it. The board's surface belongs to the review, where it is the room
+ * the photos are pinned in; boxed into a list item it just reads as a brown rectangle around a
+ * card, and the pinned paper says everything the treatment needs to say on its own.
+ *
+ * Only the title is handwritten. The counts underneath are the app's normal face — see
+ * [com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.PinTitle] for why the board
+ * keeps handwriting for titles and signatures only.
  */
 @Composable
 fun CrimeRecapCard(
     card: RecapCard,
     modifier: Modifier = Modifier,
 ) {
-    val genre = LocalSagaGenre.current ?: Genre.CRIME
-    val accent = MaterialTheme.colorScheme.primary
+    val headline = rememberRecapHeadline(card)
 
-    Box(modifier) {
-        CrimeBackground(Modifier.matchParentSize())
-
-        Column(
-            Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            CrimeBubbleFrame(
-                isMe = false,
-                genre = genre,
-                showAvatar = false,
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-            ) { contentColor ->
-                Text(
+    Box(modifier, contentAlignment = Alignment.Center) {
+        CorkPin(
+            modifier = Modifier.fillMaxWidth(CARD_WIDTH_FRACTION),
+            seed = card.title.hashCode(),
+        ) { ink ->
+            Column(Modifier.fillMaxWidth()) {
+                HandwrittenText(
                     text = card.title,
-                    color = contentColor,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.labelMedium,
+                    color = ink,
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 18.sp,
+                    isBold = true,
+                    centered = true,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    isAnimated = false,
                 )
 
-                if (card.isReady) {
-                    card.stats.forEach { stat ->
-                        Text(
-                            text = stat.sentence,
-                            color = contentColor.copy(alpha = .85f),
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                } else {
-                    card.progress?.let {
-                        Text(
-                            text = it.message,
-                            color = contentColor.copy(alpha = .75f),
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-                    }
+                Crossfade(targetState = headline, label = "recap-headline") { line ->
+                    Text(
+                        text = line,
+                        color = ink.copy(alpha = 0.75f),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontStyle = FontStyle.Italic,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    )
                 }
             }
-
-            if (card.isReady) {
-                Text(
-                    text = card.callToAction,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f),
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.End,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp, end = 4.dp),
-                )
-            }
-        }
-
-        // The dot a thread puts on something you haven't opened. Deliberately not a count: there is
-        // one recap, and inventing a number for it would be inventing information.
-        if (card.isReady) {
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(10.dp)
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(accent),
-            )
         }
     }
 }

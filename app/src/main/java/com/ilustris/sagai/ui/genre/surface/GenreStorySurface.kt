@@ -16,7 +16,7 @@ import com.ilustris.sagai.ui.genre.book.CowboyBurnMarks
 import com.ilustris.sagai.ui.genre.book.HorrorPoliceTapeOverlay
 import com.ilustris.sagai.ui.genre.book.ShinobiInkBlooms
 import com.ilustris.sagai.ui.genre.collage.PunkScribbleOverlay
-import com.ilustris.sagai.ui.genre.crime.CrimeBackground
+import com.ilustris.sagai.ui.genre.crime.CorkboardBackground
 import com.ilustris.sagai.ui.genre.surface.book.BookStoryBeat
 import com.ilustris.sagai.ui.genre.surface.collage.CollageStoryBeat
 import com.ilustris.sagai.ui.genre.surface.comic.ComicStoryBeat
@@ -28,6 +28,7 @@ import com.ilustris.sagai.ui.genre.terminal.TerminalBackground
 import com.ilustris.sagai.ui.genre.terminal.TerminalGlitchOverlay
 import com.ilustris.sagai.ui.theme.LocalSagaGenre
 import com.ilustris.sagai.ui.theme.filters.crtScreen
+import com.ilustris.sagai.ui.theme.reviewVfx
 
 /**
  * Renders one [StoryBeat] in whichever visual language [genre] speaks. This is the single entry
@@ -59,24 +60,30 @@ fun GenreStorySurface(
         }
 
         when (genre?.surfaceStyle() ?: GenreSurfaceStyle.DEFAULT) {
-            GenreSurfaceStyle.BOOK ->
+            GenreSurfaceStyle.BOOK -> {
                 BookStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding)
+            }
 
-            GenreSurfaceStyle.TERMINAL ->
+            GenreSurfaceStyle.TERMINAL -> {
                 TerminalStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding)
+            }
 
-            GenreSurfaceStyle.CRIME ->
+            GenreSurfaceStyle.CRIME -> {
                 CrimeStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding)
+            }
 
-            GenreSurfaceStyle.COLLAGE ->
+            GenreSurfaceStyle.COLLAGE -> {
                 CollageStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding)
+            }
 
-            GenreSurfaceStyle.COMIC ->
+            GenreSurfaceStyle.COMIC -> {
                 ComicStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding)
+            }
 
             // Only reachable for a null genre — every real genre has a style of its own.
-            GenreSurfaceStyle.DEFAULT ->
+            GenreSurfaceStyle.DEFAULT -> {
                 PlainStoryBeat(beat, Modifier, canAnimate, embedded, contentPadding, genre)
+            }
         }
     }
 }
@@ -92,12 +99,12 @@ fun GenreStoryBackground(
 ) {
     when (genre?.surfaceStyle() ?: GenreSurfaceStyle.DEFAULT) {
         GenreSurfaceStyle.BOOK -> BookBackground(modifier)
+
         GenreSurfaceStyle.TERMINAL -> TerminalBackground(modifier)
-        GenreSurfaceStyle.CRIME -> CrimeBackground(modifier)
-        GenreSurfaceStyle.COLLAGE,
-        GenreSurfaceStyle.COMIC,
-        GenreSurfaceStyle.DEFAULT,
-        -> Box(modifier.background(MaterialTheme.colorScheme.background))
+
+        // The corkboard's own surface, so a milestone and the finished saga's review are lit in
+        // the same room. CrimeBackground belonged to the messaging-app era this genre has left.
+        else -> Box(modifier.background(MaterialTheme.colorScheme.background))
     }
 }
 
@@ -144,11 +151,9 @@ fun GenreScreenEffects(
     val isTerminal = (genre?.surfaceStyle() ?: GenreSurfaceStyle.DEFAULT) == GenreSurfaceStyle.TERMINAL
 
     Box(
-        if (isTerminal) modifier.fillMaxSize().crtScreen() else modifier.fillMaxSize(),
+        modifier.fillMaxSize(),
     ) {
         content()
-        if (isTerminal && genre == Genre.CYBERPUNK) {
-            TerminalGlitchOverlay(Modifier.fillMaxSize())
-        }
+        Box(Modifier.fillMaxSize().reviewVfx(true))
     }
 }

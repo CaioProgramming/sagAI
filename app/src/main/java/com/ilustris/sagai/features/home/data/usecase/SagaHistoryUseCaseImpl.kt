@@ -75,7 +75,6 @@ class SagaHistoryUseCaseImpl
                                     genreConfigService.conversationInstructions(saga.data.genre),
                                 ),
                             requireTranslation = true,
-                            useCore = true,
                             requirement = ModelRequirement.HIGH,
                         ).collect { state ->
                             emit(state)
@@ -103,7 +102,6 @@ class SagaHistoryUseCaseImpl
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                         ),
                                     requireTranslation = true,
-                                    useCore = true,
                                     requirement = ModelRequirement.HIGH,
                                 ),
                             "Generating saga ending... ",

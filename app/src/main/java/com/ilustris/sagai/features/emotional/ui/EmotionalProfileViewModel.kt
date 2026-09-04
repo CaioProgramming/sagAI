@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.emotional.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.services.EmotionalToneVisualService
-import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
@@ -19,7 +18,6 @@ import javax.inject.Inject
 class EmotionalProfileViewModel
     @Inject
     constructor(
-        private val mascotEmotionService: MascotEmotionService,
         private val emotionalToneVisualService: EmotionalToneVisualService,
         private val sagaRepository: SagaRepository,
     ) : ViewModel() {
@@ -43,9 +41,8 @@ class EmotionalProfileViewModel
                                 ?.first
                             ?: EmotionalTone.NEUTRAL
 
-                    // Priority: 1. Abstract Visual (tone_visuals) | 2. Genre Mascot | 3. Default Mascot
+                    // tone_visuals only: the mascot emote tables it used to fall back to are gone.
                     _emotionalIconUrl.value = emotionalToneVisualService.getVisualUrl(dominantTone)
-                        ?: mascotEmotionService.getEmotionUrl(sagaContent.data.genre, dominantTone)
                 }
             }
         }

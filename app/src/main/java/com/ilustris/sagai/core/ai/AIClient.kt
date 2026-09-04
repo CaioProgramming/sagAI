@@ -1,7 +1,9 @@
 package com.ilustris.sagai.core.ai
 
 import com.ilustris.sagai.BuildConfig
-import com.ilustris.sagai.core.ai.GemmaClient.Companion.CORE_FLAG
+import com.ilustris.sagai.core.ai.key.ApiUsageTracker
+import com.ilustris.sagai.core.ai.key.QuotaStatusService
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -22,19 +24,24 @@ enum class ModelRequirement {
 }
 
 /**
- * Maps a tier onto a `thinkingLevel` the Gemini API actually accepts.
+ * Fallback mapping from tier to thinking level, for tiers that declare no `thinkingLevel`.
  *
- * The API's values are lowercase `low`/`medium`/`high`, so the enum name can't be sent raw —
- * it only ever looked harmless because Gemma ignores `thinkingConfig` outright, which meant an
- * invalid level went unnoticed until a tier was pointed at a Gemini 3 model.
+ * The API's values are lowercase `minimal`/`low`/`medium`/`high`, so the enum name can't be sent
+ * raw. Measured on `gemma-4-31b-it`, an uppercase level is tolerated rather than rejected — it
+ * quietly falls back to the model's default — which is why sending the enum name went unnoticed
+ * until a tier was pointed at a Gemini 3 model, where it is a hard 400.
  *
- * [ModelRequirement.MINIMAL] maps down to `low` rather than `minimal`: not every Gemini 3 model
- * offers the minimal level, and asking for a level a model doesn't have is how this broke in the
- * first place.
+ * [ModelRequirement.MINIMAL] maps to `minimal` rather than up to `low`. It used to map up, because
+ * not every model offers `minimal` and a rejection broke the tier; that fear is now handled by
+ * [GeminiAIClient.effectiveThinkingLevel], which learns the refusal and degrades on its own. The
+ * old mapping also had it backwards in practice — measured on `gemini-3.6-flash`, `low` spends 87
+ * reasoning tokens against the model's own default of 69, so the cheapest tier was thinking the
+ * hardest.
  */
 fun ModelRequirement.toGeminiThinkingLevel(): String =
     when (this) {
-        ModelRequirement.MINIMAL, ModelRequirement.LOW -> "low"
+        ModelRequirement.MINIMAL -> "minimal"
+        ModelRequirement.LOW -> "low"
         ModelRequirement.MEDIUM -> "medium"
         ModelRequirement.HIGH -> "high"
     }
@@ -44,6 +51,10 @@ abstract class AIClient(
     protected val promptService: PromptService,
     protected val ageVerificationService: AgeVerificationService,
     @PublishedApi internal val aiAuditLogDao: AIAuditLogDao,
+    @PublishedApi internal val userApiKeyStore: UserApiKeyStore,
+    @PublishedApi internal val quotaStatusService: QuotaStatusService,
+    @PublishedApi internal val modelCatalog: ModelCatalog,
+    @PublishedApi internal val apiUsageTracker: ApiUsageTracker,
 ) {
     fun getLanguage(requireTranslation: Boolean = true): String {
         val locale = if (requireTranslation) Locale.getDefault() else Locale.US
@@ -196,21 +207,57 @@ abstract class AIClient(
         }
 
     /**
-     * The `thinkingLevel` to send for [requirement], or null when the tier has thinking switched
-     * off in `model_configs` — in which case no `thinkingConfig` is sent at all.
+     * The `thinkingLevel` to send for [requirement] on [model].
      *
-     * `thinkingEnabled` has been in `model_configs` all along but nothing ever read it, so every
-     * tier requested thoughts regardless of its own configuration. Defaults to enabled when the
-     * key is absent, matching the behaviour that shipped.
+     * Read from `model_configs` rather than derived from the tier's name, because the two are not
+     * the same question: the tier says how hard the task is, the level says how much the model
+     * should deliberate, and only the second is a thing the API accepts.
+     *
+     * Resolution order, so the existing config keeps working while it migrates:
+     *  1. an explicit `thinkingLevel` on the tier — the intended way;
+     *  2. `thinkingEnabled: false` → `minimal`;
+     *  3. otherwise, the old tier-derived mapping.
+     *
+     * Note what case 2 fixes. `thinkingEnabled: false` used to send no `thinkingConfig` at all,
+     * which does not disable thinking — the model thinks at its own default, and because
+     * `includeThoughts` goes unsent with it, we paid for reasoning tokens and got no summaries
+     * back. Measured: `gemini-3.6-flash` no config ⇒ 69 thought tokens, `minimal` ⇒ 0;
+     * `gemma-4-31b-it` no config ⇒ 33, `minimal` ⇒ 0.
+     *
+     * That second pair is the one to remember. Gemma 4 honours `thinkingConfig` — older Gemma
+     * ignored it, and code comments here used to say so — so the level is not decorative on the
+     * Gemma tiers either. It buys latency and output tokens, though not input-quota headroom:
+     * thought tokens are output, and the free tier's blocking limit is
+     * `generate_content_free_tier_input_token_count`.
      */
-    suspend fun thinkingLevel(requirement: ModelRequirement): String? {
+    suspend fun thinkingLevel(
+        requirement: ModelRequirement,
+        model: String,
+    ): String {
         val tierConfig =
-            remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap()
-        val enabled =
-            (tierConfig[requirement.name] as? Map<*, *>)
-                ?.get("thinkingEnabled") as? Boolean
-                ?: true
-        return requirement.toGeminiThinkingLevel().takeIf { enabled }
+            (remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap())
+                .let { it[requirement.name] as? Map<*, *> }
+
+        val configured =
+            (tierConfig?.get("thinkingLevel") as? String)
+                ?.lowercase()
+                ?.takeIf { it in ACCEPTED_THINKING_LEVELS }
+
+        val resolved =
+            configured
+                ?: if (tierConfig?.get("thinkingEnabled") as? Boolean == false) {
+                    MINIMAL_THINKING
+                } else {
+                    requirement.toGeminiThinkingLevel()
+                }
+
+        // `minimal` is not offered by every model — gemini-3.7-flash rejects it outright — so a
+        // tier pointed at one of those degrades to the next level up instead of failing.
+        return if (resolved == MINIMAL_THINKING && !modelCatalog.supportsMinimalThinking(model)) {
+            "low"
+        } else {
+            resolved
+        }
     }
 
     suspend fun modelName(requirement: ModelRequirement): String {
@@ -242,21 +289,35 @@ abstract class AIClient(
         }
     }
 
-    suspend fun coreKey() =
-        remoteConfigService.getString(CORE_FLAG, false)?.let {
-            it.ifEmpty {
-                error("Couldn't fetch gemma Model")
-            }
-        } ?: error("Couldn't get Flag value")
+    /**
+     * The key every Gemini call runs on — the user's own, decrypted from [UserApiKeyStore].
+     *
+     * This used to take a `useCore` flag choosing the `SAGA_CORE` credential over `FIREBASE_KEY`,
+     * two keys of ours served by Remote Config. Their point was separate quota pools, which never
+     * held: quota is per Google Cloud project, so keys of the same project share one budget. Under
+     * BYOK there is a single credential and nothing left to choose between.
+     */
+    suspend fun apiConfig(): String {
+        ensureQuotaAvailable()
+        return userApiKeyStore.getKeyNow()?.takeIf { it.isNotBlank() }
+            ?: throw MissingApiKeyException()
+    }
 
-    suspend fun apiConfig(useCore: Boolean): String =
-        if (useCore) {
-            coreKey()
-        } else {
-            remoteConfigService.getString(KEY_FLAG, false)?.ifEmpty {
-                error("Couldn't fetch firebase key")
-            } ?: error("Flag Value unavailable.")
+    /**
+     * Refuses a call the daily quota has already lost, before it costs anything.
+     *
+     * Lives here rather than at the generation entry points because there are far more of those
+     * than the obvious two — book export, image generation, character creation, milestone beats,
+     * the epilogue chat — and gating them one screen at a time guarantees the ones nobody
+     * remembered keep failing mutely. Every text generation, sync and streaming alike, resolves its
+     * credential through [apiConfig], so this is the one road they all take.
+     */
+    @PublishedApi
+    internal suspend fun ensureQuotaAvailable() {
+        quotaStatusService.activeDailyBlock()?.let { block ->
+            throw QuotaExhaustedException(until = block.until, model = block.model)
         }
+    }
 
     @PublishedApi
     internal fun assembleGeminiRequest(block: GeminiRequestBuilder.() -> Unit): GeminiRequestAssembly = geminiRequest(block)
@@ -279,6 +340,10 @@ abstract class AIClient(
         }
     }
 }
+
+private const val MINIMAL_THINKING = "minimal"
+
+private val ACCEPTED_THINKING_LEVELS = setOf(MINIMAL_THINKING, "low", "medium", "high")
 
 val AI_EXCLUDED_FIELDS =
     listOf(

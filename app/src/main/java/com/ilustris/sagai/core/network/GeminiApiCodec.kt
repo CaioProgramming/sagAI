@@ -72,6 +72,26 @@ object GeminiApiCodec {
             }.toString()
     }
 
+    /**
+     * Maps each model name to the context window the API reports for it.
+     *
+     * The ceiling comes from the API rather than a constant so it stays right as tiers move
+     * between model families — Gemma reports 262144, Gemini 1048576, and a hardcoded number would
+     * be wrong for at least one of them the moment `model_configs` straddles both.
+     */
+    fun decodeModelTokenLimits(json: String): Map<String, Int> {
+        if (json.isBlank()) return emptyMap()
+        val models = JsonParser.parseString(json).asJsonObject.optJsonArray("models")
+            ?: return emptyMap()
+        return models.mapNotNull { element ->
+            val obj = element as? JsonObject ?: return@mapNotNull null
+            val name = obj.optString("name")?.removePrefix("models/") ?: return@mapNotNull null
+            val limit = obj.get("inputTokenLimit")?.takeIf { !it.isJsonNull }?.asInt
+                ?: return@mapNotNull null
+            name to limit
+        }.toMap()
+    }
+
     fun decodeErrorResponse(json: String): com.ilustris.sagai.core.ai.model.GeminiErrorResponse {
         if (json.isBlank()) return com.ilustris.sagai.core.ai.model.GeminiErrorResponse(error = null)
         val root = JsonParser.parseString(json).asJsonObject
@@ -147,6 +167,23 @@ object GeminiApiCodec {
             }
             config.temperature?.let { obj.addProperty("temperature", it) }
             config.responseMimeType?.let { obj.addProperty("response_mime_type", it) }
+            // Was silently dropped here: the builder assembled a thinkingConfig and the encoder
+            // never wrote it, so no request ever carried a thinking level or asked for a summary.
+            // Every model simply thought at its own default and returned no thought parts, which
+            // read from the outside as "the API does not send reasoning".
+            config.thinkingConfig?.let { thinking ->
+                obj.add(
+                    "thinkingConfig",
+                    JsonObject().also { thinkingObj ->
+                        thinking.includeThoughts?.let {
+                            thinkingObj.addProperty("includeThoughts", it)
+                        }
+                        thinking.thinkingLevel?.let {
+                            thinkingObj.addProperty("thinkingLevel", it)
+                        }
+                    },
+                )
+            }
             config.speechConfig?.let { speech ->
                 obj.add(
                     "speech_config",
@@ -210,6 +247,7 @@ object GeminiApiCodec {
             promptTokenCount = obj.optInt("promptTokenCount"),
             candidatesTokenCount = obj.optInt("candidatesTokenCount"),
             totalTokenCount = obj.optInt("totalTokenCount"),
+            thoughtsTokenCount = obj.optInt("thoughtsTokenCount"),
         )
 
     private fun decodeError(obj: JsonObject): GeminiError =

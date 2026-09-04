@@ -96,7 +96,9 @@ class GeminiRequestBuilder internal constructor() {
                         thinkingConfig =
                             thinkingLevel?.let { level ->
                                 GeminiThinkingConfig(
-                                    includeThoughts = true,
+                                    // No point asking for summaries of reasoning we just asked the
+                                    // model not to do — `minimal` returns zero thought tokens.
+                                    includeThoughts = level != "minimal",
                                     thinkingLevel = level,
                                 )
                             },

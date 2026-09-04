@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,7 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -70,6 +68,7 @@ import com.ilustris.sagai.ui.genre.book.CowboyBurnMarks
 import com.ilustris.sagai.ui.genre.book.HorrorPoliceTapeOverlay
 import com.ilustris.sagai.ui.genre.book.ShinobiInkBlooms
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicBoardReviewContainer
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CorkboardReviewContainer
 import com.ilustris.sagai.ui.genre.terminal.TerminalBackground
 import com.ilustris.sagai.ui.genre.terminal.TerminalGlitchOverlay
 import com.ilustris.sagai.ui.genre.terminal.TerminalProgress
@@ -185,10 +184,9 @@ fun SagaReview(
                     )
                 }
 
-                ReviewNavigationStyle.ChatScroll -> {
-                    ChatScrollReviewContainer(
+                ReviewNavigationStyle.ComicBoard -> {
+                    ComicBoardReviewContainer(
                         pages = pages,
-                        hasLoadingSlot = hasLoadingSlot,
                         genre = genre,
                         onEnsureGeneration = onEnsureGeneration,
                         onDismiss = onDismiss,
@@ -197,8 +195,8 @@ fun SagaReview(
                     )
                 }
 
-                ReviewNavigationStyle.ComicBoard -> {
-                    ComicBoardReviewContainer(
+                ReviewNavigationStyle.Corkboard -> {
+                    CorkboardReviewContainer(
                         pages = pages,
                         genre = genre,
                         onEnsureGeneration = onEnsureGeneration,
@@ -756,203 +754,3 @@ private fun ContinuousScrollReviewContainer(
     }
 }
 
-/**
- * A simulated live chat — Crime's iMessage-style template. Unlike [ContinuousScrollReviewContainer]
- * (everything laid out up front, the list drifts hands-free through it), messages here don't exist
- * in the list until revealed: [revealedCount] ticks up on a timer, and every tick forces a scroll
- * to the newest message, so it reads as watching a conversation arrive rather than reading an
- * already-finished page. The user can still scroll up freely to re-read; the next reveal just pulls
- * the view back down. Reuses the same [ReviewAction] contract as the other four containers.
- */
-@Composable
-private fun ChatScrollReviewContainer(
-    pages: List<ReviewPage>,
-    hasLoadingSlot: Boolean,
-    genre: Genre,
-    onEnsureGeneration: () -> Unit,
-    onDismiss: () -> Unit,
-    onShare: (ShareType) -> Unit,
-    onRegenerate: () -> Unit,
-) {
-    val coroutineScope = rememberCoroutineScope()
-    val listState = rememberLazyListState()
-    val itemCount = pages.size + if (hasLoadingSlot) 1 else 0
-
-    var revealedCount by remember(pages.size) { mutableStateOf(0) }
-    // Bumped by Restart/Regenerate so the reveal LaunchedEffect below — a coroutine that runs to
-    // completion once all pages are revealed — restarts instead of staying dead after resetting
-    // revealedCount back to 0.
-    var restartTrigger by remember { mutableStateOf(0) }
-
-    // Items scrolled far enough away get dropped from the LazyColumn's composition entirely; if
-    // the reader scrolls back to one, it composes fresh and would otherwise play its pop-in/
-    // typewriter again — several at once if several items re-enter view together. Indices in here
-    // have already played their entrance once, so they render already-settled on any later
-    // (re)composition instead of replaying.
-    val animatedIndices = remember(restartTrigger) { mutableStateSetOf<Int>() }
-
-    // Waits for whichever message is currently the last revealed one to actually finish its own
-    // entrance animation (typing included, for a text bubble) before pausing another 2s and
-    // moving on — a flat delay here regardless of message length was why everything felt rushed:
-    // a long message's typewriter was still mid-sentence when the next bubble already popped in.
-    suspend fun delayBeforeReveal(nextIndex: Int) {
-        if (nextIndex == 0) {
-            delay(400)
-            return
-        }
-        val settleTime = pages[nextIndex - 1].estimatedRevealDurationMs.takeIf { it > 0 } ?: 800L
-        delay(settleTime + 2000)
-    }
-
-    // Fire-and-forget: a user's manual drag preempts a running animateScrollToItem (LazyListState
-    // only allows one scroll "owner" at a time), which throws a CancellationException at that
-    // suspend call. Awaiting it directly inside the reveal loop below let that exception cancel
-    // the *whole* coroutine — reveals just stopped forever the moment someone touched the list,
-    // since nothing re-launches a LaunchedEffect whose keys never changed. Launching the scroll
-    // in its own child coroutine means only that scroll gets cancelled; revealedCount keeps
-    // progressing regardless of what the reader's finger is doing.
-    fun scrollToLatest() {
-        coroutineScope.launch { runCatching { listState.animateScrollToItem(0) } }
-    }
-
-    LaunchedEffect(pages.size, hasLoadingSlot, restartTrigger) {
-        if (revealedCount >= pages.size) return@LaunchedEffect
-        while (revealedCount < pages.size) {
-            delayBeforeReveal(revealedCount)
-            revealedCount++
-            scrollToLatest()
-        }
-        if (hasLoadingSlot) {
-            onEnsureGeneration()
-        }
-    }
-
-    fun revealNext(): Boolean {
-        if (revealedCount >= pages.size) return false
-        revealedCount++
-        scrollToLatest()
-        return true
-    }
-
-    suspend fun handleAction(action: ReviewAction) {
-        when (action) {
-            ReviewAction.Continue -> {
-                if (!revealNext()) {
-                    scrollToLatest()
-                }
-            }
-
-            ReviewAction.Finish -> {
-                onDismiss()
-            }
-
-            ReviewAction.Restart -> {
-                revealedCount = 0
-                restartTrigger++
-            }
-
-            ReviewAction.Regenerate -> {
-                onRegenerate()
-                revealedCount = 0
-                restartTrigger++
-            }
-
-            is ReviewAction.Navigate -> {
-                val targetPageIndex = pages.indexOfFirst { it.pageType == action.pageType }
-                if (targetPageIndex != -1) {
-                    // Position 0 is always the newest revealed page (see the reversed `items`
-                    // block below) — position = how many *newer* revealed pages sit after it.
-                    val clampedPageIndex = targetPageIndex.coerceAtMost(revealedCount - 1).coerceAtLeast(0)
-                    val position = (revealedCount - 1 - clampedPageIndex).coerceAtLeast(0)
-                    coroutineScope.launch { runCatching { listState.animateScrollToItem(position) } }
-                }
-            }
-
-            is ReviewAction.Share -> {
-                onShare(action.shareType)
-            }
-        }
-    }
-
-    Box(Modifier.fillMaxSize()) {
-        pages.firstOrNull()?.Background(modifier = Modifier.fillMaxSize())
-
-        // The skip icon lives at TopCenter + statusBarsPadding() below, floating over the list —
-        // without matching top content padding here, the first bubble scrolls right up under it.
-        val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            // reverseLayout so the newest bubble anchors at the *bottom* of the screen with
-            // older context still visible above it — same convention the real in-game chat
-            // (ChatView.kt) already uses. Before this, a freshly revealed bubble scrolled to the
-            // *top* of the viewport (LazyColumn's default, non-reversed alignment), which dumped
-            // everything above it out of view and left it typing alone against empty space below.
-            reverseLayout = true,
-            // The bottom edge is now where the actively-typing bubble lives — extra room here
-            // (beyond just the nav-bar inset) is the breathing space a literal trailing Spacer
-            // item would otherwise give it; a real item would also land at position 0 some of the
-            // time under reverseLayout, breaking the "position 0 = newest" invariant below.
-            contentPadding = PaddingValues(top = topInset + 56.dp, bottom = bottomInset + 96.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            // Declared first so it lands at index 0 — under reverseLayout that's the *bottom*
-            // (newest) position, right after the last real message, not above everything like
-            // declaring it after the items() block below would (declaration order still equals
-            // index order; reverseLayout only mirrors how that index sequence is placed on
-            // screen).
-            if (hasLoadingSlot && revealedCount >= pages.size) {
-                item(key = "loading") {
-                    Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
-                        ReviewLoadingIcon()
-                    }
-                }
-            }
-
-            // Rendered newest-first (position 0 = pages[revealedCount - 1]) so reverseLayout
-            // places the newest bubble at the bottom and "scroll to latest" is always just
-            // `animateScrollToItem(0)` — no index arithmetic needed at the call site. Keyed by
-            // the actual page index (not position `i`), since `i`'s mapping to a page shifts by
-            // one every time a new page is revealed — without this key, Compose would treat that
-            // shift as "a different item now occupies this slot" and could scramble each page's
-            // remembered animation state across positions.
-            items(
-                count = revealedCount,
-                key = { i -> revealedCount - 1 - i },
-            ) { i ->
-                val pageIndex = revealedCount - 1 - i
-                // Captured once, NOT re-read reactively: `animatedIndices` is a
-                // SnapshotStateSet, so a plain `pageIndex in animatedIndices` re-evaluates on
-                // every recomposition — including the one the LaunchedEffect below itself
-                // triggers a frame after first composing. That raced canAnimate from true to
-                // false before any entrance animation got to run, so everything (typewriter,
-                // pop-in, even the title card's handwriting) skipped straight to its settled
-                // state. `remember` with no keys caches the decision from the *first*
-                // composition only, immune to that self-triggered recomposition.
-                val canAnimateThisItem = remember { pageIndex !in animatedIndices }
-                LaunchedEffect(pageIndex) {
-                    animatedIndices += pageIndex
-                }
-                pages[pageIndex].Show(
-                    modifier = Modifier.fillMaxWidth(),
-                    canAnimate = canAnimateThisItem,
-                ) {
-                    coroutineScope.launch { handleAction(it) }
-                }
-            }
-        }
-
-        ReviewSkipButton(genre) {
-            coroutineScope.launch {
-                if (!revealNext()) {
-                    val isLastItem = revealedCount >= itemCount
-                    if (isLastItem) {
-                        onDismiss()
-                    }
-                }
-            }
-        }
-    }
-}

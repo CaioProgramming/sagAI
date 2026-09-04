@@ -87,7 +87,6 @@ class ActUseCaseImpl
                                 "currentChapterId",
                                 "introduction",
                             ),
-                        useCore = true,
                     )!!
 
                 updateAct(
@@ -124,7 +123,6 @@ class ActUseCaseImpl
                                         "currentChapterId",
                                         "introduction",
                                     ),
-                                useCore = true,
                             ),
                         "Generating new act...",
                         genre = saga.data.genre,
@@ -213,7 +211,6 @@ class ActUseCaseImpl
                             genreConfigService.conversationInstructions(saga.data.genre),
                             actContext.renderInstructions(),
                         ),
-                    useCore = true,
                 )!!
             val updatedAct = actRepository.updateAct(act.copy(introduction = intro.data))
             GeneratedContent(updatedAct, intro.finalMessage)
@@ -245,7 +242,6 @@ class ActUseCaseImpl
                                         actContext.renderInstructions(),
                                     ),
                                 requireTranslation = true,
-                                useCore = true,
                                 requirement = ModelRequirement.MEDIUM,
                             ),
                         "Starting a new act...",
@@ -305,7 +301,6 @@ class ActUseCaseImpl
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                         ),
-                                    useCore = true,
                                     requirement = ModelRequirement.HIGH,
                                 ),
                             "Finishing story act",

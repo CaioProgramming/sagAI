@@ -52,6 +52,7 @@ import com.ilustris.sagai.ui.genre.terminal.terminalHost
 import com.ilustris.sagai.ui.genre.terminal.terminalPromptLine
 import com.ilustris.sagai.ui.theme.LocalSagaGenre
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
+import com.ilustris.sagai.ui.theme.components.HandwrittenText
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.morphingGradient
@@ -291,19 +292,17 @@ private fun CrimeLoading(
     message: String,
 ) {
     Column(
-        Modifier.fillMaxSize().padding(20.dp),
+        Modifier.fillMaxSize().padding(32.dp),
         verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        themeStylizedText(title, modifier = Modifier.align(Alignment.CenterHorizontally))
-
-        Text(
-            text = message,
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    shadow = Shadow(Color.White, blurRadius = 10f),
-                    textAlign = TextAlign.Center,
-                ),
-            modifier = Modifier.padding(8.dp).align(Alignment.CenterHorizontally).reactiveShimmer(true),
+        HandwrittenText(
+            message,
+            isItalic = true,
+            strokeWidth = 1.dp,
+            centered = true,
+            shadow = Shadow(MaterialTheme.colorScheme.primary, blurRadius = 10f),
+            modifier = Modifier.reactiveShimmer(true),
         )
     }
 }

@@ -102,6 +102,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.key.QuotaStatus
+import com.ilustris.sagai.core.ai.key.QuotaStatusViewModel
 import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
 import com.ilustris.sagai.core.file.BACKUP_PERMISSION
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
@@ -155,6 +157,8 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.QuotaLimitNotice
+import com.ilustris.sagai.ui.components.island.islandPadding
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -166,6 +170,7 @@ import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.shimmerize
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
@@ -426,6 +431,9 @@ fun ChatContent(
     val content = uiState.sagaContent ?: stableContent ?: return
     val saga = remember(content) { content.data }
     val listState = rememberLazyListState()
+    val quotaStatus by hiltViewModel<QuotaStatusViewModel>()
+        .status
+        .collectAsStateWithLifecycle()
 
     var showReactions by remember {
         mutableStateOf<MessageContent?>(null)
@@ -449,7 +457,8 @@ fun ChatContent(
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
                 .statusBarsPadding()
-                .imePadding(),
+                .imePadding()
+                .islandPadding(),
     ) {
         Box(contentAlignment = Alignment.Center) {
             val iconAnimating = uiState.isLoading || uiState.isGenerating
@@ -712,31 +721,48 @@ fun ChatContent(
                                 enter = slideInVertically(),
                                 exit = slideOutVertically { it },
                             ) {
-                                ChatInputView(
-                                    content = content,
-                                    characters = uiState.characters,
-                                    isGenerating = uiState.isGenerating || uiState.isLoading,
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .wrapContentHeight(),
-                                    selectedCharacter = uiState.selectedCharacter,
-                                    typoFix = uiState.typoFixMessage,
-                                    inputField = uiState.inputValue,
-                                    sendType = uiState.senderType,
-                                    isSendingPending = uiState.isSendingPending,
-                                    sendingProgress = uiState.sendingProgress,
-                                    onSendMessage = onSendMessage,
-                                    onUpdateInput = onUpdateInput,
-                                    onUpdateSender = onUpdateSender,
-                                    suggestions = uiState.suggestions,
-                                    onSelectCharacter = onSelectCharacter,
-                                    onRequestAudio = onRequestAudio,
-                                    isEditing = uiState.editingMessage != null,
-                                    onCancelEdit = onCancelEdit,
-                                    maxContentLength = uiState.maxContentLength,
-                                    onStopGeneration = { onAction(ChatUiAction.StopGeneration) },
-                                )
+                                // A spent daily quota can't answer anything until midnight
+                                // Pacific, so the composer is replaced rather than disabled —
+                                // letting someone write a message that will bounce is worse than
+                                // saying so up front. Other generation surfaces are covered by the
+                                // pre-flight check and the global sheet.
+                                val dailyBlock =
+                                    quotaStatus as? QuotaStatus.DailyExhausted
+                                if (dailyBlock != null) {
+                                    QuotaLimitNotice(
+                                        until = dailyBlock.until,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    )
+                                } else {
+                                    ChatInputView(
+                                        content = content,
+                                        characters = uiState.characters,
+                                        isGenerating = uiState.isGenerating || uiState.isLoading,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .wrapContentHeight(),
+                                        selectedCharacter = uiState.selectedCharacter,
+                                        typoFix = uiState.typoFixMessage,
+                                        inputField = uiState.inputValue,
+                                        sendType = uiState.senderType,
+                                        isSendingPending = uiState.isSendingPending,
+                                        sendingProgress = uiState.sendingProgress,
+                                        onSendMessage = onSendMessage,
+                                        onUpdateInput = onUpdateInput,
+                                        onUpdateSender = onUpdateSender,
+                                        suggestions = uiState.suggestions,
+                                        onSelectCharacter = onSelectCharacter,
+                                        onRequestAudio = onRequestAudio,
+                                        isEditing = uiState.editingMessage != null,
+                                        onCancelEdit = onCancelEdit,
+                                        maxContentLength = uiState.maxContentLength,
+                                        onStopGeneration = { onAction(ChatUiAction.StopGeneration) },
+                                    )
+                                }
                             }
                         }
 
@@ -1243,7 +1269,7 @@ fun ChatList(
                             MaterialTheme.typography.labelMedium.copy(
                                 shadow =
                                     Shadow(
-                                        MaterialTheme.colorScheme.primary,
+                                        Color.White,
                                         blurRadius = 5f,
                                     ),
                                 fontWeight = FontWeight.Normal,
@@ -1256,7 +1282,8 @@ fun ChatList(
                                 .levitate()
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .alpha(.5f),
+                                .alpha(.5f)
+                                .reactiveShimmer(true, Color.White.shimmerize()),
                     )
                 }
             }

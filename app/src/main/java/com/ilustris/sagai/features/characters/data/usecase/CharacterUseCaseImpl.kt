@@ -24,7 +24,6 @@ import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
 import com.ilustris.sagai.features.characters.data.model.NickNameGen
-import com.ilustris.sagai.features.characters.data.model.SmartZoom
 import com.ilustris.sagai.features.characters.data.source.CharacterArcDao
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
@@ -206,8 +205,8 @@ class CharacterUseCaseImpl
                     ?: return character
             val updatedCharacter = character.copy(artwork = artwork)
             repository.updateCharacter(updatedCharacter)
-        return updatedCharacter
-    }
+            return updatedCharacter
+        }
 
         private fun characterImageContext(character: Character): String =
             buildString {
@@ -224,7 +223,6 @@ class CharacterUseCaseImpl
                             "image",
                             "sagaId",
                             "joinedAt",
-                            "smartZoom",
                             "knowledge",
                             "firstSceneId",
                             "emojified",
@@ -233,16 +231,6 @@ class CharacterUseCaseImpl
                         ),
                     ),
                 )
-            }
-
-        @Deprecated("Smart zoom is deprecated and no longer scheduled from chat or avatars.")
-        override suspend fun createSmartZoom(character: Character): RequestResult<Unit> =
-            executeRequest {
-                Timber.i("createSmartZoom: creating zoom for ${character.name}")
-                val smartZoom = imageSegmentationHelper.calculateSmartZoom(character.image).getSuccess()
-                val newCharacter =
-                    character.copy(smartZoom = smartZoom ?: SmartZoom(needsZoom = false))
-                repository.updateCharacter(newCharacter)
             }
 
         private fun assertCharacterNotAlreadyInSaga(
@@ -272,6 +260,7 @@ class CharacterUseCaseImpl
                         description,
                         themeColor,
                         sceneSummary,
+                        genreConfigService.aesthetic(sagaContent.data.genre),
                     )
                 Timber.d(
                     "generateCharacter: Starting character generation with theme color $themeColor...",
@@ -283,14 +272,12 @@ class CharacterUseCaseImpl
                                 genreConfigService.buildAesthetic(sagaContent.data.genre),
                                 genreConfigService.appearanceInstructions(sagaContent.data.genre),
                             ),
-                        useCore = true,
                         filterOutputFields =
                             listOf(
                                 "id",
                                 "image",
                                 "joinedAt",
                                 "sagaId",
-                                "smartZoom",
                                 "voice",
                                 "hexColor",
                                 "firstSceneId",
@@ -310,7 +297,6 @@ class CharacterUseCaseImpl
                             joinedAt = System.currentTimeMillis(),
                             image = emptyString(),
                             hexColor = themeColor,
-                            smartZoom = null,
                         ),
                     )
                 CoroutineScope(Dispatchers.IO).launch {
@@ -340,6 +326,7 @@ class CharacterUseCaseImpl
                             description,
                             themeColor,
                             sceneSummary,
+                            genreConfigService.aesthetic(sagaContent.data.genre),
                         )
 
                     val request =
@@ -350,14 +337,12 @@ class CharacterUseCaseImpl
                                         genreConfigService.buildAesthetic(sagaContent.data.genre),
                                         genreConfigService.appearanceInstructions(sagaContent.data.genre),
                                     ),
-                                useCore = true,
                                 filterOutputFields =
                                     listOf(
                                         "id",
                                         "image",
                                         "joinedAt",
                                         "sagaId",
-                                        "smartZoom",
                                         "voice",
                                         "firstSceneId",
                                     ),
@@ -388,7 +373,6 @@ class CharacterUseCaseImpl
                                             joinedAt = System.currentTimeMillis(),
                                             image = emptyString(),
                                             hexColor = themeColor,
-                                            smartZoom = null,
                                         ),
                                     )
                                 CoroutineScope(Dispatchers.IO).launch {

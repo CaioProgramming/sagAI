@@ -3,27 +3,25 @@ package com.ilustris.sagai.ui.genre.surface.crime
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -39,40 +37,56 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.chat.ui.components.rememberMessageBlocks
-import com.ilustris.sagai.ui.genre.crime.CRIME_AVATAR_SLOT
-import com.ilustris.sagai.ui.genre.crime.CRIME_BUBBLE_HORIZONTAL_PADDING
-import com.ilustris.sagai.ui.genre.crime.CRIME_BUBBLE_RESERVED_MARGIN
-import com.ilustris.sagai.ui.genre.crime.CRIME_BUBBLE_ROW_PADDING
-import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
-import com.ilustris.sagai.ui.genre.crime.CrimeContactRow
+import com.ilustris.sagai.ui.genre.crime.CorkPin
+import com.ilustris.sagai.ui.genre.crime.PinCaption
+import com.ilustris.sagai.ui.genre.crime.PinProse
+import com.ilustris.sagai.ui.genre.crime.PinSignature
+import com.ilustris.sagai.ui.genre.crime.PinTitle
+import com.ilustris.sagai.ui.genre.crime.PinVibeNote
+import com.ilustris.sagai.ui.genre.crime.rememberCorkboardPalette
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryAside
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
-import com.ilustris.sagai.ui.genre.surface.StoryBeatTone
 import com.ilustris.sagai.ui.genre.surface.StoryBody
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
 import com.ilustris.sagai.ui.genre.surface.storyRoot
-import com.ilustris.sagai.ui.theme.LocalSagaGenre
-import com.ilustris.sagai.ui.theme.SimpleTypewriterText
+import com.ilustris.sagai.ui.theme.components.HandwrittenText
+import com.ilustris.sagai.ui.theme.filters.dreamyHaze
+import com.ilustris.sagai.ui.theme.hexToColor
 import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
+
+/** How long between one card being pinned up and the next. */
+private const val PIN_STAGGER_MS = 420L
+
+private const val PIN_ENTER_MS = 480
+
+/** Wide enough that a pinned portrait reads as a photo rather than as a list thumbnail. */
+private val POLAROID_WIDTH = 156.dp
+
+/** A milestone body is read on one screen, so it gets room — but not an unbounded amount. */
+private const val BODY_MAX_LINES = 14
 
 /**
- * A beat as messages landing in a thread. Every attachment becomes the kind of message a chat app
- * would actually send: a photo, a forwarded case file, a shared contact — never a card floating in
- * a chat-coloured room.
+ * A beat as evidence going up on the case board — the same table
+ * [com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CorkboardStrip] lays the
+ * finished saga out on, at the scale of a single moment.
  *
- * The aside is deliberately *not* a bubble. It is a second voice commenting on the conversation
- * rather than a participant in it, so it renders as the centred grey line a messaging app uses for
- * its own notices.
+ * This used to be a chat thread: bubbles, read receipts, quick replies. That was right while Crime's
+ * whole identity was the messaging app, but the review has since become a board, and a milestone
+ * that still simulated a conversation left the genre speaking two languages depending on which
+ * screen you were on. The in-game chat stays a chat — that is the conversation itself. This screen
+ * is what happens *between* scenes, which is exactly when someone steps back and pins up what they
+ * have.
+ *
+ * Cards go up one at a time rather than all at once. A milestone is a pause in play, and watching
+ * the board fill is what gives that pause its beat — the job the typing indicator used to do.
  */
 @Composable
 fun CrimeStoryBeat(
@@ -82,300 +96,305 @@ fun CrimeStoryBeat(
     embedded: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
-    val genre = LocalSagaGenre.current ?: Genre.CRIME
-    val isMe = beat.tone == StoryBeatTone.PLAYER
+    val palette = rememberCorkboardPalette()
+
+    // Built as a list so the reveal can walk it. Each entry is one card on the board.
+    val cards: List<@Composable () -> Unit> =
+        buildList {
+            val headline = beat.title?.takeIf { it.isNotBlank() }
+            val body = beat.body?.takeIf { it.isNotBlank() }
+
+            if (headline != null || body != null) {
+                add {
+                    CrimeBeatCard(
+                        title = headline,
+                        body = body,
+                        speaker = beat.speaker,
+                        canAnimate = canAnimate,
+                    )
+                }
+            }
+
+            beat.figures.filter { it.isNotBlank() }.forEach { url ->
+                add { CrimeEvidencePhoto(url) }
+            }
+
+            beat.entries.forEach { wiki ->
+                add { CrimeCaseFileCard(title = wiki.title, body = wiki.content, canAnimate = canAnimate) }
+            }
+
+            beat.cast.takeIf { it.isNotEmpty() }?.let { cast ->
+                add { CrimeSuspectRow(cast = cast, label = beat.castLabel) }
+            }
+
+            beat.aside?.let { aside -> add { CrimeVibeCard(aside, canAnimate) } }
+        }
+
+    var pinned by remember(beat.key, canAnimate, cards.size) {
+        mutableIntStateOf(if (canAnimate) 0 else cards.size)
+    }
+
+    LaunchedEffect(beat.key, canAnimate, cards.size) {
+        if (!canAnimate) return@LaunchedEffect
+        repeat(cards.size) { index ->
+            pinned = index + 1
+            delay(PIN_STAGGER_MS)
+        }
+    }
 
     Column(
         modifier
             .storyRoot(embedded)
             .padding(contentPadding)
             .padding(
-                horizontal = if (embedded) 0.dp else 12.dp,
+                horizontal = if (embedded) 0.dp else 20.dp,
                 vertical = if (embedded) 0.dp else 16.dp,
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        StoryBody(embedded, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            beat.eyebrow?.let { CrimeThreadDivider(it) }
+        StoryBody(embedded, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            beat.eyebrow?.let { CrimeFileLabel(it) }
 
-            beat.body?.takeIf { it.isNotBlank() }?.let { body ->
-                CrimeMessageBubble(
-                    body = body,
-                    title = beat.title,
-                    isMe = isMe,
-                    genre = genre,
-                    speaker = beat.speaker,
-                    canAnimate = canAnimate,
-                    revealKey = beat.key,
-                )
-            } ?: beat.title?.let { title ->
-                CrimeMessageBubble(
-                    body = title,
-                    title = null,
-                    isMe = isMe,
-                    genre = genre,
-                    speaker = beat.speaker,
-                    canAnimate = canAnimate,
-                    revealKey = beat.key,
-                )
-            }
-
-            beat.figures.forEach { url -> CrimePhotoBubble(url, genre) }
-
-            beat.entries.takeIf { it.isNotEmpty() }?.let { entries ->
-                beat.entriesLabel?.let { CrimeThreadDivider(it) }
-                entries.forEach { wiki ->
-                    CrimeCaseFileBubble(title = wiki.title, body = wiki.content, genre = genre)
+            cards.forEachIndexed { index, card ->
+                AnimatedVisibility(
+                    visible = index < pinned,
+                    enter =
+                        fadeIn(tween(PIN_ENTER_MS)) +
+                            // Settles in from slightly oversized, like a card pressed onto the
+                            // board rather than faded onto it.
+                            scaleIn(tween(PIN_ENTER_MS), initialScale = 1.06f),
+                ) {
+                    card()
                 }
             }
 
-            beat.cast.takeIf { it.isNotEmpty() }?.let { cast ->
-                beat.castLabel?.let { CrimeThreadDivider(it) }
-                CrimeBubbleFrame(isMe = false, genre = genre, showAvatar = false, showTail = false) { contentColor ->
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        cast.forEach { character ->
-                            CrimeContactRow(
-                                character = character,
-                                genre = genre,
-                                subtitle = character.profile.occupation,
-                                ink = contentColor,
-                            )
-                        }
+            beat.progress?.takeIf { it.total > 1 }?.let { CrimePinTrail(it, palette.thread) }
+        }
+
+        CrimeCaseActions(beat.actions)
+    }
+}
+
+/** The beat itself: title handwritten, prose in the normal face, signed if anyone said it. */
+@Composable
+private fun CrimeBeatCard(
+    title: String?,
+    body: String?,
+    speaker: Character?,
+    canAnimate: Boolean,
+) {
+    val accent = MaterialTheme.colorScheme.primary
+    val signatureColor = speaker?.hexColor?.hexToColor() ?: accent
+
+    CorkPin(
+        modifier = Modifier.fillMaxWidth(),
+        seed = (title ?: body).hashCode(),
+        // A board has no left and right, so the tone can't place the card the way it placed a chat
+        // bubble. The pushpin carries who is speaking instead — their own colour holding their card
+        // up — rather than that attribution being dropped entirely.
+        pinColor = signatureColor,
+    ) { ink ->
+        Column(
+            Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            title?.let { PinTitle(it, ink, centered = false, isAnimated = canAnimate) }
+            body?.let { PinProse(text = it, ink = ink, maxLines = BODY_MAX_LINES) }
+            speaker?.let {
+                PinSignature(
+                    name = it.name,
+                    color = signatureColor,
+                    isAnimated = canAnimate,
+                    modifier = Modifier.align(Alignment.End),
+                )
+            }
+        }
+    }
+}
+
+/** A photo tacked to the board, wearing the same soft-focus haze the review's stills do. */
+@Composable
+private fun CrimeEvidencePhoto(url: String) {
+    CorkPin(
+        modifier = Modifier.fillMaxWidth(0.82f),
+        seed = url.hashCode(),
+    ) {
+        AsyncImage(
+            model = url,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.4f)
+                    .clip(RoundedCornerShape(2.dp))
+                    .dreamyHaze(),
+        )
+    }
+}
+
+/** New lore as a clipping pinned to the board: subject handwritten, the entry itself typeset. */
+@Composable
+private fun CrimeCaseFileCard(
+    title: String,
+    body: String,
+    canAnimate: Boolean,
+) {
+    CorkPin(
+        modifier = Modifier.fillMaxWidth(0.92f),
+        seed = title.hashCode(),
+    ) { ink ->
+        Column(
+            Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            PinTitle(title, ink, centered = false, isAnimated = canAnimate)
+            PinProse(text = body, ink = ink, maxLines = BODY_MAX_LINES)
+        }
+    }
+}
+
+/** The cast as suspect photos in a row, each its own small pinned card. */
+@Composable
+private fun CrimeSuspectRow(
+    cast: List<Character>,
+    label: String?,
+) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        label?.let { CrimeFileLabel(it) }
+
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            cast.forEach { character ->
+                CorkPin(
+                    modifier = Modifier.width(POLAROID_WIDTH),
+                    seed = character.id,
+                ) { ink ->
+                    Column {
+                        AsyncImage(
+                            model = character.image,
+                            contentDescription = character.name,
+                            contentScale = ContentScale.Crop,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(2.dp)),
+                        )
+                        PinCaption(
+                            text = character.name,
+                            ink = ink,
+                            emphasized = true,
+                            maxLines = 1,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                        character.profile.occupation
+                            .takeIf { it.isNotBlank() }
+                            ?.let { PinCaption(text = it, ink = ink, maxLines = 1) }
                     }
                 }
             }
-
-            beat.aside?.let { CrimeSystemNote(it.label, it.text) }
-
-            beat.progress?.takeIf { it.total > 1 }?.let { CrimeReadReceipt(it, isMe) }
         }
-
-        CrimeQuickReplies(beat.actions)
     }
 }
 
 /**
- * One message, split into several consecutive bubbles when it runs long — the same splitter the
- * real in-game chat uses decides the cut points, and they reveal block by block so a paragraph
- * arrives as a burst of messages rather than one wall of text.
+ * The emotional read, as the same vibe card the review pins to its table — [PinVibeNote], shared by
+ * both so the two can't drift apart.
+ *
+ * Two earlier passes got this wrong in opposite directions. It first went through [PinSignature],
+ * which caps at one line because a signature is a name, so the whole reflection was truncated to
+ * its first line. Replacing that with plain handwriting fixed the truncation but left it as bare
+ * text on the cork, while the review gave the very same content a drawn shape and a card. Now the
+ * milestone shows what the review shows.
+ *
+ * Falls back to a written note when the beat carries no tone — not every milestone has one, and a
+ * card with an empty shape on it would be worse than the writing alone.
  */
 @Composable
-private fun CrimeMessageBubble(
-    body: String,
-    title: String?,
-    isMe: Boolean,
-    genre: Genre,
-    speaker: Character?,
+private fun CrimeVibeCard(
+    aside: StoryAside,
     canAnimate: Boolean,
-    revealKey: Any,
 ) {
-    val bodyStyle = MaterialTheme.typography.labelMedium
+    val palette = rememberCorkboardPalette()
 
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val hasAvatarSlot = !isMe && speaker != null
-        val bubbleMaxWidth =
-            (
-                maxWidth - CRIME_BUBBLE_ROW_PADDING - CRIME_BUBBLE_RESERVED_MARGIN -
-                    CRIME_BUBBLE_HORIZONTAL_PADDING * 2 -
-                    (if (hasAvatarSlot) CRIME_AVATAR_SLOT + 8.dp else 0.dp)
-            ).coerceAtLeast(40.dp)
-        val maxWidthPx = with(LocalDensity.current) { bubbleMaxWidth.roundToPx() }
+    CorkPin(
+        modifier = Modifier.fillMaxWidth(0.92f),
+        seed = aside.text.hashCode(),
+        pinColor = aside.tone?.color ?: palette.pin,
+    ) { ink ->
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = aside.label.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = ink.copy(alpha = 0.55f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
 
-        val blocks = rememberMessageBlocks(text = body, style = bodyStyle, maxWidthPx = maxWidthPx)
-        val durations = rememberBlockDurations(blocks, body.length)
-
-        // Keyed on revealKey, not on the beat: an attachment arriving late must not restart the
-        // message the reader has already watched type in.
-        var revealed by remember(revealKey, blocks.size, canAnimate) {
-            mutableIntStateOf(if (canAnimate) 1 else blocks.size)
-        }
-
-        LaunchedEffect(revealKey, blocks.size, canAnimate) {
-            if (canAnimate) {
-                durations.indices.forEach { index ->
-                    delay(durations[index])
-                    if (index < durations.lastIndex) revealed = index + 2
-                }
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            blocks.take(revealed).forEachIndexed { index, blockText ->
-                val isLastVisible = index == revealed - 1
-                CrimeBubbleFrame(
-                    isMe = isMe,
-                    genre = genre,
-                    sender = speaker,
-                    showTail = isLastVisible,
-                    showAvatar = isLastVisible,
+            aside.tone?.let { tone ->
+                PinVibeNote(
+                    tone = tone,
+                    ink = ink,
+                    caption = aside.text,
                     canAnimate = canAnimate,
-                ) { contentColor ->
-                    if (index == 0) {
-                        title?.let {
-                            Text(
-                                text = it,
-                                fontWeight = FontWeight.Bold,
-                                color = contentColor,
-                                style = MaterialTheme.typography.labelMedium,
-                            )
-                        }
-                    }
-                    SimpleTypewriterText(
-                        text = blockText,
-                        style = bodyStyle.copy(color = contentColor),
-                        duration = durations[index].milliseconds,
-                        isAnimated = canAnimate && isLastVisible,
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** Floor for one block's share of the typing budget — mirrors the real chat bubble's own. */
-private const val MIN_BLOCK_DURATION_MS = 400L
-private const val MS_PER_CHAR = 16
-private const val MIN_TYPING_MS = 500
-private const val MAX_TYPING_MS = 3000
-
-@Composable
-private fun rememberBlockDurations(
-    blocks: List<String>,
-    totalLength: Int,
-): List<Long> {
-    val budget = (totalLength * MS_PER_CHAR).coerceIn(MIN_TYPING_MS, MAX_TYPING_MS)
-    return remember(blocks, budget) {
-        val totalChars = blocks.sumOf { it.length }.coerceAtLeast(1)
-        blocks.map { block ->
-            (budget * (block.length.toDouble() / totalChars)).toLong().coerceAtLeast(MIN_BLOCK_DURATION_MS)
-        }
-    }
-}
-
-/** An image sent into the thread — square-cornered, no tail: a photo is not a sentence. */
-@Composable
-private fun CrimePhotoBubble(
-    url: String,
-    genre: Genre,
-) {
-    AnimatedVisibility(visible = url.isNotBlank(), enter = fadeIn(tween(400))) {
-        CrimeBubbleFrame(
-            isMe = false,
-            genre = genre,
-            useSpeechShape = false,
-            showTail = false,
-            showAvatar = false,
-            contentPadding = PaddingValues(4.dp),
-        ) {
-            AsyncImage(
-                model = url,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier
-                        .width(230.dp)
-                        .height(150.dp)
-                        .clip(MaterialTheme.shapes.medium),
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            } ?: PinProse(
+                text = aside.text,
+                ink = ink,
+                centered = true,
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
     }
 }
 
-/** New lore arriving as a forwarded case file: bold subject over the body, marked by a left rule. */
+/** A label written straight on the board, not on paper — a section marker for what follows. */
 @Composable
-private fun CrimeCaseFileBubble(
-    title: String,
-    body: String,
-    genre: Genre,
-) {
-    CrimeBubbleFrame(isMe = false, genre = genre, showTail = false, showAvatar = false) { contentColor ->
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(
-                Modifier
-                    .width(3.dp)
-                    .height(38.dp)
-                    .clip(CircleShape)
-                    .background(contentColor.copy(alpha = .5f)),
-            )
-            Column {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.Bold,
-                    color = contentColor,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Text(
-                    text = body,
-                    color = contentColor.copy(alpha = .8f),
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            }
-        }
-    }
-}
-
-/** The centred label a thread uses to mark a break — a date, a new section of the conversation. */
-@Composable
-private fun CrimeThreadDivider(text: String) {
+private fun CrimeFileLabel(text: String) {
     Text(
         text = text.uppercase(),
         style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .6f),
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 2.sp,
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
         textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
     )
 }
 
 /**
- * The aside as a system notice, not a bubble. Nobody in the conversation said this — it is the
- * app's own voice — and giving it a bubble would have put words in a character's mouth.
+ * Step count as a row of pushpins — the ones already passed filled in, the rest empty. A board has
+ * no read receipts; it has how many things are up on it.
  */
 @Composable
-private fun CrimeSystemNote(
-    label: String,
-    text: String,
+private fun CrimePinTrail(
+    progress: StoryProgress,
+    threadColor: Color,
 ) {
-    Column(
-        Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Row(
+        Modifier.fillMaxWidth().padding(top = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f),
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .75f),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 2.dp),
-        )
+        repeat(progress.total) { index ->
+            val done = index < progress.index
+            Box(
+                Modifier
+                    .size(if (done) 8.dp else 6.dp)
+                    .clip(CircleShape)
+                    .background(threadColor.copy(alpha = if (done) 0.9f else 0.3f)),
+            )
+        }
     }
 }
 
-/** Step count as a read receipt under the last message, where a thread puts its status. */
+/** Actions as tags clipped to the bottom of the board. */
 @Composable
-private fun CrimeReadReceipt(
-    progress: StoryProgress,
-    isMe: Boolean,
-) {
-    Text(
-        text = "${progress.index}/${progress.total}",
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-        textAlign = if (isMe) TextAlign.End else TextAlign.Start,
-    )
-}
-
-/** Actions as the quick-reply pills a messaging app offers under the last message. */
-@Composable
-private fun CrimeQuickReplies(actions: List<StoryBeatAction>) {
+private fun CrimeCaseActions(actions: List<StoryBeatAction>) {
     if (actions.isEmpty()) return
     Row(
         Modifier

@@ -4,7 +4,6 @@ autoBackgroundRemover = "1.0.7"
 billingKtx = "8.0.0"
 composeCharts = "0.1.10"
 datastorePreferences = "1.1.7"
-faceDetection = "16.1.7"
 genaiPrompt = "1.0.0-beta2"
 generativeai = "0.9.0"
 googleGenai = "1.10.0"
@@ -47,6 +46,8 @@ nav3Core = "1.0.0"
 lifecycleViewmodelNav3 = "2.10.0-rc01"
 paging = "3.3.6"
 mockk = "1.14.11"
+playServicesAds = "25.4.0"
+userMessagingPlatform = "4.0.0"
 
 [libraries]
 play-age-signals = { group = "com.google.android.play", name = "age-signals", version.ref = "ageSignals" }
@@ -56,7 +57,6 @@ androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version
 androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
 billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "billingKtx" }
 compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeCharts" }
-face-detection = { module = "com.google.mlkit:face-detection", version.ref = "faceDetection" }
 mlkit-genai-prompt = { module = "com.google.mlkit:genai-prompt", version.ref = "genaiPrompt" }
 firebase-installations-ktx = { module = "com.google.firebase:firebase-installations-ktx" }
 google-generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "generativeai" }
@@ -128,6 +128,8 @@ androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.r
 androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging" }
 androidx-room-paging = { module = "androidx.room:room-paging", version = "2.7.1" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
+user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "userMessagingPlatform" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

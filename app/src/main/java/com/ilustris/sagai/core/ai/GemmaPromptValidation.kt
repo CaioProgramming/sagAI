@@ -7,14 +7,18 @@ import com.ilustris.sagai.core.network.GeminiHttpException
 import timber.log.Timber
 
 /**
- * Raised when the prompt exceeds [GeminiAIClient.INPUT_TOKEN_LIMIT], either from a pre-flight
- * countTokens check or from a non-retryable API rejection.
+ * Raised when the prompt exceeds what the model will take, either from a pre-flight countTokens
+ * check or from a non-retryable API rejection.
+ *
+ * [blueprintKey] names the prompt template that produced it. An oversized prompt is a bug in a
+ * blueprint, not a user error — without the key, all you get is "something was too big".
  */
 class PromptTooLargeException(
     message: String,
     val tokenCount: Int?,
     val tokenLimit: Int,
     val fullPrompt: String,
+    val blueprintKey: String? = null,
     cause: Throwable? = null,
 ) : IllegalStateException(message, cause)
 

@@ -66,6 +66,34 @@ class GeminiApiClient
                 body
             }
 
+        /**
+         * Cheapest possible proof that a key works: lists the models the key can reach.
+         *
+         * Costs no generation quota, so it can run the moment the user pastes a key. Note what it
+         * does *not* tell you — a key that lists models fine can still be out of daily quota, so a
+         * successful check must never be read as "generation will succeed".
+         *
+         * @throws GeminiHttpException with the API's own status when the key is rejected.
+         */
+        suspend fun listModels(apiKey: String): Map<String, Int> =
+            withContext(Dispatchers.IO) {
+                val httpRequest =
+                    Request
+                        .Builder()
+                        .url("$BASE_URL/models?pageSize=$MODEL_PAGE_SIZE")
+                        .header("x-goog-api-key", apiKey)
+                        .get()
+                        .build()
+
+                okHttpClient.newCall(httpRequest).execute().use { response ->
+                    val bodyString = response.body?.string().orEmpty()
+                    if (!response.isSuccessful) {
+                        throw GeminiHttpException(response.code, bodyString)
+                    }
+                    GeminiApiCodec.decodeModelTokenLimits(bodyString)
+                }
+            }
+
         suspend fun countTokens(
             model: String,
             apiKey: String,
@@ -91,5 +119,6 @@ class GeminiApiClient
 
         companion object {
             private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
+            private const val MODEL_PAGE_SIZE = 200
         }
     }

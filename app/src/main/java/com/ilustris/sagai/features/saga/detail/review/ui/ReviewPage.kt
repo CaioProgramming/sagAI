@@ -16,9 +16,10 @@ interface ReviewPage {
 
     /**
      * How long (ms) this page's own entrance animation takes to settle — 0 means "no opinion".
-     * Only meaningful to navigation styles that pace themselves off individual pages (currently
-     * just [ReviewNavigationStyle.ChatScroll], which waits for a message to finish "typing" in
-     * before revealing the next one); every other container ignores it entirely.
+     * Only meaningful to navigation styles that pace themselves off individual pages:
+     * [ReviewNavigationStyle.ComicBoard] falls back to its own default dwell time when this is 0
+     * rather than waiting on nothing. [ReviewNavigationStyle.Corkboard] ignores it — it drifts at a
+     * constant speed and never dwells on one pin — as does every other container.
      */
     val estimatedRevealDurationMs: Long get() = 0L
 

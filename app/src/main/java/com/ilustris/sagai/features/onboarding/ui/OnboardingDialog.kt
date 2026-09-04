@@ -119,105 +119,6 @@ fun OnboardingDialog(
 }
 
 @Composable
-internal fun DebugBillingSimulationSheet(
-    reason: String,
-    isLoading: Boolean,
-    onConfirm: () -> Unit,
-    onCancel: () -> Unit,
-    onSyncSubscription: () -> Unit,
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
-        onDismissRequest = onCancel,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-            )
-        },
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .padding(bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.billing_debug_fallback_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = stringResource(R.string.billing_debug_fallback_message),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = reason,
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            )
-            Button(
-                onClick = onConfirm,
-                enabled = !isLoading,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                shape = MaterialTheme.shapes.large,
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.billing_simulate_confirm).uppercase(),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    )
-                }
-            }
-            TextButton(
-                onClick = onSyncSubscription,
-                enabled = !isLoading,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.billing_check_subscription).uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                }
-            }
-            TextButton(
-                onClick = onCancel,
-                enabled = !isLoading,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = stringResource(R.string.billing_simulate_cancel).uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 internal fun BillingResultSheet(
     title: String,
     message: String,
@@ -375,26 +276,34 @@ fun CinematicBackground(config: GenreVisualConfig?) {
     )
 }
 
+/**
+ * @param colors defaults to the brand gradient rather than an empty list. It used to default to
+ *   empty while the icon tint read `colors.first()`, so calling this with its own defaults threw
+ *   `NoSuchElementException` — and inside a pager's prefetch that surfaced as an unrelated
+ *   `Cannot disable reuse from root`, because the failed pausable composition leaves the reuse
+ *   state inconsistent and the next assertion is what gets reported.
+ */
 @Composable
 fun SparkBackground(
-    colors: List<Color> = emptyList(),
+    colors: List<Color> = holographicGradient,
     customIcon: Int? = null,
 ) {
+    val palette = colors.ifEmpty { holographicGradient }
     Box(
         Modifier
             .fillMaxSize()
-            .reactiveShimmer(true, colors, repeatMode = RepeatMode.Restart, targetValue = 1000f),
+            .reactiveShimmer(true, palette, repeatMode = RepeatMode.Restart, targetValue = 1000f),
     ) {
         StarryTextPlaceholder(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .gradientFill(Brush.verticalGradient(colors)),
+                    .gradientFill(Brush.verticalGradient(palette)),
         )
         Icon(
             painter = painterResource(customIcon ?: R.drawable.ic_spark),
             contentDescription = null,
-            tint = colors.first(),
+            tint = palette.first(),
             modifier =
                 Modifier
                     .size(120.dp)
@@ -408,7 +317,7 @@ fun SparkBackground(
 @Composable
 fun StarfieldBackground() {
     StarryTextPlaceholder(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().reactiveShimmer(true),
         starColor = MaterialTheme.colorScheme.onBackground,
     )
 }

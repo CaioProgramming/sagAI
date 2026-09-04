@@ -17,6 +17,9 @@ import com.ilustris.sagai.core.ai.ImageGeneratorImpl
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
+import com.ilustris.sagai.core.ai.key.QuotaStatusService
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
+import com.ilustris.sagai.core.ai.key.UserApiKeyStoreImpl
 import com.ilustris.sagai.core.ai.local.LocalAiConfigLoader
 import com.ilustris.sagai.core.ai.local.LocalAiExecutor
 import com.ilustris.sagai.core.ai.local.MlKitLocalAiExecutor
@@ -37,7 +40,6 @@ import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.FileManager
 import com.ilustris.sagai.core.file.GenreReferenceHelper
-import com.ilustris.sagai.core.file.ImageCropHelper
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManagerImpl
 import com.ilustris.sagai.core.media.MediaPlayerManager
@@ -54,7 +56,7 @@ import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.EmotionalToneVisualService
 import com.ilustris.sagai.core.services.FirebaseInstallationService
-import com.ilustris.sagai.core.services.MascotEmotionService
+import com.ilustris.sagai.core.services.MascotExpressionService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.usecase.PaletteUseCase
@@ -201,10 +203,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideImageCropHelper(): ImageCropHelper = ImageCropHelper()
-
-    @Provides
-    @Singleton
     fun provideImageLoader(
         @ApplicationContext context: Context,
     ): ImageLoader =
@@ -242,6 +240,11 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAIAuditLogDao(database: SagaDatabase): AIAuditLogDao = database.aiAuditLogDao()
+
+    @Provides
+    fun provideApiUsageDao(
+        database: SagaDatabase,
+    ): com.ilustris.sagai.core.database.source.ApiUsageDao = database.apiUsageDao()
 
     @Provides
     @Singleton
@@ -330,6 +333,10 @@ object AppModule {
         ageVerificationService: AgeVerificationService,
         localAiExecutor: LocalAiExecutor,
         localAiConfigLoader: LocalAiConfigLoader,
+        userApiKeyStore: UserApiKeyStore,
+        quotaStatusService: QuotaStatusService,
+        modelCatalog: com.ilustris.sagai.core.ai.ModelCatalog,
+        apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
     ): GemmaClient =
         GemmaClient(
             remoteConfig = remoteConfigService,
@@ -338,6 +345,10 @@ object AppModule {
             promptService = promptService,
             aiAuditLogDao = aiAuditLogDao,
             ageVerificationService = ageVerificationService,
+            userApiKeyStore = userApiKeyStore,
+            quotaStatusService = quotaStatusService,
+            modelCatalog = modelCatalog,
+            apiUsageTracker = apiUsageTracker,
             localAiExecutor = localAiExecutor,
             localAiConfigLoader = localAiConfigLoader,
         )
@@ -366,11 +377,9 @@ object AppModule {
 
     @Provides
     fun providesTimelineMapper(
-        mascotEmotionService: MascotEmotionService,
         genreVisualConfigService: GenreVisualConfigService,
         remoteConfigService: RemoteConfigService,
     ) = TimelineMapper(
-        mascotEmotionService,
         genreVisualConfigService,
         remoteConfigService,
     )
@@ -439,10 +448,21 @@ object AppModule {
     @Provides
     @Singleton
     fun provideImageGenerator(
-        billingService: BillingService,
         remoteConfigService: RemoteConfigService,
         debugImageFallbackService: DebugImageFallbackService,
-    ): ImageGenerator = ImageGeneratorImpl(billingService, remoteConfigService, debugImageFallbackService)
+        geminiApiClient: GeminiApiClient,
+        userApiKeyStore: UserApiKeyStore,
+        quotaStatusService: QuotaStatusService,
+        sideEffectService: SideEffectService,
+    ): ImageGenerator =
+        ImageGeneratorImpl(
+            remoteConfigService,
+            debugImageFallbackService,
+            geminiApiClient,
+            userApiKeyStore,
+            quotaStatusService,
+            sideEffectService,
+        )
 
     @Provides
     @Singleton
@@ -475,7 +495,16 @@ object AppModule {
         billingService: BillingService,
         remoteConfigService: RemoteConfigService,
         geminiApiClient: GeminiApiClient,
-    ): AudioGenClient = AudioGenClientImpl(billingService, remoteConfigService, geminiApiClient)
+        userApiKeyStore: UserApiKeyStore,
+        quotaStatusService: QuotaStatusService,
+    ): AudioGenClient =
+        AudioGenClientImpl(
+            billingService,
+            remoteConfigService,
+            geminiApiClient,
+            userApiKeyStore,
+            quotaStatusService,
+        )
 
     @Provides
     @Singleton
@@ -542,13 +571,11 @@ object AppModule {
     @Provides
     @Singleton
     fun providesOnboardingStateMapper(
-        billingService: BillingService,
         stringResourceHelper: StringResourceHelper,
         genreConfigService: GenreVisualConfigService,
         remoteConfigService: RemoteConfigService,
     ): OnboardingStateMapper =
         OnboardingStateMapper(
-            billingService,
             stringResourceHelper,
             genreConfigService,
             remoteConfigService,
@@ -556,8 +583,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideMascotEmotionService(remoteConfigService: RemoteConfigService): MascotEmotionService =
-        MascotEmotionService(remoteConfigService)
+    fun provideMascotExpressionService(remoteConfigService: RemoteConfigService): MascotExpressionService =
+        MascotExpressionService(remoteConfigService)
 
     @Provides
     @Singleton
@@ -647,6 +674,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesUserIdentityUseCase(userIdentityUseCaseImpl: UserIdentityUseCaseImpl): UserIdentityUseCase
+
+    @Binds
+    abstract fun providesUserApiKeyStore(userApiKeyStoreImpl: UserApiKeyStoreImpl): UserApiKeyStore
 
     @Binds
     abstract fun providesPlayerProfileUseCase(playerProfileUseCaseImpl: PlayerProfileUseCaseImpl): PlayerProfileUseCase

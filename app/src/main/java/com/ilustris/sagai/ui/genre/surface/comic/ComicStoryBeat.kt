@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.ui.genre.PhysicalButton
@@ -44,6 +45,15 @@ import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
 import com.ilustris.sagai.ui.genre.surface.storyRoot
+
+/**
+ * The most body text the loose, unscrolled layout can hold before its lowest balloon starts running
+ * off the screen. Past this a beat goes to the column instead.
+ */
+private const val LOOSE_BODY_MAX_CHARS = 280
+
+/** Vertical room the floating action row needs, kept clear of the loose layout's balloons. */
+private val ACTION_ROW_RESERVE = 96.dp
 
 /**
  * A beat as one comic page.
@@ -66,6 +76,17 @@ fun ComicStoryBeat(
 ) {
     val hasAttachments = beat.figures.isNotEmpty() || beat.entries.isNotEmpty() || beat.cast.isNotEmpty()
 
+    // The loose layout has no scroll and places its balloons at absolute vertical biases, so it can
+    // only ever hold what fits on one screen. Deciding that on attachments alone was wrong twice
+    // over: a long body pushed its lowest balloon (bias ~0.78) off the bottom with nothing to
+    // scroll to, and an aside — which is where the milestone's emotional review lands — was drawn
+    // at BottomStart, directly underneath the action row sitting at BottomCenter. Anything with an
+    // aside or a body past this length belongs in the column, which stacks and scrolls.
+    val fitsLoose =
+        !hasAttachments &&
+            beat.aside == null &&
+            beat.body.orEmpty().length <= LOOSE_BODY_MAX_CHARS
+
     var revealed by remember(beat.key) { mutableStateOf(!canAnimate) }
     LaunchedEffect(beat.key) { revealed = true }
 
@@ -75,13 +96,19 @@ fun ComicStoryBeat(
             .storyRoot(embedded)
             .padding(contentPadding),
     ) {
-        if (hasAttachments) {
+        if (!fitsLoose) {
             // Actions ride inside this column's own scroll, not pinned over it — a beat with a
             // cover, two wikis and a cast is tall enough that a floating action row either
             // overlapped the last line of text or had nowhere honest to sit.
             ComicPageColumn(beat, Modifier.fillMaxWidth(), embedded, revealed)
         } else {
-            ComicLooseBeat(beat, if (embedded) Modifier.fillMaxWidth().height(260.dp) else Modifier.fillMaxSize())
+            ComicLooseBeat(
+                beat = beat,
+                modifier = if (embedded) Modifier.fillMaxWidth().height(260.dp) else Modifier.fillMaxSize(),
+                // The action row floats over this layout, so the balloons have to be told to stay
+                // out from under it.
+                bottomReserve = if (beat.actions.isEmpty()) 0.dp else ACTION_ROW_RESERVE,
+            )
 
             AnimatedVisibility(
                 visible = !beat.gateActionsOnReveal || revealed,
@@ -107,10 +134,18 @@ fun ComicStoryBeat(
 private fun ComicLooseBeat(
     beat: StoryBeat,
     modifier: Modifier = Modifier,
+    bottomReserve: Dp = 0.dp,
 ) {
     val balloons = remember(beat.key, beat.title, beat.body) { comicNarrationBalloons(beat.title, beat.body) }
 
-    Box(modifier.padding(horizontal = 20.dp, vertical = 48.dp)) {
+    Box(
+        modifier.padding(
+            start = 20.dp,
+            end = 20.dp,
+            top = 48.dp,
+            bottom = 48.dp + bottomReserve,
+        ),
+    ) {
         beat.eyebrow?.let {
             ComicFadeIn(modifier = Modifier.align(Alignment.TopCenter)) { ComicTag(text = it) }
         }
@@ -122,11 +157,6 @@ private fun ComicLooseBeat(
                     .offset(spec.offset.x, spec.offset.y),
             ) {
                 spec.content()
-            }
-        }
-        beat.aside?.let { aside ->
-            ComicFadeIn(delayMillis = 1400, modifier = Modifier.align(Alignment.BottomStart)) {
-                ComicSpeechBalloon(text = aside.text, speaker = aside.label)
             }
         }
     }

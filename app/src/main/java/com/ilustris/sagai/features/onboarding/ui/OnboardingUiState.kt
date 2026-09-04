@@ -10,15 +10,16 @@ sealed class OnboardingAction {
 
     data object Dismiss : OnboardingAction()
 
-    data class Subscribe(
-        val productId: String,
-    ) : OnboardingAction()
-
     data class Finish(
         val metadata: Map<String, Any?> = emptyMap(),
     ) : OnboardingAction()
 
     data object DeactivateTutorials : OnboardingAction()
+
+    /** Sends the user somewhere outside the app — currently only the AI Studio key page. */
+    data class OpenUrl(
+        val url: String,
+    ) : OnboardingAction()
 }
 
 data class OnboardingButton(

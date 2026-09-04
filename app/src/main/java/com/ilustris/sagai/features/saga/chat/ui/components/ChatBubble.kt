@@ -126,13 +126,24 @@ import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 /** Inner padding around a bubble's text — also what the block splitter measures against. */
 private val BUBBLE_TEXT_PADDING = 16.dp
 
-/** Floor for a block's share of the typing budget, so a one-word block isn't a blink. */
-private val MIN_BLOCK_DURATION = 400.milliseconds
+/**
+ * Floor for a block's typing duration, so a one/two-word block isn't a blink. Paired with
+ * [MAX_BLOCK_DURATION] below to bound [BubbleStyle.charDuration]'s otherwise-unbounded
+ * per-character scaling (see that field's doc) at both ends.
+ */
+private val MIN_BLOCK_DURATION = 1200.milliseconds
+
+/**
+ * Ceiling for a single block's typing duration — without this, an unusually long block (a big
+ * paragraph that didn't get split further) would type out for a distractingly long time at a
+ * fixed chars/sec pace. 4.5s comfortably covers a long sentence without stalling the
+ * conversation on a rare outlier.
+ */
+private val MAX_BLOCK_DURATION = 4500.milliseconds
 
 /**
  * Shared spec for every `animateContentSize()` around a message bubble (the message row, the
@@ -276,19 +287,11 @@ fun ChatBubble(
                 )
             }
         }
-    val duration = bubbleStyle.animationDuration
+    val charDuration = bubbleStyle.charDuration
     val bubbleShape = genre.bubble(bubbleStyle.tailAlignment)
     val avatarShape = genre.avatarShape()
     val decorationOverlay = genre.chatBubbleDecorationOverlay(bubbleShape, isUser)
     val decorationBackground = genre.chatBubbleBackgroundDecoration(bubbleShape, isUser)
-    val constraintDecorationOverlay =
-        genre.chatBubbleConstraintDecorationOverlay(
-            bubbleShape,
-            isUser,
-            bubbleStyle.backgroundColor,
-        )
-    val constraintDecorationBackground =
-        genre.chatBubbleConstraintBackgroundDecoration(bubbleShape, isUser, bubbleStyle.backgroundColor)
     // Heroes' decoration is the comic-panel drop-shadow/ink outline — every panel in a page has
     // one, so a split message should carry it on every block. Other genres' decorations read as a
     // single accent for the whole message, so they stay tail-only to avoid visual noise.
@@ -579,7 +582,11 @@ fun ChatBubble(
                                     // instead of separate messages — the first/last block in the
                                     // group keeps the full 4dp on its outward-facing edge, since
                                     // that's the breathing room against the *next* message.
-                                    val bubbleContentModifierFor: @Composable (shape: Shape, topPadding: Dp, bottomPadding: Dp) -> Modifier =
+                                    val bubbleContentModifierFor: @Composable (
+                                        shape: Shape,
+                                        topPadding: Dp,
+                                        bottomPadding: Dp,
+                                    ) -> Modifier =
                                         { shape, topPadding, bottomPadding ->
                                             bubbleModifierFor(shape)
                                                 .graphicsLayer {
@@ -745,17 +752,21 @@ fun ChatBubble(
                                             )
                                         }
 
-                                        // Blocks reveal one at a time, each taking a slice of the
-                                        // total typing budget proportional to its length — so a
-                                        // split message takes about as long to read out as it did
-                                        // as a single bubble, it just arrives in pieces.
+                                        // Blocks reveal one at a time, each block's own duration
+                                        // scaled directly off its own character count (not a
+                                        // fixed total budget divided across however many blocks
+                                        // the message happened to split into) — so pacing feels
+                                        // organic and consistent: a short aside always flashes by
+                                        // quickly and a long line always gets proportionally more
+                                        // time, regardless of how many other blocks are in the
+                                        // same message. Bounded by MIN/MAX_BLOCK_DURATION so a
+                                        // one-word block isn't a blink and a rare huge paragraph
+                                        // doesn't stall the conversation.
                                         val blockDurations =
-                                            remember(blocks, duration) {
-                                                val totalChars =
-                                                    blocks.sumOf { it.length }.coerceAtLeast(1)
+                                            remember(blocks, charDuration) {
                                                 blocks.map { block ->
-                                                    (duration * (block.length.toDouble() / totalChars))
-                                                        .coerceAtLeast(MIN_BLOCK_DURATION)
+                                                    (charDuration * block.length)
+                                                        .coerceIn(MIN_BLOCK_DURATION, MAX_BLOCK_DURATION)
                                                 }
                                             }
 
@@ -794,10 +805,7 @@ fun ChatBubble(
                                             tooltip = bubbleTooltipContent,
                                         ) {
                                             Column(
-                                                // No extra gap here — the grouping tightness comes
-                                                // from each block's own top/bottom padding
-                                                // (bubbleContentModifierFor) instead, so it can taper
-                                                // per block position rather than being uniform.
+                                                verticalArrangement = Arrangement.spacedBy(8.dp),
                                                 horizontalAlignment =
                                                     if (isUser) Alignment.End else Alignment.Start,
                                             ) {
@@ -837,18 +845,40 @@ fun ChatBubble(
                                                         // that isn't actually drawn there.
                                                         val showBlockDecoration = isTailBlock || decorateAllBlocks
                                                         val blockDecorationBackground =
-                                                            if (showBlockDecoration) genre.chatBubbleBackgroundDecoration(blockShape, isUser) else null
+                                                            if (showBlockDecoration) {
+                                                                genre.chatBubbleBackgroundDecoration(
+                                                                    blockShape,
+                                                                    isUser,
+                                                                )
+                                                            } else {
+                                                                null
+                                                            }
                                                         val blockDecorationOverlay =
-                                                            if (showBlockDecoration) genre.chatBubbleDecorationOverlay(blockShape, isUser) else null
+                                                            if (showBlockDecoration) {
+                                                                genre.chatBubbleDecorationOverlay(
+                                                                    blockShape,
+                                                                    isUser,
+                                                                )
+                                                            } else {
+                                                                null
+                                                            }
                                                         val blockConstraintDecorationBackground =
                                                             if (showBlockDecoration) {
-                                                                genre.chatBubbleConstraintBackgroundDecoration(blockShape, isUser, bubbleStyle.backgroundColor)
+                                                                genre.chatBubbleConstraintBackgroundDecoration(
+                                                                    blockShape,
+                                                                    isUser,
+                                                                    bubbleStyle.backgroundColor,
+                                                                )
                                                             } else {
                                                                 null
                                                             }
                                                         val blockConstraintDecorationOverlay =
                                                             if (showBlockDecoration) {
-                                                                genre.chatBubbleConstraintDecorationOverlay(blockShape, isUser, bubbleStyle.backgroundColor)
+                                                                genre.chatBubbleConstraintDecorationOverlay(
+                                                                    blockShape,
+                                                                    isUser,
+                                                                    bubbleStyle.backgroundColor,
+                                                                )
                                                             } else {
                                                                 null
                                                             }
@@ -861,8 +891,8 @@ fun ChatBubble(
                                                             contentModifier =
                                                                 bubbleContentModifierFor(
                                                                     blockShape,
-                                                                    if (index == 0) 4.dp else 1.dp,
-                                                                    if (block.isLast) 4.dp else 1.dp,
+                                                                    if (index == 0) 4.dp else 6.dp,
+                                                                    if (block.isLast) 4.dp else 6.dp,
                                                                 ),
                                                             content = { bubbleTextContent(block) },
                                                         )
@@ -1221,7 +1251,16 @@ data class BubbleStyle(
     val backgroundColor: Color,
     val textColor: Color,
     val tailAlignment: BubbleTailAlignment,
-    val animationDuration: Duration,
+    /**
+     * Typing duration *per character*, not a flat per-message total — each block's own duration
+     * (see the `blockDurations` calc in [ChatBubble]) scales directly off its own length times
+     * this rate, bounded by `MIN_BLOCK_DURATION`/`MAX_BLOCK_DURATION`. Used to be a flat 2-3s
+     * total budget split proportionally across however many blocks a message had, which made
+     * pacing inconsistent — a message that split into more pieces got faster per piece for no
+     * reason related to its actual content. Per-char scaling keeps typing speed constant
+     * regardless of how a message happens to be segmented.
+     */
+    val charDuration: Duration,
     val horizontalArrangement: Arrangement.Horizontal,
     val animationEnabled: Boolean,
 ) {
@@ -1242,6 +1281,7 @@ data class BubbleStyle(
                 // wash the fill out. darker() keeps it a fully opaque, solid comic-panel color,
                 // just a shade dimmer than the user's own bubble.
                 Genre.HEROES -> if (!isUser) default.darker(0.25f) else default
+
                 else -> default
             }
 
@@ -1253,7 +1293,7 @@ data class BubbleStyle(
             backgroundColor = genre.resolveFill(backgroundColor.darker(.15f), true),
             textColor = textColor,
             tailAlignment = BubbleTailAlignment.BottomRight,
-            animationDuration = 2.seconds,
+            charDuration = 30.milliseconds,
             horizontalArrangement = Arrangement.End,
             false,
         )
@@ -1267,7 +1307,7 @@ data class BubbleStyle(
             backgroundColor = genre.resolveFill(backgroundColor, false),
             textColor = textColor,
             tailAlignment = BubbleTailAlignment.BottomLeft,
-            animationDuration = 3.seconds,
+            charDuration = 42.milliseconds,
             horizontalArrangement = Arrangement.Start,
             canAnimate,
         )

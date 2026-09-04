@@ -647,6 +647,15 @@ class SagaContentManagerImpl
          * back on SagaContentManager (via MessageUseCase), so injecting it here is a Dagger
          * dependency cycle. That gating lives in MainActivity's collector instead, which can see
          * both without the cycle.
+         *
+         * Also recombined with [SagaNavigationTracker.currentKey] rather than only with the
+         * readiness edge: the emitted signal has no replay, so if it fired while the user was on a
+         * different screen (mid-reply, on another saga, on the home screen), MainActivity's
+         * isOnChatForSaga gate silently swallowed it and nothing ever asked again — the only way
+         * back in was a fresh ChatViewModel (leave the saga, come back) forcing a full re-init.
+         * Folding navigation into this combine means returning to this saga's chat re-derives
+         * "ready" from the persisted coordinator/milestone state and re-emits, instead of relying
+         * on a one-shot pulse that's already been discarded.
          */
         private fun observeMilestoneChainReadiness() =
             managerScope.launch {
@@ -663,14 +672,21 @@ class SagaContentManagerImpl
                                 milestone !is SagaMilestone.NewCharacter
                         }.distinctUntilChanged()
 
-                combine(awaitingAdvance, freshReveal) { advance, reveal -> advance || reveal }
-                    .distinctUntilChanged()
-                    .collectLatest { ready ->
-                        if (ready) {
-                            content.value
-                                ?.data
-                                ?.id
-                                ?.let { _milestoneChainReady.emit(it) }
+                val ready =
+                    combine(awaitingAdvance, freshReveal) { advance, reveal -> advance || reveal }
+                        .distinctUntilChanged()
+
+                combine(ready, content, sagaNavigationTracker.currentKey) { isReady, saga, _ ->
+                    val sagaId = saga?.data?.id
+                    if (isReady && sagaId != null && sagaNavigationTracker.isOnChatForSaga(sagaId)) {
+                        sagaId
+                    } else {
+                        null
+                    }
+                }.distinctUntilChanged()
+                    .collectLatest { sagaId ->
+                        if (sagaId != null) {
+                            _milestoneChainReady.emit(sagaId)
                         }
                     }
             }
@@ -903,11 +919,30 @@ class SagaContentManagerImpl
                         continue
                     }
 
+                    if (shouldReevaluateAgain) {
+                        // A concurrent caller found the mutex held and queued a reevaluation
+                        // instead of running its own check (the isLocked branch above) — loop
+                        // back and reread with fresh state while still holding the lock, instead
+                        // of releasing and recursing outside it. The previous version captured
+                        // shouldReevaluateAgain here and only acted on it after the lock let go;
+                        // a second caller's schedulePendingReevaluation() landing in that gap
+                        // (between this read and the actual release) was silently dropped, since
+                        // by then the local var was already fixed at whatever it read here. That
+                        // dropped signal is exactly what let the app sit past loreUpdateLimit with
+                        // nothing re-validating the timeline it had just crossed — no
+                        // AwaitingAdvance, no milestoneChainReady, no navigate to Milestone.
+                        continue
+                    }
+
                     return@withLock
                 }
             }
 
-            if (shouldReevaluateAgain) {
+            // Fallback for the two return@withLock escapes above that call
+            // schedulePendingReevaluation() directly (hydration failure, automatic-step-guard
+            // bailout) rather than looping — those intentionally want a fresh outer call to reset
+            // local loop state, so they don't flow through shouldReevaluateAgain.
+            if (shouldReevaluateAgain || narrativeCoordinator.consumePendingReevaluation()) {
                 requestNarrativeProgression(isRetry = false)
             }
         }
@@ -1217,18 +1252,11 @@ class SagaContentManagerImpl
                                 t.title,
                             ),
                         )
-                        val mascotIcon =
-                            emotionalUseCase
-                                .getEmotionalMascot(
-                                    saga.data,
-                                    saga.findTimeline(t.id)?.data,
-                                ).getSuccess()
                         val fullSaga = getSagaContent()
                         fullSaga?.let {
                             emitMilestone(
                                 SagaMilestone.NewEvent(
                                     timeline = t,
-                                    emotionalMascot = mascotIcon,
                                     messageText = message,
                                     sagaContent = fullSaga,
                                     characters = generatedContent?.characters ?: emptyList(),
@@ -1254,6 +1282,12 @@ class SagaContentManagerImpl
                                     wikis = generatedContent?.wikis ?: emptyList(),
                                 ),
                             )
+                            // Title/artwork/wikis are already final at this point — no reason to
+                            // wait for the user to tap "continue" on the Milestone screen before
+                            // spending the cover's image generation call. handleChapterPostActions
+                            // still calls generateChapterCover on continue as a fallback; its own
+                            // guard skips it once this has already filled coverImage in.
+                            managerScope.launch { chapterUseCase.generateChapterCover(c.id) }
                         }
                     } ?: dismissMilestone()
                 }
@@ -1462,27 +1496,45 @@ class SagaContentManagerImpl
 
                 linkUnlinkedCharacterMessagesInternal(freshSaga)
 
-                if (savedMessage.characterId != null) return@launch
+                val discovery = reply.newCharacter
+                val speaker = savedMessage.speakerName
+                // Whether the newcomer is also the one holding this line. They often are, but not
+                // always: a character can enter the fiction on a turn where someone else speaks —
+                // the player touches a stranger's shoulder and that stranger now exists, without
+                // having said a word yet. Treating the two as the same event is what made this
+                // function either lose the newcomer or hand them somebody else's dialogue.
+                val discoveryIsSpeaker =
+                    discovery != null &&
+                        speaker != null &&
+                        speaker.trim().equals(discovery.name.trim(), ignoreCase = true)
 
                 val linkCandidates =
                     listOfNotNull(
                         savedMessage.speakerName,
-                        reply.newCharacter?.name,
+                        discovery?.name.takeIf { discoveryIsSpeaker },
                     ).distinctBy { it.trim().lowercase() }
 
-                for (candidateName in linkCandidates) {
-                    if (
-                        linkMessageToExistingCharacter(
-                            saga = freshSaga,
-                            message = savedMessage,
-                            candidateName = candidateName,
-                        )
-                    ) {
-                        return@launch
+                var lineAttributed = savedMessage.characterId != null
+                if (!lineAttributed) {
+                    for (candidateName in linkCandidates) {
+                        if (
+                            linkMessageToExistingCharacter(
+                                saga = freshSaga,
+                                message = savedMessage,
+                                candidateName = candidateName,
+                            )
+                        ) {
+                            lineAttributed = true
+                            break
+                        }
                     }
                 }
 
-                val discovery = reply.newCharacter ?: return@launch
+                if (discovery == null) return@launch
+                // Attributing the line to an existing speaker used to end the whole routine, which
+                // silently dropped any newcomer introduced on that same turn.
+                if (lineAttributed && discoveryIsSpeaker) return@launch
+                if (freshSaga.findCharacter(discovery.name) != null) return@launch
                 if (reply.message.senderType == SenderType.NARRATOR) return@launch
 
                 when (
@@ -1495,15 +1547,20 @@ class SagaContentManagerImpl
                 ) {
                     is RequestResult.Success -> {
                         val character = result.value
-                        // No manual content.value re-publish here: the write below already
-                        // invalidates the messages table, and loadSaga()'s collector re-emits on
-                        // its own. Doing both meant two UI updates for one change.
-                        messageDao.updateMessage(
-                            savedMessage.copy(
-                                characterId = character.id,
-                                speakerName = character.fullName(),
-                            ),
-                        )
+                        // The line only becomes theirs when they are the one who spoke. Relabelling
+                        // unconditionally is how a newcomer ended up credited with dialogue another
+                        // character had just delivered.
+                        if (discoveryIsSpeaker && !lineAttributed) {
+                            // No manual content.value re-publish here: the write below already
+                            // invalidates the messages table, and loadSaga()'s collector re-emits on
+                            // its own. Doing both meant two UI updates for one change.
+                            messageDao.updateMessage(
+                                savedMessage.copy(
+                                    characterId = character.id,
+                                    speakerName = character.fullName(),
+                                ),
+                            )
+                        }
                     }
 
                     is RequestResult.Error -> {
@@ -1511,6 +1568,7 @@ class SagaContentManagerImpl
                             result.value,
                             "Failed to generate character for reply message ${savedMessage.id}",
                         )
+                        if (lineAttributed) return@launch
                         for (candidateName in linkCandidates) {
                             if (
                                 linkMessageToExistingCharacter(
@@ -1594,7 +1652,6 @@ class SagaContentManagerImpl
                         emitMilestone(
                             SagaMilestone.NewEvent(
                                 timeline = data,
-                                emotionalMascot = null,
                                 messageText = state.data.finalMessage,
                                 sagaContent = getSagaContent()!!,
                                 characters = state.data.characters,

@@ -65,7 +65,6 @@ class BookUseCaseImpl
                                     prompt.mergeInstructions(
                                         genreConfigService.conversationInstructions(saga.data.genre),
                                     ),
-                                useCore = true,
                                 requirement = ModelRequirement.HIGH,
                             )
 

@@ -13,10 +13,5 @@ interface EmotionalUseCase {
 
     suspend fun getEmotionalCard(saga: Saga): RequestResult<String>
 
-    suspend fun getEmotionalMascot(
-        sagaContent: Saga,
-        timelineContent: Timeline?,
-    ): RequestResult<String>
-
     fun streamEmotionalConclusion(sagaContent: SagaContent): Flow<StreamingState<SagaEnding?>>
 }

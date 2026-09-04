@@ -27,3 +27,4 @@ keystore.properties
 .hotswan/
 .claude/settings.local.json
 .claude/worktrees/
+/app/release/

@@ -27,7 +27,7 @@ import com.ilustris.sagai.ui.theme.sagaShape
 @Composable
 fun TimelineCommunityNote(
     emotionalReview: String,
-    mascotEmotion: Pair<EmotionalTone, String?>,
+    mascotEmotion: EmotionalTone,
     genre: Genre,
     modifier: Modifier = Modifier,
 ) {
@@ -46,14 +46,11 @@ fun TimelineCommunityNote(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            mascotEmotion.second?.let {
-                MascotEmotionFace(
-                    imageUrl = it,
-                    emotionalTone = mascotEmotion.first,
-                    modifier = Modifier.size(24.dp),
-                    animate = false,
-                )
-            }
+            MascotEmotionFace(
+                emotionalTone = mascotEmotion,
+                modifier = Modifier.size(24.dp),
+                animate = false,
+            )
             Text(
                 text = stringResource(id = R.string.mascot_insight_label), // Needs to be added to strings.xml or used as literal
                 style =
