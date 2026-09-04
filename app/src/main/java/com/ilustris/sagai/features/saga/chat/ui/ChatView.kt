@@ -170,6 +170,7 @@ import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.shimmerize
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
@@ -1268,7 +1269,7 @@ fun ChatList(
                             MaterialTheme.typography.labelMedium.copy(
                                 shadow =
                                     Shadow(
-                                        MaterialTheme.colorScheme.primary,
+                                        Color.White,
                                         blurRadius = 5f,
                                     ),
                                 fontWeight = FontWeight.Normal,
@@ -1281,7 +1282,8 @@ fun ChatList(
                                 .levitate()
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .alpha(.5f),
+                                .alpha(.5f)
+                                .reactiveShimmer(true, Color.White.shimmerize()),
                     )
                 }
             }
