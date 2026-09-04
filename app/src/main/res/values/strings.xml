@@ -1045,6 +1045,13 @@
     </plurals>
     <string name="plans_confirm">Continue</string>
     <string name="plan_featured_badge">Recommended</string>
+    <string name="billing_error_unreachable">Could not reach the store. Check your connection and try again.</string>
+    <string name="billing_error_unsupported">Purchases are not available on this device or account.</string>
+    <string name="billing_error_item_unavailable">This plan is not available right now.</string>
+    <string name="billing_error_already_owned">You already have this one. It should be active shortly.</string>
+    <string name="billing_error_misconfigured">Something is off on our end with this plan. Nothing was charged.</string>
+    <string name="billing_error_generic_message">The purchase could not be completed. Nothing was charged.</string>
+    <string name="plans_purchase_unavailable">This plan cannot be purchased right now.</string>
     <string name="plan_term_daily">Daily</string>
     <string name="plan_term_weekly">Weekly</string>
     <string name="plan_term_monthly">Monthly</string>

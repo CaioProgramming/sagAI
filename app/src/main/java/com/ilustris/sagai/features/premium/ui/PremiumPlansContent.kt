@@ -134,10 +134,10 @@ fun PremiumPlansContent(modifier: Modifier = Modifier) {
                     }
                 }
 
-                localError?.let { message ->
+                localError?.let { messageRes ->
                     item(key = "purchase-error") {
                         Text(
-                            message,
+                            stringResource(messageRes),
                             style = MaterialTheme.typography.bodySmall,
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.error,

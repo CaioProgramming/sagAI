@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.billingclient.api.ProductDetails
 import com.ilustris.sagai.MainActivity
+import com.ilustris.sagai.R
+import timber.log.Timber
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.features.premium.data.PremiumPlan
 import com.ilustris.sagai.features.premium.data.PremiumPlansSource
@@ -52,8 +54,10 @@ class PremiumPlansViewModel
          * had simply ignored the tap. They mean the catalogue and Play disagree about what this
          * plan is, and the only way anyone finds that out is if the screen says so.
          */
-        private val _localError = MutableStateFlow<String?>(null)
-        val localError: StateFlow<String?> = _localError.asStateFlow()
+        private val _localError = MutableStateFlow<Int?>(null)
+
+        /** A string resource rather than a sentence: the detail belongs in the log, not on screen. */
+        val localError: StateFlow<Int?> = _localError.asStateFlow()
 
         fun select(plan: PremiumPlan) {
             _selectedKey.value = plan.key
@@ -69,7 +73,7 @@ class PremiumPlansViewModel
                         _isPurchasing.value = false
                     }
                     if (result is BillingService.PurchaseFlowResult.Error) {
-                        _localError.value = result.message
+                        _localError.value = billingErrorCopy(result.responseCode)
                     }
                 }
             }
@@ -82,19 +86,22 @@ class PremiumPlansViewModel
             _localError.value = null
             val product =
                 rawProductFor(plan) ?: run {
-                    _localError.value = "Product ${plan.productId} is not in Play's answer."
+                    Timber.w("${plan.productId} is configured but absent from Play's answer.")
+                    _localError.value = R.string.plans_purchase_unavailable
                     return
                 }
             // Both kinds carry a token now: a one-time product's purchase option has one just as
             // a base plan does. Without it Play cannot tell which option is being bought.
             val offerToken =
                 plan.offerToken ?: run {
-                    _localError.value = "No offer for ${plan.productId}/${plan.optionId.orEmpty()}."
+                    Timber.w("No offer token for ${plan.productId}/${plan.optionId.orEmpty()}.")
+                    _localError.value = R.string.plans_purchase_unavailable
                     return
                 }
 
             if (activity == null) {
-                _localError.value = "Could not reach the activity to open Play's payment sheet."
+                Timber.w("No Activity in scope; cannot launch Play's payment sheet.")
+                _localError.value = R.string.plans_purchase_unavailable
                 return
             }
 

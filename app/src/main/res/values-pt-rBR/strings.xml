@@ -1031,6 +1031,13 @@
     </plurals>
     <string name="plans_confirm">Continuar</string>
     <string name="plan_featured_badge">Recomendado</string>
+    <string name="billing_error_unreachable">Não deu para falar com a loja. Confere a conexão e tenta de novo.</string>
+    <string name="billing_error_unsupported">Compras não estão disponíveis neste aparelho ou nesta conta.</string>
+    <string name="billing_error_item_unavailable">Esse plano não está disponível agora.</string>
+    <string name="billing_error_already_owned">Você já tem esse. Deve ativar em instantes.</string>
+    <string name="billing_error_misconfigured">Tem algo errado do nosso lado nesse plano. Nada foi cobrado.</string>
+    <string name="billing_error_generic_message">Não deu para concluir a compra. Nada foi cobrado.</string>
+    <string name="plans_purchase_unavailable">Esse plano não pode ser comprado agora.</string>
     <string name="plan_term_daily">Diário</string>
     <string name="plan_term_weekly">Semanal</string>
     <string name="plan_term_monthly">Mensal</string>

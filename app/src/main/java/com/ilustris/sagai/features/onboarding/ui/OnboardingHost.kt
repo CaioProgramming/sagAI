@@ -32,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.features.premium.ui.billingErrorCopy
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
@@ -248,7 +249,7 @@ private fun OnboardingBillingOverlays(
         is BillingService.PurchaseFlowResult.Error -> {
             BillingResultSheet(
                 title = stringResource(R.string.billing_error_generic),
-                message = result.message,
+                message = stringResource(billingErrorCopy(result.responseCode)),
                 isLoading = isPurchaseInProgress,
                 onSyncSubscription = onSyncSubscription,
                 onDismiss = onDismissPurchaseResult,

@@ -384,19 +384,22 @@ class BillingService
             // purchase instead, on the assumption that Play Billing simply does not work in a
             // debug build; it does here, products and all, so that assumption was hiding real
             // failures behind a fake success.
-            purchaseFlowResult.emit(PurchaseFlowResult.Error(message))
+            purchaseFlowResult.emit(PurchaseFlowResult.Error(responseCode))
         }
 
+        /** For the log only. User-facing copy is resolved from the code, in string resources. */
         private fun billingResponseMessage(responseCode: Int): String =
             when (responseCode) {
                 BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE -> "Billing service unavailable"
                 BillingClient.BillingResponseCode.BILLING_UNAVAILABLE -> "Billing unavailable on this device"
-            BillingClient.BillingResponseCode.ITEM_UNAVAILABLE -> "Subscription product unavailable"
-            BillingClient.BillingResponseCode.DEVELOPER_ERROR -> "Billing configuration error"
-            BillingClient.BillingResponseCode.ERROR -> "Billing error"
-            BillingClient.BillingResponseCode.USER_CANCELED -> "Purchase cancelled"
-            else -> "Billing error (code $responseCode)"
-        }
+                BillingClient.BillingResponseCode.ITEM_UNAVAILABLE -> "Product unavailable"
+                BillingClient.BillingResponseCode.DEVELOPER_ERROR -> "Billing configuration error"
+                BillingClient.BillingResponseCode.ERROR -> "Billing error"
+                BillingClient.BillingResponseCode.USER_CANCELED -> "Purchase cancelled"
+                BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> "Already owned"
+                BillingClient.BillingResponseCode.NETWORK_ERROR -> "Network error"
+                else -> "Billing error (code $responseCode)"
+            }
 
         class PremiumException(
             val deviceId: String? = null,
@@ -436,8 +439,16 @@ class BillingService
 
         object Cancelled : PurchaseFlowResult
 
+        /**
+         * Carries Play's response code, not its message.
+         *
+         * `debugMessage` is written for the developer and only ever comes back in English, which
+         * is how "Please ensure the app is signed correctly" ended up in front of a user. The code
+         * is the stable part, so the screen maps it to our own copy and the message stays in the
+         * log where it is useful.
+         */
         data class Error(
-            val message: String,
+            val responseCode: Int,
         ) : PurchaseFlowResult
 
         }
