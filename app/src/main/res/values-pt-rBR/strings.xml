@@ -1031,6 +1031,11 @@
     </plurals>
     <string name="plans_confirm">Continuar</string>
     <string name="plan_featured_badge">Recomendado</string>
+    <string name="plan_term_daily">Diário</string>
+    <string name="plan_term_weekly">Semanal</string>
+    <string name="plan_term_monthly">Mensal</string>
+    <string name="plan_term_yearly">Anual</string>
+    <string name="plan_term_lifetime">Pra sempre</string>
     <string name="billing_result_pending_title">Pagamento a caminho</string>
     <string name="billing_result_pending_message">Sua forma de pagamento demora um pouco mais para compensar. Os anúncios saem assim que ela for confirmada, e você não precisa fazer mais nada.</string>
 </resources>

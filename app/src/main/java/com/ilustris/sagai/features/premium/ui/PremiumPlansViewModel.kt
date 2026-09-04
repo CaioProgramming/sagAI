@@ -37,21 +37,23 @@ class PremiumPlansViewModel
                     initialValue = PremiumPlansState.Loading,
                 )
 
-        private val _selectedProductId = MutableStateFlow<String?>(null)
-        val selectedProductId: StateFlow<String?> = _selectedProductId.asStateFlow()
+        // Keyed on the plan, not the product: one subscription product sells several base
+        // plans, so selecting by product id would light up monthly and yearly at once.
+        private val _selectedKey = MutableStateFlow<String?>(null)
+        val selectedKey: StateFlow<String?> = _selectedKey.asStateFlow()
 
         private val _isPurchasing = MutableStateFlow(false)
         val isPurchasing: StateFlow<Boolean> = _isPurchasing.asStateFlow()
 
         fun select(plan: PremiumPlan) {
-            _selectedProductId.value = plan.productId
+            _selectedKey.value = plan.key
         }
 
         fun purchase(
             plan: PremiumPlan,
             activity: MainActivity?,
         ) {
-            val product = rawProductFor(plan.productId) ?: return
+            val product = rawProductFor(plan) ?: return
             // A one-time product has no offers to choose between, so it carries no token. Only a
             // subscription needs one, and failing to find it there means there is nothing to buy.
             val offerToken =
@@ -78,8 +80,8 @@ class PremiumPlansViewModel
          * The billing flow needs Google's own object, but letting the UI hold one is what made the
          * old screen impossible to exercise without Play, so it stays on this side of the line.
          */
-        private fun rawProductFor(productId: String): ProductDetails? =
+        private fun rawProductFor(plan: PremiumPlan): ProductDetails? =
             (billingService.state.value as? BillingService.BillingState.SignatureDisabled)
                 ?.products
-                ?.firstOrNull { it.productId == productId }
+                ?.firstOrNull { it.productId == plan.productId }
     }

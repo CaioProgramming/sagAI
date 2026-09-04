@@ -13,6 +13,14 @@ package com.ilustris.sagai.features.premium.data
  */
 data class PremiumPlan(
     val productId: String,
+    /**
+     * The base plan behind this card, for subscriptions. Null for a one-time product.
+     *
+     * Part of the identity, not decoration: one subscription product sells several base plans, so
+     * [productId] alone no longer tells two cards apart. Anything keyed on a plan - the list, the
+     * selection, the purchase - has to use [key].
+     */
+    val basePlanId: String? = null,
     /** Needed to launch the purchase for a subscription offer; null for a one-time product. */
     val offerToken: String?,
     val name: String,
@@ -22,4 +30,7 @@ data class PremiumPlan(
     val isOneTime: Boolean,
     /** The plan the app puts forward. At most one in a list; the label itself is an app string. */
     val isFeatured: Boolean = false,
-)
+) {
+    /** Stable identity across a list where one product may appear more than once. */
+    val key: String get() = "$productId:${basePlanId.orEmpty()}"
+}

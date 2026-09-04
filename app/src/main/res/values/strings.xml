@@ -1045,6 +1045,11 @@
     </plurals>
     <string name="plans_confirm">Continue</string>
     <string name="plan_featured_badge">Recommended</string>
+    <string name="plan_term_daily">Daily</string>
+    <string name="plan_term_weekly">Weekly</string>
+    <string name="plan_term_monthly">Monthly</string>
+    <string name="plan_term_yearly">Yearly</string>
+    <string name="plan_term_lifetime">Forever</string>
     <string name="billing_result_pending_title">Payment on its way</string>
     <string name="billing_result_pending_message">Your payment method takes a little longer to clear. Ads come off as soon as it does, and you do not need to do anything else.</string>
 </resources>

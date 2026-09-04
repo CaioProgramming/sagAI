@@ -55,7 +55,7 @@ fun PremiumPlansContent(
 ) {
     val viewModel: PremiumPlansViewModel = hiltViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val selectedId by viewModel.selectedProductId.collectAsStateWithLifecycle()
+    val selectedKey by viewModel.selectedKey.collectAsStateWithLifecycle()
     val isPurchasing by viewModel.isPurchasing.collectAsStateWithLifecycle()
 
     Column(
@@ -84,7 +84,7 @@ fun PremiumPlansContent(
                 // Falls back to the featured plan rather than the first, so the one the app puts
                 // forward is also the one already selected when the screen opens.
                 val selected =
-                    current.plans.firstOrNull { it.productId == selectedId }
+                    current.plans.firstOrNull { it.key == selectedKey }
                         ?: current.plans.firstOrNull { it.isFeatured }
                         ?: current.plans.first()
 
@@ -100,10 +100,10 @@ fun PremiumPlansContent(
                         )
                     }
 
-                    items(current.plans, key = { it.productId }) { plan ->
+                    items(current.plans, key = { it.key }) { plan ->
                         PlanCard(
                             plan = plan,
-                            isSelected = plan.productId == selected.productId,
+                            isSelected = plan.key == selected.key,
                             onSelect = { viewModel.select(plan) },
                         )
                     }
