@@ -218,17 +218,21 @@ class OnboardingStateMapper
                         }
 
                         OnboardingType.PREMIUM_GUIDE -> {
-                            when (index) {
-                                0 -> {
+                            // Keyed on the last page rather than on an index, because the page
+                            // count is configured: the plan list moved from index 2 to index 1
+                            // when the copy went from three pages to two, and an index-keyed
+                            // branch silently handed it the wrong backdrop.
+                            when {
+                                isLastPage -> {
+                                    { MorphingGenresBackground(visualConfigs = genreConfigs) }
+                                }
+
+                                index == 0 -> {
                                     { PremiumBackground() }
                                 }
 
-                                1 -> {
-                                    { StackedCardsBackground(assets = storyAssets) }
-                                }
-
                                 else -> {
-                                    { MorphingGenresBackground(visualConfigs = genreConfigs) }
+                                    { StackedCardsBackground(assets = storyAssets) }
                                 }
                             }
                         }

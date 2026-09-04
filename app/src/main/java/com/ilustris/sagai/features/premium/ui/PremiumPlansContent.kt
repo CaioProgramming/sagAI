@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.premium.ui
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -38,11 +40,13 @@ import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.premium.data.PremiumPlan
 import com.ilustris.sagai.features.premium.data.PremiumPlansState
 
-/** Tall enough for three plans; more than that scrolls rather than pushing the button off screen. */
-private val PLAN_LIST_MAX_HEIGHT = 320.dp
-
 /**
  * The plan list, as the last page of the premium onboarding.
+ *
+ * One list from the title down to the confirm button, rather than a capped list sitting between
+ * fixed pieces. The capped version had to guess a height that fit every plan count, and guessed
+ * wrong: three cards overflowed it and the first was drawn cut in half, which reads as a rendering
+ * bug rather than as a list that scrolls.
  *
  * Cards are selected and then confirmed, rather than bought on tap. Tapping a plan directly would
  * open Google's payment sheet on a single touch, which is a lot to hand to a mis-tap, and the
@@ -57,27 +61,41 @@ fun PremiumPlansContent(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val selectedKey by viewModel.selectedKey.collectAsStateWithLifecycle()
     val isPurchasing by viewModel.isPurchasing.collectAsStateWithLifecycle()
+    val localError by viewModel.localError.collectAsStateWithLifecycle()
+    val current = state
 
-    Column(
+    LazyColumn(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        when (val current = state) {
+        item(key = "premium-title") {
+            PremiumTitle(
+                titleStyle = MaterialTheme.typography.headlineLarge,
+                isAnimated = true,
+            )
+        }
+
+        when (current) {
             PremiumPlansState.Loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp).align(Alignment.CenterHorizontally),
-                    strokeWidth = 2.dp,
-                )
+                item(key = "loading") {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                    )
+                }
             }
 
             PremiumPlansState.Unavailable -> {
-                Text(
-                    stringResource(R.string.plans_load_error),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                item(key = "unavailable") {
+                    Text(
+                        stringResource(R.string.plans_load_error),
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
 
             is PremiumPlansState.Available -> {
@@ -88,41 +106,42 @@ fun PremiumPlansContent(
                         ?: current.plans.firstOrNull { it.isFeatured }
                         ?: current.plans.first()
 
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth().heightIn(max = PLAN_LIST_MAX_HEIGHT),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    item(key = "premium-title") {
-                        PremiumTitle(
-                            titleStyle = MaterialTheme.typography.titleMedium,
-                            isAnimated = true,
-                            modifier = Modifier.padding(bottom = 4.dp),
-                        )
-                    }
+                items(current.plans, key = { it.key }) { plan ->
+                    PlanCard(
+                        plan = plan,
+                        isSelected = plan.key == selected.key,
+                        onSelect = { viewModel.select(plan) },
+                    )
+                }
 
-                    items(current.plans, key = { it.key }) { plan ->
-                        PlanCard(
-                            plan = plan,
-                            isSelected = plan.key == selected.key,
-                            onSelect = { viewModel.select(plan) },
-                        )
+                item(key = "confirm") {
+                    Button(
+                        onClick = { viewModel.purchase(selected, activity) },
+                        enabled = !isPurchasing,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        if (isPurchasing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Text(stringResource(R.string.plans_confirm))
+                        }
                     }
                 }
 
-                Button(
-                    onClick = { viewModel.purchase(selected, activity) },
-                    enabled = !isPurchasing,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    if (isPurchasing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                localError?.let { message ->
+                    item(key = "purchase-error") {
+                        Text(
+                            message,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.fillMaxWidth(),
                         )
-                    } else {
-                        Text(stringResource(R.string.plans_confirm))
                     }
                 }
             }
@@ -130,12 +149,14 @@ fun PremiumPlansContent(
     }
 }
 
+
 @Composable
 private fun PlanCard(
     plan: PremiumPlan,
     isSelected: Boolean,
     onSelect: () -> Unit,
 ) {
+    val shape = RoundedCornerShape(16.dp)
     val borderColor by animateColorAsState(
         if (isSelected) {
             MaterialTheme.colorScheme.primary
@@ -144,16 +165,28 @@ private fun PlanCard(
         },
         label = "plan-border",
     )
+    // The card sits over the page's own artwork, so it tints it rather than covering it. A solid
+    // surface here read as a panel dropped on top of the screen instead of part of it.
+    val elevation by animateDpAsState(
+        if (isSelected) 16.dp else 0.dp,
+        label = "plan-elevation",
+    )
 
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                .border(1.5.dp, borderColor, RoundedCornerShape(16.dp))
+                .shadow(
+                    elevation = elevation,
+                    shape = shape,
+                    ambientColor = MaterialTheme.colorScheme.primary,
+                    spotColor = MaterialTheme.colorScheme.primary,
+                )
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = .35f))
+                .border(1.5.dp, borderColor, shape)
                 .clickable(onClick = onSelect)
-                .padding(16.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -188,13 +221,6 @@ private fun PlanCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (plan.description.isNotBlank()) {
-                Text(
-                    plan.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .7f),
-                )
-            }
         }
 
         if (isSelected) {

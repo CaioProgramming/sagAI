@@ -18,6 +18,7 @@ import com.android.billingclient.api.queryPurchasesAsync
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.core.data.SideEffect
+import timber.log.Timber
 import com.ilustris.sagai.features.premium.data.BillingCatalog
 import com.ilustris.sagai.features.premium.data.BillingProductEntry
 import kotlinx.coroutines.CoroutineScope
@@ -203,6 +204,7 @@ class BillingService
             }
 
             val catalog = catalogEntries()
+            Timber.tag(TAG).d("Configured catalogue: ${catalog.map { "${it.id}/${it.optionId}" }}")
             if (catalog.isEmpty()) {
                 handleBillingFailure(
                     BillingClient.BillingResponseCode.ITEM_UNAVAILABLE,
@@ -213,7 +215,7 @@ class BillingService
             }
 
             val products = mutableListOf<ProductDetails>()
-            for ((type, entries) in catalog.groupBy { it.type.uppercase() }) {
+            for ((type, entries) in catalog.groupBy { it.type.lowercase() }) {
                 val params =
                     QueryProductDetailsParams
                         .newBuilder()
@@ -235,7 +237,11 @@ class BillingService
                     )
                     return false
                 }
-                products += result.productDetailsList ?: emptyList()
+                val returned = result.productDetailsList ?: emptyList()
+                Timber
+                    .tag(TAG)
+                    .d("Play returned ${returned.map { it.productId }} for $type")
+                products += returned
             }
 
             if (products.isEmpty()) {
@@ -257,8 +263,13 @@ class BillingService
                 ?.products
                 .orEmpty()
                 .filter {
+                    // Lowercased, because that is what BillingClient.ProductType actually holds:
+                    // SUBS is the string "subs", not "SUBS". Comparing an uppercased config value
+                    // against them matched nothing, so every configured product was dropped before
+                    // the query and the screen reported "no products configured" while the config
+                    // sitting right there listed three.
                     it.id.isNotBlank() &&
-                        it.type.uppercase() in
+                        it.type.lowercase() in
                         setOf(BillingClient.ProductType.SUBS, BillingClient.ProductType.INAPP)
                 }
 
@@ -270,15 +281,6 @@ class BillingService
             }
             return false
         }
-
-        suspend fun simulatePurchase(confirmed: Boolean) {
-            if (!BuildConfig.DEBUG) return
-            if (confirmed) {
-                purchaseFlowResult.emit(PurchaseFlowResult.DebugSimulationSuccess)
-            } else {
-                purchaseFlowResult.emit(PurchaseFlowResult.Cancelled)
-        }
-    }
 
     fun resetPurchaseFlowResult() {
         purchaseFlowResult.value = PurchaseFlowResult.Idle
@@ -368,17 +370,21 @@ class BillingService
             duringPurchase: Boolean,
         ) {
             val message = debugMessage ?: billingResponseMessage(responseCode)
+            // Logged because the screen can only ever say "could not load the plans", and the
+            // causes behind that sentence need completely different fixes: an APK signed with the
+            // debug keystore, a product still in draft, an id that does not match the console, an
+            // empty catalogue in Remote Config. Without the code there is no way to tell them
+            // apart from outside.
+            Timber
+                .tag(TAG)
+                .w("Billing failure ($responseCode ${billingResponseMessage(responseCode)}): $message")
             state.emit(BillingState.BillingError(responseCode, message))
             if (!duringPurchase) return
-            if (BuildConfig.DEBUG) {
-                purchaseFlowResult.emit(
-                    PurchaseFlowResult.DebugFallback(
-                        "Test environment: Play Billing is unavailable on this DEBUG build. ($message)",
-                    ),
-                )
-            } else {
-                purchaseFlowResult.emit(PurchaseFlowResult.Error(message))
-            }
+            // The same error in both builds. Debug used to get a sheet offering to simulate the
+            // purchase instead, on the assumption that Play Billing simply does not work in a
+            // debug build; it does here, products and all, so that assumption was hiding real
+            // failures behind a fake success.
+            purchaseFlowResult.emit(PurchaseFlowResult.Error(message))
         }
 
         private fun billingResponseMessage(responseCode: Int): String =
@@ -428,19 +434,15 @@ class BillingService
         /** Paid for with a method that clears later, such as a boleto. Access is not granted yet. */
         object Pending : PurchaseFlowResult
 
-        data object DebugSimulationSuccess : PurchaseFlowResult
-
         object Cancelled : PurchaseFlowResult
 
         data class Error(
             val message: String,
         ) : PurchaseFlowResult
 
-        data class DebugFallback(
-            val reason: String,
-        ) : PurchaseFlowResult
         }
     }
 
+private const val TAG = "💳 Billing"
 private const val BILLING_PRODUCTS_KEY = "billing_products"
 private const val PREMIUM_TESTER = "premiumTester"

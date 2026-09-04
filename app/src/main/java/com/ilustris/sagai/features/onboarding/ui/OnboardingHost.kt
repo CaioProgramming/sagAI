@@ -173,8 +173,6 @@ fun OnboardingHost(
             purchaseFlowResult = purchaseFlowResult,
             isPurchaseInProgress = isPurchaseInProgress,
             onDismiss = dismissOnboarding,
-            onConfirmDebugPurchase = viewModel::confirmDebugPurchase,
-            onCancelDebugPurchase = viewModel::cancelDebugPurchase,
             onSyncSubscription = viewModel::syncSubscription,
             onDismissPurchaseResult = viewModel::dismissPurchaseResult,
         )
@@ -227,35 +225,15 @@ private fun OnboardingBillingOverlays(
     purchaseFlowResult: BillingService.PurchaseFlowResult,
     isPurchaseInProgress: Boolean,
     onDismiss: () -> Unit,
-    onConfirmDebugPurchase: () -> Unit,
-    onCancelDebugPurchase: () -> Unit,
     onSyncSubscription: () -> Unit,
     onDismissPurchaseResult: () -> Unit,
 ) {
     when (val result = purchaseFlowResult) {
-        is BillingService.PurchaseFlowResult.DebugFallback -> {
-            DebugBillingSimulationSheet(
-                reason = result.reason,
-                isLoading = isPurchaseInProgress,
-                onConfirm = onConfirmDebugPurchase,
-                onCancel = onCancelDebugPurchase,
-                onSyncSubscription = onSyncSubscription,
-            )
-        }
-
         is BillingService.PurchaseFlowResult.Success -> {
             BillingResultSheet(
                 title = stringResource(R.string.billing_result_success_title),
                 message = stringResource(R.string.billing_result_success_message),
                 onDismiss = onDismiss,
-            )
-        }
-
-        BillingService.PurchaseFlowResult.DebugSimulationSuccess -> {
-            BillingResultSheet(
-                title = stringResource(R.string.billing_debug_simulation_success_title),
-                message = stringResource(R.string.billing_debug_simulation_success_message),
-                onDismiss = onDismissPurchaseResult,
             )
         }
 

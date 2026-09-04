@@ -222,17 +222,6 @@ class OnboardingViewModel
             }
         }
 
-        fun confirmDebugPurchase() {
-            viewModelScope.launch {
-                billingService.simulatePurchase(confirmed = true)
-            }
-        }
-
-        fun cancelDebugPurchase() {
-            viewModelScope.launch {
-                billingService.simulatePurchase(confirmed = false)
-            }
-        }
 
         fun dismissPurchaseResult() {
             billingService.resetPurchaseFlowResult()

@@ -45,18 +45,38 @@ class PremiumPlansViewModel
         private val _isPurchasing = MutableStateFlow(false)
         val isPurchasing: StateFlow<Boolean> = _isPurchasing.asStateFlow()
 
+        /**
+         * Why the last attempt did not even reach Play.
+         *
+         * These two cases used to be bare returns, which left the confirm button looking like it
+         * had simply ignored the tap. They mean the catalogue and Play disagree about what this
+         * plan is, and the only way anyone finds that out is if the screen says so.
+         */
+        private val _localError = MutableStateFlow<String?>(null)
+        val localError: StateFlow<String?> = _localError.asStateFlow()
+
         fun select(plan: PremiumPlan) {
             _selectedKey.value = plan.key
+            _localError.value = null
         }
 
         fun purchase(
             plan: PremiumPlan,
             activity: MainActivity?,
         ) {
-            val product = rawProductFor(plan) ?: return
+            _localError.value = null
+            val product =
+                rawProductFor(plan) ?: run {
+                    _localError.value = "Product ${plan.productId} is not in Play's answer."
+                    return
+                }
             // Both kinds carry a token now: a one-time product's purchase option has one just as
             // a base plan does. Without it Play cannot tell which option is being bought.
-            val offerToken = plan.offerToken ?: return
+            val offerToken =
+                plan.offerToken ?: run {
+                    _localError.value = "No offer for ${plan.productId}/${plan.optionId.orEmpty()}."
+                    return
+                }
 
             viewModelScope.launch {
                 _isPurchasing.value = true
