@@ -24,6 +24,7 @@ import com.ilustris.sagai.ui.genre.crime.PinTitle
 import com.ilustris.sagai.ui.genre.crime.rememberCorkboardPalette
 import com.ilustris.sagai.ui.theme.components.mascot.BlobMascot
 import com.ilustris.sagai.ui.theme.components.mascot.rememberMascotExpression
+import com.ilustris.sagai.ui.theme.components.mascot.rememberTiltLook
 
 /** The vibe caption is short by nature; anything longer than this is the stage over-writing. */
 private const val CAPTION_MAX_LINES = 5
@@ -53,10 +54,12 @@ class CorkboardVibePinPage(
             pinColor = tone.color,
         ) { ink ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val tilt = rememberTiltLook(enabled = canAnimate)
                 BlobMascot(
                     expression = rememberMascotExpression(tone),
                     color = tone.color,
                     eyeColor = rememberCorkboardPalette().paper,
+                    look = { tilt.value },
                     animate = canAnimate,
                     modifier = Modifier.size(BLOB_SIZE),
                 )

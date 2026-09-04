@@ -37,6 +37,7 @@ import com.ilustris.sagai.ui.genre.book.BookBackground
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.components.mascot.BlobMascot
 import com.ilustris.sagai.ui.theme.components.mascot.rememberMascotExpression
+import com.ilustris.sagai.ui.theme.components.mascot.rememberTiltLook
 import com.ilustris.sagai.ui.theme.gradientFade
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -101,10 +102,12 @@ class BookExpressivenessPage(
                     .animateContentSize(tween(1200, easing = LinearOutSlowInEasing)),
         ) {
             emotionalTone.first?.let {
+                val tilt = rememberTiltLook(enabled = canAnimate)
                 BlobMascot(
                     expression = rememberMascotExpression(it),
                     color = ink,
                     eyeColor = MaterialTheme.colorScheme.background,
+                    look = { tilt.value },
                     modifier = Modifier.size(BLOB_SIZE),
                 )
             }

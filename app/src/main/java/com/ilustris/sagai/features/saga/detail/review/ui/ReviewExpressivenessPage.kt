@@ -37,6 +37,7 @@ import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.components.mascot.BlobMascot
 import com.ilustris.sagai.ui.theme.components.mascot.rememberMascotExpression
+import com.ilustris.sagai.ui.theme.components.mascot.rememberTiltLook
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shimmerize
@@ -97,10 +98,12 @@ class ReviewExpressivenessPage(
                     ).fillMaxWidth(),
         ) {
             emotionalTone.first?.let {
+                val tilt = rememberTiltLook(enabled = canAnimate)
                 BlobMascot(
                     expression = rememberMascotExpression(it),
                     color = MaterialTheme.colorScheme.primary,
                     eyeColor = MaterialTheme.colorScheme.background,
+                    look = { tilt.value },
                     modifier =
                         Modifier
                             .size(BLOB_SIZE)

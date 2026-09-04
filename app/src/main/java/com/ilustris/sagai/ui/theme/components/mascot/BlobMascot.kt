@@ -30,7 +30,9 @@ import kotlin.math.sin
  * Draws nothing when [expression] is null: a tone that is not configured in Remote Config
  * has no mascot, by design.
  *
- * @param look where the mascot is looking, each axis in `-1f..1f`. Null drifts on its own.
+ * @param look where the mascot is looking, each axis in `-1f..1f`; null drifts on its own. Taken
+ *   as a lambda so a value that changes every frame — [rememberTiltLook], a drag — is read while
+ *   drawing and repaints without recomposing anything.
  */
 @Composable
 fun BlobMascot(
@@ -38,7 +40,7 @@ fun BlobMascot(
     color: Color,
     eyeColor: Color,
     modifier: Modifier = Modifier,
-    look: Offset? = null,
+    look: () -> Offset? = { null },
     animate: Boolean = true,
 ) {
     if (expression == null) return
@@ -68,7 +70,7 @@ fun BlobMascot(
                     cos(beat * SHAKE_Y_SPEED) * radius * SHAKE_Y * shake,
             )
 
-        val gaze = look ?: idleGaze(time)
+        val gaze = look() ?: idleGaze(time)
 
         withTransform({ scale(1f + pulse, 1f - pulse, center) }) {
             drawCircle(color = color, radius = radius, center = center)

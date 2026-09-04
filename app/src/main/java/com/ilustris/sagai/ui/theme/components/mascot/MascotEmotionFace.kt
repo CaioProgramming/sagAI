@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,11 +38,13 @@ fun MascotEmotionFace(
     expression: MascotExpression? = rememberMascotExpression(emotionalTone),
     color: Color = emotionalTone.color,
     eyeColor: Color = MaterialTheme.colorScheme.background,
+    look: () -> Offset? = { null },
 ) {
     BlobMascot(
         expression = expression,
         color = color,
         eyeColor = eyeColor,
+        look = look,
         animate = animate,
         modifier =
             modifier.then(
