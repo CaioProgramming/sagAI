@@ -28,3 +28,7 @@ keystore.properties
 .claude/settings.local.json
 .claude/worktrees/
 /app/release/
+
+# JVM crash artifacts (a Gradle/Kotlin daemon crash drops these at the repo root)
+hs_err_pid*.log
+replay_pid*.log
