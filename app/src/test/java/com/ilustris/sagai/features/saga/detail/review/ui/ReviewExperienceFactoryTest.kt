@@ -4,50 +4,67 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.book.BookReviewExperience
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.collage.CollageReviewExperience
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicReviewExperience
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CrimeReviewExperience
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.terminal.TerminalReviewExperience
+import com.ilustris.sagai.ui.genre.GenreSurfaceStyle
+import com.ilustris.sagai.ui.genre.surfaceStyle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * Written against `surfaceStyle()`, which replaced a `ReviewTemplate` enum this file still named.
+ * The rename left it uncompilable, and one file that does not compile takes the whole test source
+ * set with it, so nothing here had run since.
+ *
+ * Its last case had also become false rather than merely stale: it asserted that HORROR falls back
+ * to the default experience, and HORROR reads as a book now.
+ */
 class ReviewExperienceFactoryTest {
     @Test
-    fun `cyberpunk resolves to the terminal template`() {
-        assertEquals(ReviewTemplate.TERMINAL, Genre.CYBERPUNK.reviewTemplate())
+    fun `each genre resolves to the surface its style names`() {
+        val expected =
+            mapOf(
+                Genre.CYBERPUNK to GenreSurfaceStyle.TERMINAL,
+                Genre.SPACE_OPERA to GenreSurfaceStyle.TERMINAL,
+                Genre.FANTASY to GenreSurfaceStyle.BOOK,
+                Genre.SHINOBI to GenreSurfaceStyle.BOOK,
+                Genre.COWBOY to GenreSurfaceStyle.BOOK,
+                Genre.HORROR to GenreSurfaceStyle.BOOK,
+                Genre.CRIME to GenreSurfaceStyle.CRIME,
+                Genre.PUNK_ROCK to GenreSurfaceStyle.COLLAGE,
+                Genre.HEROES to GenreSurfaceStyle.COMIC,
+            )
+
+        // Every genre, not a sample: a genre added without a style decision is the failure this
+        // catches, and it would otherwise surface as a screen quietly rendering the wrong look.
+        assertEquals(Genre.entries.toSet(), expected.keys)
+        expected.forEach { (genre, style) ->
+            assertEquals("$genre resolves to the wrong surface", style, genre.surfaceStyle())
+        }
     }
 
     @Test
-    fun `fantasy resolves to the book template`() {
-        assertEquals(ReviewTemplate.BOOK, Genre.FANTASY.reviewTemplate())
+    fun `the factory builds the experience its genre's style calls for`() {
+        Genre.entries.forEach { genre ->
+            val experience = ReviewExperienceFactory.createExperience(sagaOf(genre))
+            val matches =
+                when (genre.surfaceStyle()) {
+                    GenreSurfaceStyle.TERMINAL -> experience is TerminalReviewExperience
+                    GenreSurfaceStyle.BOOK -> experience is BookReviewExperience
+                    GenreSurfaceStyle.CRIME -> experience is CrimeReviewExperience
+                    GenreSurfaceStyle.COLLAGE -> experience is CollageReviewExperience
+                    GenreSurfaceStyle.COMIC -> experience is ComicReviewExperience
+                    GenreSurfaceStyle.DEFAULT -> experience is DefaultReviewExperience
+                }
+            assertTrue(
+                "$genre got ${experience.javaClass.simpleName} for ${genre.surfaceStyle()}",
+                matches,
+            )
+        }
     }
 
-    @Test
-    fun `every other genre falls back to the default template`() {
-        Genre.entries
-            .filterNot { it == Genre.CYBERPUNK || it == Genre.FANTASY }
-            .forEach { genre ->
-                assertEquals(
-                    "$genre should default to ReviewTemplate.DEFAULT",
-                    ReviewTemplate.DEFAULT,
-                    genre.reviewTemplate(),
-                )
-            }
-    }
-
-    @Test
-    fun `factory builds a TerminalReviewExperience for cyberpunk sagas`() {
-        val content = SagaContent(data = Saga(genre = Genre.CYBERPUNK))
-        assertTrue(ReviewExperienceFactory.createExperience(content) is TerminalReviewExperience)
-    }
-
-    @Test
-    fun `factory builds a BookReviewExperience for fantasy sagas`() {
-        val content = SagaContent(data = Saga(genre = Genre.FANTASY))
-        assertTrue(ReviewExperienceFactory.createExperience(content) is BookReviewExperience)
-    }
-
-    @Test
-    fun `factory builds a DefaultReviewExperience for genres without a template`() {
-        val content = SagaContent(data = Saga(genre = Genre.HORROR))
-        assertTrue(ReviewExperienceFactory.createExperience(content) is DefaultReviewExperience)
-    }
+    private fun sagaOf(genre: Genre) = SagaContent(data = Saga(genre = genre))
 }
