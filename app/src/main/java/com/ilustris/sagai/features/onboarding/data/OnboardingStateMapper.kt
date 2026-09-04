@@ -7,15 +7,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import com.ilustris.sagai.BuildConfig
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.features.premium.ui.PremiumPlansContent
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
-import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -55,7 +54,6 @@ import javax.inject.Singleton
 class OnboardingStateMapper
     @Inject
     constructor(
-        private val billingService: BillingService,
         private val stringResourceHelper: StringResourceHelper,
         private val genreVisualConfig: GenreVisualConfigService,
         private val remoteConfigService: RemoteConfigService,
@@ -237,25 +235,14 @@ class OnboardingStateMapper
                     }
 
                 val primaryButton =
-                    if (isKeyOnboarding && isLastPage) {
-                        // The field owns its own submit: only it knows whether what was typed
-                        // is worth sending, and the answer comes back asynchronously.
+                    if (isLastPage && (isKeyOnboarding || isPremiumOnboarding)) {
+                        // Both of these end on a page whose content owns its own submit: only the
+                        // key field knows whether what was typed is worth sending, and only the
+                        // plan list knows which plan is selected. A page-level button would either
+                        // duplicate them or fire without either answer.
                         null
                     } else if (isLastPage) {
-                        val action =
-                            when (type) {
-                                OnboardingType.PREMIUM_GUIDE -> {
-                                    val product =
-                                        (billingService.state.value as? BillingService.BillingState.SignatureDisabled)
-                                            ?.products
-                                            ?.firstOrNull()
-                                    OnboardingAction.Subscribe(product?.productId ?: "")
-                                }
-
-                                else -> {
-                                    OnboardingAction.Dismiss
-                                }
-                            }
+                        val action = OnboardingAction.Dismiss
                         val text =
                             when (type) {
                                 OnboardingType.API_KEY_SETUP -> {
@@ -274,22 +261,10 @@ class OnboardingStateMapper
                                     stringResourceHelper.getString(R.string.onboarding_gameplay_guide_finish)
                                 }
 
+                                // Unreachable, like API_KEY_SETUP above: this type never gets a
+                                // page-level button on its last page.
                                 OnboardingType.PREMIUM_GUIDE -> {
-                                    val price =
-                                        (billingService.state.value as? BillingService.BillingState.SignatureDisabled)
-                                            ?.products
-                                            ?.firstOrNull()
-                                            ?.subscriptionOfferDetails
-                                            ?.firstOrNull()
-                                            ?.pricingPhases
-                                            ?.pricingPhaseList
-                                            ?.firstOrNull()
-                                            ?.formattedPrice
-                                    if (price.isNullOrBlank() && BuildConfig.DEBUG) {
-                                        stringResourceHelper.getString(R.string.subscribe_debug_fallback)
-                                    } else {
-                                        "${stringResourceHelper.getString(R.string.subscribe)} ${price.orEmpty()}"
-                                    }
+                                    stringResourceHelper.getString(R.string.onboarding_finish)
                                 }
                             }
                         OnboardingButton(text, action)
@@ -338,6 +313,13 @@ class OnboardingStateMapper
                     content = {
                         if (isKeyOnboarding && isLastPage) {
                             ApiKeyInputContent(page)
+                        } else if (isPremiumOnboarding && isLastPage) {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                OnboardingStandardContent(page)
+                                PremiumPlansContent(
+                                    activity = LocalContext.current as? MainActivity,
+                                )
+                            }
                         } else {
                             OnboardingStandardContent(page)
                         }

@@ -573,13 +573,11 @@ object AppModule {
     @Provides
     @Singleton
     fun providesOnboardingStateMapper(
-        billingService: BillingService,
         stringResourceHelper: StringResourceHelper,
         genreConfigService: GenreVisualConfigService,
         remoteConfigService: RemoteConfigService,
     ): OnboardingStateMapper =
         OnboardingStateMapper(
-            billingService,
             stringResourceHelper,
             genreConfigService,
             remoteConfigService,
