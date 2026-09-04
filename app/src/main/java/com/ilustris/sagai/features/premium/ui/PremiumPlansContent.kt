@@ -165,8 +165,14 @@ private fun PlanCard(
         },
         label = "plan-border",
     )
-    // The card sits over the page's own artwork, so it tints it rather than covering it. A solid
-    // surface here read as a panel dropped on top of the screen instead of part of it.
+    // Unselected cards tint the page artwork rather than covering it: a solid surface read as a
+    // panel dropped onto the screen instead of part of it. The selected one goes opaque, because
+    // its shadow falls on whatever is behind the card, and through a translucent card you see the
+    // shadow lying on the artwork inside its own bounds.
+    val containerColor by animateColorAsState(
+        MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = if (isSelected) 1f else .35f),
+        label = "plan-container",
+    )
     val elevation by animateDpAsState(
         if (isSelected) 16.dp else 0.dp,
         label = "plan-elevation",
@@ -183,7 +189,7 @@ private fun PlanCard(
                     spotColor = MaterialTheme.colorScheme.primary,
                 )
                 .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = .35f))
+                .background(containerColor)
                 .border(1.5.dp, borderColor, shape)
                 .clickable(onClick = onSelect)
                 .padding(horizontal = 14.dp, vertical = 12.dp),
