@@ -1,16 +1,15 @@
 package com.ilustris.sagai.features.onboarding.data
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.features.premium.ui.PremiumPlansContent
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -30,6 +29,7 @@ import com.ilustris.sagai.features.onboarding.ui.SparkBackground
 import com.ilustris.sagai.features.onboarding.ui.StarfieldBackground
 import com.ilustris.sagai.features.onboarding.ui.apikey.AI_STUDIO_URL
 import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyInputContent
+import com.ilustris.sagai.features.premium.ui.PremiumPlansContent
 import com.ilustris.sagai.ui.animations.MorphingAvatarBackground
 import com.ilustris.sagai.ui.animations.StackedCardsBackground
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
@@ -216,10 +216,6 @@ class OnboardingStateMapper
                         }
 
                         OnboardingType.PREMIUM_GUIDE -> {
-                            // Keyed on the last page rather than on an index, because the page
-                            // count is configured: the plan list moved from index 2 to index 1
-                            // when the copy went from three pages to two, and an index-keyed
-                            // branch silently handed it the wrong backdrop.
                             when {
                                 isLastPage -> {
                                     { MorphingGenresBackground(visualConfigs = genreConfigs) }
@@ -230,7 +226,7 @@ class OnboardingStateMapper
                                 }
 
                                 else -> {
-                                    { StackedCardsBackground(assets = storyAssets) }
+                                    { Box(Modifier.fillMaxSize().background(Brush.verticalGradient(morphingGradient()))) }
                                 }
                             }
                         }

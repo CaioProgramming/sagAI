@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.premium.ui
 
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -27,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -35,13 +38,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import android.content.Context
-import android.content.ContextWrapper
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.premium.data.PremiumPlan
 import com.ilustris.sagai.features.premium.data.PremiumPlansState
+import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.iridescentGradient
+import com.ilustris.sagai.ui.theme.morphingGradient
 
 /**
  * The plan list, as the last page of the premium onboarding.
@@ -74,6 +78,14 @@ fun PremiumPlansContent(modifier: Modifier = Modifier) {
             PremiumTitle(
                 titleStyle = MaterialTheme.typography.headlineLarge,
                 isAnimated = true,
+                modifier =
+                    Modifier.gradientFill(
+                        Brush.horizontalGradient(
+                            morphingGradient(
+                                iridescentGradient,
+                            ),
+                        ),
+                    ),
             )
         }
 
@@ -150,7 +162,6 @@ fun PremiumPlansContent(modifier: Modifier = Modifier) {
     }
 }
 
-
 @Composable
 private fun PlanCard(
     plan: PremiumPlan,
@@ -188,8 +199,7 @@ private fun PlanCard(
                     shape = shape,
                     ambientColor = MaterialTheme.colorScheme.primary,
                     spotColor = MaterialTheme.colorScheme.primary,
-                )
-                .clip(shape)
+                ).clip(shape)
                 .background(containerColor)
                 .border(1.5.dp, borderColor, shape)
                 .clickable(onClick = onSelect)
