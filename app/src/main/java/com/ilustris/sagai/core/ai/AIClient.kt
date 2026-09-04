@@ -252,12 +252,24 @@ abstract class AIClient(
                 }
 
         // `minimal` is not offered by every model — gemini-3.7-flash rejects it outright — so a
-        // tier pointed at one of those degrades to the next level up instead of failing.
-        return if (resolved == MINIMAL_THINKING && !modelCatalog.supportsMinimalThinking(model)) {
-            "low"
-        } else {
-            resolved
+        // tier pointed at one of those degrades to the next level up instead of failing. This is
+        // the one direction proven in production, kept exactly as it was.
+        if (resolved == MINIMAL_THINKING && !modelCatalog.supportsThinkingLevel(model, MINIMAL_THINKING)) {
+            return "low"
         }
+
+        // Any other level: a 503 retry can now hand this call a model nobody asked for [resolved]
+        // before — the Gemma model backing a fallback normally only ever serves the LOW tier's
+        // `minimal`, so whether it tolerates `high` is untested the first time it happens. Step
+        // down the ladder toward less reasoning, skipping only levels this exact model has already
+        // taught us (via a prior 400) that it rejects, instead of resending the same rejected value
+        // until the retry budget runs out.
+        val startIndex = THINKING_LEVEL_LADDER.indexOf(resolved)
+        if (startIndex < 0) return resolved
+        return THINKING_LEVEL_LADDER
+            .drop(startIndex)
+            .firstOrNull { modelCatalog.supportsThinkingLevel(model, it) }
+            ?: THINKING_LEVEL_LADDER.last()
     }
 
     suspend fun modelName(requirement: ModelRequirement): String {
@@ -287,6 +299,24 @@ abstract class AIClient(
                 error("Invalid model configuration for ${requirement.name}")
             }
         }
+    }
+
+    /**
+     * The model a 503 ("this model is currently experiencing high demand") falls over to for
+     * [requirement], or null if the tier declares none.
+     *
+     * Remote-Config-only, on purpose: this app does not ship a compiled fallback, so a tier with
+     * nothing configured here simply keeps retrying its own model on a 503, exactly like before
+     * this existed. Living in `model_configs` rather than as a constant is also what leaves the
+     * choice of fallback — including whether it shares a model (and a quota pool) with another
+     * tier — to whoever edits the config, not to a value baked into the app.
+     */
+    suspend fun fallbackModelName(requirement: ModelRequirement): String? {
+        val tierConfig =
+            (remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap())[requirement.name] as? Map<*, *>
+        return (tierConfig?.get("fallbackModel") as? String)
+            ?.replace("models/", "")
+            ?.takeIf { it.isNotBlank() }
     }
 
     /**
@@ -344,6 +374,9 @@ abstract class AIClient(
 private const val MINIMAL_THINKING = "minimal"
 
 private val ACCEPTED_THINKING_LEVELS = setOf(MINIMAL_THINKING, "low", "medium", "high")
+
+/** Most to least reasoning — the order [thinkingLevel] steps down when a model rejects one. */
+internal val THINKING_LEVEL_LADDER = listOf("high", "medium", "low", MINIMAL_THINKING)
 
 val AI_EXCLUDED_FIELDS =
     listOf(

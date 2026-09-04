@@ -30,7 +30,8 @@ class ModelCatalog
         @Volatile
         private var limits: Map<String, Int>? = null
 
-        private val minimalUnsupported = ConcurrentHashMap.newKeySet<String>()
+        /** Per-model, the thinking levels that model has taught us it rejects with a 400. */
+        private val unsupportedLevelsByModel = ConcurrentHashMap<String, MutableSet<String>>()
 
         private val perMinuteTokenBudget = ConcurrentHashMap<String, Int>()
 
@@ -93,19 +94,32 @@ class ModelCatalog
         }
 
         /**
-         * Whether [model] accepts `thinkingLevel: "minimal"`.
+         * Whether [model] accepts `thinkingLevel: [level]`.
          *
          * Learned from the API's own rejection rather than a hardcoded list: the set of models
-         * offering `minimal` changes with every release, and a stale list would either downgrade
-         * tiers that did not need it or keep sending a level the model refuses.
+         * offering a given level changes with every release, and a stale list would either
+         * downgrade tiers that did not need it or keep resending a level the model refuses.
+         *
+         * This used to only ever track `minimal`, back when the sole known gap was some Gemini
+         * models omitting that one level. It generalized once a model swap could put `high` in
+         * front of a model nobody had ever asked for `high` before — the fallback Gemma model a
+         * 503 retry can now fall over to serves the LOW tier in production, which only ever
+         * requests `minimal` from it, so whether it tolerates `high` is untested territory the
+         * first time it actually happens.
          */
-        fun supportsMinimalThinking(model: String): Boolean =
-            model.replace("models/", "") !in minimalUnsupported
+        fun supportsThinkingLevel(
+            model: String,
+            level: String,
+        ): Boolean = level !in unsupportedLevelsByModel[model.replace("models/", "")].orEmpty()
 
-        fun markMinimalThinkingUnsupported(model: String) {
+        fun markThinkingLevelUnsupported(
+            model: String,
+            level: String,
+        ) {
             val normalized = model.replace("models/", "")
-            if (minimalUnsupported.add(normalized)) {
-                Timber.tag(TAG).i("$normalized rejects minimal thinking — using low from now on.")
+            val rejected = unsupportedLevelsByModel.getOrPut(normalized) { ConcurrentHashMap.newKeySet() }
+            if (rejected.add(level)) {
+                Timber.tag(TAG).i("$normalized rejects '$level' thinking.")
             }
         }
 

@@ -108,6 +108,9 @@ internal inline fun <reified T> parseGenerationJson(
 @PublishedApi
 internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWithRetry(params: GeminiSyncGenerationParams): T? {
     val maxAttempts = GeminiGenerationPolicy.maxAttempts(params.requirement)
+    // Shadows the parameter on purpose: a 503 fallback swaps the model (and its thinking level)
+    // between attempts, and every reference below reads this one rather than the original.
+    var params = params
     for (currentAttempt in 1..maxAttempts) {
         var queueWaitMs = 0L
         var inferenceMs = 0L
@@ -222,26 +225,37 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                 logEnabled = params.logEnabled,
             )
 
-            val shouldRetry =
-                handleGenerationRetry(
-                    throwable = e,
-                    currentAttempt = currentAttempt,
-                    maxAttempts = maxAttempts,
-                    model = params.model,
-                    logEnabled = params.logEnabled,
-                    lastRequestParts = lastRequestParts,
-                    systemInstruction = params.systemInstruction,
-                    context = "generate",
-                    blueprintKey = params.audit.blueprintKey,
-                    reportsQuota = params.reportsQuota,
-                )
-            if (!shouldRetry) {
-                if (params.logEnabled) {
-                    Timber.e("Final failure after $maxAttempts attempts.")
-                    Timber.e("generate: Failed prompt")
-                    Timber.w(params.promptForFailureLog)
+            when (
+                val outcome =
+                    handleGenerationRetry(
+                        throwable = e,
+                        currentAttempt = currentAttempt,
+                        maxAttempts = maxAttempts,
+                        model = params.model,
+                        requirement = params.requirement,
+                        thinkingLevel = params.thinkingLevel.orEmpty(),
+                        logEnabled = params.logEnabled,
+                        lastRequestParts = lastRequestParts,
+                        systemInstruction = params.systemInstruction,
+                        context = "generate",
+                        blueprintKey = params.audit.blueprintKey,
+                        reportsQuota = params.reportsQuota,
+                    )
+            ) {
+                is RetryOutcome.RetryWithModel -> {
+                    params = params.copy(model = outcome.model, thinkingLevel = outcome.thinkingLevel)
                 }
-                return null
+
+                RetryOutcome.Retry -> Unit
+
+                RetryOutcome.Stop -> {
+                    if (params.logEnabled) {
+                        Timber.e("Final failure after $maxAttempts attempts.")
+                        Timber.e("generate: Failed prompt")
+                        Timber.w(params.promptForFailureLog)
+                    }
+                    return null
+                }
             }
         }
     }
@@ -255,6 +269,9 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
     return flow {
         val maxAttempts = GeminiGenerationPolicy.maxAttempts(params.requirement)
         val startTime = System.currentTimeMillis()
+        // Shadows the parameter: a 503 fallback swaps the model (and its thinking level) between
+        // attempts, and every reference from here on reads this one rather than the original.
+        var params = params
 
         // Same per-model lock the sync path takes. Streaming ran outside it, so a reply could go
         // out while a sync generation on the same model was already in flight — and both spend
@@ -263,6 +280,13 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
         // Safe against the reasoning synthesizer that runs during collection: it launches in its
         // own coroutine and asks for a different tier's model, so it never waits on this lock in a
         // way that could hold the stream up.
+        //
+        // Kept keyed to the *original* model even across a 503 fallback: reacquiring it mid-stream
+        // for whatever the params get swapped to would need releasing and retaking a different
+        // lock partway through a single logical call, which risks a real bug (a second caller
+        // slipping in between the release and the reacquire) for a case — a fallback model that is
+        // itself contended enough to need its own lock at that exact moment — narrow enough not to
+        // be worth that risk.
         requestMutexes.getOrPut(params.model) { Mutex() }.withLock {
             for (currentAttempt in 1..maxAttempts) {
                 try {
@@ -361,35 +385,46 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
                         params.onGuardrailBlock?.invoke(e)
                     }
 
-                    val shouldRetry =
-                        handleGenerationRetry(
-                            throwable = e,
-                            currentAttempt = currentAttempt,
-                            maxAttempts = maxAttempts,
-                            model = params.model,
-                            logEnabled = params.logEnabled,
-                            lastRequestParts = lastRequestParts,
-                            systemInstruction = params.systemInstruction,
-                            context = "generateStreaming",
-                            blueprintKey = params.audit.blueprintKey,
-                            reportsQuota = params.reportsQuota,
-                        )
-                    if (!shouldRetry) {
-                        val duration = System.currentTimeMillis() - startTime
-                        recordAudit(
-                            AIAuditSnapshot.error(
+                    when (
+                        val outcome =
+                            handleGenerationRetry(
+                                throwable = e,
+                                currentAttempt = currentAttempt,
+                                maxAttempts = maxAttempts,
                                 model = params.model,
+                                requirement = params.requirement,
+                                thinkingLevel = params.thinkingLevel.orEmpty(),
+                                logEnabled = params.logEnabled,
+                                lastRequestParts = lastRequestParts,
+                                systemInstruction = params.systemInstruction,
+                                context = "generateStreaming",
                                 blueprintKey = params.audit.blueprintKey,
-                                dataType = params.audit.dataType,
-                                errorMessage = "${e.javaClass.simpleName}: ${e.message}",
-                                responseTimeMs = duration,
-                                safetyStatus = if (e is GuardrailsException) e.status.name else null,
-                                systemInstruction = params.audit.systemInstruction,
-                                sentVariables = params.audit.sentVariables,
-                            ),
-                            logEnabled = params.logEnabled,
-                        )
-                        throw e
+                                reportsQuota = params.reportsQuota,
+                            )
+                    ) {
+                        is RetryOutcome.RetryWithModel -> {
+                            params = params.copy(model = outcome.model, thinkingLevel = outcome.thinkingLevel)
+                        }
+
+                        RetryOutcome.Retry -> Unit
+
+                        RetryOutcome.Stop -> {
+                            val duration = System.currentTimeMillis() - startTime
+                            recordAudit(
+                                AIAuditSnapshot.error(
+                                    model = params.model,
+                                    blueprintKey = params.audit.blueprintKey,
+                                    dataType = params.audit.dataType,
+                                    errorMessage = "${e.javaClass.simpleName}: ${e.message}",
+                                    responseTimeMs = duration,
+                                    safetyStatus = if (e is GuardrailsException) e.status.name else null,
+                                    systemInstruction = params.audit.systemInstruction,
+                                    sentVariables = params.audit.sentVariables,
+                                ),
+                                logEnabled = params.logEnabled,
+                            )
+                            throw e
+                        }
                     }
                 }
             }
@@ -436,12 +471,27 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
 internal fun GeminiAIClient.effectiveThinkingLevel(
     model: String,
     requested: String?,
-): String? =
-    if (requested == "minimal" && !modelCatalog.supportsMinimalThinking(model)) {
-        "low"
-    } else {
-        requested
+): String? {
+    if (requested == null) return null
+
+    // `minimal` is the one direction proven in production: some models omit it from the low end
+    // entirely, and the safe fallback is one step up, not a step down.
+    if (requested == "minimal" && !modelCatalog.supportsThinkingLevel(model, "minimal")) {
+        return "low"
     }
+
+    // Any other level this exact model has taught us — via a 400 on an earlier attempt of this
+    // same call — that it rejects: step down the ladder toward less reasoning instead of resending
+    // the same rejected value on every remaining attempt. This is the actual mechanism that makes
+    // a retry after markThinkingLevelUnsupported different from the attempt that just failed: the
+    // assembly calls this fresh every pass, so a value recorded moments ago already applies here.
+    val startIndex = THINKING_LEVEL_LADDER.indexOf(requested)
+    if (startIndex < 0) return requested
+    return THINKING_LEVEL_LADDER
+        .drop(startIndex)
+        .firstOrNull { modelCatalog.supportsThinkingLevel(model, it) }
+        ?: THINKING_LEVEL_LADDER.last()
+}
 
 @PublishedApi
 internal fun GeminiAIClient.buildGenerationAssembly(params: GeminiSyncGenerationParams): GeminiRequestAssembly =
@@ -610,19 +660,41 @@ internal suspend fun GeminiAIClient.consumeStreamingResponse(
     )
 }
 
+/**
+ * What to do about a failed attempt, decided by [handleGenerationRetry].
+ *
+ * A plain [Boolean] stopped being enough once a retry could mean "try again, but against a
+ * different model" — a 503 fallback needs to hand the caller a new model *and* the thinking level
+ * resolved for it, not just a green light to loop again with the params it already had.
+ */
+@PublishedApi
+internal sealed class RetryOutcome {
+    object Stop : RetryOutcome()
+
+    object Retry : RetryOutcome()
+
+    /** Retry, but [model] is overloaded's replacement — a 503 fallback, not the original tier model. */
+    data class RetryWithModel(
+        val model: String,
+        val thinkingLevel: String,
+    ) : RetryOutcome()
+}
+
 @PublishedApi
 internal suspend fun GeminiAIClient.handleGenerationRetry(
     throwable: Exception,
     currentAttempt: Int,
     maxAttempts: Int,
     model: String,
+    requirement: ModelRequirement,
+    thinkingLevel: String,
     logEnabled: Boolean,
     lastRequestParts: List<GeminiPart>,
     systemInstruction: String?,
     context: String,
     blueprintKey: String? = null,
     reportsQuota: Boolean = true,
-): Boolean {
+): RetryOutcome {
     if (logEnabled) {
         Timber
             .tag(javaClass.simpleName)
@@ -633,15 +705,37 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
     }
 
     // Refusals raised before the request ever left: retrying re-raises them identically.
-    if (throwable is QuotaExhaustedException || throwable is MissingApiKeyException) return false
+    if (throwable is QuotaExhaustedException || throwable is MissingApiKeyException) return RetryOutcome.Stop
 
-    // The model refuses `minimal`. Recording it is what makes the retry different from the
-    // attempt that just failed: the assembly is rebuilt each pass and resolves the level through
-    // effectiveThinkingLevel, which now returns `low` for this model — here and on every later
-    // request, so the cost is one wasted attempt, once per model.
+    // The model refuses the level actually sent. Recording which one is what makes the retry
+    // different from the attempt that just failed: thinkingLevel() steps down its ladder past any
+    // level a model has taught us it rejects, so the next assembly asks for something this model
+    // has a chance of accepting — here and on every later request against it, so the cost is one
+    // wasted attempt, once per model-and-level pair.
     if (isUnsupportedThinkingLevel(throwable)) {
-        modelCatalog.markMinimalThinkingUnsupported(model)
-        return currentAttempt < maxAttempts
+        modelCatalog.markThinkingLevelUnsupported(model, thinkingLevel)
+        return if (currentAttempt < maxAttempts) RetryOutcome.Retry else RetryOutcome.Stop
+    }
+
+    // The model itself is overloaded — Google's own "high demand" signal, unrelated to this key's
+    // validity or its quota. Retrying the same model spends the whole attempt budget against
+    // something that just failed for a reason outside our control; a tier that names a fallback
+    // gets a real second option instead of three guaranteed repeats. Switching on the very first
+    // 503 rather than after some number of retries is a judgment call, not a measured one — there
+    // is no data yet on how often a 503 clears on its own within a couple of seconds against how
+    // often it is a sustained spike, and mirroring the thinking-level branch above (which also
+    // reacts immediately) keeps the two nearest cases in this function consistent with each other.
+    if (throwable is GeminiHttpException && throwable.code == 503 && currentAttempt < maxAttempts) {
+        val normalizedModel = model.replace("models/", "")
+        val fallback = fallbackModelName(requirement)?.takeIf { it != normalizedModel }
+        if (fallback != null) {
+            if (logEnabled) {
+                Timber
+                    .tag(javaClass.simpleName)
+                    .w("$normalizedModel is overloaded (503) — falling over to $fallback.")
+            }
+            return RetryOutcome.RetryWithModel(fallback, thinkingLevel(requirement, fallback))
+        }
     }
 
     // Key verdicts come first, before any backoff maths. A rejected key fails every attempt
@@ -655,12 +749,12 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
                     .tag(javaClass.simpleName)
                     .e("API key rejected (${diagnosis.failure.name}) — not retrying.")
             }
-            return false
+            return RetryOutcome.Stop
         }
 
         ApiKeyDiagnosis.QuotaDaily -> {
             if (reportsQuota) quotaStatusService.reportDailyExhausted(model)
-            return false
+            return RetryOutcome.Stop
         }
 
         is ApiKeyDiagnosis.QuotaMinute -> {
@@ -708,7 +802,7 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
             resolveHttpRetryDelay(throwable, model, logEnabled) ?: extractedDelay
     }
 
-    if (currentAttempt >= maxAttempts) return false
+    if (currentAttempt >= maxAttempts) return RetryOutcome.Stop
 
     logEstimatedPromptTokensOnFailure(
         parts = lastRequestParts,
@@ -736,7 +830,7 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
             .tag(javaClass.simpleName)
             .w("Retrying immediately due to parsing error (${throwable.javaClass.simpleName})...")
     }
-    return true
+    return RetryOutcome.Retry
 }
 
 @PublishedApi
