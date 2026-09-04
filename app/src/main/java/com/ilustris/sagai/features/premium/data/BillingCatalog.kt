@@ -25,18 +25,18 @@ data class BillingProductEntry(
     /** `SUBS` or `INAPP`; anything else is ignored rather than guessed at. */
     val type: String = "",
     /**
-     * Which base plan of [id] this entry offers, for subscriptions.
+     * Which option of [id] this entry sells: a base plan for `SUBS`, a purchase option for
+     * `INAPP`. Play calls them different things and models them identically.
      *
      * Monthly and yearly are two base plans of one subscription product rather than two products,
      * which is how Play models them and what lets a monthly subscriber move to yearly as a native
      * upgrade with Play doing the proration. Two separate products would make that a cancel and
-     * rebuy. So the id alone no longer identifies a plan, and the same product appears once per
-     * base plan it sells.
+     * rebuy. So a product id alone no longer identifies a plan, and the same product appears here
+     * once per option it sells.
      *
-     * Null for a one-time product, and null is also accepted for a subscription with a single base
-     * plan, where there is nothing to disambiguate.
+     * Null is accepted where there is a single option and nothing to disambiguate.
      */
-    val basePlanId: String? = null,
+    val optionId: String? = null,
     /**
      * Marks the plan the app puts forward. The label itself is an app string, not config: it
      * changes far less often than which plan carries it, and keeping it in `strings.xml` means a

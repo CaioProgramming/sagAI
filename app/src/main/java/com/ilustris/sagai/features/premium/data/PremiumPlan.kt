@@ -14,13 +14,13 @@ package com.ilustris.sagai.features.premium.data
 data class PremiumPlan(
     val productId: String,
     /**
-     * The base plan behind this card, for subscriptions. Null for a one-time product.
+     * The base plan or purchase option behind this card.
      *
-     * Part of the identity, not decoration: one subscription product sells several base plans, so
-     * [productId] alone no longer tells two cards apart. Anything keyed on a plan - the list, the
-     * selection, the purchase - has to use [key].
+     * Part of the identity, not decoration: one product sells several of these, so [productId]
+     * alone no longer tells two cards apart. Anything keyed on a plan - the list, the selection,
+     * the purchase - has to use [key].
      */
-    val basePlanId: String? = null,
+    val optionId: String? = null,
     /** Needed to launch the purchase for a subscription offer; null for a one-time product. */
     val offerToken: String?,
     val name: String,
@@ -32,5 +32,5 @@ data class PremiumPlan(
     val isFeatured: Boolean = false,
 ) {
     /** Stable identity across a list where one product may appear more than once. */
-    val key: String get() = "$productId:${basePlanId.orEmpty()}"
+    val key: String get() = "$productId:${optionId.orEmpty()}"
 }

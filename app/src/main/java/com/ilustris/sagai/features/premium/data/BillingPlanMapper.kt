@@ -39,7 +39,7 @@ class BillingPlanMapper
                 mapEntry(product, entry)?.copy(
                     isFeatured = featured != null &&
                         entry.id == featured.id &&
-                        entry.basePlanId == featured.basePlanId,
+                        entry.optionId == featured.optionId,
                 )
             }
         }
@@ -48,10 +48,10 @@ class BillingPlanMapper
             product: ProductDetails,
             entry: BillingProductEntry,
         ): PremiumPlan? {
-            product.oneTimePurchaseOfferDetails?.let { oneTime ->
+            resolveOneTimeOffer(product, entry.optionId)?.let { oneTime ->
                 return PremiumPlan(
                     productId = product.productId,
-                    basePlanId = null,
+                    optionId = oneTime.purchaseOptionId,
                     offerToken = oneTime.offerToken,
                     name = strings.getString(R.string.plan_term_lifetime),
                     description = product.description,
@@ -61,7 +61,7 @@ class BillingPlanMapper
                 )
             }
 
-            val offer = resolveOffer(product, entry.basePlanId) ?: return null
+            val offer = resolveSubscriptionOffer(product, entry.optionId) ?: return null
             val phases = offer.pricingPhases.pricingPhaseList
             // The last paid phase is what the buyer pays from then on. Counting phases instead
             // would break on a promotional price, where three of them exist and only the last is
@@ -70,7 +70,7 @@ class BillingPlanMapper
 
             return PremiumPlan(
                 productId = product.productId,
-                basePlanId = offer.basePlanId,
+                optionId = offer.basePlanId,
                 offerToken = offer.offerToken,
                 name = termLabel(steady.billingPeriod),
                 description = product.description,
@@ -80,28 +80,50 @@ class BillingPlanMapper
         }
 
         /**
-         * The offer to sell for [basePlanId].
+         * The subscription offer to sell for [optionId], which names a base plan.
          *
          * A base plan appears once on its own and once more for every promotional offer the buyer
          * is eligible for - Play only returns eligible ones - so a promo present here is a
          * discount this buyer can actually have, and picking it is both the friendlier and the
          * more accurate choice, since the price line is built from whichever offer we return.
          *
-         * A null [basePlanId] means the config did not disambiguate, which is correct for a
-         * product that sells a single base plan.
+         * A null [optionId] means the config did not disambiguate, which is correct for a product
+         * that sells a single base plan.
          */
-        private fun resolveOffer(
+        private fun resolveSubscriptionOffer(
             product: ProductDetails,
-            basePlanId: String?,
-        ): ProductDetails.SubscriptionOfferDetails? {
-            val offers = product.subscriptionOfferDetails.orEmpty()
-            val forPlan =
-                if (basePlanId.isNullOrBlank()) {
-                    offers
-                } else {
-                    offers.filter { it.basePlanId == basePlanId }
-                }
-            return forPlan.firstOrNull { !it.offerId.isNullOrBlank() } ?: forPlan.firstOrNull()
+            optionId: String?,
+        ): ProductDetails.SubscriptionOfferDetails? =
+            pick(product.subscriptionOfferDetails.orEmpty(), optionId, { it.basePlanId }, { it.offerId })
+
+        /**
+         * The same resolution for a one-time product, which Play now models the same way.
+         *
+         * One-time products used to be a single price with nothing to choose between, and this
+         * read the singular `oneTimePurchaseOfferDetails`. They now have purchase options, each
+         * with its own id and its own offer token, exposed through the plural list - and a product
+         * created with purchase options is exactly where the singular field cannot be relied on.
+         * It stays as the fallback for products created before the console offered them.
+         */
+        private fun resolveOneTimeOffer(
+            product: ProductDetails,
+            optionId: String?,
+        ): ProductDetails.OneTimePurchaseOfferDetails? {
+            val offers = product.oneTimePurchaseOfferDetailsList.orEmpty()
+            if (offers.isEmpty()) return product.oneTimePurchaseOfferDetails
+            return pick(offers, optionId, { it.purchaseOptionId }, { it.offerId })
+        }
+
+        /** Matches on the option, then prefers a promotional offer within it over the bare one. */
+        private fun <T> pick(
+            offers: List<T>,
+            optionId: String?,
+            optionOf: (T) -> String?,
+            offerIdOf: (T) -> String?,
+        ): T? {
+            val forOption =
+                if (optionId.isNullOrBlank()) offers else offers.filter { optionOf(it) == optionId }
+            return forOption.firstOrNull { !offerIdOf(it).isNullOrBlank() } ?: forOption.firstOrNull()
         }
 
         private fun buildPriceLine(

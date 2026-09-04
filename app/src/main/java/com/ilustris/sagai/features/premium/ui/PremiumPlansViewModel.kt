@@ -54,16 +54,9 @@ class PremiumPlansViewModel
             activity: MainActivity?,
         ) {
             val product = rawProductFor(plan) ?: return
-            // A one-time product has no offers to choose between, so it carries no token. Only a
-            // subscription needs one, and failing to find it there means there is nothing to buy.
-            val offerToken =
-                if (plan.isOneTime) {
-                    null
-                } else {
-                    plan.offerToken
-                        ?: product.subscriptionOfferDetails?.firstOrNull()?.offerToken
-                        ?: return
-                }
+            // Both kinds carry a token now: a one-time product's purchase option has one just as
+            // a base plan does. Without it Play cannot tell which option is being bought.
+            val offerToken = plan.offerToken ?: return
 
             viewModelScope.launch {
                 _isPurchasing.value = true

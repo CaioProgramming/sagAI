@@ -136,11 +136,14 @@ class BillingService
         /**
          * Launches Play's payment sheet for [productDetails].
          *
-         * [offerToken] is required for a subscription and meaningless for a one-time product,
-         * which has no offers to choose between. It used to also re-check the id against a single
-         * constant, which made sense while exactly one product existed and is simply wrong now:
-         * the [ProductDetails] came from our own catalogue query, so there is nothing left to
-         * validate it against.
+         * [offerToken] names which base plan or purchase option is being bought. It used to be a
+         * subscription-only concern, back when a one-time product was a single price with nothing
+         * to choose between; purchase options gave those a token of their own, so both kinds need
+         * it now.
+         *
+         * This used to also re-check the id against a single constant, which made sense while
+         * exactly one product existed and is simply wrong now: the [ProductDetails] came from our
+         * own catalogue query, so there is nothing left to validate it against.
          */
         suspend fun purchase(
             activity: MainActivity,
