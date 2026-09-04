@@ -220,10 +220,12 @@ class BillingService
                     QueryProductDetailsParams
                         .newBuilder()
                         .setProductList(
-                            entries.map { entry ->
+                            // Distinct, because a product appears once per option it sells: asking
+                            // for sagas_membership twice is how Play came back with it twice.
+                            entries.map { it.id }.distinct().map { id ->
                                 QueryProductDetailsParams.Product
                                     .newBuilder()
-                                    .setProductId(entry.id)
+                                    .setProductId(id)
                                     .setProductType(type)
                                     .build()
                             },
@@ -378,7 +380,14 @@ class BillingService
             Timber
                 .tag(TAG)
                 .w("Billing failure ($responseCode ${billingResponseMessage(responseCode)}): $message")
-            state.emit(BillingState.BillingError(responseCode, message))
+            // A failed query is not evidence that anyone stopped owning anything. This matters
+            // more now that the check runs on every foreground: a resume with no signal would
+            // otherwise take premium away from someone who paid for it, and hand it back only
+            // whenever the next check happened to succeed. An entitlement is only ever dropped by
+            // Play answering, successfully, that it is gone.
+            if (state.value !is BillingState.SignatureEnabled) {
+                state.emit(BillingState.BillingError(responseCode, message))
+            }
             if (!duringPurchase) return
             // The same error in both builds. Debug used to get a sheet offering to simulate the
             // purchase instead, on the assumption that Play Billing simply does not work in a

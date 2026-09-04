@@ -58,7 +58,8 @@ class OnboardingViewModel
 
         init {
             viewModelScope.launch {
-                billingService.checkPurchases()
+                // No checkPurchases() here: SagaApp runs one on every foreground, so this only
+                // ever duplicated the query that had just happened.
                 loadAllConfigs()
             }
             viewModelScope.launch {
