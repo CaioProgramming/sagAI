@@ -9,9 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.features.premium.ui.PremiumPlansContent
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
@@ -320,9 +318,7 @@ class OnboardingStateMapper
                         } else if (isPremiumOnboarding && isLastPage) {
                             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 OnboardingStandardContent(page)
-                                PremiumPlansContent(
-                                    activity = LocalContext.current as? MainActivity,
-                                )
+                                PremiumPlansContent()
                             }
                         } else {
                             OnboardingStandardContent(page)

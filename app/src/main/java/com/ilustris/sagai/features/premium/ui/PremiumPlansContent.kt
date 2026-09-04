@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +35,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.content.Context
+import android.content.ContextWrapper
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.premium.PremiumTitle
@@ -53,11 +56,9 @@ import com.ilustris.sagai.features.premium.data.PremiumPlansState
  * confirm step is also what lets the user see what they are about to be charged for.
  */
 @Composable
-fun PremiumPlansContent(
-    activity: MainActivity? = null,
-    modifier: Modifier = Modifier,
-) {
+fun PremiumPlansContent(modifier: Modifier = Modifier) {
     val viewModel: PremiumPlansViewModel = hiltViewModel()
+    val activity = LocalContext.current.findMainActivity()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val selectedKey by viewModel.selectedKey.collectAsStateWithLifecycle()
     val isPurchasing by viewModel.isPurchasing.collectAsStateWithLifecycle()
@@ -244,4 +245,21 @@ private fun PlanCard(
             ) {}
         }
     }
+}
+
+/**
+ * The [MainActivity] behind this composition, unwrapped rather than cast.
+ *
+ * `LocalContext.current as? MainActivity` is null inside a Compose `Dialog`, which is where this
+ * screen lives: the dialog composes against a `ContextWrapper` around the activity, not the
+ * activity itself. The cast failing meant the purchase silently did nothing at all, since
+ * launching Play's flow needs a real Activity.
+ */
+private fun Context.findMainActivity(): MainActivity? {
+    var context: Context? = this
+    while (context is ContextWrapper) {
+        if (context is MainActivity) return context
+        context = context.baseContext
+    }
+    return null
 }

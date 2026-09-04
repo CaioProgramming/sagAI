@@ -60,6 +60,21 @@ class PremiumPlansViewModel
             _localError.value = null
         }
 
+        init {
+            // Play's flow ends in the listener, not in the call that opened it, so the button
+            // would otherwise spin forever on a cancelled or failed purchase.
+            viewModelScope.launch {
+                billingService.purchaseFlowResult.collect { result ->
+                    if (result != BillingService.PurchaseFlowResult.Idle) {
+                        _isPurchasing.value = false
+                    }
+                    if (result is BillingService.PurchaseFlowResult.Error) {
+                        _localError.value = result.message
+                    }
+                }
+            }
+        }
+
         fun purchase(
             plan: PremiumPlan,
             activity: MainActivity?,
@@ -78,12 +93,19 @@ class PremiumPlansViewModel
                     return
                 }
 
+            if (activity == null) {
+                _localError.value = "Could not reach the activity to open Play's payment sheet."
+                return
+            }
+
             viewModelScope.launch {
                 _isPurchasing.value = true
                 billingService.resetPurchaseFlowResult()
-                val launched =
-                    activity?.let { billingService.purchase(it, product, offerToken) }
-                if (launched != true) _isPurchasing.value = false
+                // A false here means Play refused to open the sheet at all; the reason has already
+                // gone through purchaseFlowResult, which this ViewModel is collecting.
+                if (!billingService.purchase(activity, product, offerToken)) {
+                    _isPurchasing.value = false
+                }
             }
         }
 
