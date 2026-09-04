@@ -198,8 +198,6 @@ fun OnboardingPagerContent(
                     }
 
                     uiPage.primaryButton?.let { button ->
-                        val isSubscribeLoading =
-                            button.action is OnboardingAction.Subscribe && isPurchaseInProgress
                         Button(
                             onClick = {
                                 if (button.action is OnboardingAction.Next) {
@@ -219,7 +217,6 @@ fun OnboardingPagerContent(
                                     )
                                 }
                             },
-                            enabled = !isSubscribeLoading,
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
@@ -231,22 +228,14 @@ fun OnboardingPagerContent(
                                 ),
                             shape = MaterialTheme.shapes.large,
                         ) {
-                            if (isSubscribeLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    strokeWidth = 2.dp,
+                            AnimatedContent(button) {
+                                Text(
+                                    text = it.text.uppercase(),
+                                    style =
+                                        MaterialTheme.typography.labelLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                        ),
                                 )
-                            } else {
-                                AnimatedContent(button) {
-                                    Text(
-                                        text = it.text.uppercase(),
-                                        style =
-                                            MaterialTheme.typography.labelLarge.copy(
-                                                fontWeight = FontWeight.Bold,
-                                            ),
-                                    )
-                                }
                             }
                         }
                     }

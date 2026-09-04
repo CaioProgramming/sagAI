@@ -29,7 +29,7 @@ class PremiumPlansViewModel
             billingService.state
                 // Null until the first query answers, which is loading rather than unavailable.
                 .map { billingState ->
-                    billingState?.let(plansSource::plansFor) ?: PremiumPlansState.Loading
+                    billingState?.let { plansSource.plansFor(it) } ?: PremiumPlansState.Loading
                 }
                 .stateIn(
                     scope = viewModelScope,
@@ -52,16 +52,22 @@ class PremiumPlansViewModel
             activity: MainActivity?,
         ) {
             val product = rawProductFor(plan.productId) ?: return
+            // A one-time product has no offers to choose between, so it carries no token. Only a
+            // subscription needs one, and failing to find it there means there is nothing to buy.
             val offerToken =
-                plan.offerToken
-                    ?: product.subscriptionOfferDetails?.firstOrNull()?.offerToken
-                    ?: return
+                if (plan.isOneTime) {
+                    null
+                } else {
+                    plan.offerToken
+                        ?: product.subscriptionOfferDetails?.firstOrNull()?.offerToken
+                        ?: return
+                }
 
             viewModelScope.launch {
                 _isPurchasing.value = true
                 billingService.resetPurchaseFlowResult()
                 val launched =
-                    activity?.let { billingService.purchaseSignature(it, product, offerToken) }
+                    activity?.let { billingService.purchase(it, product, offerToken) }
                 if (launched != true) _isPurchasing.value = false
             }
         }

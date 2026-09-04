@@ -277,6 +277,17 @@ private fun OnboardingBillingOverlays(
             )
         }
 
+        BillingService.PurchaseFlowResult.Pending -> {
+            // Paid for with a method that clears later, a boleto or a bank transfer. Access is not
+            // granted yet and there is nothing for the buyer to do, so the one thing that matters
+            // is saying so: silence here reads as a payment that failed.
+            BillingResultSheet(
+                title = stringResource(R.string.billing_result_pending_title),
+                message = stringResource(R.string.billing_result_pending_message),
+                onDismiss = onDismissPurchaseResult,
+            )
+        }
+
         BillingService.PurchaseFlowResult.Idle -> {
             Unit
         }

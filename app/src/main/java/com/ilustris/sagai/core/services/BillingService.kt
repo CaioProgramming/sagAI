@@ -18,6 +18,8 @@ import com.android.billingclient.api.queryPurchasesAsync
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.core.data.SideEffect
+import com.ilustris.sagai.features.premium.data.BillingCatalog
+import com.ilustris.sagai.features.premium.data.BillingProductEntry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -88,56 +90,63 @@ class BillingService
                 )
                 return
             }
-            val params =
-                QueryPurchasesParams
-                    .newBuilder()
-                    .setProductType(BillingClient.ProductType.SUBS)
-                    .build()
-            val purchasesResult = billingClient.queryPurchasesAsync(params)
-            if (purchasesResult.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                handleBillingFailure(
-                    purchasesResult.billingResult.responseCode,
-                    purchasesResult.billingResult.debugMessage,
-                    duringPurchase = false,
-                )
+            // Both types, because ad-free is sold as a subscription and as a one-time purchase,
+            // and either one grants it. This asks Play what the user owns rather than checking a
+            // single known id: a purchase list needs no ids at all, unlike the catalogue query.
+            val owned = mutableListOf<Purchase>()
+            for (type in listOf(BillingClient.ProductType.SUBS, BillingClient.ProductType.INAPP)) {
+                val params =
+                    QueryPurchasesParams
+                        .newBuilder()
+                        .setProductType(type)
+                        .build()
+                val purchasesResult = billingClient.queryPurchasesAsync(params)
+                if (purchasesResult.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                    handleBillingFailure(
+                        purchasesResult.billingResult.responseCode,
+                        purchasesResult.billingResult.debugMessage,
+                        duringPurchase = false,
+                    )
+                    return
+                }
+                owned += purchasesResult.purchasesList
+            }
+
+            val purchased =
+                owned.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+            val active = purchased.firstOrNull { it.isAcknowledged }
+            if (active != null) {
+                state.emit(BillingState.SignatureEnabled)
                 return
             }
-            val hasActiveSignature =
-                purchasesResult.purchasesList.any { purchase ->
-                    purchase.products.contains(SAGA_SIGNATURE_ID) &&
-                        purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
-                        purchase.isAcknowledged
+            // Bought but never acknowledged — a process death between paying and acknowledging, or
+            // an acknowledge that failed. Play auto-refunds within three days, so finishing it here
+            // is what keeps someone who already paid from losing both the money and the access.
+            val unacknowledged = purchased.firstOrNull()
+            if (unacknowledged != null) {
+                if (acknowledgePurchase(unacknowledged)) {
+                    state.emit(BillingState.SignatureEnabled)
+                    purchaseFlowResult.emit(PurchaseFlowResult.Success)
                 }
-            if (hasActiveSignature) {
-                state.emit(BillingState.SignatureEnabled)
-            } else {
-                val pendingPurchase =
-                    purchasesResult.purchasesList.firstOrNull { purchase ->
-                        purchase.products.contains(SAGA_SIGNATURE_ID) &&
-                            purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
-                            !purchase.isAcknowledged
-                    }
-                if (pendingPurchase != null) {
-                    acknowledgePurchase(pendingPurchase)
-                } else {
-                    loadSignatureProduct()
-                }
+                return
             }
+            loadProducts()
         }
 
-        suspend fun purchaseSignature(
+        /**
+         * Launches Play's payment sheet for [productDetails].
+         *
+         * [offerToken] is required for a subscription and meaningless for a one-time product,
+         * which has no offers to choose between. It used to also re-check the id against a single
+         * constant, which made sense while exactly one product existed and is simply wrong now:
+         * the [ProductDetails] came from our own catalogue query, so there is nothing left to
+         * validate it against.
+         */
+        suspend fun purchase(
             activity: MainActivity,
             productDetails: ProductDetails,
-            offerToken: String,
+            offerToken: String?,
         ): Boolean {
-            if (productDetails.productId != SAGA_SIGNATURE_ID) {
-                handleBillingFailure(
-                    BillingClient.BillingResponseCode.DEVELOPER_ERROR,
-                    "Invalid product id",
-                    duringPurchase = true,
-                )
-                return false
-            }
             val connectionResult = ensureConnected()
             if (connectionResult.responseCode != BillingClient.BillingResponseCode.OK) {
                 handleBillingFailure(
@@ -152,7 +161,7 @@ class BillingService
                     BillingFlowParams.ProductDetailsParams
                         .newBuilder()
                         .setProductDetails(productDetails)
-                        .setOfferToken(offerToken)
+                        .apply { if (offerToken != null) setOfferToken(offerToken) }
                         .build(),
                 )
             val billingFlowParams =
@@ -172,7 +181,14 @@ class BillingService
             return true
         }
 
-        suspend fun loadSignatureProduct(duringPurchase: Boolean = false): Boolean {
+        /**
+         * Fetches every product named in `billing_products`.
+         *
+         * One query per product type: Play rejects a mixed list. An id that no longer exists in
+         * Play simply does not come back, and that is deliberately not an error — a typo in the
+         * config must cost that one plan, never the whole screen.
+         */
+        suspend fun loadProducts(duringPurchase: Boolean = false): Boolean {
             val connectionResult = ensureConnected()
             if (connectionResult.responseCode != BillingClient.BillingResponseCode.OK) {
                 handleBillingFailure(
@@ -181,40 +197,67 @@ class BillingService
                     duringPurchase = duringPurchase,
                 )
                 return false
-        }
-            val params =
-                QueryProductDetailsParams
-                    .newBuilder()
-                    .setProductList(
-                        listOf(
-                            QueryProductDetailsParams.Product
-                                .newBuilder()
-                                .setProductId(SAGA_SIGNATURE_ID)
-                                .setProductType(BillingClient.ProductType.SUBS)
-                                .build(),
-                        ),
-                    ).build()
-            val productDetailsResult = billingClient.queryProductDetails(params)
-            if (productDetailsResult.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+            }
+
+            val catalog = catalogEntries()
+            if (catalog.isEmpty()) {
                 handleBillingFailure(
-                    productDetailsResult.billingResult.responseCode,
-                    productDetailsResult.billingResult.debugMessage,
+                    BillingClient.BillingResponseCode.ITEM_UNAVAILABLE,
+                    "No products configured",
                     duringPurchase = duringPurchase,
                 )
                 return false
-        }
-            val products = productDetailsResult.productDetailsList ?: emptyList()
+            }
+
+            val products = mutableListOf<ProductDetails>()
+            for ((type, entries) in catalog.groupBy { it.type.uppercase() }) {
+                val params =
+                    QueryProductDetailsParams
+                        .newBuilder()
+                        .setProductList(
+                            entries.map { entry ->
+                                QueryProductDetailsParams.Product
+                                    .newBuilder()
+                                    .setProductId(entry.id)
+                                    .setProductType(type)
+                                    .build()
+                            },
+                        ).build()
+                val result = billingClient.queryProductDetails(params)
+                if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                    handleBillingFailure(
+                        result.billingResult.responseCode,
+                        result.billingResult.debugMessage,
+                        duringPurchase = duringPurchase,
+                    )
+                    return false
+                }
+                products += result.productDetailsList ?: emptyList()
+            }
+
             if (products.isEmpty()) {
                 handleBillingFailure(
                     BillingClient.BillingResponseCode.ITEM_UNAVAILABLE,
-                    "Product not found",
+                    "No configured product is available in Play",
                     duringPurchase = duringPurchase,
-            )
-            return false
-        }
+                )
+                return false
+            }
             state.emit(BillingState.SignatureDisabled(products))
             return true
         }
+
+        /** The configured catalogue, minus entries this app would not know what to do with. */
+        suspend fun catalogEntries(): List<BillingProductEntry> =
+            remoteConfigService
+                .getJson<BillingCatalog>(BILLING_PRODUCTS_KEY)
+                ?.products
+                .orEmpty()
+                .filter {
+                    it.id.isNotBlank() &&
+                        it.type.uppercase() in
+                        setOf(BillingClient.ProductType.SUBS, BillingClient.ProductType.INAPP)
+                }
 
         suspend fun syncSubscription(): Boolean {
             checkPurchases()
@@ -278,11 +321,16 @@ class BillingService
         private suspend fun handleSuccessfulPurchases(purchases: List<Purchase>) {
             val signaturePurchase =
                 purchases.firstOrNull { purchase ->
-                    purchase.products.contains(SAGA_SIGNATURE_ID) &&
-                        purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+                    purchase.purchaseState == Purchase.PurchaseState.PURCHASED
                 }
             if (signaturePurchase == null) {
-                purchaseFlowResult.emit(PurchaseFlowResult.Cancelled)
+                // Not cancelled in every case: a slow payment method leaves the purchase PENDING,
+                // and Play calls back again once it clears.
+                val pending =
+                    purchases.any { it.purchaseState == Purchase.PurchaseState.PENDING }
+                purchaseFlowResult.emit(
+                    if (pending) PurchaseFlowResult.Pending else PurchaseFlowResult.Cancelled,
+                )
                 return
             }
             if (!signaturePurchase.isAcknowledged) {
@@ -374,6 +422,9 @@ class BillingService
 
         object Success : PurchaseFlowResult
 
+        /** Paid for with a method that clears later, such as a boleto. Access is not granted yet. */
+        object Pending : PurchaseFlowResult
+
         data object DebugSimulationSuccess : PurchaseFlowResult
 
         object Cancelled : PurchaseFlowResult
@@ -388,5 +439,5 @@ class BillingService
         }
     }
 
-private const val SAGA_SIGNATURE_ID = "saga_signature"
+private const val BILLING_PRODUCTS_KEY = "billing_products"
 private const val PREMIUM_TESTER = "premiumTester"

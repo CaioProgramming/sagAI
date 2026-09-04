@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.premium.data.PremiumPlan
 import com.ilustris.sagai.features.premium.data.PremiumPlansState
 
@@ -80,13 +81,25 @@ fun PremiumPlansContent(
             }
 
             is PremiumPlansState.Available -> {
+                // Falls back to the featured plan rather than the first, so the one the app puts
+                // forward is also the one already selected when the screen opens.
                 val selected =
-                    current.plans.firstOrNull { it.productId == selectedId } ?: current.plans.first()
+                    current.plans.firstOrNull { it.productId == selectedId }
+                        ?: current.plans.firstOrNull { it.isFeatured }
+                        ?: current.plans.first()
 
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth().heightIn(max = PLAN_LIST_MAX_HEIGHT),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    item(key = "premium-title") {
+                        PremiumTitle(
+                            titleStyle = MaterialTheme.typography.titleMedium,
+                            isAnimated = true,
+                            modifier = Modifier.padding(bottom = 4.dp),
+                        )
+                    }
+
                     items(current.plans, key = { it.productId }) { plan ->
                         PlanCard(
                             plan = plan,
@@ -94,14 +107,6 @@ fun PremiumPlansContent(
                             onSelect = { viewModel.select(plan) },
                         )
                     }
-                }
-
-                if (current.isSample) {
-                    Text(
-                        stringResource(R.string.plans_sample_warning),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
                 }
 
                 Button(
@@ -156,11 +161,28 @@ private fun PlanCard(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text(
-                plan.name,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    plan.name,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (plan.isFeatured) {
+                    Text(
+                        stringResource(R.string.plan_featured_badge).uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier =
+                            Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.primary)
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+            }
             Text(
                 plan.priceLine,
                 style = MaterialTheme.typography.bodyMedium,

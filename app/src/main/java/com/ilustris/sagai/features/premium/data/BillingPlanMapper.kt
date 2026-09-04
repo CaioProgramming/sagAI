@@ -19,7 +19,24 @@ class BillingPlanMapper
     constructor(
         private val strings: StringResourceHelper,
     ) {
-        fun map(products: List<ProductDetails>): List<PremiumPlan> = products.mapNotNull(::mapProduct)
+        /**
+         * @param catalog the configured entries, which decide display order and which plan is
+         *   featured. Play returns products in no guaranteed order, so without this the list would
+         *   reshuffle between loads; and only one plan may carry the badge, since two of them in a
+         *   list of three cancel each other out.
+         */
+        fun map(
+            products: List<ProductDetails>,
+            catalog: List<BillingProductEntry>,
+        ): List<PremiumPlan> {
+            val featuredId = catalog.firstOrNull { it.featured }?.id
+            val order = catalog.map { it.id }
+            return products
+                .sortedBy { order.indexOf(it.productId).takeIf { i -> i >= 0 } ?: Int.MAX_VALUE }
+                .mapNotNull { product ->
+                    mapProduct(product)?.copy(isFeatured = product.productId == featuredId)
+                }
+        }
 
         private fun mapProduct(product: ProductDetails): PremiumPlan? {
             product.oneTimePurchaseOfferDetails?.let { oneTime ->

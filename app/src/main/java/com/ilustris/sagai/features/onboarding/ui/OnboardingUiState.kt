@@ -10,10 +10,6 @@ sealed class OnboardingAction {
 
     data object Dismiss : OnboardingAction()
 
-    data class Subscribe(
-        val productId: String,
-    ) : OnboardingAction()
-
     data class Finish(
         val metadata: Map<String, Any?> = emptyMap(),
     ) : OnboardingAction()

@@ -1030,7 +1030,9 @@
         <item quantity="other">%d anos</item>
     </plurals>
     <string name="plans_confirm">Continuar</string>
-    <string name="plans_sample_warning">Planos de exemplo (build de debug). O Play não retornou nada.</string>
+    <string name="plan_featured_badge">Recomendado</string>
+    <string name="billing_result_pending_title">Pagamento a caminho</string>
+    <string name="billing_result_pending_message">Sua forma de pagamento demora um pouco mais para compensar. Os anúncios saem assim que ela for confirmada, e você não precisa fazer mais nada.</string>
 </resources>
 
 

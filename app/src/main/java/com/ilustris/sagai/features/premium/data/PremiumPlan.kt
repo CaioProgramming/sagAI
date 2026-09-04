@@ -20,4 +20,6 @@ data class PremiumPlan(
     /** e.g. "R$ 23,90/mês", "3 meses grátis, depois R$ 23,90/mês", or a bare price. */
     val priceLine: String,
     val isOneTime: Boolean,
+    /** The plan the app puts forward. At most one in a list; the label itself is an app string. */
+    val isFeatured: Boolean = false,
 )

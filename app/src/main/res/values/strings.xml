@@ -1044,5 +1044,7 @@
         <item quantity="other">%d years</item>
     </plurals>
     <string name="plans_confirm">Continue</string>
-    <string name="plans_sample_warning">Sample plans (debug build). Play returned nothing.</string>
+    <string name="plan_featured_badge">Recommended</string>
+    <string name="billing_result_pending_title">Payment on its way</string>
+    <string name="billing_result_pending_message">Your payment method takes a little longer to clear. Ads come off as soon as it does, and you do not need to do anything else.</string>
 </resources>
