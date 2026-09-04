@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,20 +15,23 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.ui.genre.crime.CorkPin
+import com.ilustris.sagai.ui.genre.crime.CorkboardBackground
 import com.ilustris.sagai.ui.genre.crime.PinBackNote
 import com.ilustris.sagai.ui.genre.crime.PinCaption
 import com.ilustris.sagai.ui.genre.crime.PinProse
 import com.ilustris.sagai.ui.genre.crime.PinSignature
 import com.ilustris.sagai.ui.genre.crime.PinTitle
-import com.ilustris.sagai.ui.genre.crime.CorkboardBackground
-import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
+import com.ilustris.sagai.ui.genre.crime.rememberCorkboardPalette
+import com.ilustris.sagai.ui.theme.components.mascot.BlobMascot
+import com.ilustris.sagai.ui.theme.components.mascot.rememberMascotExpression
 
 /** The vibe caption is short by nature; anything longer than this is the stage over-writing. */
 private const val CAPTION_MAX_LINES = 5
 
 /**
- * The table's "vibe" card — [VibeShapeDrawing] sketched on paper, with the Expressiveness stage's
- * own caption underneath.
+ * The table's "vibe" card — the [BlobMascot] wearing the tone, with the Expressiveness stage's
+ * own caption underneath. The pin keeps its caption when the tone has no entry in Remote Config
+ * and the blob does not draw.
  */
 class CorkboardVibePinPage(
     override val content: SagaContent,
@@ -49,12 +53,12 @@ class CorkboardVibePinPage(
             pinColor = tone.color,
         ) { ink ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                VibeShapeDrawing(
-                    emotionalTone = tone,
-                    strokeWidth = 2.dp,
+                BlobMascot(
+                    expression = rememberMascotExpression(tone),
                     color = tone.color,
-                    isAnimated = canAnimate,
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    eyeColor = rememberCorkboardPalette().paper,
+                    animate = canAnimate,
+                    modifier = Modifier.size(BLOB_SIZE),
                 )
                 PinTitle(
                     text = tone.getTitle(),
@@ -80,3 +84,5 @@ class CorkboardVibePinPage(
         CorkboardBackground(modifier)
     }
 }
+
+private val BLOB_SIZE = 100.dp

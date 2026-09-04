@@ -1,53 +1,51 @@
 package com.ilustris.sagai.ui.theme.components.mascot
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.EaseInBounce
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.scaleIn
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import coil3.compose.AsyncImage
+import androidx.compose.ui.graphics.Color
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilustris.sagai.core.services.model.MascotExpression
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
-import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
 import com.ilustris.sagai.ui.theme.levitate
 import kotlin.time.Duration.Companion.seconds
-import timber.log.Timber
 
+/**
+ * Reads the blob eye spec for [tone] from Remote Config. Null when the tone is not configured,
+ * which is the signal not to draw the mascot at all.
+ */
+@Composable
+fun rememberMascotExpression(tone: EmotionalTone): MascotExpression? {
+    val viewModel: MascotViewModel = hiltViewModel()
+    val expressions by viewModel.expressions.collectAsStateWithLifecycle()
+    return expressions[tone]
+}
+
+/**
+ * The mascot as the app shows it: the blob wearing [emotionalTone], floating when [animate].
+ *
+ * The blob is the only way the app renders an emotional state — the per-genre emote images this
+ * used to fall back to are gone, along with the Remote Config tables that fed them.
+ */
 @Composable
 fun MascotEmotionFace(
-    imageUrl: String?,
     emotionalTone: EmotionalTone,
     modifier: Modifier,
     animate: Boolean = true,
+    expression: MascotExpression? = rememberMascotExpression(emotionalTone),
+    color: Color = emotionalTone.color,
+    eyeColor: Color = MaterialTheme.colorScheme.background,
 ) {
-    AnimatedContent(imageUrl, label = "mascotIconAnimation") { url ->
-        if (url != null) {
-            AsyncImage(
-                model = url,
-                contentDescription = emotionalTone.name,
-                modifier =
-                    modifier
-                        .then(
-                            if (animate) {
-                                Modifier.levitate(
-                                    duration = 5.seconds,
-                                    yOffset = 10f,
-                                )
-                            } else Modifier
-                        )
-                        .animateEnterExit(
-                            enter = scaleIn(tween(600, easing = EaseInBounce)),
-                        ),
-                onError = {
-                    Timber.tag("MascotSticker").e("Error loading image $url")
-                    it.result.throwable.printStackTrace()
-                },
-            )
-        } else {
-            VibeShapeDrawing(
-                emotionalTone = emotionalTone,
-                modifier = modifier,
-            )
-        }
-    }
+    BlobMascot(
+        expression = expression,
+        color = color,
+        eyeColor = eyeColor,
+        animate = animate,
+        modifier =
+            modifier.then(
+                if (animate) Modifier.levitate(duration = 5.seconds, yOffset = 10f) else Modifier,
+            ),
+    )
 }

@@ -1252,18 +1252,11 @@ class SagaContentManagerImpl
                                 t.title,
                             ),
                         )
-                        val mascotIcon =
-                            emotionalUseCase
-                                .getEmotionalMascot(
-                                    saga.data,
-                                    saga.findTimeline(t.id)?.data,
-                                ).getSuccess()
                         val fullSaga = getSagaContent()
                         fullSaga?.let {
                             emitMilestone(
                                 SagaMilestone.NewEvent(
                                     timeline = t,
-                                    emotionalMascot = mascotIcon,
                                     messageText = message,
                                     sagaContent = fullSaga,
                                     characters = generatedContent?.characters ?: emptyList(),
@@ -1659,7 +1652,6 @@ class SagaContentManagerImpl
                         emitMilestone(
                             SagaMilestone.NewEvent(
                                 timeline = data,
-                                emotionalMascot = null,
                                 messageText = state.data.finalMessage,
                                 sagaContent = getSagaContent()!!,
                                 characters = state.data.characters,

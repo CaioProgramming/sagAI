@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -15,11 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.ui.theme.components.HandwrittenText
-import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
+import com.ilustris.sagai.ui.theme.components.mascot.BlobMascot
+import com.ilustris.sagai.ui.theme.components.mascot.rememberMascotExpression
 
 /**
  * The corkboard's typography rule, in one place so no pin has to re-decide it.
@@ -144,8 +147,8 @@ fun PinBackNote(
 }
 
 /**
- * The emotional read as it appears on the board: the tone's own shape sketched on the card, its
- * name under it, and the write-up below that.
+ * The emotional read as it appears on the board: the blob mascot wearing the tone, its name under
+ * it, and the write-up below that. Draws nothing when the tone has no entry in Remote Config.
  *
  * Lives in the kit rather than in either caller because both the finished saga's review and the
  * milestone show this same card, and "the same as the review" is the whole requirement — two
@@ -164,12 +167,12 @@ fun PinVibeNote(
         modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        VibeShapeDrawing(
-            emotionalTone = tone,
-            strokeWidth = 2.dp,
+        BlobMascot(
+            expression = rememberMascotExpression(tone),
             color = tone.color,
-            isAnimated = canAnimate,
-            modifier = Modifier.fillMaxWidth().height(100.dp),
+            eyeColor = rememberCorkboardPalette().paper,
+            animate = canAnimate,
+            modifier = Modifier.size(VIBE_BLOB_SIZE),
         )
         PinTitle(
             text = tone.getTitle(),
@@ -188,3 +191,5 @@ fun PinVibeNote(
         }
     }
 }
+
+private val VIBE_BLOB_SIZE = 100.dp

@@ -56,7 +56,7 @@ import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.EmotionalToneVisualService
 import com.ilustris.sagai.core.services.FirebaseInstallationService
-import com.ilustris.sagai.core.services.MascotEmotionService
+import com.ilustris.sagai.core.services.MascotExpressionService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.usecase.PaletteUseCase
@@ -377,11 +377,9 @@ object AppModule {
 
     @Provides
     fun providesTimelineMapper(
-        mascotEmotionService: MascotEmotionService,
         genreVisualConfigService: GenreVisualConfigService,
         remoteConfigService: RemoteConfigService,
     ) = TimelineMapper(
-        mascotEmotionService,
         genreVisualConfigService,
         remoteConfigService,
     )
@@ -585,8 +583,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideMascotEmotionService(remoteConfigService: RemoteConfigService): MascotEmotionService =
-        MascotEmotionService(remoteConfigService)
+    fun provideMascotExpressionService(remoteConfigService: RemoteConfigService): MascotExpressionService =
+        MascotExpressionService(remoteConfigService)
 
     @Provides
     @Singleton

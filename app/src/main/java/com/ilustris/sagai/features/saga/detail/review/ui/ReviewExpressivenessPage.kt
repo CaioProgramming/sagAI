@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -18,7 +19,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,13 +35,14 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.components.AutoResizeText
-import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
+import com.ilustris.sagai.ui.theme.components.mascot.BlobMascot
+import com.ilustris.sagai.ui.theme.components.mascot.rememberMascotExpression
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shimmerize
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.seconds
 
 class ReviewExpressivenessPage(
     private val stage: ReviewStage,
@@ -63,6 +64,13 @@ class ReviewExpressivenessPage(
             mutableStateOf(false)
         }
 
+        // The blob loops instead of finishing a stroke, so the caption is timed off the page
+        // appearing rather than off VibeShapeDrawing's onFinishDraw.
+        LaunchedEffect(Unit) {
+            delay(BLOB_SETTLE_DELAY)
+            showText = true
+        }
+
         LaunchedEffect(showText) {
             if (showText) {
                 delay(2.seconds)
@@ -70,7 +78,6 @@ class ReviewExpressivenessPage(
             }
         }
 
-        val coroutineScope = rememberCoroutineScope()
         val emotionalTone =
             remember {
                 content
@@ -90,24 +97,17 @@ class ReviewExpressivenessPage(
                     ).fillMaxWidth(),
         ) {
             emotionalTone.first?.let {
-                VibeShapeDrawing(
-                    emotionalTone = it,
-                    strokeWidth = 4.dp,
+                BlobMascot(
+                    expression = rememberMascotExpression(it),
+                    color = MaterialTheme.colorScheme.primary,
+                    eyeColor = MaterialTheme.colorScheme.background,
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
+                            .size(BLOB_SIZE)
                             .reactiveShimmer(
                                 true,
                                 shimmerColors = it.color.shimmerize(),
                             ),
-                    color = MaterialTheme.colorScheme.primary,
-                    onFinishDraw = {
-                        coroutineScope.launch {
-                            delay(1500)
-                            showText = true
-                        }
-                    },
                 )
             }
 
@@ -179,3 +179,6 @@ class ReviewExpressivenessPage(
         }
     }
 }
+
+private val BLOB_SIZE = 200.dp
+private val BLOB_SETTLE_DELAY = 1.5.seconds

@@ -37,7 +37,7 @@ fun TimelineThreadCard(
 ) {
     val genre = sagaInfo.genre
     val event = eventCard.timelineContent
-    val mascotEmotion = eventCard.mascotEmotion
+    val mascotEmotion = eventCard.overallEmotion
 
     Column(
         modifier =
