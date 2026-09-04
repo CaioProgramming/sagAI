@@ -10,7 +10,6 @@ object LocalAiEligibility {
     ): Boolean {
         if (!config.enabled) return false
         if (params.requirement !in config.tiers) return false
-        if (params.useCore) return false
         if (params.references.any { it != null }) return false
         val promptLength =
             params.taskPrompt.length +

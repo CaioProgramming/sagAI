@@ -308,7 +308,6 @@ class TimelineUseCaseImpl
                                 "createdAt",
                                 "currentObjective",
                             ),
-                        useCore = true,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {

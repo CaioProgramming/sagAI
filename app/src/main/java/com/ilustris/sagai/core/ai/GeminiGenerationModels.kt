@@ -13,8 +13,19 @@ data class GeminiGenerationAuditContext(
 data class GeminiSyncGenerationParams(
     val model: String,
     val requirement: ModelRequirement,
-    val useCore: Boolean,
     val logEnabled: Boolean,
+    /**
+     * Whether a quota verdict from this request may change the app's quota state.
+     *
+     * False for decoration — the holding lines. Those run on the MINIMAL tier, which is a
+     * different model from the narrative work and so a different daily bucket, but
+     * [com.ilustris.sagai.core.ai.key.QuotaStatusService] surfaces a single aggregate block across
+     * models. Letting a loading line record a daily exhaustion would therefore stop every
+     * generation in the app, including the one it was decorating, which still had quota of its
+     * own. It must not publish a cooldown either: the countdown on screen belongs to the real
+     * request, and clearing or replacing it would misreport how long the user is actually waiting.
+     */
+    val reportsQuota: Boolean = true,
     val taskPrompt: String,
     val systemInstruction: String,
     val references: List<ImageReference?>,
@@ -28,8 +39,19 @@ data class GeminiSyncGenerationParams(
 data class GeminiStreamingGenerationParams(
     val model: String,
     val requirement: ModelRequirement,
-    val useCore: Boolean,
     val logEnabled: Boolean,
+    /**
+     * Whether a quota verdict from this request may change the app's quota state.
+     *
+     * False for decoration — the holding lines. Those run on the MINIMAL tier, which is a
+     * different model from the narrative work and so a different daily bucket, but
+     * [com.ilustris.sagai.core.ai.key.QuotaStatusService] surfaces a single aggregate block across
+     * models. Letting a loading line record a daily exhaustion would therefore stop every
+     * generation in the app, including the one it was decorating, which still had quota of its
+     * own. It must not publish a cooldown either: the countdown on screen belongs to the real
+     * request, and clearing or replacing it would misreport how long the user is actually waiting.
+     */
+    val reportsQuota: Boolean = true,
     val taskPrompt: String,
     val systemInstruction: String,
     val references: List<ImageReference?>,

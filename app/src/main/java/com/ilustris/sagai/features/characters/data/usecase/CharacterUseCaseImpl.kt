@@ -272,7 +272,6 @@ class CharacterUseCaseImpl
                                 genreConfigService.buildAesthetic(sagaContent.data.genre),
                                 genreConfigService.appearanceInstructions(sagaContent.data.genre),
                             ),
-                        useCore = true,
                         filterOutputFields =
                             listOf(
                                 "id",
@@ -338,7 +337,6 @@ class CharacterUseCaseImpl
                                         genreConfigService.buildAesthetic(sagaContent.data.genre),
                                         genreConfigService.appearanceInstructions(sagaContent.data.genre),
                                     ),
-                                useCore = true,
                                 filterOutputFields =
                                     listOf(
                                         "id",

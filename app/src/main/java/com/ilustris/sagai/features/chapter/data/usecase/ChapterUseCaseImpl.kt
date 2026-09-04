@@ -114,7 +114,6 @@ class ChapterUseCaseImpl
                                     "actId",
                                 ),
                             requireTranslation = true,
-                            useCore = true,
                             requirement = ModelRequirement.HIGH,
                         )!!
 
@@ -161,7 +160,6 @@ class ChapterUseCaseImpl
                                     "actId",
                                 ),
                             requireTranslation = true,
-                            useCore = true,
                             requirement = ModelRequirement.HIGH,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
@@ -232,6 +230,12 @@ class ChapterUseCaseImpl
         override suspend fun generateChapterCover(chapterId: Int): RequestResult<Chapter> =
             executeRequest {
                 val (saga, chapter) = fetchContext(chapterId)
+                // Now also kicked off automatically as soon as the chapter synthesis finishes
+                // (see SagaContentManagerImpl's NarrativeAction.GenerateChapter handling), instead
+                // of only from the Milestone screen's "continue" tap — this call stays as a
+                // fallback for that tap, so the guard keeps it from re-enqueuing (and re-billing)
+                // a cover the background trigger already generated.
+                if (chapter.data.coverImage.isNotBlank()) return@executeRequest chapter.data
                 val chapterWithArtwork = ensureChapterArtwork(chapter.data, saga.data)
                 val characters =
                     chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
@@ -446,7 +450,6 @@ class ChapterUseCaseImpl
                             genreConfigService.conversationInstructions(saga.data.genre),
                         ),
                     requireTranslation = true,
-                    useCore = true,
                     requirement = ModelRequirement.HIGH,
                 )!!
             val updated = chapterContent.copy(introduction = intro.data)
@@ -475,7 +478,6 @@ class ChapterUseCaseImpl
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                         ),
                                     requireTranslation = true,
-                                    useCore = true,
                                     requirement = ModelRequirement.HIGH,
                                 ),
                             "Generating chapter introduction...",

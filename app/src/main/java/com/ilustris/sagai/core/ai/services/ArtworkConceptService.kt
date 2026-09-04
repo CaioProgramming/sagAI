@@ -45,7 +45,6 @@ class ArtworkConceptService
                                 "genreAesthetic" to genreConfigService.aesthetic(genre),
                                 "context" to context,
                             ),
-                        useCore = true,
                         requirement = ModelRequirement.MEDIUM,
                     )!!
                     .artwork

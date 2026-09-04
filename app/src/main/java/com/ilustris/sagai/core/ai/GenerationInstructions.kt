@@ -103,8 +103,8 @@ fun PreparedGenerationInstructions.toAuditContext(): GeminiGenerationAuditContex
 fun PreparedGenerationInstructions.toSyncParams(
     model: String,
     requirement: ModelRequirement,
-    useCore: Boolean,
     logEnabled: Boolean,
+    reportsQuota: Boolean = true,
     references: List<ImageReference?>,
     temperatureRandomness: Float,
     thinkingLevel: String?,
@@ -112,8 +112,8 @@ fun PreparedGenerationInstructions.toSyncParams(
     GeminiSyncGenerationParams(
         model = model,
         requirement = requirement,
-        useCore = useCore,
         logEnabled = logEnabled,
+        reportsQuota = reportsQuota,
         taskPrompt = taskPrompt,
         systemInstruction = normalizedSystemInstruction,
         references = references,
@@ -126,8 +126,8 @@ fun PreparedGenerationInstructions.toSyncParams(
 fun PreparedGenerationInstructions.toStreamingParams(
     model: String,
     requirement: ModelRequirement,
-    useCore: Boolean,
     logEnabled: Boolean,
+    reportsQuota: Boolean = true,
     references: List<ImageReference?>,
     temperatureRandomness: Float,
     thinkingLevel: String?,
@@ -137,8 +137,8 @@ fun PreparedGenerationInstructions.toStreamingParams(
     GeminiStreamingGenerationParams(
         model = model,
         requirement = requirement,
-        useCore = useCore,
         logEnabled = logEnabled,
+        reportsQuota = reportsQuota,
         taskPrompt = taskPrompt,
         systemInstruction = normalizedSystemInstruction,
         references = references,

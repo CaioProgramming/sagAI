@@ -125,7 +125,7 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
 
                 ensurePromptWithinTokenLimit(
                     model = formattedModel,
-                    apiKey = apiConfig(params.useCore),
+                    apiKey = apiConfig(),
                     request = geminiRequest,
                     parts = lastRequestParts,
                     fullPromptText = fullPromptText,
@@ -145,7 +145,7 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                 val response =
                     callGenerateContent(
                         formattedModel,
-                        apiConfig(params.useCore),
+                        apiConfig(),
                         geminiRequest,
                     )
                 inferenceMs = System.currentTimeMillis() - inferenceStart
@@ -186,8 +186,9 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                     Timber.d("AI data ->\n${parsed.data}\n")
                 }
                 // A request that got through proves the throttle lifted, whatever the backoff
-                // last published.
-                quotaStatusService.reportRecovered()
+                // last published. Decoration is exempt: it would clear a countdown belonging to a
+                // real request that is still waiting.
+                if (params.reportsQuota) quotaStatusService.reportRecovered()
                 parsed.data
             }
         } catch (e: Exception) {
@@ -232,6 +233,7 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                     systemInstruction = params.systemInstruction,
                     context = "generate",
                     blueprintKey = params.audit.blueprintKey,
+                    reportsQuota = params.reportsQuota,
                 )
             if (!shouldRetry) {
                 if (params.logEnabled) {
@@ -275,7 +277,7 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
 
                     ensurePromptWithinTokenLimit(
                         model = formattedModel,
-                        apiKey = apiConfig(params.useCore),
+                        apiKey = apiConfig(),
                         request = geminiRequest,
                         parts = lastRequestParts,
                         fullPromptText = fullPromptText,
@@ -294,7 +296,7 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
                     val responseBody =
                         callStreamGenerateContent(
                             formattedModel,
-                            apiConfig(params.useCore),
+                            apiConfig(),
                             geminiRequest,
                         )
 
@@ -370,6 +372,7 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
                             systemInstruction = params.systemInstruction,
                             context = "generateStreaming",
                             blueprintKey = params.audit.blueprintKey,
+                            reportsQuota = params.reportsQuota,
                         )
                     if (!shouldRetry) {
                         val duration = System.currentTimeMillis() - startTime
@@ -618,6 +621,7 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
     systemInstruction: String?,
     context: String,
     blueprintKey: String? = null,
+    reportsQuota: Boolean = true,
 ): Boolean {
     if (logEnabled) {
         Timber
@@ -655,7 +659,7 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
         }
 
         ApiKeyDiagnosis.QuotaDaily -> {
-            quotaStatusService.reportDailyExhausted(model)
+            if (reportsQuota) quotaStatusService.reportDailyExhausted(model)
             return false
         }
 
@@ -680,12 +684,14 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
             }
             // Otherwise transient: the request stays alive behind the existing backoff. Publishing
             // the window only replaces a mute spinner with a countdown the user can read.
-            quotaStatusService.reportCoolingDown(
-                model = model,
-                retryDelaySeconds =
-                    diagnosis.retryDelaySeconds
-                        ?: GeminiGenerationPolicy.DEFAULT_RATE_LIMIT_RETRY_SECONDS,
-            )
+            if (reportsQuota) {
+                quotaStatusService.reportCoolingDown(
+                    model = model,
+                    retryDelaySeconds =
+                        diagnosis.retryDelaySeconds
+                            ?: GeminiGenerationPolicy.DEFAULT_RATE_LIMIT_RETRY_SECONDS,
+                )
+            }
         }
 
         null -> Unit
@@ -724,7 +730,7 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
                 )
         }
         delay(delayToApply.seconds)
-        quotaStatusService.reportRecovered()
+        if (reportsQuota) quotaStatusService.reportRecovered()
     } else if (logEnabled) {
         Timber
             .tag(javaClass.simpleName)

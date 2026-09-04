@@ -285,27 +285,42 @@ class MessageUseCaseImpl
                     // The visible "thinking" text comes from the synthesizer's fallback regardless.
                     val generateStream =
                         flow {
-                            emit(
-                                StreamingState.Success(
-                                    gemmaClient.generate<AIReply>(
-                                        promptSplit =
-                                            prompt.mergeInstructions(
-                                                conversationInstructions,
-                                                actContext.renderInstructions(),
-                                            ),
-                                        userInteraction = true,
-                                        filterOutputFields = ChatPrompts.messageOutputExclusions,
-                                        requirement = ModelRequirement.HIGH,
-                                        useCore = true,
+                            val reply =
+                                gemmaClient.generate<AIReply>(
+                                    promptSplit =
+                                        prompt.mergeInstructions(
+                                            conversationInstructions,
+                                            actContext.renderInstructions(),
+                                        ),
+                                    userInteraction = true,
+                                    filterOutputFields = ChatPrompts.messageOutputExclusions,
+                                    requirement = ModelRequirement.HIGH,
+                                )
+                            // gemmaClient.generate returns null rather than throwing on a final,
+                            // non-retryable failure (spent daily quota, rejected key, exhausted
+                            // retries — see GeminiGenerationEngine.executeSyncGenerationWithRetry).
+                            // Wrapping that null in Success used to reach the `state.data!!` below
+                            // and surface as a raw NullPointerException instead of a real error —
+                            // the message never got marked failed and the underlying cause (e.g. the
+                            // daily quota block already persisted by QuotaStatusService by this
+                            // point) was lost from the message shown to the user.
+                            if (reply == null) {
+                                emit(
+                                    StreamingState.Error(
+                                        message = "Reply generation returned no result",
+                                        throwable = IllegalStateException("AIReply generation failed"),
                                     ),
-                                ),
-                            )
+                                )
+                            } else {
+                                emit(StreamingState.Success(reply))
+                            }
                         }
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             generateStream,
                             "Generating a deep narrative reply",
                             genre = saga.data.genre,
+                            details = message.message.text,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 // A discovery whose name differs from the speaker is not a

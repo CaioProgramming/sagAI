@@ -292,15 +292,12 @@ abstract class AIClient(
     /**
      * The key every Gemini call runs on — the user's own, decrypted from [UserApiKeyStore].
      *
-     * [useCore] no longer picks between two keys. It used to choose the `SAGA_CORE` credential
-     * over `FIREBASE_KEY`, both served by Remote Config and both billed to us; under BYOK there is
-     * a single credential, so both branches resolve to the same value. The parameter survives
-     * because it still routes models (`model_configs`) and gates on-device eligibility in
-     * [com.ilustris.sagai.core.ai.local.LocalAiEligibility] — it just no longer selects a key.
+     * This used to take a `useCore` flag choosing the `SAGA_CORE` credential over `FIREBASE_KEY`,
+     * two keys of ours served by Remote Config. Their point was separate quota pools, which never
+     * held: quota is per Google Cloud project, so keys of the same project share one budget. Under
+     * BYOK there is a single credential and nothing left to choose between.
      */
-    suspend fun apiConfig(
-        @Suppress("UNUSED_PARAMETER") useCore: Boolean,
-    ): String {
+    suspend fun apiConfig(): String {
         ensureQuotaAvailable()
         return userApiKeyStore.getKeyNow()?.takeIf { it.isNotBlank() }
             ?: throw MissingApiKeyException()
