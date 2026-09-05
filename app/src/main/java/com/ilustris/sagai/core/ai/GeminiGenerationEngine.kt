@@ -719,12 +719,13 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
 
     // The model itself is overloaded — Google's own "high demand" signal, unrelated to this key's
     // validity or its quota. Retrying the same model spends the whole attempt budget against
-    // something that just failed for a reason outside our control; a tier that names a fallback
-    // gets a real second option instead of three guaranteed repeats. Switching on the very first
-    // 503 rather than after some number of retries is a judgment call, not a measured one — there
-    // is no data yet on how often a 503 clears on its own within a couple of seconds against how
-    // often it is a sustained spike, and mirroring the thinking-level branch above (which also
-    // reacts immediately) keeps the two nearest cases in this function consistent with each other.
+    // something that just failed for a reason outside our control; falling over to LOW's own
+    // model (a different serving stack, and one already trusted with real traffic) is a real
+    // second option instead of three guaranteed repeats. Switching on the very first 503 rather
+    // than after some number of retries is a judgment call, not a measured one — there is no data
+    // yet on how often a 503 clears on its own within a couple of seconds against how often it is
+    // a sustained spike, and mirroring the thinking-level branch above (which also reacts
+    // immediately) keeps the two nearest cases in this function consistent with each other.
     if (throwable is GeminiHttpException && throwable.code == 503 && currentAttempt < maxAttempts) {
         val normalizedModel = model.replace("models/", "")
         val fallback = fallbackModelName(requirement)?.takeIf { it != normalizedModel }

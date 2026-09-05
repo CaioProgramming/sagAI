@@ -304,20 +304,27 @@ abstract class AIClient(
 
     /**
      * The model a 503 ("this model is currently experiencing high demand") falls over to for
-     * [requirement], or null if the tier declares none.
+     * [requirement], or null if this tier has nowhere sensible to fall back to.
      *
-     * Remote-Config-only, on purpose: this app does not ship a compiled fallback, so a tier with
-     * nothing configured here simply keeps retrying its own model on a 503, exactly like before
-     * this existed. Living in `model_configs` rather than as a constant is also what leaves the
-     * choice of fallback — including whether it shares a model (and a quota pool) with another
-     * tier — to whoever edits the config, not to a value baked into the app.
+     * Always LOW's own configured model, never a separate value — the free-tier model backing
+     * LOW is already Gemma, a different serving stack from Gemini, and it is presumably the
+     * cheapest, most available thing this app already trusts in production, since a tier is
+     * already running real traffic against it. Pointing at it *by reference* rather than copying
+     * its name into a second config field is deliberate: if the model backing LOW is ever swapped
+     * (a future Gemma generation, say), every tier's fallback follows automatically, with nothing
+     * to update here or in Remote Config.
+     *
+     * MINIMAL and LOW have nowhere to fall back to — they already run whatever LOW runs — so this
+     * only ever returns something for MEDIUM and HIGH.
+     *
+     * A disabled LOW tier ([ModelOutageException], the existing per-tier kill switch) is treated
+     * as "no fallback available" rather than left to propagate: pulling that switch is a decision
+     * about LOW, and it should not also change how an unrelated MEDIUM/HIGH request behaves on a
+     * 503 that has nothing to do with it.
      */
     suspend fun fallbackModelName(requirement: ModelRequirement): String? {
-        val tierConfig =
-            (remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap())[requirement.name] as? Map<*, *>
-        return (tierConfig?.get("fallbackModel") as? String)
-            ?.replace("models/", "")
-            ?.takeIf { it.isNotBlank() }
+        if (requirement == ModelRequirement.MINIMAL || requirement == ModelRequirement.LOW) return null
+        return runCatching { modelName(ModelRequirement.LOW) }.getOrNull()
     }
 
     /**
