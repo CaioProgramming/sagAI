@@ -116,6 +116,9 @@ class GemmaClient
                         logEnabled = logEnabled,
                         references = references,
                         temperatureRandomness = temperatureRandomness,
+                        onGuardrailBlock = {
+                            sideEffectService.emit(SideEffect.GuardrailBlock(it.status))
+                        },
                     )
                 executeSyncGenerationWithLocalFallback(
                     params = params,
@@ -154,6 +157,9 @@ class GemmaClient
                         logEnabled = logEnabled,
                         references = references,
                         temperatureRandomness = temperatureRandomness,
+                        onGuardrailBlock = {
+                            sideEffectService.emit(SideEffect.GuardrailBlock(it.status))
+                        },
                     )
                 executeSyncGenerationWithLocalFallback(
                     params = params,
@@ -225,6 +231,9 @@ class GemmaClient
                         reportsQuota = reportsQuota,
                         references = references,
                         temperatureRandomness = temperatureRandomness,
+                        onGuardrailBlock = {
+                            sideEffectService.emit(SideEffect.GuardrailBlock(it.status))
+                        },
                     )
                 executeSyncGenerationWithLocalFallback(
                     params = params,

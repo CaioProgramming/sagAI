@@ -75,6 +75,19 @@ data class GeminiResponse(
     val candidates: List<GeminiCandidate>?,
     val usageMetadata: GeminiUsageMetadata?,
     val error: GeminiError?,
+    /**
+     * Present, with [candidates] absent entirely, when Gemini refuses the request before ever
+     * attempting to answer it — the prompt itself tripped a platform-level filter. This is a
+     * different mechanism from [GeminiCandidate.finishReason] "SAFETY": that is the model judging
+     * its own would-be answer mid-generation; this is Google's infrastructure judging the request
+     * before the model runs at all, over the *whole* prompt — history, blueprint and all, not just
+     * what the user just typed.
+     */
+    val promptFeedback: GeminiPromptFeedback? = null,
+)
+
+data class GeminiPromptFeedback(
+    val blockReason: String? = null,
 )
 
 data class GeminiCandidate(

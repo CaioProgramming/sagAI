@@ -34,6 +34,7 @@ data class GeminiSyncGenerationParams(
     val audit: GeminiGenerationAuditContext,
     val promptForFailureLog: String,
     val includeSystemInFullPrompt: Boolean = true,
+    val onGuardrailBlock: (suspend (GuardrailsException) -> Unit)? = null,
 )
 
 data class GeminiStreamingGenerationParams(
