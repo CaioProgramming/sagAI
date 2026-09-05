@@ -222,6 +222,10 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                 logEnabled = params.logEnabled,
             )
 
+            if (e is GuardrailsException) {
+                params.onGuardrailBlock?.invoke(e)
+            }
+
             val shouldRetry =
                 handleGenerationRetry(
                     throwable = e,
@@ -483,6 +487,14 @@ internal inline fun <reified T> GeminiAIClient.parseSyncGenerationResponse(
         throwIfApiInputTokenLimitError(error, fullPromptText)
         throw Exception("Gemini API error: ${error.message}")
     }
+    // No candidate at all means the model never ran — the prompt itself was refused. Without this,
+    // execution fell through to the parts extractor, which logged "parts list is null or empty",
+    // then to the JSON sanitizer, which logged "input string is null or blank" and threw a bare
+    // IllegalArgumentException — two messages that say a value was missing, never why.
+    response.promptFeedback?.blockReason?.let { blockReason ->
+        if (logEnabled) Timber.w("Gemini blocked the prompt itself: $blockReason")
+        throw GuardrailsException(promptBlockReasonToSafeGuard(blockReason))
+    }
 
     val candidate = response.candidates?.firstOrNull()
     if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
@@ -554,6 +566,10 @@ internal suspend fun GeminiAIClient.consumeStreamingResponse(
             partialResponse.error?.let { streamError ->
                 throwIfApiInputTokenLimitError(streamError, fullPromptText)
                 throw GeminiHttpException(streamError.code ?: 400, trimmed)
+            }
+            partialResponse.promptFeedback?.blockReason?.let { blockReason ->
+                if (logEnabled) Timber.w("Gemini blocked the prompt itself: $blockReason")
+                throw GuardrailsException(promptBlockReasonToSafeGuard(blockReason))
             }
 
             if (partialResponse.usageMetadata != null) {
@@ -632,8 +648,18 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
             )
     }
 
-    // Refusals raised before the request ever left: retrying re-raises them identically.
-    if (throwable is QuotaExhaustedException || throwable is MissingApiKeyException) return false
+    // Refusals raised before the request ever left: retrying re-raises them identically. A
+    // guardrail block belongs in this group too, on either side that raises it — the model's own
+    // self-reported violation and Gemini's prompt-level refusal both mean the exact same request
+    // would be rejected exactly the same way again, so nothing is gained by spending the rest of
+    // the attempt budget resending it. onGuardrailBlock has already fired at the call site above
+    // this point (or its streaming equivalent) by the time this runs.
+    if (throwable is QuotaExhaustedException ||
+        throwable is MissingApiKeyException ||
+        throwable is GuardrailsException
+    ) {
+        return false
+    }
 
     // The model refuses `minimal`. Recording it is what makes the retry different from the
     // attempt that just failed: the assembly is rebuilt each pass and resolves the level through
