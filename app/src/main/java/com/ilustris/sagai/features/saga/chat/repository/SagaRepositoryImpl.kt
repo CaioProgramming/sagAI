@@ -10,7 +10,6 @@ import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
-import com.ilustris.sagai.core.file.ImageCropHelper
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -29,7 +28,6 @@ class SagaRepositoryImpl
         private val database: SagaDatabase,
         private val genreReferenceHelper: GenreReferenceHelper,
         private val gemmaClient: GemmaClient,
-        private val imageCropHelper: ImageCropHelper,
         private val fileHelper: FileHelper,
         private val imageGenerationService: ImageGenerationService,
         private val backupService: BackupService,
@@ -181,7 +179,6 @@ class SagaRepositoryImpl
                             "joinedAt",
                             "id",
                             "emojified",
-                            "smartZoom",
                             "artwork",
                         ),
                     ),

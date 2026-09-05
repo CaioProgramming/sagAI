@@ -7,6 +7,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
@@ -63,7 +64,11 @@ fun MilestoneUiState.ClosureStep.toStoryBeat(
         castLabel = stringResource(R.string.milestone_characters_created),
         aside =
             milestone.emotionalReviewText?.takeIf { it.isNotBlank() }?.let {
-                StoryAside(label = stringResource(R.string.milestone_emotional_note_label), text = it)
+                StoryAside(
+                    label = stringResource(R.string.milestone_emotional_note_label),
+                    text = it,
+                    tone = milestone.emotionalToneOrNull(),
+                )
             },
         progress = StoryProgress(index = stepIndex, total = stepTotal),
         actions =
@@ -169,15 +174,33 @@ private val SagaMilestone.wikis: List<Wiki>
             else -> emptyList()
         }
 
-/** Same trio of variants as [wikis]. */
+/**
+ * The cast a beat introduces.
+ *
+ * [SagaMilestone.NewCharacter] is here rather than in the `else` branch, which is where it used to
+ * land: a beat whose entire subject is a new character was handing the surfaces an empty cast, so
+ * the one character it exists to introduce was never rendered as one. Every style shows cast
+ * members its own way — a photo pinned to Crime's board, a framed panel on the comic page — and all
+ * of them were falling back to just the name in the title.
+ */
 private val SagaMilestone.characters: List<Character>
     get() =
         when (this) {
             is SagaMilestone.NewEvent -> characters
             is SagaMilestone.ChapterFinished -> characters
             is SagaMilestone.ActFinished -> characters
+            is SagaMilestone.NewCharacter -> listOf(character)
             else -> emptyList()
         }
+
+/** The tone behind [emotionalReviewText], for surfaces that draw it rather than only quote it. */
+private fun SagaMilestone.emotionalToneOrNull(): EmotionalTone? =
+    when (this) {
+        is SagaMilestone.NewEvent -> timeline.emotionalTone
+        is SagaMilestone.ChapterFinished -> emotionalTone
+        is SagaMilestone.ActFinished -> emotionalTone
+        else -> null
+    }
 
 /**
  * Pushed on top of the Milestone screen, not replacing it — the chain keeps waiting on its own

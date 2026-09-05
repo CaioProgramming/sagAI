@@ -117,6 +117,38 @@ data class CrtSettings(
                 flicker = 0f,
                 rollIntensity = 0f,
             )
+
+        /**
+         * [Dream] with the display taken out of it: halo and channel split only, no dot grid and no
+         * scanlines.
+         *
+         * This is the "dreamy blur" look — a soft bloom around bright edges with the colour
+         * channels barely out of register — for surfaces that are *not* pretending to be a screen.
+         * A photo on a table is one of those: the haze belongs to the lens and the light, not to a
+         * tube, and the moment a phosphor grid appears over it the object stops being paper.
+         *
+         * Worth knowing what this is and is not. It is not a Gaussian blur: the shader gathers four
+         * neighbouring samples and adds them back as light, so bright areas spread and dark ones
+         * stay put. A true blur of this quality would need tens of taps per pixel, which is the
+         * expensive thing people mean when they say blur is hard on Android — and it would also
+         * make the text underneath unreadable. Softness that only bright things emit is both the
+         * cheaper effect and the one that actually reads as dreamy.
+         *
+         * Time-independent, so it costs one shader pass when the content changes and nothing while
+         * it sits still.
+         */
+        val SoftFocus =
+            CrtSettings(
+                dotIntensity = 0f,
+                scanlineIntensity = 0f,
+                aberration = 1.4f,
+                bloomRadius = 5f,
+                bloomIntensity = 0.45f,
+                grain = 0f,
+                vignette = 0f,
+                flicker = 0f,
+                rollIntensity = 0f,
+            )
     }
 }
 
@@ -140,6 +172,21 @@ fun Modifier.genreCrtScreen(genre: Genre?): Modifier {
     val preset = genre?.crtPreset() ?: return this
     return crtScreen(settings = preset)
 }
+
+/**
+ * Soft bloom and a slight channel split over whatever it wraps — [CrtSettings.SoftFocus], which is
+ * the CRT shader with the display taken out of it. See that preset for why this is a halo rather
+ * than a real blur, and why the halo is the effect you actually want here.
+ *
+ * Apply it to individual elements — a photo, a portrait — rather than to a large scrolling
+ * container. It is a [RenderEffect], so everything inside the layer it is attached to is re-rendered
+ * through the shader on every frame that layer changes; hanging it on a continuously moving surface
+ * means paying for the whole surface, every frame, forever.
+ *
+ * No-op below API 33, like everything else built on [RuntimeShader].
+ */
+@Composable
+fun Modifier.dreamyHaze(settings: CrtSettings = CrtSettings.SoftFocus): Modifier = crtScreen(settings = settings)
 
 /**
  * Renders its content as if it were being shown on a phosphor dot-matrix panel.

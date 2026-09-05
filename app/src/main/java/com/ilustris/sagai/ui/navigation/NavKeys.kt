@@ -16,6 +16,9 @@ data object PlayerProfileKey : NavKey
 data object FAQKey : NavKey
 
 @Serializable
+data object ApiSettingsKey : NavKey
+
+@Serializable
 data object NewSagaKey : NavKey
 
 @Serializable

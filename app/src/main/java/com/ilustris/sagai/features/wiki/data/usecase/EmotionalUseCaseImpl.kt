@@ -10,7 +10,6 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -28,7 +27,6 @@ class EmotionalUseCaseImpl
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
         private val remoteConfigService: RemoteConfigService,
-        private val mascotEmotionService: MascotEmotionService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
     ) : EmotionalUseCase {
         override suspend fun generateEmotionalConclusion(sagaContent: SagaContent) =
@@ -56,17 +54,6 @@ class EmotionalUseCaseImpl
                 if (saga.emotionalReview == null) error("Emotional profile not ready yet")
                 remoteConfigService.getString("mental_card_icon")!!
             }
-
-        override suspend fun getEmotionalMascot(
-            sagaContent: Saga,
-            timelineContent: Timeline?,
-        ) = executeRequest {
-            mascotEmotionService
-                .getEmotionUrl(
-                    genre = sagaContent.genre,
-                    tone = timelineContent!!.emotionalTone!!,
-                )!!
-        }
 
         override fun streamEmotionalConclusion(sagaContent: SagaContent): Flow<StreamingState<SagaEnding?>> =
             flow {

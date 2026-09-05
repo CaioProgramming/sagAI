@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,7 +18,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,7 +35,9 @@ import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.genre.book.BookBackground
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
-import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
+import com.ilustris.sagai.ui.theme.components.mascot.BlobMascot
+import com.ilustris.sagai.ui.theme.components.mascot.rememberMascotExpression
+import com.ilustris.sagai.ui.theme.components.mascot.rememberTiltLook
 import com.ilustris.sagai.ui.theme.gradientFade
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -67,6 +69,13 @@ class BookExpressivenessPage(
         var showText by remember { mutableStateOf(false) }
         var showShareLink by remember { mutableStateOf(false) }
 
+        // The blob loops instead of finishing a stroke, so the caption is timed off the page
+        // appearing rather than off VibeShapeDrawing's onFinishDraw.
+        LaunchedEffect(Unit) {
+            delay(BLOB_SETTLE_DELAY)
+            showText = true
+        }
+
         LaunchedEffect(showText) {
             if (showText) {
                 delay(2.seconds)
@@ -74,7 +83,6 @@ class BookExpressivenessPage(
             }
         }
 
-        val coroutineScope = rememberCoroutineScope()
         val emotionalTone =
             remember {
                 content
@@ -94,20 +102,13 @@ class BookExpressivenessPage(
                     .animateContentSize(tween(1200, easing = LinearOutSlowInEasing)),
         ) {
             emotionalTone.first?.let {
-                VibeShapeDrawing(
-                    emotionalTone = it,
-                    strokeWidth = 3.dp,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(180.dp),
+                val tilt = rememberTiltLook(enabled = canAnimate)
+                BlobMascot(
+                    expression = rememberMascotExpression(it),
                     color = ink,
-                    onFinishDraw = {
-                        coroutineScope.launch {
-                            delay(1500)
-                            showText = true
-                        }
-                    },
+                    eyeColor = MaterialTheme.colorScheme.background,
+                    look = { tilt.value },
+                    modifier = Modifier.size(BLOB_SIZE),
                 )
             }
 
@@ -159,3 +160,6 @@ class BookExpressivenessPage(
         BookBackground(modifier)
     }
 }
+
+private val BLOB_SIZE = 150.dp
+private val BLOB_SETTLE_DELAY = 1.5.seconds

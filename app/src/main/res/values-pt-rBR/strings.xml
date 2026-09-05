@@ -942,6 +942,110 @@
     <string name="player_name_hint">Seu nome...</string>
     <string name="player_name_save">Salvar</string>
     <string name="player_name_skip">Pular</string>
+    <!-- BYOK: chave de API do usuário -->
+    <string name="api_key_invalid_title">Sua chave de API não é mais válida</string>
+    <string name="api_key_invalid_message">O Google recusou a chave guardada neste aparelho. Gere uma nova no Google AI Studio e adicione abaixo para continuar jogando.</string>
+    <string name="api_key_forbidden_title">Esta chave não acessa a API do Gemini</string>
+    <string name="api_key_forbidden_message">A chave é válida, mas não tem acesso à API do Gemini. Ative a Generative Language API no projeto do Google Cloud dela, ou verifique se a chave tem restrições de uso.</string>
+    <string name="api_key_quota_daily_title">Limite diário atingido</string>
+    <string name="api_key_quota_daily_message">Sua chave esgotou a cota gratuita de hoje. Ela volta às %1$s. Para tirar o limite, ative o faturamento no projeto do Google Cloud da chave.</string>
+
+    <!-- BYOK: configuração e onboarding -->
+    <string name="api_key_setup_title">O Sagas roda na sua própria chave</string>
+    <string name="api_key_setup_body">Cada história, personagem e ilustração daqui é gerada por IA, e IA cobra por token. Em vez de colocar uma assinatura entre você e suas sagas, o Sagas usa uma chave de API do Gemini que é sua: você cria de graça, o uso é cobrado no seu próprio projeto Google, e nada do que você escreve passa pelos nossos servidores.</string>
+    <string name="api_key_setup_storage_note">A chave fica criptografada neste aparelho. Nunca é enviada para nós e nunca sai em backup.</string>
+    <string name="api_key_setup_open_studio">Pegar uma chave no Google AI Studio</string>
+    <string name="api_key_setup_field_label">Cole sua chave de API</string>
+    <string name="api_key_setup_save">Salvar chave</string>
+    <string name="api_key_setup_validating">Conferindo a chave…</string>
+    <string name="api_key_setup_valid">Chave aceita. Boas sagas!</string>
+    <string name="api_key_setup_error_empty">Cole uma chave para continuar.</string>
+    <string name="api_key_setup_error_rejected">O Google recusou esta chave. Confira se você copiou ela inteira.</string>
+    <string name="api_key_setup_error_network">Não deu para falar com o Google para conferir a chave. Verifique sua conexão e tente de novo.</string>
+
+    <!-- BYOK: migração de instalações existentes -->
+
+    <!-- BYOK: ajustes -->
+    <string name="api_key_settings_section">Chave de API</string>
+    <string name="api_key_settings_replace">Atualizar chave</string>
+    <string name="api_key_settings_remove">Remover chave</string>
+    <string name="api_key_settings_test">Testar chave</string>
+    <string name="api_key_settings_test_ok">A chave está funcionando.</string>
+    <string name="api_key_settings_remove_confirm">Remover a chave? O Sagas não vai conseguir gerar nada até você adicionar outra.</string>
+    <string name="api_key_settings_quota_active">Limite diário atingido em %1$s. Volta às %2$s.</string>
+
+    <!-- BYOK: aviso de cota nas telas de geração -->
+    <string name="quota_cooldown_reasoning">Limite por minuto da sua chave. Retomando em %1$s</string>
+    <string name="quota_daily_notice_title">Limite diário da sua chave atingido</string>
+    <string name="quota_daily_notice_message">Novas gerações voltam às %1$s. Suas sagas continuam legíveis enquanto isso.</string>
+    <string name="feature_needs_billing_title">Gerar imagem exige projeto Google pago</string>
+    <string name="feature_needs_billing_message">Gerar imagem não faz parte do plano gratuito, então nenhum modelo de imagem funciona nele. Sua chave continua escrevendo a história normalmente. As ilustrações precisam de faturamento ativo no seu projeto.</string>
+    <string name="api_key_learn_more">Ver seus limites de uso</string>
+    <!-- BYOK: painel de uso -->
+    <string name="api_usage_title">Uso de hoje</string>
+    <string name="api_usage_disclaimer">Estimativa do que este app usou. Chamadas feitas com a mesma chave em outros lugares não entram na conta. Os limites mostrados são os do plano gratuito, então se você ativou faturamento no seu projeto, os seus são maiores.</string>
+    <string name="api_usage_requests">%1$d de ~%2$d requisições</string>
+    <string name="api_usage_requests_unknown">%1$d requisições</string>
+    <string name="api_usage_tokens">%1$s tokens · %2$s de raciocínio</string>
+    <string name="api_usage_reset_relative">Reseta em %1$s</string>
+    <string name="api_usage_empty">Nenhuma chamada hoje ainda.</string>
+    <!-- BYOK: tela dedicada de API -->
+    <string name="api_settings_title">API e uso</string>
+    <string name="api_settings_entry_title">Configurações de API</string>
+    <string name="api_settings_entry_subtitle">Sua chave, uso e limites.</string>
+    <string name="api_settings_help">Por que o Sagas precisa de uma chave</string>
+    <string name="api_usage_metric_requests">Requisições hoje</string>
+    <string name="api_key_onboarding_next">Continuar</string>
+    <string name="api_key_paste">Colar chave</string>
+    <string name="api_key_pasted_hint">Encontramos uma chave na área de transferência.</string>
+    <string name="api_key_manage_title">Sua chave de API</string>
+    <string name="api_key_status_checking">Conferindo sua chave…</string>
+    <string name="api_key_status_valid">Chave verificada</string>
+    <string name="api_key_status_invalid">Esta chave não é mais válida</string>
+    <string name="api_key_status_unreachable">Não deu pra conferir a chave agora</string>
+    <string name="api_key_docs">Ver a documentação da chave</string>
+    <!-- Planos premium -->
+    <string name="plan_price_period">%1$s/%2$s</string>
+    <string name="plan_period_day">dia</string>
+    <string name="plan_period_week">semana</string>
+    <string name="plan_period_month">mês</string>
+    <string name="plan_period_year">ano</string>
+    <string name="plan_trial_then">%1$s grátis, depois %2$s</string>
+    <string name="plan_intro_then">%1$s por %2$s, depois %3$s</string>
+    <string name="plans_load_error">Não deu para carregar os planos agora.</string>
+    <plurals name="plan_duration_days">
+        <item quantity="one">%d dia</item>
+        <item quantity="other">%d dias</item>
+    </plurals>
+    <plurals name="plan_duration_weeks">
+        <item quantity="one">%d semana</item>
+        <item quantity="other">%d semanas</item>
+    </plurals>
+    <plurals name="plan_duration_months">
+        <item quantity="one">%d mês</item>
+        <item quantity="other">%d meses</item>
+    </plurals>
+    <plurals name="plan_duration_years">
+        <item quantity="one">%d ano</item>
+        <item quantity="other">%d anos</item>
+    </plurals>
+    <string name="plans_confirm">Continuar</string>
+    <string name="plan_featured_badge">Recomendado</string>
+    <string name="generation_taking_longer">Isso está demorando um pouco mais que o normal…</string>
+    <string name="billing_error_unreachable">Não deu para falar com a loja. Confere a conexão e tenta de novo.</string>
+    <string name="billing_error_unsupported">Compras não estão disponíveis neste aparelho ou nesta conta.</string>
+    <string name="billing_error_item_unavailable">Esse plano não está disponível agora.</string>
+    <string name="billing_error_already_owned">Você já tem esse. Deve ativar em instantes.</string>
+    <string name="billing_error_misconfigured">Tem algo errado do nosso lado nesse plano. Nada foi cobrado.</string>
+    <string name="billing_error_generic_message">Não deu para concluir a compra. Nada foi cobrado.</string>
+    <string name="plans_purchase_unavailable">Esse plano não pode ser comprado agora.</string>
+    <string name="plan_term_daily">Diário</string>
+    <string name="plan_term_weekly">Semanal</string>
+    <string name="plan_term_monthly">Mensal</string>
+    <string name="plan_term_yearly">Anual</string>
+    <string name="plan_term_lifetime">Pra sempre</string>
+    <string name="billing_result_pending_title">Pagamento a caminho</string>
+    <string name="billing_result_pending_message">Sua forma de pagamento demora um pouco mais para compensar. Os anúncios saem assim que ela for confirmada, e você não precisa fazer mais nada.</string>
 </resources>
 
 

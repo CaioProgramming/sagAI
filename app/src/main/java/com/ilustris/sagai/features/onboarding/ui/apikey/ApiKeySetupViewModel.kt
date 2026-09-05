@@ -1,0 +1,187 @@
+package com.ilustris.sagai.features.onboarding.ui.apikey
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.ai.key.ApiKeyDiagnosis
+import com.ilustris.sagai.core.ai.key.ApiKeyShape
+import com.ilustris.sagai.core.ai.key.ApiKeyVerification
+import com.ilustris.sagai.core.ai.key.ApiKeyVerificationService
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
+import com.ilustris.sagai.core.ai.key.classifyApiKeyFailure
+import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.network.GeminiApiClient
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.data.model.OnboardingContent
+import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
+import com.ilustris.sagai.features.player.domain.UserIdentityUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+sealed class ApiKeySetupUiState {
+    object Idle : ApiKeySetupUiState()
+
+    object Validating : ApiKeySetupUiState()
+
+    object Saved : ApiKeySetupUiState()
+
+    /** Google turned the key down — a typo, a partial paste, or a revoked key. */
+    object Rejected : ApiKeySetupUiState()
+
+    /** We never got an answer, so the key is unproven rather than bad. Do not discard it. */
+    object Unreachable : ApiKeySetupUiState()
+
+    object Empty : ApiKeySetupUiState()
+}
+
+@HiltViewModel
+class ApiKeySetupViewModel
+    @Inject
+    constructor(
+        private val userApiKeyStore: UserApiKeyStore,
+        private val geminiApiClient: GeminiApiClient,
+        private val userIdentityUseCase: UserIdentityUseCase,
+        private val onboardingUseCase: OnboardingUseCase,
+        private val verificationService: ApiKeyVerificationService,
+    ) : ViewModel() {
+        private val _uiState = MutableStateFlow<ApiKeySetupUiState>(ApiKeySetupUiState.Idle)
+        val uiState: StateFlow<ApiKeySetupUiState> = _uiState.asStateFlow()
+
+        /**
+         * "A key was just saved", delivered once and consumed.
+         *
+         * Not read off [uiState], because this ViewModel is shared: Compose's `Dialog` inherits
+         * `LocalViewModelStoreOwner` from its parent, so opening "update key" from Settings gets
+         * the very same instance the onboarding gate used — still holding [ApiKeySetupUiState.Saved]
+         * from the first time a key was stored. A `LaunchedEffect` keyed on that state fires on the
+         * value it finds at composition, not on a transition, so the sheet dismissed itself the
+         * instant it opened. An event can only be collected once, so a stale one cannot exist.
+         */
+        private val _keySaved = Channel<Unit>(Channel.BUFFERED)
+        val keySaved = _keySaved.receiveAsFlow()
+
+        /** Clears leftover state so a reopened screen does not show the last run's outcome. */
+        fun prepareForEntry() {
+            _uiState.value = ApiKeySetupUiState.Idle
+        }
+
+
+        /**
+         * Ask for a name before asking for a key.
+         *
+         * The name is a warm, no-stakes question; the key is the one that needs the user to leave
+         * for Google AI Studio. Leading with the harder ask, to someone who has seen nothing of the
+         * app yet, is how you lose them at the door. Skipped for migrations — those users named
+         * themselves long ago.
+         */
+        private val _needsName = MutableStateFlow(false)
+        val needsName: StateFlow<Boolean> = _needsName.asStateFlow()
+
+        init {
+            viewModelScope.launch {
+                _needsName.value = userIdentityUseCase.shouldPromptName()
+            }
+        }
+
+        /**
+         * The explanatory pages, from `onboarding_fallbacks` in Remote Config.
+         *
+         * Empty is a valid state, not an error: the key field is the part that cannot be skipped,
+         * so a missing or malformed config costs the pitch, never the ability to get in.
+         */
+        private val _pages = MutableStateFlow<OnboardingContent>(OnboardingContent())
+        val pages: StateFlow<OnboardingContent> = _pages.asStateFlow()
+
+        fun observeCurrentKey() {
+            viewModelScope.launch {
+                userApiKeyStore.observeState().collect {
+                    _currentMaskedKey.value =
+                        userApiKeyStore.getKeyNow()?.let(ApiKeyShape::mask).orEmpty()
+                }
+            }
+        }
+
+        fun loadPages() {
+            viewModelScope.launch {
+                onboardingUseCase
+                    .getContent(OnboardingType.API_KEY_SETUP, null)
+                    .onSuccess { _pages.value = it }
+            }
+        }
+
+        fun saveName(name: String) {
+            viewModelScope.launch {
+                if (name.isNotBlank()) userIdentityUseCase.setName(name.trim())
+                _needsName.value = false
+            }
+        }
+
+        fun skipName() {
+            _needsName.value = false
+        }
+
+        fun submit(rawKey: String) {
+            val key = rawKey.trim()
+            if (key.isBlank()) {
+                _uiState.value = ApiKeySetupUiState.Empty
+                return
+            }
+
+            viewModelScope.launch {
+                _uiState.value = ApiKeySetupUiState.Validating
+                executeRequest(reportCrash = false) {
+                    // Verified before storing: a key that fails here would otherwise sail past the
+                    // app gate and only surface as a failed generation deep inside a saga.
+                    geminiApiClient.listModels(key)
+                    userApiKeyStore.save(key)
+                }.onSuccess {
+                    _uiState.value = ApiKeySetupUiState.Saved
+                    verificationService.markVerified()
+                    _keySaved.trySend(Unit)
+                }.onFailureAsync { error ->
+                    _uiState.value =
+                        when (classifyApiKeyFailure(error)) {
+                            is ApiKeyDiagnosis.Rejected -> ApiKeySetupUiState.Rejected
+                            // Quota answers prove the key is real — it is just busy. Accept it and
+                            // let the cooldown machinery handle the rest.
+                            is ApiKeyDiagnosis.QuotaDaily,
+                            is ApiKeyDiagnosis.QuotaMinute,
+                            -> {
+                                userApiKeyStore.save(key)
+                                _keySaved.trySend(Unit)
+                                ApiKeySetupUiState.Saved
+                            }
+
+                            null -> ApiKeySetupUiState.Unreachable
+                        }
+                }
+            }
+        }
+
+        /**
+         * The stored key, masked. Shown as the field's placeholder rather than as its value: the
+         * mask is not a key, and putting it in the field would let it be saved as one.
+         */
+        private val _currentMaskedKey = MutableStateFlow("")
+        val currentMaskedKey: StateFlow<String> = _currentMaskedKey.asStateFlow()
+
+        val verification: StateFlow<ApiKeyVerification> = verificationService.status
+
+        fun removeKey() {
+            viewModelScope.launch {
+                userApiKeyStore.clear()
+                _uiState.value = ApiKeySetupUiState.Idle
+            }
+        }
+
+        fun resetError() {
+            if (_uiState.value != ApiKeySetupUiState.Saved) {
+                _uiState.value = ApiKeySetupUiState.Idle
+            }
+        }
+    }

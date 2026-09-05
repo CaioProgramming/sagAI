@@ -166,7 +166,6 @@ object ChatPrompts {
             "emojified",
             "hexColor",
             "firstSceneId",
-            "smartZoom",
             "events",
             "relationships",
             "artwork",

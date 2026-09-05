@@ -112,13 +112,12 @@ class HomeViewModel
         suspend fun shouldPromptName(): Boolean = userIdentityUseCase.shouldPromptName()
 
         private fun onCreateNewSaga() {
-            val activeCount = sagas.value.count { !it.data.isEnded }
-            if (homeUseCase.canCreateNewSaga(activeCount)) {
-                viewModelScope.launch {
-                    _navigationEvent.emit(HomeNavigationEvent.NewSaga)
-                }
-            } else {
-                stateManager.setShowPremiumOnboarding(true)
+            // No cap any more. Three active sagas was a limit on our own inference bill, and that
+            // bill moved to the user's key — rationing something we no longer pay for would just
+            // be a paywall wearing a cost argument. Their real ceiling is the daily quota, which
+            // the usage screen shows them honestly.
+            viewModelScope.launch {
+                _navigationEvent.emit(HomeNavigationEvent.NewSaga)
             }
         }
 

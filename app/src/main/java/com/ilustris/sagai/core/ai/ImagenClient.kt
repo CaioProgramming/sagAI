@@ -91,7 +91,6 @@ class ImagenClientImpl
                     val sourceStream =
                         gemmaClient.generateStreaming<String>(
                             promptSplit = prompt,
-                            useCore = false,
                             requirement = ModelRequirement.HIGH,
                             requireTranslation = false,
                         )
@@ -173,7 +172,6 @@ class ImagenClientImpl
                 val finalStringPrompt =
                     gemmaClient.generate<String>(
                         promptSplit = prompt,
-                        useCore = true,
                         requirement = ModelRequirement.HIGH,
                         requireTranslation = false,
                     )!!

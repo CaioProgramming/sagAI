@@ -13,7 +13,6 @@ class LocalAiEligibilityTest {
         GeminiSyncGenerationParams(
             model = "gemini-test",
             requirement = ModelRequirement.LOW,
-            useCore = false,
             logEnabled = false,
             taskPrompt = "short prompt",
             systemInstruction = "system",
@@ -55,16 +54,6 @@ class LocalAiEligibilityTest {
             LocalAiEligibility.isEligible(
                 baseParams,
                 enabledConfig.copy(tiers = setOf(ModelRequirement.MINIMAL)),
-            ),
-        )
-    }
-
-    @Test
-    fun notEligible_whenUseCore() {
-        assertFalse(
-            LocalAiEligibility.isEligible(
-                baseParams.copy(useCore = true),
-                enabledConfig,
             ),
         )
     }

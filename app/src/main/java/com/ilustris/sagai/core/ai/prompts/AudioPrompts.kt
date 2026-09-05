@@ -59,7 +59,6 @@ object AudioPrompts {
                     "emojified",
                     "hexColor",
                     "firstSceneId",
-                    "smartZoom",
                     "voice",
                 ),
             )

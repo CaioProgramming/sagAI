@@ -1,0 +1,102 @@
+// A gradient that flows instead of crossfading.
+//
+// The morphing gradient this replaces animated its *colours* while its stops stayed put, which is
+// why it read as a slideshow rather than as movement. Here the gradient's own coordinates are
+// pushed around by animated noise — domain warping — so the bands themselves bend, drift and fold
+// into each other the way heat rising off tarmac bends what's behind it.
+//
+// Generates colour rather than filtering content: this is bound as a ShaderBrush and painted into
+// a rect, so there is no `composable_shader` input to sample.
+
+uniform float2 iResolution;
+uniform float iTime;
+
+// Up to three stops, as plain RGB in 0..1 — the haze is the backdrop, so it is always opaque and
+// has no alpha to carry. Declared as float3 and fed via setFloatUniform rather than as a
+// `layout(color) half4`: that is the convention the rest of the app's shaders already use (see
+// u_highlightTint in genre_filter_shader.agsl), and setColorUniform refuses any uniform not
+// explicitly marked `layout(color)`.
+uniform float3 u_colorA;
+uniform float3 u_colorB;
+uniform float3 u_colorC;
+
+// How many noise cells fit across the screen. Small values read as slow continental drift, large
+// values as boiling — around 2 to 3 is the "warm air over a road" range.
+uniform float u_scale;
+
+// How far the warp displaces the field. This is the knob that separates "a gradient" from "a
+// gradient in motion": at 0 the noise only tints, at ~1.5 the bands visibly fold over each other.
+uniform float u_warp;
+
+// Brightness of the hot spots where the field peaks.
+uniform float u_glow;
+
+const int OCTAVES = 4;
+
+float hash(float2 p) {
+    return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453123);
+}
+
+// Value noise with a smoothstep fade — cheaper than gradient noise and, once it has been warped
+// and folded four times over, indistinguishable in a soft backdrop like this one.
+float valueNoise(float2 p) {
+    float2 i = floor(p);
+    float2 f = fract(p);
+    float2 u = f * f * (3.0 - 2.0 * f);
+
+    float a = hash(i);
+    float b = hash(i + float2(1.0, 0.0));
+    float c = hash(i + float2(0.0, 1.0));
+    float d = hash(i + float2(1.0, 1.0));
+
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float fbm(float2 seed) {
+    float total = 0.0;
+    float amplitude = 0.5;
+    float2 p = seed;
+    for (int i = 0; i < OCTAVES; i++) {
+        total += amplitude * valueNoise(p);
+        // Not exactly 2.0: an integer lacunarity lines every octave's cells up on the same grid,
+        // which shows through as faint square tiling in flat areas.
+        p = p * 2.03;
+        amplitude = amplitude * 0.5;
+    }
+    return total;
+}
+
+half4 main(float2 fragCoord) {
+    float2 uv = fragCoord / iResolution;
+
+    // Correct for aspect so the cells stay round on a tall screen instead of being stretched into
+    // vertical streaks.
+    float2 p = uv * u_scale;
+    p.x *= iResolution.x / max(iResolution.y, 1.0);
+
+    float t = iTime;
+
+    // Two rounds of warping. One round alone still looks like noise scrolling past; feeding the
+    // first field back in as an offset is what produces the slow curling folds.
+    float2 q = float2(
+        fbm(p + float2(0.0, t * 0.9)),
+        fbm(p + float2(5.2, 1.3) + t * 0.7)
+    );
+
+    float2 r = float2(
+        fbm(p + u_warp * q + float2(1.7, 9.2) - t * 0.5),
+        fbm(p + u_warp * q + float2(8.3, 2.8) + t * 0.4)
+    );
+
+    float field = clamp(fbm(p + u_warp * r), 0.0, 1.0);
+    float depth = clamp(r.x, 0.0, 1.0);
+
+    float3 colour = mix(u_colorA, u_colorB, smoothstep(0.12, 0.78, field));
+    colour = mix(colour, u_colorC, smoothstep(0.45, 1.0, depth) * 0.85);
+
+    // The shimmer: where the warped field peaks, the air is "hotter". Cubed so it stays confined to
+    // the crests rather than washing the whole surface out.
+    colour += u_glow * pow(field, 3.0);
+
+    return half4(half3(clamp(colour, 0.0, 1.0)), half(1.0));
+}

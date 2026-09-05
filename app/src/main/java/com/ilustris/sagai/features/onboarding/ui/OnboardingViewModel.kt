@@ -58,7 +58,8 @@ class OnboardingViewModel
 
         init {
             viewModelScope.launch {
-                billingService.checkPurchases()
+                // No checkPurchases() here: SagaApp runs one on every foreground, so this only
+                // ever duplicated the query that had just happened.
                 loadAllConfigs()
             }
             viewModelScope.launch {
@@ -191,55 +192,6 @@ class OnboardingViewModel
         ) {
             viewModelScope.launch {
                 when (action) {
-                    is OnboardingAction.Subscribe -> {
-                        _isPurchaseInProgress.value = true
-                        billingService.resetPurchaseFlowResult()
-                        val productDetails = resolveSignatureProduct()
-                        val offerToken =
-                            productDetails
-                                ?.subscriptionOfferDetails
-                                ?.firstOrNull()
-                                ?.offerToken
-                        if (activity != null && productDetails != null && offerToken != null) {
-                            val launched =
-                                billingService.purchaseSignature(
-                                    activity,
-                                    productDetails,
-                                    offerToken,
-                                )
-                            if (!launched) {
-                                _isPurchaseInProgress.value = false
-                            }
-                        } else {
-                            val loaded = billingService.loadSignatureProduct(duringPurchase = true)
-                            if (!loaded) {
-                                _isPurchaseInProgress.value = false
-                                return@launch
-                            }
-                            val refreshedProduct = resolveSignatureProduct()
-                            val refreshedOfferToken =
-                                refreshedProduct
-                                    ?.subscriptionOfferDetails
-                                    ?.firstOrNull()
-                                    ?.offerToken
-                            if (activity != null && refreshedProduct != null && refreshedOfferToken != null) {
-                                val launched =
-                                    billingService.purchaseSignature(
-                                        activity,
-                                        refreshedProduct,
-                                        refreshedOfferToken,
-                                    )
-                                if (!launched) {
-                                    _isPurchaseInProgress.value = false
-                                }
-                            } else if (activity != null) {
-                                billingService.loadSignatureProduct(duringPurchase = true)
-                            } else {
-                                _isPurchaseInProgress.value = false
-                            }
-                        }
-                    }
-
                     is OnboardingAction.Dismiss -> {
                         billingService.resetPurchaseFlowResult()
                         _onboardingState.value = OnboardingUiState.Idle
@@ -262,24 +214,6 @@ class OnboardingViewModel
             }
         }
 
-        private suspend fun resolveSignatureProduct(): ProductDetails? =
-            when (val currentState = billingService.state.value) {
-                is BillingService.BillingState.SignatureDisabled -> {
-                    currentState.products.firstOrNull()
-                }
-
-                else -> {
-                    billingService.loadSignatureProduct(duringPurchase = false)
-                    withTimeoutOrNull(5.seconds) {
-                        billingService.state
-                            .filter { it is BillingService.BillingState.SignatureDisabled }
-                            .first()
-                    }?.let { state ->
-                        (state as? BillingService.BillingState.SignatureDisabled)?.products?.firstOrNull()
-                    }
-                }
-            }
-
         fun syncSubscription() {
             viewModelScope.launch {
                 _isPurchaseInProgress.value = true
@@ -289,17 +223,6 @@ class OnboardingViewModel
             }
         }
 
-        fun confirmDebugPurchase() {
-            viewModelScope.launch {
-                billingService.simulatePurchase(confirmed = true)
-            }
-        }
-
-        fun cancelDebugPurchase() {
-            viewModelScope.launch {
-                billingService.simulatePurchase(confirmed = false)
-            }
-        }
 
         fun dismissPurchaseResult() {
             billingService.resetPurchaseFlowResult()

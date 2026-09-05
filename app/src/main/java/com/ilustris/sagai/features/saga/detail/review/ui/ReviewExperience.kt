@@ -28,15 +28,6 @@ sealed class ReviewNavigationStyle {
     data object ContinuousScroll : ReviewNavigationStyle()
 
     /**
-     * A simulated live chat: messages reveal one at a time (typing-pause timed), each new one
-     * forcing the list to scroll to it — pinned to the latest message, like watching a
-     * conversation arrive in real time, rather than [ContinuousScroll]'s hands-free drift through
-     * already-laid-out content. The user can still scroll up freely; the next revealed message
-     * just pulls the view back down. Used by Crime's iMessage-style template.
-     */
-    data object ChatScroll : ReviewNavigationStyle()
-
-    /**
      * One comic page instead of a sequence of screens: every page is a frame laid out on a single
      * board, and a camera flies from frame to frame. It plays through on its own, then settles on
      * the whole page — from there a tap flies to a frame, a second tap pulls back out, and swipes
@@ -45,6 +36,19 @@ sealed class ReviewNavigationStyle {
      * Heroes.
      */
     data object ComicBoard : ReviewNavigationStyle()
+
+    /**
+     * The saga spread out as photos on a table, panning steadily past: the saga icon, chapter
+     * stills and character portraits laid along one long horizontal strip, threaded together by a
+     * red string — the travelling line across a map an Indiana Jones intro opens on, rather than
+     * another simulated conversation.
+     *
+     * Deliberately *not* [ComicBoard]'s camera. It started as a reuse of it, and the two genres
+     * ended up moving identically; a constant, un-zooming drift is what makes this read as leafing
+     * through an album instead of reading a comic page. Replaces Crime's old simulated-iMessage
+     * thread template. Used by Crime.
+     */
+    data object Corkboard : ReviewNavigationStyle()
 }
 
 sealed class ReviewAction {

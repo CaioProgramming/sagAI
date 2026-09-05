@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.timeline.domain
 
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
-import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.home.data.model.SagaInfo
@@ -12,7 +11,6 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.toMetaData
 import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
 
 class TimelineMapper(
-    private val mascotEmotionService: MascotEmotionService,
     private val genreVisualConfigService: GenreVisualConfigService,
     private val remoteConfigService: RemoteConfigService,
 ) {
@@ -44,21 +42,10 @@ class TimelineMapper(
         timelineContent: TimelineMetadata,
     ): TimelineCardContent {
         val narrativeRules = remoteConfigService.getNarrativeRules()
-        val genre = saga.genre
-        val topEmotion =
-            timelineContent.data.emotionalTone
-        val mascotPair =
-            timelineContent.data.emotionalTone?.let {
-                topEmotion to
-                    mascotEmotionService.getEmotionUrl(
-                        genre,
-                        topEmotion,
-                    )
-            }
 
         return TimelineCardContent(
             timelineContent,
-            mascotPair,
+            timelineContent.data.emotionalTone,
             null,
             timelineContent.isComplete(narrativeRules),
         )
@@ -78,7 +65,7 @@ data class TimelineGroup(
 
 data class TimelineCardContent(
     val timelineContent: TimelineMetadata,
-    val mascotEmotion: Pair<EmotionalTone, String?>?,
+    val overallEmotion: EmotionalTone?,
     val chapterNumber: String?,
     val canShowData: Boolean,
 )

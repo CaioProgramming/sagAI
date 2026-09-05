@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.saga.detail.review.ui.templates.crime
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,23 +17,32 @@ import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
-import com.ilustris.sagai.ui.genre.crime.CrimeBackground
-import com.ilustris.sagai.ui.genre.crime.CrimeBubbleFrame
+import com.ilustris.sagai.ui.genre.crime.CorkPin
+import com.ilustris.sagai.ui.genre.crime.PinBackNote
+import com.ilustris.sagai.ui.genre.crime.PinCaption
+import com.ilustris.sagai.ui.genre.crime.PinProse
+import com.ilustris.sagai.ui.genre.crime.PinSignature
+import com.ilustris.sagai.ui.genre.crime.PinTitle
+import com.ilustris.sagai.ui.genre.crime.CorkboardBackground
 import kotlin.time.Duration.Companion.seconds
 
-/**
- * The playtime attachment — sent right after the Playstyle content bubble, same side. Reuses
- * [AnimatedPlaytimeCounter], the same stat [com.ilustris.sagai.features.saga.detail.review.ui.templates.book.BookPlaystylePage]
- * shows, sized down to a card rather than a full page.
- */
-class CrimePlaystyleStatPage(
-    override val content: SagaContent,
-    private val isMe: Boolean,
-) : ReviewPage {
-    override val pageType: ReviewPageType = ReviewPageType.PLAYSTYLE
+/** The playstyle caption sits under a counter, so it gets a few lines rather than a page. */
+private const val CAPTION_MAX_LINES = 5
 
-    /** No typing to wait for, just the pop-in plus the counter's own count-up. */
-    override val estimatedRevealDurationMs: Long = 1400L
+/**
+ * The table's playtime card — reuses [AnimatedPlaytimeCounter], the same stat
+ * [com.ilustris.sagai.features.saga.detail.review.ui.templates.book.BookPlaystylePage] shows.
+ *
+ * The counter's own styles are given explicit colors rather than inherited ones: it is being
+ * printed on the pin's paper, not on the app's surface, and its defaults resolve against the
+ * theme's background instead. See [CorkPin].
+ */
+class CorkboardPlaystylePinPage(
+    override val content: SagaContent,
+    private val caption: String?,
+) : ReviewPage, CorkboardPinPage {
+    override val pageType: ReviewPageType = ReviewPageType.PLAYSTYLE
+    override val pinSize: CorkPinSize = CorkPinSize.NOTE
 
     @Composable
     override fun Show(
@@ -44,35 +53,46 @@ class CrimePlaystyleStatPage(
         val genre = content.data.genre
         val accent = genre.compiledColorPalette().firstOrNull() ?: MaterialTheme.colorScheme.primary
 
-        CrimeBubbleFrame(
-            isMe = isMe,
-            genre = genre,
-            useSpeechShape = false,
-            canAnimate = canAnimate,
+        CorkPin(
             modifier = modifier,
-        ) { contentColor ->
+            seed = content.data.id + PLAYSTYLE_SEED_OFFSET,
+            pinColor = accent,
+        ) { ink ->
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.width(160.dp).padding(vertical = 4.dp),
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 AnimatedPlaytimeCounter(
                     playtimeMs = content.data.playTimeMs,
                     label = stringResource(R.string.playtime_title),
                     animationDuration = 1.2.seconds,
                     isAnimated = canAnimate,
-                    textStyle = MaterialTheme.typography.titleLarge.copy(color = contentColor),
+                    textStyle = MaterialTheme.typography.titleLarge.copy(color = ink),
                     labelStyle =
                         MaterialTheme.typography.labelSmall.copy(
                             fontStyle = FontStyle.Italic,
                             color = accent,
                         ),
                 )
+                caption?.let {
+                    PinProse(
+                        text = it,
+                        ink = ink,
+                        centered = true,
+                        maxLines = CAPTION_MAX_LINES,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
             }
         }
     }
 
     @Composable
     override fun Background(modifier: Modifier) {
-        CrimeBackground(modifier)
+        CorkboardBackground(modifier)
+    }
+
+    private companion object {
+        const val PLAYSTYLE_SEED_OFFSET = 17
     }
 }

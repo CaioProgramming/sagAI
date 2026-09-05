@@ -4,6 +4,8 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.JsonSyntaxException
+import com.ilustris.sagai.core.ai.key.ApiKeyDiagnosis
+import com.ilustris.sagai.core.ai.key.classifyApiKeyFailure
 import com.ilustris.sagai.core.ai.model.AIGeneration
 import com.ilustris.sagai.core.ai.model.GeminiPart
 import com.ilustris.sagai.core.ai.model.GeminiRequest
@@ -62,6 +64,7 @@ object GeminiGenerationPolicy {
         attempt: Int,
         maxAttempts: Int,
         throwable: Throwable,
+        blueprintKey: String? = null,
     ) {
         val summary = "${throwable.javaClass.simpleName}: ${throwable.message}"
         lastGenerateFailure = summary
@@ -71,6 +74,9 @@ object GeminiGenerationPolicy {
             setCustomKey("ai_model", model)
             setCustomKey("ai_attempt", attempt)
             setCustomKey("ai_max_attempts", maxAttempts)
+            // An oversized prompt is a bug in a specific blueprint. Without this the report says
+            // only that something was too big, which is not something you can go and fix.
+            setCustomKey("ai_blueprint_key", blueprintKey ?: "unknown")
             recordException(throwable)
         }
     }
@@ -102,6 +108,9 @@ internal inline fun <reified T> parseGenerationJson(
 @PublishedApi
 internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWithRetry(params: GeminiSyncGenerationParams): T? {
     val maxAttempts = GeminiGenerationPolicy.maxAttempts(params.requirement)
+    // Shadows the parameter on purpose: a 503 fallback swaps the model (and its thinking level)
+    // between attempts, and every reference below reads this one rather than the original.
+    var params = params
     for (currentAttempt in 1..maxAttempts) {
         var queueWaitMs = 0L
         var inferenceMs = 0L
@@ -119,11 +128,12 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
 
                 ensurePromptWithinTokenLimit(
                     model = formattedModel,
-                    apiKey = apiConfig(params.useCore),
+                    apiKey = apiConfig(),
                     request = geminiRequest,
                     parts = lastRequestParts,
                     fullPromptText = fullPromptText,
                     systemInstruction = params.systemInstruction,
+                    blueprintKey = params.audit.blueprintKey,
                 )
 
                 logGenerateRequest(
@@ -138,7 +148,7 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                 val response =
                     callGenerateContent(
                         formattedModel,
-                        apiConfig(params.useCore),
+                        apiConfig(),
                         geminiRequest,
                     )
                 inferenceMs = System.currentTimeMillis() - inferenceStart
@@ -149,7 +159,11 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                         geminiRequest = geminiRequest,
                         fullPromptText = fullPromptText,
                         logEnabled = params.logEnabled,
+                        model = params.model,
+                        blueprintKey = params.audit.blueprintKey,
                     )
+
+                apiUsageTracker.record(params.model, parsed.usageMetadata)
 
                 recordAudit(
                     AIAuditSnapshot.success(
@@ -174,6 +188,10 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                     )
                     Timber.d("AI data ->\n${parsed.data}\n")
                 }
+                // A request that got through proves the throttle lifted, whatever the backoff
+                // last published. Decoration is exempt: it would clear a countdown belonging to a
+                // real request that is still waiting.
+                if (params.reportsQuota) quotaStatusService.reportRecovered()
                 parsed.data
             }
         } catch (e: Exception) {
@@ -181,7 +199,7 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
             classifyPromptLimitFailure(
                 e,
                 fullPromptText,
-                GeminiAIClient.INPUT_TOKEN_LIMIT,
+                lastTokenLimit,
             )?.let { throw it }
 
             GeminiGenerationPolicy.recordGenerationFailure(
@@ -190,6 +208,7 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                 attempt = currentAttempt,
                 maxAttempts = maxAttempts,
                 throwable = e,
+                blueprintKey = params.audit.blueprintKey,
             )
             recordAudit(
                 AIAuditSnapshot.error(
@@ -206,24 +225,53 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                 logEnabled = params.logEnabled,
             )
 
-            val shouldRetry =
-                handleGenerationRetry(
-                    throwable = e,
-                    currentAttempt = currentAttempt,
-                    maxAttempts = maxAttempts,
-                    model = params.model,
-                    logEnabled = params.logEnabled,
-                    lastRequestParts = lastRequestParts,
-                    systemInstruction = params.systemInstruction,
-                    context = "generate",
-                )
-            if (!shouldRetry) {
-                if (params.logEnabled) {
-                    Timber.e("Final failure after $maxAttempts attempts.")
-                    Timber.e("generate: Failed prompt")
-                    Timber.w(params.promptForFailureLog)
+            if (e is GuardrailsException) {
+                params.onGuardrailBlock?.invoke(e)
+            }
+
+            when (
+                val outcome =
+                    handleGenerationRetry(
+                        throwable = e,
+                        currentAttempt = currentAttempt,
+                        maxAttempts = maxAttempts,
+                        model = params.model,
+                        requirement = params.requirement,
+                        thinkingLevel = params.thinkingLevel.orEmpty(),
+                        logEnabled = params.logEnabled,
+                        lastRequestParts = lastRequestParts,
+                        systemInstruction = params.systemInstruction,
+                        context = "generate",
+                        blueprintKey = params.audit.blueprintKey,
+                        reportsQuota = params.reportsQuota,
+                    )
+            ) {
+                is RetryOutcome.RetryWithModel -> {
+                    params = params.copy(model = outcome.model, thinkingLevel = outcome.thinkingLevel)
                 }
-                return null
+
+                RetryOutcome.Retry -> Unit
+
+                RetryOutcome.Stop -> {
+                    if (params.logEnabled) {
+                        Timber.e("Final failure after $maxAttempts attempts.")
+                        Timber.e("generate: Failed prompt")
+                        Timber.w(params.promptForFailureLog)
+                    }
+                    // Every other Stop cause returns null, same as always — a lot of callers rely
+                    // on that to mean "didn't work" without a crash. GuardrailsException is the one
+                    // exception here that carries something a caller cannot get any other way (a
+                    // SafeGuard status) and that some callers specifically watch for downstream
+                    // (ChatGenerationService deletes the offending message and restores its text to
+                    // the input on exactly this type). Collapsing it into null threw that structured
+                    // reason away before it ever left this function — the caller saw only "no
+                    // result" and, unable to tell why, wrapped it in a plain IllegalStateException
+                    // that no such check could ever match. The streaming path across this same file
+                    // already rethrows on Stop for this reason; this brings the sync path in line
+                    // with it for this one case rather than for all of them.
+                    if (e is GuardrailsException) throw e
+                    return null
+                }
             }
         }
     }
@@ -237,6 +285,9 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
     return flow {
         val maxAttempts = GeminiGenerationPolicy.maxAttempts(params.requirement)
         val startTime = System.currentTimeMillis()
+        // Shadows the parameter: a 503 fallback swaps the model (and its thinking level) between
+        // attempts, and every reference from here on reads this one rather than the original.
+        var params = params
 
         // Same per-model lock the sync path takes. Streaming ran outside it, so a reply could go
         // out while a sync generation on the same model was already in flight — and both spend
@@ -245,6 +296,13 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
         // Safe against the reasoning synthesizer that runs during collection: it launches in its
         // own coroutine and asks for a different tier's model, so it never waits on this lock in a
         // way that could hold the stream up.
+        //
+        // Kept keyed to the *original* model even across a 503 fallback: reacquiring it mid-stream
+        // for whatever the params get swapped to would need releasing and retaking a different
+        // lock partway through a single logical call, which risks a real bug (a second caller
+        // slipping in between the release and the reacquire) for a case — a fallback model that is
+        // itself contended enough to need its own lock at that exact moment — narrow enough not to
+        // be worth that risk.
         requestMutexes.getOrPut(params.model) { Mutex() }.withLock {
             for (currentAttempt in 1..maxAttempts) {
                 try {
@@ -259,11 +317,12 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
 
                     ensurePromptWithinTokenLimit(
                         model = formattedModel,
-                        apiKey = apiConfig(params.useCore),
+                        apiKey = apiConfig(),
                         request = geminiRequest,
                         parts = lastRequestParts,
                         fullPromptText = fullPromptText,
                         systemInstruction = params.systemInstruction,
+                        blueprintKey = params.audit.blueprintKey,
                     )
 
                     logGenerateRequest(
@@ -277,7 +336,7 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
                     val responseBody =
                         callStreamGenerateContent(
                             formattedModel,
-                            apiConfig(params.useCore),
+                            apiConfig(),
                             geminiRequest,
                         )
 
@@ -287,6 +346,8 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
                             fullPromptText = fullPromptText,
                             logEnabled = params.logEnabled,
                             geminiRequest = geminiRequest,
+                            model = params.model,
+                            blueprintKey = params.audit.blueprintKey,
                             onReasoning = { chunk -> emit(StreamingState.Reasoning(chunk)) },
                         )
 
@@ -325,7 +386,7 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
                     classifyPromptLimitFailure(
                         e,
                         lastFullPromptText.toString(),
-                        GeminiAIClient.INPUT_TOKEN_LIMIT,
+                        lastTokenLimit,
                     )?.let { throw it }
 
                     GeminiGenerationPolicy.recordGenerationFailure(
@@ -340,33 +401,46 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
                         params.onGuardrailBlock?.invoke(e)
                     }
 
-                    val shouldRetry =
-                        handleGenerationRetry(
-                            throwable = e,
-                            currentAttempt = currentAttempt,
-                            maxAttempts = maxAttempts,
-                            model = params.model,
-                            logEnabled = params.logEnabled,
-                            lastRequestParts = lastRequestParts,
-                            systemInstruction = params.systemInstruction,
-                            context = "generateStreaming",
-                        )
-                    if (!shouldRetry) {
-                        val duration = System.currentTimeMillis() - startTime
-                        recordAudit(
-                            AIAuditSnapshot.error(
+                    when (
+                        val outcome =
+                            handleGenerationRetry(
+                                throwable = e,
+                                currentAttempt = currentAttempt,
+                                maxAttempts = maxAttempts,
                                 model = params.model,
+                                requirement = params.requirement,
+                                thinkingLevel = params.thinkingLevel.orEmpty(),
+                                logEnabled = params.logEnabled,
+                                lastRequestParts = lastRequestParts,
+                                systemInstruction = params.systemInstruction,
+                                context = "generateStreaming",
                                 blueprintKey = params.audit.blueprintKey,
-                                dataType = params.audit.dataType,
-                                errorMessage = "${e.javaClass.simpleName}: ${e.message}",
-                                responseTimeMs = duration,
-                                safetyStatus = if (e is GuardrailsException) e.status.name else null,
-                                systemInstruction = params.audit.systemInstruction,
-                                sentVariables = params.audit.sentVariables,
-                            ),
-                            logEnabled = params.logEnabled,
-                        )
-                        throw e
+                                reportsQuota = params.reportsQuota,
+                            )
+                    ) {
+                        is RetryOutcome.RetryWithModel -> {
+                            params = params.copy(model = outcome.model, thinkingLevel = outcome.thinkingLevel)
+                        }
+
+                        RetryOutcome.Retry -> Unit
+
+                        RetryOutcome.Stop -> {
+                            val duration = System.currentTimeMillis() - startTime
+                            recordAudit(
+                                AIAuditSnapshot.error(
+                                    model = params.model,
+                                    blueprintKey = params.audit.blueprintKey,
+                                    dataType = params.audit.dataType,
+                                    errorMessage = "${e.javaClass.simpleName}: ${e.message}",
+                                    responseTimeMs = duration,
+                                    safetyStatus = if (e is GuardrailsException) e.status.name else null,
+                                    systemInstruction = params.audit.systemInstruction,
+                                    sentVariables = params.audit.sentVariables,
+                                ),
+                                logEnabled = params.logEnabled,
+                            )
+                            throw e
+                        }
                     }
                 }
             }
@@ -378,11 +452,11 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
             classifyPromptLimitFailure(
                 e,
                 lastFullPromptText.toString(),
-                GeminiAIClient.INPUT_TOKEN_LIMIT,
+                lastTokenLimit,
             ) ?: e
         logEstimatedPromptTokensOnFailure(
             parts = lastRequestParts,
-            tokenLimit = GeminiAIClient.INPUT_TOKEN_LIMIT,
+            tokenLimit = lastTokenLimit,
             context = "generateStreaming",
             logEnabled = params.logEnabled,
             cause = resolved,
@@ -394,12 +468,45 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
                     appendEstimatedTokenDiagnostics(
                         message = resolved.message ?: "Unknown error",
                         parts = lastRequestParts,
-                        tokenLimit = GeminiAIClient.INPUT_TOKEN_LIMIT,
+                        tokenLimit = lastTokenLimit,
                     ),
                 throwable = resolved,
             ),
         )
     }
+}
+
+/**
+ * The thinking level this request should actually carry.
+ *
+ * Resolved at assembly time rather than trusting the level frozen into the params, because the
+ * params are fixed before the retry loop starts — so a `minimal` rejection recorded mid-flight
+ * would otherwise be re-sent verbatim on every remaining attempt and fail identically.
+ */
+@PublishedApi
+internal fun GeminiAIClient.effectiveThinkingLevel(
+    model: String,
+    requested: String?,
+): String? {
+    if (requested == null) return null
+
+    // `minimal` is the one direction proven in production: some models omit it from the low end
+    // entirely, and the safe fallback is one step up, not a step down.
+    if (requested == "minimal" && !modelCatalog.supportsThinkingLevel(model, "minimal")) {
+        return "low"
+    }
+
+    // Any other level this exact model has taught us — via a 400 on an earlier attempt of this
+    // same call — that it rejects: step down the ladder toward less reasoning instead of resending
+    // the same rejected value on every remaining attempt. This is the actual mechanism that makes
+    // a retry after markThinkingLevelUnsupported different from the attempt that just failed: the
+    // assembly calls this fresh every pass, so a value recorded moments ago already applies here.
+    val startIndex = THINKING_LEVEL_LADDER.indexOf(requested)
+    if (startIndex < 0) return requested
+    return THINKING_LEVEL_LADDER
+        .drop(startIndex)
+        .firstOrNull { modelCatalog.supportsThinkingLevel(model, it) }
+        ?: THINKING_LEVEL_LADDER.last()
 }
 
 @PublishedApi
@@ -409,7 +516,7 @@ internal fun GeminiAIClient.buildGenerationAssembly(params: GeminiSyncGeneration
         system(params.systemInstruction)
         references(params.references)
         generation(params.requirement, params.temperatureRandomness)
-        thinking(params.thinkingLevel)
+        thinking(effectiveThinkingLevel(params.model, params.thinkingLevel))
         if (!params.includeSystemInFullPrompt) {
             fullPrompt(includeSystemInstruction = false)
         }
@@ -422,7 +529,7 @@ internal fun GeminiAIClient.buildGenerationAssembly(params: GeminiStreamingGener
         system(params.systemInstruction)
         references(params.references)
         generation(params.requirement, params.temperatureRandomness)
-        thinking(params.thinkingLevel)
+        thinking(effectiveThinkingLevel(params.model, params.thinkingLevel))
         if (!params.includeSystemInFullPrompt) {
             fullPrompt(includeSystemInstruction = false)
         }
@@ -434,11 +541,21 @@ internal inline fun <reified T> GeminiAIClient.parseSyncGenerationResponse(
     geminiRequest: GeminiRequest,
     fullPromptText: String,
     logEnabled: Boolean,
+    model: String = "unknown",
+    blueprintKey: String? = null,
 ): GeminiParsedGeneration<T> {
     response.error?.let { error ->
         if (logEnabled) Timber.e("Gemini API error: ${error.code} - ${error.message}")
         throwIfApiInputTokenLimitError(error, fullPromptText)
         throw Exception("Gemini API error: ${error.message}")
+    }
+    // No candidate at all means the model never ran — the prompt itself was refused. Without this,
+    // execution fell through to the parts extractor, which logged "parts list is null or empty",
+    // then to the JSON sanitizer, which logged "input string is null or blank" and threw a bare
+    // IllegalArgumentException — two messages that say a value was missing, never why.
+    response.promptFeedback?.blockReason?.let { blockReason ->
+        if (logEnabled) Timber.w("Gemini blocked the prompt itself: $blockReason")
+        throw GuardrailsException(promptBlockReasonToSafeGuard(blockReason))
     }
 
     val candidate = response.candidates?.firstOrNull()
@@ -446,8 +563,18 @@ internal inline fun <reified T> GeminiAIClient.parseSyncGenerationResponse(
         if (logEnabled) Timber.w("API blocked content with reason: ${candidate.finishReason}")
         throw GuardrailsException(SafeGuard.BLOCKED)
     }
+    if (candidate?.finishReason == "MAX_TOKENS") {
+        // Named rather than left to the JSON sanitizer, which would either fail to parse or hand
+        // back a partial object — the second being indistinguishable from the model simply
+        // answering briefly.
+        throw ResponseTruncatedException(
+            model = model,
+            blueprintKey = blueprintKey,
+            outputTokens = response.usageMetadata?.candidatesTokenCount,
+        )
+    }
 
-    updateReactiveTokenCount(response.usageMetadata?.promptTokenCount ?: 0)
+    updateReactiveTokenCount(response.usageMetadata?.promptTokenCount ?: 0, lastTokenLimit)
 
     val responseContent =
         response.candidates
@@ -480,6 +607,8 @@ internal suspend fun GeminiAIClient.consumeStreamingResponse(
     fullPromptText: String,
     logEnabled: Boolean,
     geminiRequest: GeminiRequest,
+    model: String = "unknown",
+    blueprintKey: String? = null,
     onReasoning: suspend (String) -> Unit,
 ): StreamingAccumulationResult {
     val accumulatedText = StringBuilder()
@@ -500,12 +629,23 @@ internal suspend fun GeminiAIClient.consumeStreamingResponse(
                 throwIfApiInputTokenLimitError(streamError, fullPromptText)
                 throw GeminiHttpException(streamError.code ?: 400, trimmed)
             }
+            partialResponse.promptFeedback?.blockReason?.let { blockReason ->
+                if (logEnabled) Timber.w("Gemini blocked the prompt itself: $blockReason")
+                throw GuardrailsException(promptBlockReasonToSafeGuard(blockReason))
+            }
 
             if (partialResponse.usageMetadata != null) {
                 usageMetadata = partialResponse.usageMetadata
             }
 
             val candidate = partialResponse.candidates?.firstOrNull()
+            if (candidate?.finishReason == "MAX_TOKENS") {
+                throw ResponseTruncatedException(
+                    model = model,
+                    blueprintKey = blueprintKey,
+                    outputTokens = partialResponse.usageMetadata?.candidatesTokenCount,
+                )
+            }
             if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
                 if (logEnabled) {
                     Timber.w(
@@ -528,6 +668,8 @@ internal suspend fun GeminiAIClient.consumeStreamingResponse(
         }
     }
 
+    apiUsageTracker.record(model, usageMetadata)
+
     val fullText = accumulatedText.toString()
     val fullThoughts = accumulatedThoughts.toString()
 
@@ -546,17 +688,41 @@ internal suspend fun GeminiAIClient.consumeStreamingResponse(
     )
 }
 
+/**
+ * What to do about a failed attempt, decided by [handleGenerationRetry].
+ *
+ * A plain [Boolean] stopped being enough once a retry could mean "try again, but against a
+ * different model" — a 503 fallback needs to hand the caller a new model *and* the thinking level
+ * resolved for it, not just a green light to loop again with the params it already had.
+ */
+@PublishedApi
+internal sealed class RetryOutcome {
+    object Stop : RetryOutcome()
+
+    object Retry : RetryOutcome()
+
+    /** Retry, but [model] is overloaded's replacement — a 503 fallback, not the original tier model. */
+    data class RetryWithModel(
+        val model: String,
+        val thinkingLevel: String,
+    ) : RetryOutcome()
+}
+
 @PublishedApi
 internal suspend fun GeminiAIClient.handleGenerationRetry(
     throwable: Exception,
     currentAttempt: Int,
     maxAttempts: Int,
     model: String,
+    requirement: ModelRequirement,
+    thinkingLevel: String,
     logEnabled: Boolean,
     lastRequestParts: List<GeminiPart>,
     systemInstruction: String?,
     context: String,
-): Boolean {
+    blueprintKey: String? = null,
+    reportsQuota: Boolean = true,
+): RetryOutcome {
     if (logEnabled) {
         Timber
             .tag(javaClass.simpleName)
@@ -564,6 +730,107 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
                 "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: " +
                     "${throwable.javaClass.simpleName} - ${throwable.message}",
             )
+    }
+
+    // Refusals raised before the request ever left: retrying re-raises them identically. A
+    // guardrail block belongs in this group too, on either side that raises it — the model's own
+    // self-reported violation and Gemini's prompt-level refusal both mean the exact same request
+    // would be rejected exactly the same way again, so nothing is gained by spending the rest of
+    // the attempt budget resending it. onGuardrailBlock has already fired at the call site above
+    // this point (or its streaming equivalent) by the time this runs.
+    if (throwable is QuotaExhaustedException ||
+        throwable is MissingApiKeyException ||
+        throwable is GuardrailsException
+    ) {
+        return RetryOutcome.Stop
+    }
+
+    // The model refuses the level actually sent. Recording which one is what makes the retry
+    // different from the attempt that just failed: thinkingLevel() steps down its ladder past any
+    // level a model has taught us it rejects, so the next assembly asks for something this model
+    // has a chance of accepting — here and on every later request against it, so the cost is one
+    // wasted attempt, once per model-and-level pair.
+    if (isUnsupportedThinkingLevel(throwable)) {
+        modelCatalog.markThinkingLevelUnsupported(model, thinkingLevel)
+        return if (currentAttempt < maxAttempts) RetryOutcome.Retry else RetryOutcome.Stop
+    }
+
+    // The model itself is overloaded — Google's own "high demand" signal, unrelated to this key's
+    // validity or its quota. Retrying the same model spends the whole attempt budget against
+    // something that just failed for a reason outside our control; falling over to LOW's own
+    // model (a different serving stack, and one already trusted with real traffic) is a real
+    // second option instead of three guaranteed repeats. Switching on the very first 503 rather
+    // than after some number of retries is a judgment call, not a measured one — there is no data
+    // yet on how often a 503 clears on its own within a couple of seconds against how often it is
+    // a sustained spike, and mirroring the thinking-level branch above (which also reacts
+    // immediately) keeps the two nearest cases in this function consistent with each other.
+    if (throwable is GeminiHttpException && throwable.code == 503 && currentAttempt < maxAttempts) {
+        val normalizedModel = model.replace("models/", "")
+        val fallback = fallbackModelName(requirement)?.takeIf { it != normalizedModel }
+        if (fallback != null) {
+            if (logEnabled) {
+                Timber
+                    .tag(javaClass.simpleName)
+                    .w("$normalizedModel is overloaded (503) — falling over to $fallback.")
+            }
+            // One-shot, not persisted: this is "something unusual just happened," not a state
+            // for the UI to keep reflecting once the fallback attempt is done one way or another.
+            modelFallbackNotifier.signalFallback()
+            return RetryOutcome.RetryWithModel(fallback, thinkingLevel(requirement, fallback))
+        }
+    }
+
+    // Key verdicts come first, before any backoff maths. A rejected key fails every attempt
+    // identically, so the three-attempt policy would just triple the damage; and a spent daily
+    // quota cannot recover before midnight Pacific, which no retry delay is going to outwait.
+    when (val diagnosis = classifyApiKeyFailure(throwable)) {
+        is ApiKeyDiagnosis.Rejected -> {
+            userApiKeyStore.markInvalid(diagnosis.failure)
+            if (logEnabled) {
+                Timber
+                    .tag(javaClass.simpleName)
+                    .e("API key rejected (${diagnosis.failure.name}) — not retrying.")
+            }
+            return RetryOutcome.Stop
+        }
+
+        ApiKeyDiagnosis.QuotaDaily -> {
+            if (reportsQuota) quotaStatusService.reportDailyExhausted(model)
+            return RetryOutcome.Stop
+        }
+
+        is ApiKeyDiagnosis.QuotaMinute -> {
+            // A prompt bigger than the whole per-minute token budget never fits, however long we
+            // wait — burning the retry budget on it would report a permanent problem as a
+            // temporary one. Raise it as the blueprint bug it is instead.
+            val budget = diagnosis.tokenQuotaValue
+            if (budget != null) modelCatalog.recordPerMinuteTokenBudget(model, budget)
+            if (budget != null && lastPromptTokenCount > budget) {
+                throw PromptTooLargeException(
+                    message =
+                        "Prompt of $lastPromptTokenCount tokens exceeds the per-minute budget of " +
+                            "$budget for $model — no retry delay can satisfy it. " +
+                            "Blueprint: ${blueprintKey ?: "unknown"}",
+                    tokenCount = lastPromptTokenCount,
+                    tokenLimit = budget,
+                    fullPrompt = "",
+                    blueprintKey = blueprintKey,
+                    cause = throwable,
+                )
+            }
+            // Otherwise transient: the request stays alive behind the existing backoff. Publishing
+            // the window only replaces a mute spinner with a countdown the user can read.
+            if (reportsQuota) {
+                quotaStatusService.reportCoolingDown(
+                    model = model,
+                    retryDelaySeconds =
+                        diagnosis.retryDelaySeconds
+                            ?: GeminiGenerationPolicy.DEFAULT_RATE_LIMIT_RETRY_SECONDS,
+                )
+            }
+        }
+
+        null -> Unit
     }
 
     val isParsingError =
@@ -577,11 +844,11 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
             resolveHttpRetryDelay(throwable, model, logEnabled) ?: extractedDelay
     }
 
-    if (currentAttempt >= maxAttempts) return false
+    if (currentAttempt >= maxAttempts) return RetryOutcome.Stop
 
     logEstimatedPromptTokensOnFailure(
         parts = lastRequestParts,
-        tokenLimit = GeminiAIClient.INPUT_TOKEN_LIMIT,
+        tokenLimit = lastTokenLimit,
         context = context,
         logEnabled = logEnabled,
         cause = throwable,
@@ -599,12 +866,13 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
                 )
         }
         delay(delayToApply.seconds)
+        if (reportsQuota) quotaStatusService.reportRecovered()
     } else if (logEnabled) {
         Timber
             .tag(javaClass.simpleName)
             .w("Retrying immediately due to parsing error (${throwable.javaClass.simpleName})...")
     }
-    return true
+    return RetryOutcome.Retry
 }
 
 @PublishedApi
@@ -711,4 +979,18 @@ internal fun GeminiAIClient.logGenerateStreamingResponse(
             )
         }",
     )
+}
+
+/**
+ * Whether the API rejected the request purely for the thinking level it asked for.
+ *
+ * Matched on the message because the API expresses it as a plain `INVALID_ARGUMENT`, with the
+ * level named only in prose: "Thinking level MINIMAL is not supported for this model."
+ */
+@PublishedApi
+internal fun isUnsupportedThinkingLevel(throwable: Throwable): Boolean {
+    val http = throwable as? GeminiHttpException ?: return false
+    if (http.code != 400) return false
+    val message = "${http.message.orEmpty()} ${http.errorBody.orEmpty()}".lowercase()
+    return message.contains("thinking level") && message.contains("not supported")
 }

@@ -2,6 +2,8 @@ package com.ilustris.sagai.features.saga.milestone.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.services.AdTier
+import com.ilustris.sagai.core.services.AdsService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.BookGenerationService
@@ -47,6 +49,7 @@ class MilestoneViewModel
         private val remoteConfigService: RemoteConfigService,
         private val bookGenerationService: BookGenerationService,
         private val settingsUseCase: SettingsUseCase,
+        private val adsService: AdsService,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<MilestoneUiState>(MilestoneUiState.Loading())
         val uiState: StateFlow<MilestoneUiState> = _uiState.asStateFlow()
@@ -101,6 +104,11 @@ class MilestoneViewModel
         private var chainStepTotal = 0
         private var chainStepIndex = 0
 
+        // Only the chain's terminal closure step shows an ad (see the tier-selection branch
+        // below) — this guards against a second show if a step past the original estimate is
+        // also deemed terminal (chainStepTotal is a projection, not a guarantee).
+        private var adShownThisChain = false
+
         fun start(sagaId: Int) {
             if (currentSagaId == sagaId) return
             currentSagaId = sagaId
@@ -108,6 +116,7 @@ class MilestoneViewModel
             finishCheckJob?.cancel()
             chainStepTotal = 0
             chainStepIndex = 0
+            adShownThisChain = false
             _uiState.value = MilestoneUiState.Loading()
             _showOnboarding.value = false
 
@@ -126,6 +135,15 @@ class MilestoneViewModel
                     }
                     if (saga?.acts?.isEmpty() == true && settingsUseCase.getShowTutorials().first()) {
                         _showOnboarding.value = true
+                    }
+
+                    // Preloaded here so the ad has the whole generation wait to fetch — by the
+                    // time a closure milestone actually resolves, the request has had as long as
+                    // the LLM call itself took. Both tiers are speculative: only one (at most)
+                    // ends up shown, chosen once we know which milestone actually closed the chain.
+                    viewModelScope.launch { adsService.preload(AdTier.EVENT) }
+                    if (chainStepTotal > 1) {
+                        viewModelScope.launch { adsService.preload(AdTier.CHAPTER_OR_ACT) }
                     }
 
                     var hasEngaged = false
@@ -147,12 +165,30 @@ class MilestoneViewModel
                                 milestone is SagaMilestone.ActFinished -> {
                                 hasEngaged = true
                                 chainStepIndex++
-                                _uiState.value =
+                                val stepTotal = maxOf(chainStepTotal, chainStepIndex)
+                                val closureState =
                                     MilestoneUiState.ClosureStep(
                                         milestone = milestone,
                                         stepIndex = chainStepIndex,
-                                        stepTotal = maxOf(chainStepTotal, chainStepIndex),
+                                        stepTotal = stepTotal,
                                     )
+                                // Event -> chapter -> act closures can only ever emit in that
+                                // order within one chain (verified against SagaContentManagerImpl's
+                                // drive loop), so the terminal step's own milestone type is always
+                                // the highest-severity one that closed — an event mid-chain (a
+                                // chapter or act still coming) never shows an ad, only the chain's
+                                // last step does, tiered by what actually closed.
+                                val isTerminalStep = chainStepIndex >= stepTotal
+                                if (!adShownThisChain && isTerminalStep) {
+                                    adShownThisChain = true
+                                    val tier =
+                                        if (milestone is SagaMilestone.NewEvent) AdTier.EVENT else AdTier.CHAPTER_OR_ACT
+                                    viewModelScope.launch {
+                                        adsService.showIfReady(tier) { _uiState.value = closureState }
+                                    }
+                                } else {
+                                    _uiState.value = closureState
+                                }
                             }
 
                             // A step that already failed once sits back in AwaitingAdvance

@@ -76,6 +76,7 @@ class EpilogueChatUseCaseImpl
                             generateStream,
                             context = "Reconnecting with ${character.data.fullName()} after their story ended",
                             genre = saga.data.genre,
+                            details = userMessage,
                         ),
                     )
                 } catch (e: Exception) {

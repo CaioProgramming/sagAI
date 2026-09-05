@@ -28,7 +28,7 @@ fun AutoResizeText(
         style = currentTextStyle,
         maxLines = maxLines,
         onTextLayout = { textLayoutResult ->
-            if (textLayoutResult.didOverflowHeight) {
+            if (textLayoutResult.didOverflowHeight || textLayoutResult.didOverflowWidth) {
                 if (currentTextStyle.fontSize > minFontSize) {
                     val newSize = currentTextStyle.fontSize.value - fontSizeReductionStep.value
                     currentTextStyle =

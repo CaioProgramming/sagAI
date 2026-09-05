@@ -1,10 +1,17 @@
 package com.ilustris.sagai.features.onboarding.data
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import com.ilustris.sagai.BuildConfig
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
-import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -19,11 +26,25 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingUiPage
 import com.ilustris.sagai.features.onboarding.ui.OnboardingUiState
 import com.ilustris.sagai.features.onboarding.ui.PremiumBackground
 import com.ilustris.sagai.features.onboarding.ui.SparkBackground
+import com.ilustris.sagai.features.onboarding.ui.StarfieldBackground
+import com.ilustris.sagai.features.onboarding.ui.apikey.AI_STUDIO_URL
+import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyInputContent
+import com.ilustris.sagai.features.premium.ui.PremiumPlansContent
 import com.ilustris.sagai.ui.animations.MorphingAvatarBackground
 import com.ilustris.sagai.ui.animations.StackedCardsBackground
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.FluidGradient
+import com.ilustris.sagai.ui.theme.fadeColors
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadeGradientTop
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.morphingColor
+import com.ilustris.sagai.ui.theme.morphingGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,7 +52,6 @@ import javax.inject.Singleton
 class OnboardingStateMapper
     @Inject
     constructor(
-        private val billingService: BillingService,
         private val stringResourceHelper: StringResourceHelper,
         private val genreVisualConfig: GenreVisualConfigService,
         private val remoteConfigService: RemoteConfigService,
@@ -63,6 +83,13 @@ class OnboardingStateMapper
                 remoteConfigService.getJsonMapStringString("mascot_full_body_designs")
                     ?: emptyMap()
 
+            // The key field is the last page of this type, described in Remote Config like any
+            // other. It was briefly appended after them instead, which broke the assumption that
+            // the last configured page is the last page shown — and both things reading that
+            // assumption (the background's else branch, the finishing button) went wrong.
+            val isKeyOnboarding = type == OnboardingType.API_KEY_SETUP
+            val isPremiumOnboarding = type == OnboardingType.PREMIUM_GUIDE
+
             return content.pages.mapIndexed { index, page ->
                 val isLastPage = index == content.pages.size - 1
                 val mascotUrl =
@@ -88,6 +115,36 @@ class OnboardingStateMapper
                     }
                 val background: @Composable () -> Unit =
                     when (type) {
+                        OnboardingType.API_KEY_SETUP -> {
+                            when (index) {
+                                0 -> {
+                                    {
+                                        Box(
+                                            Modifier.fillMaxSize().background(
+                                                Brush.verticalGradient(
+                                                    morphingGradient(),
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                }
+
+                                1 -> {
+                                    { MorphingGenresBackground(visualConfigs = genreConfigs) }
+                                }
+
+                                2 -> {
+                                    { MorphingAvatarBackground(iconsAssets.map { it.image }) }
+                                }
+
+                                else -> {
+                                    {
+                                        StarfieldBackground()
+                                    }
+                                }
+                            }
+                        }
+
                         OnboardingType.APP_INTRO -> {
                             when (index) {
                                 0 -> {
@@ -159,40 +216,37 @@ class OnboardingStateMapper
                         }
 
                         OnboardingType.PREMIUM_GUIDE -> {
-                            when (index) {
-                                0 -> {
+                            when {
+                                isLastPage -> {
+                                    { MorphingGenresBackground(visualConfigs = genreConfigs) }
+                                }
+
+                                index == 0 -> {
                                     { PremiumBackground() }
                                 }
 
-                                1 -> {
-                                    { StackedCardsBackground(assets = storyAssets) }
-                                }
-
                                 else -> {
-                                    { MorphingGenresBackground(visualConfigs = genreConfigs) }
+                                    { Box(Modifier.fillMaxSize().background(Brush.verticalGradient(morphingGradient()))) }
                                 }
                             }
                         }
                     }
 
                 val primaryButton =
-                    if (isLastPage) {
-                        val action =
-                            when (type) {
-                                OnboardingType.PREMIUM_GUIDE -> {
-                                    val product =
-                                        (billingService.state.value as? BillingService.BillingState.SignatureDisabled)
-                                            ?.products
-                                            ?.firstOrNull()
-                                    OnboardingAction.Subscribe(product?.productId ?: "")
-                                }
-
-                                else -> {
-                                    OnboardingAction.Dismiss
-                                }
-                            }
+                    if (isLastPage && (isKeyOnboarding || isPremiumOnboarding)) {
+                        // Both of these end on a page whose content owns its own submit: only the
+                        // key field knows whether what was typed is worth sending, and only the
+                        // plan list knows which plan is selected. A page-level button would either
+                        // duplicate them or fire without either answer.
+                        null
+                    } else if (isLastPage) {
+                        val action = OnboardingAction.Dismiss
                         val text =
                             when (type) {
+                                OnboardingType.API_KEY_SETUP -> {
+                                    stringResourceHelper.getString(R.string.onboarding_finish)
+                                }
+
                                 OnboardingType.APP_INTRO -> {
                                     stringResourceHelper.getString(R.string.onboarding_finish)
                                 }
@@ -205,22 +259,10 @@ class OnboardingStateMapper
                                     stringResourceHelper.getString(R.string.onboarding_gameplay_guide_finish)
                                 }
 
+                                // Unreachable, like API_KEY_SETUP above: this type never gets a
+                                // page-level button on its last page.
                                 OnboardingType.PREMIUM_GUIDE -> {
-                                    val price =
-                                        (billingService.state.value as? BillingService.BillingState.SignatureDisabled)
-                                            ?.products
-                                            ?.firstOrNull()
-                                            ?.subscriptionOfferDetails
-                                            ?.firstOrNull()
-                                            ?.pricingPhases
-                                            ?.pricingPhaseList
-                                            ?.firstOrNull()
-                                            ?.formattedPrice
-                                    if (price.isNullOrBlank() && BuildConfig.DEBUG) {
-                                        stringResourceHelper.getString(R.string.subscribe_debug_fallback)
-                                    } else {
-                                        "${stringResourceHelper.getString(R.string.subscribe)} ${price.orEmpty()}"
-                                    }
+                                    stringResourceHelper.getString(R.string.onboarding_finish)
                                 }
                             }
                         OnboardingButton(text, action)
@@ -232,7 +274,12 @@ class OnboardingStateMapper
                     }
 
                 val secondaryButton =
-                    if (isLastPage) {
+                    if (isKeyOnboarding && isLastPage) {
+                        OnboardingButton(
+                            stringResourceHelper.getString(R.string.api_key_setup_open_studio),
+                            OnboardingAction.OpenUrl(AI_STUDIO_URL),
+                        )
+                    } else if (isLastPage) {
                         when (type) {
                             OnboardingType.PREMIUM_GUIDE -> {
                                 OnboardingButton(
@@ -262,7 +309,16 @@ class OnboardingStateMapper
                 OnboardingUiPage(
                     background = background,
                     content = {
-                        OnboardingStandardContent(page)
+                        if (isKeyOnboarding && isLastPage) {
+                            ApiKeyInputContent(page)
+                        } else if (isPremiumOnboarding && isLastPage) {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                OnboardingStandardContent(page)
+                                PremiumPlansContent()
+                            }
+                        } else {
+                            OnboardingStandardContent(page)
+                        }
                     },
                     primaryButton = primaryButton,
                     secondaryButton = secondaryButton,

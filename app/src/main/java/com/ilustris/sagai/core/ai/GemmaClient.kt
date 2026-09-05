@@ -7,6 +7,9 @@ import com.ilustris.sagai.core.ai.local.LocalAiExecutor
 import com.ilustris.sagai.core.ai.local.LocalAiSidebackRouting
 import com.ilustris.sagai.core.ai.local.LocalAiSidebackStep
 import com.ilustris.sagai.core.ai.local.LocalAiTelemetry
+import com.ilustris.sagai.core.ai.key.ApiUsageTracker
+import com.ilustris.sagai.core.ai.key.QuotaStatusService
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -39,6 +42,11 @@ class GemmaClient
         promptService: PromptService,
         aiAuditLogDao: AIAuditLogDao,
         ageVerificationService: AgeVerificationService,
+        userApiKeyStore: UserApiKeyStore,
+        quotaStatusService: QuotaStatusService,
+        modelCatalog: ModelCatalog,
+        apiUsageTracker: ApiUsageTracker,
+        modelFallbackNotifier: ModelFallbackNotifier,
         @PublishedApi
         internal val localAiExecutor: LocalAiExecutor,
         @PublishedApi
@@ -49,10 +57,13 @@ class GemmaClient
             ageVerificationService,
             aiAuditLogDao,
             geminiApiClient,
+            userApiKeyStore,
+            quotaStatusService,
+            modelCatalog,
+            apiUsageTracker,
+            modelFallbackNotifier,
         ) {
         companion object {
-            const val CORE_FLAG = "SAGA_CORE"
-
             /** @see GeminiGenerationPolicy.lastGenerateFailure */
             val lastGenerateFailure: String?
                 get() = GeminiGenerationPolicy.lastGenerateFailure
@@ -77,7 +88,6 @@ class GemmaClient
             requireTranslation: Boolean = true,
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
-            useCore: Boolean = false,
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
             aiStats: AIStats? = null,
             blueprintKey: String? = null,
@@ -101,12 +111,14 @@ class GemmaClient
                 val params =
                     prepared.toSyncParams(
                         model = modelName(requirement),
-                        thinkingLevel = thinkingLevel(requirement),
+                        thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
                         requirement = requirement,
-                        useCore = useCore,
                         logEnabled = logEnabled,
                         references = references,
                         temperatureRandomness = temperatureRandomness,
+                        onGuardrailBlock = {
+                            sideEffectService.emit(SideEffect.GuardrailBlock(it.status))
+                        },
                     )
                 executeSyncGenerationWithLocalFallback(
                     params = params,
@@ -123,7 +135,6 @@ class GemmaClient
             requireTranslation: Boolean = true,
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
-            useCore: Boolean = false,
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
             logEnabled: Boolean = true,
         ): T? =
@@ -141,12 +152,14 @@ class GemmaClient
                 val params =
                     prepared.toSyncParams(
                         model = modelName(requirement),
-                        thinkingLevel = thinkingLevel(requirement),
+                        thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
                         requirement = requirement,
-                        useCore = useCore,
                         logEnabled = logEnabled,
                         references = references,
                         temperatureRandomness = temperatureRandomness,
+                        onGuardrailBlock = {
+                            sideEffectService.emit(SideEffect.GuardrailBlock(it.status))
+                        },
                     )
                 executeSyncGenerationWithLocalFallback(
                     params = params,
@@ -168,7 +181,6 @@ class GemmaClient
             requireTranslation: Boolean = true,
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
-            useCore: Boolean = false,
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
             logEnabled: Boolean = true,
         ): T? =
@@ -186,7 +198,6 @@ class GemmaClient
                 requireTranslation = requireTranslation,
                 describeOutput = describeOutput,
                 filterOutputFields = filterOutputFields,
-                useCore = useCore,
                 requirement = requirement,
                 logEnabled = logEnabled,
             )
@@ -207,19 +218,22 @@ class GemmaClient
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
             references: List<ImageReference?> = emptyList(),
             temperatureRandomness: Float = .5f,
-            useCore: Boolean = false,
             logEnabled: Boolean = true,
+            reportsQuota: Boolean = true,
         ): T? =
             withContext(Dispatchers.IO) {
                 val params =
                     prepared.toSyncParams(
                         model = modelName(requirement),
-                        thinkingLevel = thinkingLevel(requirement),
+                        thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
                         requirement = requirement,
-                        useCore = useCore,
                         logEnabled = logEnabled,
+                        reportsQuota = reportsQuota,
                         references = references,
                         temperatureRandomness = temperatureRandomness,
+                        onGuardrailBlock = {
+                            sideEffectService.emit(SideEffect.GuardrailBlock(it.status))
+                        },
                     )
                 executeSyncGenerationWithLocalFallback(
                     params = params,
@@ -243,7 +257,6 @@ class GemmaClient
             requireTranslation: Boolean = true,
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
-            useCore: Boolean = false,
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
             blueprintKey: String? = null,
             userInteraction: Boolean = false,
@@ -268,9 +281,8 @@ class GemmaClient
                     streamingGenerationFlow<T>(
                         prepared.toStreamingParams(
                             model = modelName(requirement),
-                            thinkingLevel = thinkingLevel(requirement),
+                            thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
                             requirement = requirement,
-                            useCore = useCore,
                             logEnabled = logEnabled,
                             references = references,
                             temperatureRandomness = temperatureRandomness,
@@ -289,7 +301,6 @@ class GemmaClient
             requireTranslation: Boolean = true,
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
-            useCore: Boolean = false,
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
             userInteraction: Boolean = false,
             logEnabled: Boolean = true,
@@ -308,9 +319,8 @@ class GemmaClient
                     streamingGenerationFlow<T>(
                         prepared.toStreamingParams(
                             model = modelName(requirement),
-                            thinkingLevel = thinkingLevel(requirement),
+                            thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
                             requirement = requirement,
-                            useCore = useCore,
                             logEnabled = logEnabled,
                             references = references,
                             temperatureRandomness = temperatureRandomness,
@@ -417,5 +427,3 @@ class GemmaClient
             }
         }
     }
-
-const val KEY_FLAG = "FIREBASE_KEY"

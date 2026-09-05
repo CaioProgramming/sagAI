@@ -16,6 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.features.premium.ui.billingErrorCopy
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
@@ -52,6 +54,12 @@ fun OnboardingHost(
     genre: Genre? = null,
     saga: Saga? = null,
     force: Boolean = false,
+    /**
+     * False while the app is gated on this onboarding — there is nowhere to dismiss to. The
+     * sheet then refuses the drag too, rather than sliding halfway down and springing back,
+     * which reads as the app struggling with the user.
+     */
+    dismissible: Boolean = true,
     onDismiss: () -> Unit = {},
 ) {
     val viewModel: OnboardingViewModel = hiltViewModel()
@@ -90,6 +98,7 @@ fun OnboardingHost(
                             state = uiState as OnboardingUiState.Content,
                             genre = genre,
                             isPurchaseInProgress = isPurchaseInProgress,
+                            dismissible = dismissible,
                             onDismiss = dismissOnboarding,
                         )
                     }
@@ -165,8 +174,6 @@ fun OnboardingHost(
             purchaseFlowResult = purchaseFlowResult,
             isPurchaseInProgress = isPurchaseInProgress,
             onDismiss = dismissOnboarding,
-            onConfirmDebugPurchase = viewModel::confirmDebugPurchase,
-            onCancelDebugPurchase = viewModel::cancelDebugPurchase,
             onSyncSubscription = viewModel::syncSubscription,
             onDismissPurchaseResult = viewModel::dismissPurchaseResult,
         )
@@ -180,8 +187,13 @@ private fun OnboardingSheetPresentation(
     genre: Genre?,
     isPurchaseInProgress: Boolean,
     onDismiss: () -> Unit,
+    dismissible: Boolean = true,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState =
+        rememberModalBottomSheetState(
+            skipPartiallyExpanded = true,
+            confirmValueChange = { dismissible || it != SheetValue.Hidden },
+        )
     val shape =
         RoundedCornerShape(
             topStart = CornerSize(15.dp),
@@ -190,7 +202,7 @@ private fun OnboardingSheetPresentation(
             bottomEnd = CornerSize(0.dp),
         )
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (dismissible) onDismiss() },
         sheetState = sheetState,
         shape = shape,
         dragHandle = null,
@@ -214,35 +226,15 @@ private fun OnboardingBillingOverlays(
     purchaseFlowResult: BillingService.PurchaseFlowResult,
     isPurchaseInProgress: Boolean,
     onDismiss: () -> Unit,
-    onConfirmDebugPurchase: () -> Unit,
-    onCancelDebugPurchase: () -> Unit,
     onSyncSubscription: () -> Unit,
     onDismissPurchaseResult: () -> Unit,
 ) {
     when (val result = purchaseFlowResult) {
-        is BillingService.PurchaseFlowResult.DebugFallback -> {
-            DebugBillingSimulationSheet(
-                reason = result.reason,
-                isLoading = isPurchaseInProgress,
-                onConfirm = onConfirmDebugPurchase,
-                onCancel = onCancelDebugPurchase,
-                onSyncSubscription = onSyncSubscription,
-            )
-        }
-
         is BillingService.PurchaseFlowResult.Success -> {
             BillingResultSheet(
                 title = stringResource(R.string.billing_result_success_title),
                 message = stringResource(R.string.billing_result_success_message),
                 onDismiss = onDismiss,
-            )
-        }
-
-        BillingService.PurchaseFlowResult.DebugSimulationSuccess -> {
-            BillingResultSheet(
-                title = stringResource(R.string.billing_debug_simulation_success_title),
-                message = stringResource(R.string.billing_debug_simulation_success_message),
-                onDismiss = onDismissPurchaseResult,
             )
         }
 
@@ -257,9 +249,20 @@ private fun OnboardingBillingOverlays(
         is BillingService.PurchaseFlowResult.Error -> {
             BillingResultSheet(
                 title = stringResource(R.string.billing_error_generic),
-                message = result.message,
+                message = stringResource(billingErrorCopy(result.responseCode)),
                 isLoading = isPurchaseInProgress,
                 onSyncSubscription = onSyncSubscription,
+                onDismiss = onDismissPurchaseResult,
+            )
+        }
+
+        BillingService.PurchaseFlowResult.Pending -> {
+            // Paid for with a method that clears later, a boleto or a bank transfer. Access is not
+            // granted yet and there is nothing for the buyer to do, so the one thing that matters
+            // is saying so: silence here reads as a payment that failed.
+            BillingResultSheet(
+                title = stringResource(R.string.billing_result_pending_title),
+                message = stringResource(R.string.billing_result_pending_message),
                 onDismiss = onDismissPurchaseResult,
             )
         }

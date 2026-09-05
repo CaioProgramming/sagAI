@@ -27,7 +27,6 @@ sealed class SagaMilestone(
 ) {
     data class NewEvent(
         val timeline: Timeline,
-        val emotionalMascot: String?,
         val messageText: String? = null,
         val sagaContent: SagaContent,
         val characters: List<Character> = emptyList(),

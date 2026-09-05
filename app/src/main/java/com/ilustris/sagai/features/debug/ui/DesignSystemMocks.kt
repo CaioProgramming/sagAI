@@ -137,7 +137,6 @@ object DesignSystemMocks {
                     title = "The Signal in the Static",
                     emotionalReview = "The Traveler's excitement curdles into dread the moment the static clears — this is the first real crack in their confidence all saga.",
                 ),
-            emotionalMascot = null,
             messageText = "The static clears just long enough for you to make out a single word before the signal dies again.",
             sagaContent = mockSagaContent(genre),
             characters = listOf(mockCharacter(3, "The Signal Keeper")),

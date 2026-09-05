@@ -39,6 +39,10 @@ android {
         resValue("string", "app_version", "v$computedVersionName")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Google's public test App ID — safe to ship in debug builds, never in release.
+        // See buildTypes.release below for the production override.
+        manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
     }
 
     val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -76,6 +80,7 @@ android {
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-8016530757684172~7685362941"
         }
     }
     // After bundleRelease, upload mapping.txt from:
@@ -149,7 +154,6 @@ dependencies {
     implementation(libs.coil.network)
     implementation(libs.gson)
     implementation(libs.lottie.compose)
-    implementation(libs.face.detection)
     implementation(libs.mlkit.genai.prompt)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
@@ -166,6 +170,8 @@ dependencies {
     implementation(libs.play.services.mlkit.subject.segmentation)
     implementation(libs.jakewharton.timber)
     implementation(libs.play.age.signals)
+    implementation(libs.play.services.ads)
+    implementation(libs.user.messaging.platform)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

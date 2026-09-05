@@ -67,7 +67,7 @@ fun TimelineContentViewCard(
     var expanded by remember { mutableStateOf(false) }
     val genre = remember { saga.genre }
     val event = remember { eventCard.timelineContent }
-    val emotionalMascot = remember { eventCard.mascotEmotion }
+    val emotionalMascot = remember { eventCard.overallEmotion }
 
     Column(
         modifier =
@@ -169,8 +169,7 @@ fun TimelineContentViewCard(
 
                     emotionalMascot?.let {
                         MascotEmotionFace(
-                            imageUrl = it.second,
-                            emotionalTone = it.first,
+                            emotionalTone = it,
                             animate = false,
                             modifier = Modifier.size(24.dp),
                         )
@@ -227,7 +226,7 @@ fun ExpandedTimeline(
 ) {
     val genre = remember { saga.genre }
     val event = remember { eventCard.timelineContent }
-    val emotionalMascot = remember { eventCard.mascotEmotion }
+    val emotionalMascot = remember { eventCard.overallEmotion }
     Column(
         Modifier
             .fillMaxSize()
@@ -280,8 +279,7 @@ fun ExpandedTimeline(
             emotionalMascot?.let {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
                     MascotEmotionFace(
-                        imageUrl = it.second,
-                        emotionalTone = it.first,
+                        emotionalTone = it,
                         modifier =
                             Modifier
                                 .size(100.dp),
