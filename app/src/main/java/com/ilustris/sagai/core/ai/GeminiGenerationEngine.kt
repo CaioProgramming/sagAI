@@ -734,6 +734,9 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
                     .tag(javaClass.simpleName)
                     .w("$normalizedModel is overloaded (503) — falling over to $fallback.")
             }
+            // One-shot, not persisted: this is "something unusual just happened," not a state
+            // for the UI to keep reflecting once the fallback attempt is done one way or another.
+            modelFallbackNotifier.signalFallback()
             return RetryOutcome.RetryWithModel(fallback, thinkingLevel(requirement, fallback))
         }
     }

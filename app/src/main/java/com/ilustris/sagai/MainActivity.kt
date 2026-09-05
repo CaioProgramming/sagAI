@@ -63,6 +63,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import com.google.android.gms.ads.MobileAds
 import com.google.firebase.installations.FirebaseInstallations
+import com.ilustris.sagai.core.ai.ModelFallbackNotifier
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.ai.key.ApiKeyState
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
@@ -199,6 +200,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var chatIslandService: ChatIslandService
 
+    @Inject
+    lateinit var modelFallbackNotifier: ModelFallbackNotifier
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -307,6 +311,16 @@ class MainActivity : ComponentActivity() {
                     sideEffectService.sideEffects.collect { effect ->
                         Timber.d("Received global side effect: $effect")
                         activeSideEffect = effect
+                    }
+                }
+
+                // A generation just fell over to a substitute model after Gemini's own answered
+                // 503 — not an error, so it does not go through activeSideEffect, just an ambient
+                // heads-up for why this particular reply is taking longer than usual.
+                val generationTakingLonger = stringResource(R.string.generation_taking_longer)
+                LaunchedEffect(Unit) {
+                    modelFallbackNotifier.fellBackToSubstitute.collect {
+                        sagaThemeManager.showSnackBar(generationTakingLonger)
                     }
                 }
 

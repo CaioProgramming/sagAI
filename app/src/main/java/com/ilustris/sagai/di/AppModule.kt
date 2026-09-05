@@ -337,6 +337,7 @@ object AppModule {
         quotaStatusService: QuotaStatusService,
         modelCatalog: com.ilustris.sagai.core.ai.ModelCatalog,
         apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
+        modelFallbackNotifier: com.ilustris.sagai.core.ai.ModelFallbackNotifier,
     ): GemmaClient =
         GemmaClient(
             remoteConfig = remoteConfigService,
@@ -349,6 +350,7 @@ object AppModule {
             quotaStatusService = quotaStatusService,
             modelCatalog = modelCatalog,
             apiUsageTracker = apiUsageTracker,
+            modelFallbackNotifier = modelFallbackNotifier,
             localAiExecutor = localAiExecutor,
             localAiConfigLoader = localAiConfigLoader,
         )

@@ -31,6 +31,7 @@ abstract class GeminiAIClient(
     quotaStatusService: QuotaStatusService,
     modelCatalog: ModelCatalog,
     apiUsageTracker: ApiUsageTracker,
+    modelFallbackNotifier: ModelFallbackNotifier,
 ) : AIClient(
         remoteConfigService,
         promptService,
@@ -40,6 +41,7 @@ abstract class GeminiAIClient(
         quotaStatusService,
         modelCatalog,
         apiUsageTracker,
+        modelFallbackNotifier,
     ) {
     @PublishedApi
     internal val requestMutexes = ConcurrentHashMap<String, Mutex>()

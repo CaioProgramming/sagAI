@@ -46,6 +46,7 @@ class GemmaClient
         quotaStatusService: QuotaStatusService,
         modelCatalog: ModelCatalog,
         apiUsageTracker: ApiUsageTracker,
+        modelFallbackNotifier: ModelFallbackNotifier,
         @PublishedApi
         internal val localAiExecutor: LocalAiExecutor,
         @PublishedApi
@@ -60,6 +61,7 @@ class GemmaClient
             quotaStatusService,
             modelCatalog,
             apiUsageTracker,
+            modelFallbackNotifier,
         ) {
         companion object {
             /** @see GeminiGenerationPolicy.lastGenerateFailure */

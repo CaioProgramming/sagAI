@@ -1045,6 +1045,7 @@
     </plurals>
     <string name="plans_confirm">Continue</string>
     <string name="plan_featured_badge">Recommended</string>
+    <string name="generation_taking_longer">This is taking a bit longer than usual…</string>
     <string name="billing_error_unreachable">Could not reach the store. Check your connection and try again.</string>
     <string name="billing_error_unsupported">Purchases are not available on this device or account.</string>
     <string name="billing_error_item_unavailable">This plan is not available right now.</string>

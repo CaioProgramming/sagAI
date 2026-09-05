@@ -41,6 +41,7 @@ class ReasoningSynthesizerService
         quotaStatusService: QuotaStatusService,
         modelCatalog: com.ilustris.sagai.core.ai.ModelCatalog,
         apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
+        modelFallbackNotifier: com.ilustris.sagai.core.ai.ModelFallbackNotifier,
         @PublishedApi internal val genreConfigService: GenreConfigService,
     ) : AIClient(
             remoteConfigService,
@@ -51,6 +52,7 @@ class ReasoningSynthesizerService
             quotaStatusService,
             modelCatalog,
             apiUsageTracker,
+            modelFallbackNotifier,
         ) {
         /**
          * Holds the screen while [sourceFlow] runs, with lines written for this request.

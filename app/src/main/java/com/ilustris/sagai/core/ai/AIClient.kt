@@ -55,6 +55,7 @@ abstract class AIClient(
     @PublishedApi internal val quotaStatusService: QuotaStatusService,
     @PublishedApi internal val modelCatalog: ModelCatalog,
     @PublishedApi internal val apiUsageTracker: ApiUsageTracker,
+    @PublishedApi internal val modelFallbackNotifier: ModelFallbackNotifier,
 ) {
     fun getLanguage(requireTranslation: Boolean = true): String {
         val locale = if (requireTranslation) Locale.getDefault() else Locale.US
