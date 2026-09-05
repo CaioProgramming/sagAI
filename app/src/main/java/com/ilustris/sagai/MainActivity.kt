@@ -745,65 +745,70 @@ class MainActivity : ComponentActivity() {
                         if (activeSideEffect is SideEffect.GuardrailBlock) {
                             val effect = activeSideEffect as SideEffect.GuardrailBlock
                             val sheetState = rememberModalBottomSheetState()
-                            ModalBottomSheet(
-                                onDismissRequest = { activeSideEffect = null },
-                                sheetState = sheetState,
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                                dragHandle = {
-                                    BottomSheetDefaults.DragHandle(
-                                        color =
-                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                                alpha = 0.4f,
-                                            ),
-                                    )
-                                },
-                            ) {
-                                Column(
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(24.dp)
-                                            .padding(bottom = 32.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
+                            // Forced to the neutral palette, not the ambient saga genre: this is a
+                            // technical safety notice, and reading as plain/serious regardless of
+                            // whatever genre the user was immersed in is the point.
+                            SagAITheme(null) {
+                                ModalBottomSheet(
+                                    onDismissRequest = { activeSideEffect = null },
+                                    sheetState = sheetState,
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                    dragHandle = {
+                                        BottomSheetDefaults.DragHandle(
+                                            color =
+                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                    alpha = 0.4f,
+                                                ),
+                                        )
+                                    },
                                 ) {
-                                    Icon(
-                                        painter = painterResource(effect.status.iconRes),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(48.dp),
-                                        tint = effect.status.color(MaterialTheme.colorScheme),
-                                    )
-
-                                    Spacer(modifier = Modifier.size(16.dp))
-
-                                    effect.status.titleRes?.let {
-                                        Text(
-                                            text = stringResource(it),
-                                            style = MaterialTheme.typography.headlineSmall,
-                                            fontWeight = FontWeight.ExtraBold,
-                                            textAlign = TextAlign.Center,
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.size(8.dp))
-
-                                    effect.status.messageRes?.let {
-                                        Text(
-                                            text = stringResource(it),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            textAlign = TextAlign.Center,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.size(32.dp))
-
-                                    Button(
-                                        onClick = { activeSideEffect = null },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(16.dp),
+                                    Column(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(24.dp)
+                                                .padding(bottom = 32.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
                                     ) {
-                                        Text(stringResource(R.string.guardrail_dismiss))
+                                        Icon(
+                                            painter = painterResource(effect.status.iconRes),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(48.dp),
+                                            tint = effect.status.color(MaterialTheme.colorScheme),
+                                        )
+
+                                        Spacer(modifier = Modifier.size(16.dp))
+
+                                        effect.status.titleRes?.let {
+                                            Text(
+                                                text = stringResource(it),
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                textAlign = TextAlign.Center,
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.size(8.dp))
+
+                                        effect.status.messageRes?.let {
+                                            Text(
+                                                text = stringResource(it),
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                textAlign = TextAlign.Center,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.size(32.dp))
+
+                                        Button(
+                                            onClick = { activeSideEffect = null },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(16.dp),
+                                        ) {
+                                            Text(stringResource(R.string.guardrail_dismiss))
+                                        }
                                     }
                                 }
                             }

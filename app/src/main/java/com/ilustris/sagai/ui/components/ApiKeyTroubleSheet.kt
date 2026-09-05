@@ -37,6 +37,7 @@ import com.ilustris.sagai.core.ai.key.ApiKeyFailure
 import com.ilustris.sagai.core.ai.key.ApiKeyState
 import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusViewModel
+import com.ilustris.sagai.ui.theme.SagAITheme
 import java.util.Date
 
 /**
@@ -94,92 +95,97 @@ fun ApiKeyTroubleSheet(
             dailyBlock?.until?.let { DateFormat.getTimeFormat(context).format(Date(it)) }
         }
 
-    ModalBottomSheet(
-        onDismissRequest = { dismissedFor = conditionKey },
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-            )
-        },
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .padding(bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    // Forced to the neutral palette, not the ambient saga genre: this is a technical safety
+    // notice, and reading as plain/serious regardless of whatever genre the user was immersed
+    // in is the point — same reasoning as the guardrail sheet in MainActivity.
+    SagAITheme(null) {
+        ModalBottomSheet(
+            onDismissRequest = { dismissedFor = conditionKey },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                )
+            },
         ) {
-            Text(
-                text = stringResource(failure.titleRes),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-            )
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(failure.titleRes),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                )
 
-            Spacer(Modifier.size(8.dp))
+                Spacer(Modifier.size(8.dp))
 
-            Text(
-                text =
-                    if (resetTime != null) {
-                        stringResource(failure.messageRes, resetTime)
-                    } else {
-                        stringResource(failure.messageRes)
+                Text(
+                    text =
+                        if (resetTime != null) {
+                            stringResource(failure.messageRes, resetTime)
+                        } else {
+                            stringResource(failure.messageRes)
+                        },
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Spacer(Modifier.size(8.dp))
+
+                TextButton(
+                    onClick = {
+                        // Quota sends you to your own numbers; a rejected key sends you to what a
+                        // key is and how to make another. Same slot, different question being asked.
+                        val url =
+                            if (failure.requiresNewKey) {
+                                AI_STUDIO_DOCS_URL
+                            } else {
+                                AI_STUDIO_RATE_LIMIT_URL
+                            }
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                     },
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+                ) {
+                    Text(
+                        stringResource(
+                            if (failure.requiresNewKey) {
+                                R.string.api_key_docs
+                            } else {
+                                R.string.api_key_learn_more
+                            },
+                        ),
+                    )
+                }
 
-            Spacer(Modifier.size(8.dp))
+                Spacer(Modifier.size(16.dp))
 
-            TextButton(
-                onClick = {
-                    // Quota sends you to your own numbers; a rejected key sends you to what a key
-                    // is and how to make another. Same slot, different question being asked.
-                    val url =
-                        if (failure.requiresNewKey) {
-                            AI_STUDIO_DOCS_URL
-                        } else {
-                            AI_STUDIO_RATE_LIMIT_URL
-                        }
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                },
-            ) {
-                Text(
-                    stringResource(
-                        if (failure.requiresNewKey) {
-                            R.string.api_key_docs
-                        } else {
-                            R.string.api_key_learn_more
-                        },
-                    ),
-                )
-            }
-
-            Spacer(Modifier.size(16.dp))
-
-            Button(
-                onClick = {
-                    dismissedFor = conditionKey
-                    // A spent quota fixes itself; only a rejected key needs the user to act.
-                    if (failure.requiresNewKey) onOpenSettings()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Text(
-                    stringResource(
-                        if (failure.requiresNewKey) {
-                            R.string.api_key_settings_replace
-                        } else {
-                            R.string.guardrail_dismiss
-                        },
-                    ),
-                )
+                Button(
+                    onClick = {
+                        dismissedFor = conditionKey
+                        // A spent quota fixes itself; only a rejected key needs the user to act.
+                        if (failure.requiresNewKey) onOpenSettings()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Text(
+                        stringResource(
+                            if (failure.requiresNewKey) {
+                                R.string.api_key_settings_replace
+                            } else {
+                                R.string.guardrail_dismiss
+                            },
+                        ),
+                    )
+                }
             }
         }
     }

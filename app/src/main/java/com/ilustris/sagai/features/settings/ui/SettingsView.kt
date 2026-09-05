@@ -78,6 +78,7 @@ import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -196,7 +197,7 @@ fun SettingsView(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         modifier =
                             Modifier
-                                .padding(16.dp)
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
                                 .reactiveShimmer(true)
                                 .gradientFill(Brush.horizontalGradient(holographicGradient)),
                     ) {
@@ -210,15 +211,44 @@ fun SettingsView(
             }
 
             item {
+                PreferencesContainer(
+                    stringResource(R.string.api_settings_entry_title),
+                    stringResource(R.string.api_settings_entry_subtitle),
+                    true,
+                    showSwitch = false,
+                    onClickSwitch = { navToApiSettings() },
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                MaterialTheme.shapes.medium,
+                            ).padding(8.dp),
+                )
+            }
+
+            item {
+                Text(
+                    text = stringResource(R.string.sagas_storage),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 16.dp)
+                            .alpha(.5f),
+                )
+            }
+
+            item {
                 Column(
                     modifier =
                         Modifier
-                            .padding(16.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                             .fillMaxWidth()
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
-                                RoundedCornerShape(15.dp),
-                            ).padding(12.dp),
+                                MaterialTheme.shapes.medium,
+                            ).padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.memory_usage),
@@ -246,75 +276,62 @@ fun SettingsView(
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp),
                     )
-                }
-            }
 
-            if (breakdown.cacheSize > 1) {
-                item {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                            Modifier
-                                .padding(16.dp)
-                                .clip(RoundedCornerShape(15.dp))
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceContainer,
-                                    RoundedCornerShape(15.dp),
-                                ).clickable {
-                                    viewModel.clearCache()
-                                }.padding(16.dp),
-                    ) {
-                        Text(
-                            stringResource(R.string.clear_cache),
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f),
+                    if (breakdown.cacheSize > 1) {
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth().height(1.dp),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                            thickness = 1.dp,
                         )
-
-                        Text(
-                            breakdown.cacheSize.formatFileSize(),
-                            style =
-                                MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.Normal,
-                                ),
-                            modifier = Modifier.alpha(.5f),
-                        )
-
-                        Icon(
-                            painterResource(R.drawable.round_arrow_forward_ios_24),
-                            null,
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier =
                                 Modifier
-                                    .alpha(.5f)
-                                    .size(24.dp)
-                                    .padding(8.dp),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
+                                    .clickable {
+                                        viewModel.clearCache()
+                                    }.padding(16.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.clear_cache),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f),
+                            )
+
+                            Text(
+                                breakdown.cacheSize.formatFileSize(),
+                                style =
+                                    MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.Normal,
+                                    ),
+                                modifier = Modifier.alpha(.5f),
+                            )
+
+                            Icon(
+                                painterResource(R.drawable.round_arrow_forward_ios_24),
+                                null,
+                                modifier =
+                                    Modifier
+                                        .alpha(.5f)
+                                        .size(24.dp)
+                                        .padding(8.dp),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
                     }
                 }
             }
 
             if (storageInfo.isNotEmpty()) {
                 item {
-                    Text(
-                        text = stringResource(R.string.sagas_storage),
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 16.dp)
-                                .alpha(.5f),
-                    )
-                }
-
-                item {
                     Column(
                         modifier =
                             Modifier
-                                .padding(16.dp)
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
                                 .fillMaxWidth()
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
-                                    RoundedCornerShape(15.dp),
+                                    MaterialTheme.shapes.medium,
                                 ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -325,15 +342,17 @@ fun SettingsView(
                             ) {
                                 val saga = remember(info.data.id) { info.data }
 
-                                AvatarTimelineIcon(
-                                    saga.icon,
-                                    false,
-                                    saga.genre,
-                                    placeHolderChar = saga.title.first().uppercase(),
-                                    borderWidth = 1.dp,
-                                    borderColor = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.size(32.dp),
-                                )
+                                SagAITheme(saga.genre) {
+                                    AvatarTimelineIcon(
+                                        saga.icon,
+                                        false,
+                                        saga.genre,
+                                        placeHolderChar = saga.title.first().uppercase(),
+                                        borderWidth = 1.dp,
+                                        borderColor = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.size(32.dp),
+                                    )
+                                }
 
                                 Column(
                                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -394,10 +413,10 @@ fun SettingsView(
             item {
                 Column(
                     Modifier
-                        .padding(16.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
-                            RoundedCornerShape(15.dp),
+                            MaterialTheme.shapes.medium,
                         ).padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -433,7 +452,6 @@ fun SettingsView(
                     PreferencesContainer(
                         stringResource(R.string.backup),
                         stringResource(R.string.storage_permission_description),
-                        modifier = Modifier.padding(16.dp),
                         isActivated = backupEnabled,
                         onClickSwitch = {
                             if (backupEnabled) {
@@ -452,7 +470,6 @@ fun SettingsView(
                             },
                             modifier =
                                 Modifier
-                                    .padding(16.dp)
                                     .align(Alignment.CenterHorizontally),
                             colors = ButtonDefaults.textButtonColors(),
                         ) {
@@ -478,7 +495,6 @@ fun SettingsView(
                         Column(
                             modifier =
                                 Modifier
-                                    .padding(16.dp)
                                     .fillMaxWidth()
                                     .padding(horizontal = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -513,7 +529,6 @@ fun SettingsView(
                         onClickSwitch = {
                             viewModel.setSmartSuggestionsEnabled(!it)
                         },
-                        modifier = Modifier.padding(16.dp),
                     )
 
                     HorizontalDivider(
@@ -529,7 +544,6 @@ fun SettingsView(
                         onClickSwitch = {
                             viewModel.setMessageEffectsEnabled(!it)
                         },
-                        modifier = Modifier.padding(16.dp),
                     )
 
                     HorizontalDivider(
@@ -545,7 +559,6 @@ fun SettingsView(
                         onClickSwitch = {
                             viewModel.setShowTutorials(!it)
                         },
-                        modifier = Modifier.padding(16.dp),
                     )
 
                     HorizontalDivider(
@@ -561,7 +574,6 @@ fun SettingsView(
                         onClickSwitch = {
                             viewModel.setMusicEnabled(!it)
                         },
-                        modifier = Modifier.padding(16.dp),
                     )
                 }
             }
@@ -579,29 +591,12 @@ fun SettingsView(
             }
 
             item {
-                PreferencesContainer(
-                    stringResource(R.string.api_settings_entry_title),
-                    stringResource(R.string.api_settings_entry_subtitle),
-                    true,
-                    showSwitch = false,
-                    onClickSwitch = { navToApiSettings() },
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .background(
-                                MaterialTheme.colorScheme.surfaceContainer,
-                                RoundedCornerShape(15.dp),
-                            ).padding(8.dp),
-                )
-            }
-
-            item {
                 PremiumCard(
                     isUserPro = isUserPro,
                     onClick = {
                         showPremiumSheet = true
                     },
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
 
@@ -616,112 +611,117 @@ fun SettingsView(
                     },
                     modifier =
                         Modifier
-                            .padding(16.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
-                                RoundedCornerShape(15.dp),
+                                MaterialTheme.shapes.medium,
                             ).padding(8.dp),
                 )
             }
 
             item {
-                Button(
-                    onClick = { viewModel.clearPreferences() },
+                Column(
                     modifier =
                         Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                        ),
-                    shape = RoundedCornerShape(15.dp),
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .fillMaxWidth()
+                            .background(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                MaterialTheme.shapes.medium,
+                            ).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Column(
+                    Button(
+                        onClick = { viewModel.clearPreferences() },
                         modifier =
                             Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
+                                .fillMaxWidth(),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Column(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.clear_preferences),
+                                textAlign = TextAlign.Start,
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            Text(
+                                stringResource(R.string.clear_preferences_explanation),
+                                textAlign = TextAlign.Start,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.alpha(0.6f),
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            exportLauncher.launch("sagai_database_backup.db")
+                        },
+                        colors =
+                            ButtonDefaults.buttonColors().copy(
+                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = .2f),
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            stringResource(R.string.clear_preferences),
+                            stringResource(R.string.export_database_button),
                             textAlign = TextAlign.Start,
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                        Text(
-                            stringResource(R.string.clear_preferences_explanation),
-                            textAlign = TextAlign.Start,
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.alpha(0.6f),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
                         )
                     }
-                }
-            }
 
-            item {
-                Button(
-                    onClick = {
-                        exportLauncher.launch("sagai_database_backup.db")
-                    },
-                    colors =
-                        ButtonDefaults.buttonColors().copy(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = .2f),
-                            contentColor = MaterialTheme.colorScheme.primary.darker(.3f),
-                        ),
-                    shape = RoundedCornerShape(15.dp),
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                ) {
-                    Text(
-                        stringResource(R.string.export_database_button),
-                        textAlign = TextAlign.Start,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                    )
-                }
-            }
+                    Button(
+                        onClick = {
+                            importLauncher.launch(PermissionService.SQLITE_MIME_TYPES)
+                        },
+                        colors = ButtonDefaults.textButtonColors(),
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            stringResource(R.string.import_database_button),
+                            textAlign = TextAlign.Start,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                        )
+                    }
 
-            item {
-                Button(
-                    onClick = {
-                        importLauncher.launch(PermissionService.SQLITE_MIME_TYPES)
-                    },
-                    colors = ButtonDefaults.textButtonColors(),
-                    shape = RoundedCornerShape(15.dp),
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                ) {
-                    Text(
-                        stringResource(R.string.import_database_button),
-                        textAlign = TextAlign.Start,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                    )
-                }
-            }
-
-            item {
-                Button(
-                    onClick = { showClearDialog = true },
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = MaterialColor.RedA200,
-                        ),
-                    shape = RoundedCornerShape(15.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.clear_data_button),
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                        textAlign = TextAlign.Start,
-                    )
+                    Button(
+                        onClick = { showClearDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialColor.RedA200,
+                            ),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Text(
+                            stringResource(R.string.clear_data_button),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                            textAlign = TextAlign.Start,
+                        )
+                    }
                 }
             }
 
@@ -732,19 +732,18 @@ fun SettingsView(
                         style = MaterialTheme.typography.titleSmall,
                         modifier =
                             Modifier
-                                .padding(16.dp)
-                                .alpha(.5f)
-                                .padding(8.dp),
+                                .padding(horizontal = 16.dp)
+                                .alpha(.5f),
                     )
                 }
                 item {
                     Column(
                         Modifier
-                            .padding(16.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                             .fillMaxWidth()
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
-                                RoundedCornerShape(15.dp),
+                                MaterialTheme.shapes.medium,
                             ).padding(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -812,6 +811,16 @@ fun SettingsView(
             }
 
             item {
+                Text(
+                    stringResource(R.string.app_version),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth().alpha(.4f),
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Light,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+
+            item {
                 Spacer(Modifier.size(50.dp))
             }
         }
@@ -871,20 +880,20 @@ private fun ProfileCard(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
             Modifier
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
                 .fillMaxWidth()
-                .dropShadow(RoundedCornerShape(15.dp)) {
+                .dropShadow(MaterialTheme.shapes.medium) {
                     this.brush = brush
                     this.radius = 15f
                     this.spread = 1f
                 }.border(
                     1.dp,
                     Brush.verticalGradient(holographicGradient),
-                    RoundedCornerShape(15.dp),
-                ).clip(RoundedCornerShape(15.dp))
+                    MaterialTheme.shapes.medium,
+                ).clip(MaterialTheme.shapes.medium)
                 .background(
                     MaterialTheme.colorScheme.surfaceContainer,
-                    RoundedCornerShape(15.dp),
+                    MaterialTheme.shapes.medium,
                 ).clickable {
                     navToPlayerProfile()
                 }.padding(16.dp),

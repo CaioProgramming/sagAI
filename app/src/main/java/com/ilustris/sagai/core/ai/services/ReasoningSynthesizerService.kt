@@ -184,7 +184,7 @@ class ReasoningSynthesizerService
                                 "language" to getLanguage(true),
                                 "aesthetic" to aesthetic,
                             ),
-                        logEnabled = false,
+                        logEnabled = true,
                     )
 
                 val generated =
@@ -192,7 +192,7 @@ class ReasoningSynthesizerService
                         promptSplit = promptSplit,
                         requirement = ModelRequirement.MINIMAL,
                         temperatureRandomness = 1f,
-                        logEnabled = false,
+                        logEnabled = true,
                         reportsQuota = false,
                     )
 
