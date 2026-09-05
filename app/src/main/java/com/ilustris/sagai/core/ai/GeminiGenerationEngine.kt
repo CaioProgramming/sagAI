@@ -258,6 +258,18 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                         Timber.e("generate: Failed prompt")
                         Timber.w(params.promptForFailureLog)
                     }
+                    // Every other Stop cause returns null, same as always — a lot of callers rely
+                    // on that to mean "didn't work" without a crash. GuardrailsException is the one
+                    // exception here that carries something a caller cannot get any other way (a
+                    // SafeGuard status) and that some callers specifically watch for downstream
+                    // (ChatGenerationService deletes the offending message and restores its text to
+                    // the input on exactly this type). Collapsing it into null threw that structured
+                    // reason away before it ever left this function — the caller saw only "no
+                    // result" and, unable to tell why, wrapped it in a plain IllegalStateException
+                    // that no such check could ever match. The streaming path across this same file
+                    // already rethrows on Stop for this reason; this brings the sync path in line
+                    // with it for this one case rather than for all of them.
+                    if (e is GuardrailsException) throw e
                     return null
                 }
             }

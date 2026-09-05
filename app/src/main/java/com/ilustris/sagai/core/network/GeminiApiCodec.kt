@@ -11,6 +11,7 @@ import com.ilustris.sagai.core.ai.model.GeminiErrorDetail
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
 import com.ilustris.sagai.core.ai.model.GeminiInlineData
 import com.ilustris.sagai.core.ai.model.GeminiPart
+import com.ilustris.sagai.core.ai.model.GeminiPromptFeedback
 import com.ilustris.sagai.core.ai.model.GeminiQuotaViolation
 import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
@@ -107,8 +108,14 @@ object GeminiApiCodec {
             candidates = root.optJsonArray("candidates")?.let(::decodeCandidates),
             usageMetadata = root.optJsonObject("usageMetadata")?.let(::decodeUsageMetadata),
             error = root.optJsonObject("error")?.let(::decodeError),
+            promptFeedback = root.optJsonObject("promptFeedback")?.let(::decodePromptFeedback),
         )
     }
+
+    private fun decodePromptFeedback(obj: JsonObject): GeminiPromptFeedback =
+        GeminiPromptFeedback(
+            blockReason = obj.optString("blockReason"),
+        )
 
     fun decodeCountTokensResponse(json: String): GeminiCountTokensResponse {
         if (json.isBlank()) {
