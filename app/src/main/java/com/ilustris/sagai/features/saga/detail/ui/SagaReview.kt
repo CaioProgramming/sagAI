@@ -476,6 +476,7 @@ private fun TerminalReviewContainer(
             modifier = Modifier.fillMaxSize(),
         ) { pageIndex ->
             Box(
+                Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 val isLoadingPage = pageIndex >= pages.size
@@ -486,8 +487,15 @@ private fun TerminalReviewContainer(
                     // supplies misconvergence and roll, and a glitch pass on top of it fights the
                     // CRT instead of adding to it — two different displays claiming the same
                     // screen. The tube is the terminal's one screen treatment.
+                    // Top-inset clears TerminalProgress below, which sits at statusBar + 56dp plus
+                    // its own line height — otherwise a page whose content grows tall renders
+                    // straight underneath it.
                     pages.getOrNull(pageIndex)?.Show(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .statusBarsPadding()
+                                .padding(top = 88.dp),
                         canAnimate = true,
                     ) {
                         coroutineScope.launch { handleAction(it) }

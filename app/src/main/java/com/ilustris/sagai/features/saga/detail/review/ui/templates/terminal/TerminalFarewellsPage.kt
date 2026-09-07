@@ -62,7 +62,7 @@ class TerminalFarewellsPage(
             }
         var revealedCount by remember { mutableIntStateOf(if (canAnimate) 0 else speakers.size) }
 
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
                 Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),

@@ -74,7 +74,7 @@ class TerminalEmotionScanPage(
                     ?.first
             }
 
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
                 Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),

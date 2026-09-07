@@ -85,7 +85,7 @@ class TerminalUptimePage(
                 }
             }
 
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             TerminalTypewriter(
                 lines = lines,
                 modifier = Modifier.padding(24.dp),

@@ -62,7 +62,7 @@ class TerminalSummaryPage(
         // Material affordance is the one thing that breaks the fiction here.
         val selection = remember(accent) { terminalSelection(accent) }
 
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
                 Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
