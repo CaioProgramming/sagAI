@@ -304,6 +304,14 @@ class GemmaClient
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
             userInteraction: Boolean = false,
             logEnabled: Boolean = true,
+            // Escape hatch for a call site that needs a specific tier's model regardless of what
+            // this call's own requirement resolves to — by reference, same as the 503 fallback's
+            // fallbackModelName, so a later model swap on that tier (e.g. LOW moving to a new
+            // Gemma generation) follows automatically with no call-site change. Requirement still
+            // governs everything else about the request (thinking-level defaults, retry policy,
+            // quota reporting) — only which model name is sent changes, so forcing e.g. LOW's
+            // model here does not also inherit LOW's own (usually lower) thinking level.
+            forceModel: ModelRequirement? = null,
         ): Flow<StreamingState<T?>> =
             flow {
                 val prepared =
@@ -315,11 +323,12 @@ class GemmaClient
                         filterOutputFields = filterOutputFields,
                         userInteraction = userInteraction,
                     )
+                val model = forceModel?.let { modelName(it) } ?: modelName(requirement)
                 emitAll(
                     streamingGenerationFlow<T>(
                         prepared.toStreamingParams(
-                            model = modelName(requirement),
-                            thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
+                            model = model,
+                            thinkingLevel = thinkingLevel(requirement, model),
                             requirement = requirement,
                             logEnabled = logEnabled,
                             references = references,
