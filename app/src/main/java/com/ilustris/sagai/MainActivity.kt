@@ -301,8 +301,6 @@ class MainActivity : ComponentActivity() {
             }
 
             SagAITheme(genre = themeGenre) {
-                Timber.d("MainActivity: SagAITheme block")
-
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
                 val globalShellState by globalShellService.uiState.collectAsState()
