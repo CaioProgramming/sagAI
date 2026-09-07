@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.debug.ui
 import MessageStatus
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -42,10 +44,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,8 +64,11 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -69,9 +77,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.gson.GsonBuilder
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
+import com.ilustris.sagai.core.ai.model.ShaderParamsConfig
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -115,6 +125,7 @@ import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.themeVfx
 import kotlinx.coroutines.delay
+import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -147,40 +158,66 @@ fun DesignSystemPreviewView(
             fadeIn(tween(300)) togetherWith fadeOut(tween(800))
         }) {
             SagAITheme(genre = it) {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
-                ) {
-                    Column(
+                // Debug-only slider overrides for the remote shader params — lets you tune
+                // contrast/brightness/etc. live against the real rendering pipeline before
+                // committing values to Remote Config. Resets to the remote defaults whenever
+                // the genre changes or the remote config first loads for it.
+                val remoteConfig = LocalGenreVisualConfig.current
+                var shaderOverrides by remember(genre) { mutableStateOf<ShaderParamsConfig?>(null) }
+                LaunchedEffect(remoteConfig?.shaderParams, genre) {
+                    if (shaderOverrides == null) {
+                        shaderOverrides = remoteConfig?.shaderParams ?: ShaderParamsConfig()
+                    }
+                }
+                val effectiveConfig =
+                    remember(remoteConfig, shaderOverrides) {
+                        shaderOverrides?.let { overrides -> remoteConfig?.copy(shaderParams = overrides) }
+                            ?: remoteConfig
+                    }
+
+                CompositionLocalProvider(LocalGenreVisualConfig provides effectiveConfig) {
+                    Box(
                         Modifier
                             .fillMaxSize()
-                            .statusBarsPadding()
-                            .verticalScroll(rememberScrollState()),
+                            .background(MaterialTheme.colorScheme.background),
                     ) {
-                        // Genre Pager
-
-                        // Realistic Saga Header
-                        val config = LocalGenreVisualConfig.current
-                        val mockSaga =
-                            remember(genre, config) {
-                                DesignSystemMocks.mockSaga(genre, config?.imageUrl ?: "")
-                            }
-                        sagaHeaderComponent(
-                            saga = mockSaga,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(300.dp),
-                            onAction = {},
-                        )
-
                         Column(
                             Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(24.dp),
+                                .fillMaxSize()
+                                .statusBarsPadding()
+                                .verticalScroll(rememberScrollState()),
                         ) {
+                            // Genre Pager
+
+                            // Realistic Saga Header
+                            val config = LocalGenreVisualConfig.current
+                            val mockSaga =
+                                remember(genre, config) {
+                                    DesignSystemMocks.mockSaga(genre, config?.imageUrl ?: "")
+                                }
+                            val screenHeightDp = LocalConfiguration.current.screenHeightDp
+                            val headerHeight = remember(screenHeightDp) { (screenHeightDp * 0.7f).dp }
+                            sagaHeaderComponent(
+                                saga = mockSaga,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(headerHeight),
+                                onAction = {},
+                            )
+
+                            ShaderParamsTuningMenu(
+                                shaderParams = shaderOverrides ?: ShaderParamsConfig(),
+                                remoteDefaults = remoteConfig?.shaderParams,
+                                onChange = { shaderOverrides = it },
+                            )
+
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(24.dp),
+                            ) {
                             // Mini Chat Preview
                             MiniChatPreview(genre, sharedTransitionScope, animatedVisibilityScope)
 
@@ -371,6 +408,7 @@ fun DesignSystemPreviewView(
                             }
                         }
                     }
+                }
                 }
             }
         }
@@ -646,6 +684,248 @@ private fun ConfigRow(
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, style = MaterialTheme.typography.labelMedium, modifier = Modifier.alpha(0.6f))
         Text(value, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+    }
+}
+
+/**
+ * Expandable, slider-driven live editor for [ShaderParamsConfig] — every scalar Float knob that
+ * feeds the AGSL image-adjustment pipeline (see [com.ilustris.sagai.ui.theme.filters.effectForGenre]).
+ * Sliders write into [onChange], which the caller re-provides through [LocalGenreVisualConfig] so
+ * the header image above re-renders live with the tuned values. "Copiar JSON" exports the current
+ * values in the exact shape Remote Config expects for the `shaderParams` key.
+ */
+@Composable
+private fun ShaderParamsTuningMenu(
+    shaderParams: ShaderParamsConfig,
+    remoteDefaults: ShaderParamsConfig?,
+    onChange: (ShaderParamsConfig) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "AJUSTES DE IMAGEM",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                )
+                Text(
+                    "Ajuste ao vivo dos parâmetros de shaderParams (visual config)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                )
+            }
+            Icon(
+                painterResource(if (expanded) R.drawable.ic_arrow_up else R.drawable.ic_arrow_down),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+
+        AnimatedVisibility(expanded) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp),
+            ) {
+                shaderSliderGroups(shaderParams, onChange).forEach { (groupLabel, specs) ->
+                    Text(
+                        groupLabel,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                    )
+                    specs.forEach { spec -> SliderRow(spec) }
+                }
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = { onChange(remoteDefaults ?: ShaderParamsConfig()) },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Resetar")
+                    }
+                    Button(
+                        onClick = {
+                            val json = GsonBuilder().setPrettyPrinting().create().toJson(shaderParams)
+                            clipboardManager.setText(AnnotatedString(json))
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_copy),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("Copiar JSON")
+                    }
+                }
+            }
+        }
+    }
+}
+
+private data class SliderSpec(
+    val label: String,
+    val value: Float,
+    val range: ClosedFloatingPointRange<Float>,
+    val onValueChange: (Float) -> Unit,
+)
+
+/** Groups every scalar Float of [ShaderParamsConfig] into labeled sections for the tuning menu. */
+private fun shaderSliderGroups(
+    params: ShaderParamsConfig,
+    onChange: (ShaderParamsConfig) -> Unit,
+): List<Pair<String, List<SliderSpec>>> =
+    listOf(
+        "AJUSTES BÁSICOS" to
+            listOf(
+                SliderSpec("Brilho", params.brightness, -1f..1f) { onChange(params.copy(brightness = it)) },
+                SliderSpec("Contraste", params.contrast, 0f..2f) { onChange(params.copy(contrast = it)) },
+                SliderSpec("Saturação", params.saturation, 0f..2f) { onChange(params.copy(saturation = it)) },
+                SliderSpec(
+                    "Temperatura de Cor",
+                    params.colorTemperature,
+                    -1f..1f,
+                ) { onChange(params.copy(colorTemperature = it)) },
+                SliderSpec("Ponto Preto", params.blackPoint, 0f..1f) { onChange(params.copy(blackPoint = it)) },
+                SliderSpec("Ponto Branco", params.whitePoint, 0.01f..1f) { onChange(params.copy(whitePoint = it)) },
+            ),
+        "FOCO & NITIDEZ" to
+            listOf(
+                SliderSpec(
+                    "Foco Suave (Raio)",
+                    params.softFocusRadius,
+                    0f..20f,
+                ) { onChange(params.copy(softFocusRadius = it)) },
+                SliderSpec("Nitidez", params.sharpenAmount, 0f..2f) { onChange(params.copy(sharpenAmount = it)) },
+            ),
+        "VINHETA" to
+            listOf(
+                SliderSpec(
+                    "Intensidade",
+                    params.vignetteStrength,
+                    0f..1f,
+                ) { onChange(params.copy(vignetteStrength = it)) },
+                SliderSpec(
+                    "Suavidade",
+                    params.vignetteSoftness,
+                    0f..1f,
+                ) { onChange(params.copy(vignetteSoftness = it)) },
+            ),
+        "EFEITOS" to
+            listOf(
+                SliderSpec("Grão", params.grainIntensity, 0f..1f) { onChange(params.copy(grainIntensity = it)) },
+                SliderSpec(
+                    "Bloom · Limiar",
+                    params.bloomThreshold,
+                    0f..1f,
+                ) { onChange(params.copy(bloomThreshold = it)) },
+                SliderSpec(
+                    "Bloom · Intensidade",
+                    params.bloomIntensity,
+                    0f..2f,
+                ) { onChange(params.copy(bloomIntensity = it)) },
+                SliderSpec(
+                    "Bloom · Raio",
+                    params.bloomRadius,
+                    0f..20f,
+                ) { onChange(params.copy(bloomRadius = it)) },
+                SliderSpec(
+                    "Aberração Cromática",
+                    params.chromaticAberration,
+                    0f..0.3f,
+                ) { onChange(params.copy(chromaticAberration = it)) },
+                SliderSpec(
+                    "Scanline · Intensidade",
+                    params.scanlineIntensity,
+                    0f..1f,
+                ) { onChange(params.copy(scanlineIntensity = it)) },
+                SliderSpec(
+                    "Scanline · Densidade",
+                    params.scanlineDensity,
+                    0f..10f,
+                ) { onChange(params.copy(scanlineDensity = it)) },
+                SliderSpec(
+                    "Posterização",
+                    params.posterizeLevels,
+                    0f..16f,
+                ) { onChange(params.copy(posterizeLevels = it)) },
+                SliderSpec(
+                    "Halftone",
+                    params.halftoneScale,
+                    0f..50f,
+                ) { onChange(params.copy(halftoneScale = it)) },
+                SliderSpec(
+                    "Pixelização",
+                    params.pixelationBlockSize,
+                    0f..50f,
+                ) { onChange(params.copy(pixelationBlockSize = it)) },
+                SliderSpec(
+                    "Força do Tint",
+                    params.tintStrength,
+                    0f..1f,
+                ) { onChange(params.copy(tintStrength = it)) },
+                SliderSpec(
+                    "Energia de Contorno",
+                    params.rimEnergyIntensity,
+                    0f..2f,
+                ) { onChange(params.copy(rimEnergyIntensity = it)) },
+                SliderSpec(
+                    "Largura do Contorno",
+                    params.rimEnergyWidth,
+                    0f..50f,
+                ) { onChange(params.copy(rimEnergyWidth = it)) },
+                SliderSpec(
+                    "Névoa · Intensidade",
+                    params.wispIntensity,
+                    0f..1f,
+                ) { onChange(params.copy(wispIntensity = it)) },
+                SliderSpec(
+                    "Névoa · Velocidade",
+                    params.wispSpeed,
+                    0f..10f,
+                ) { onChange(params.copy(wispSpeed = it)) },
+            ),
+    )
+
+@Composable
+private fun SliderRow(spec: SliderSpec) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(spec.label, style = MaterialTheme.typography.labelSmall)
+            Text(
+                String.format(Locale.US, "%.3f", spec.value),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            )
+        }
+        Slider(
+            value = spec.value,
+            onValueChange = spec.onValueChange,
+            valueRange = spec.range,
+            modifier = Modifier.fillMaxWidth().height(28.dp),
+        )
     }
 }
 
