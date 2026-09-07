@@ -124,6 +124,7 @@ object ChatPrompts {
             // every message in the history.
             "viewed",
         )
+
     /**
      * Applied to the *output* schema only, never to the context we send in.
      *
@@ -222,9 +223,6 @@ object ChatPrompts {
                 if (narrativeContinuity.isNotEmpty()) {
                     put("narrativeContinuity", narrativeContinuity)
                 }
-                // No globalWorldState here on purpose: buildChatContinuityContext already emits it,
-                // and sagaContext carries the same string as `worldState`. Putting it a third time
-                // just paid for the same paragraph twice more.
 
                 put(
                     "storyCharacters",
@@ -275,13 +273,16 @@ object ChatPrompts {
                 if (mentionedWikis.isNotEmpty()) {
                     put("mentionedWikis", mentionedWikis.normalizetoAIItems())
                 }
+
+                sceneSummary?.charactersPresent?.let {
+                    val sagaCharacters = it.map { saga.findCharacter(it)?.data }
+                    put("charactersPresent", sagaCharacters.normalizetoAIItems(ChatPrompts.CHARACTER_EXCLUSIONS))
+                }
             }
 
         val argsMap =
             mutableMapOf(
                 "worldContext" to worldContext,
-                // Excluding the turn we're answering: it's sent whole as `latestMessage`, and
-                // conversationHistory used to end with a byte-identical copy of it.
                 "conversationHistory" to
                     conversationHistory(updateLimit, saga, excludingMessageId = message.id),
                 "latestMessage" to message.toAINormalize(messageExclusions),
@@ -349,7 +350,12 @@ object ChatPrompts {
 
         // Whoever just spoke doesn't react to themselves, so they don't need a stake block either.
         val reactingCast =
-            present.filterNot { it.data.fullName().trim().lowercase() in speakerNames }
+            present.filterNot {
+                it.data
+                    .fullName()
+                    .trim()
+                    .lowercase() in speakerNames
+            }
 
         val castWithStake =
             reactingCast.joinToString("\n") { character ->
