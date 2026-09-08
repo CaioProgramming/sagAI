@@ -74,6 +74,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -82,6 +83,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.gson.JsonElement
+import com.google.gson.JsonParser
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.database.model.AIAuditLog
@@ -922,55 +925,44 @@ fun AuditLogSectionCard(
     }
 }
 
+private val JsonKeyColor = Color(0xFF9CDCFE) // VSCode-like light blue for keys
+private val JsonStringColor = Color(0xFFCE9178) // VSCode-like orange for strings
+private val JsonNumberColor = Color(0xFFB5CEA8) // VSCode-like green for numbers
+private val JsonKeywordColor = Color(0xFF569CD6) // VSCode-like blue for booleans/null
+private val JsonPunctuationColor = Color.White
+
+/**
+ * Labels inside a flattened, non-JSON blob. Two conventions show up nested inside these audit
+ * logs: Kotlin's own `Map.toString()` (`key=value, key2=value2`, used one level up for a raw
+ * `Map<String, Any>` like `worldContext`) and this app's own `toAINormalize()` field dump
+ * (`key: value`, newline/comma separated). Capturing which separator matched lets the renderer
+ * treat `=` as an outer entry and `:` as a field nested inside it.
+ *
+ * The third leading alternative (`(?<==)`) exists because `toAINormalize()`'s first field never
+ * gets a comma/newline before it — the nested value starts touching the `=` directly, e.g.
+ * `sagaContext=description: ...`. Without it, only the entry label (`sagaContext`) would be
+ * recognized and `description` would be swallowed into its value text.
+ */
+private val blobLabelRegex = "(?:^|[,\\n]\\s*|(?<==)\\s*)([A-Za-z][\\w]*(?:\\[\\d+\\])?)\\s*([:=])".toRegex()
+
+private fun looksLikeJson(value: String): Boolean {
+    val trimmed = value.trim()
+    return (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+        (trimmed.startsWith("[") && trimmed.endsWith("]"))
+}
+
 @Composable
 fun JsonCodeBlock(jsonString: String) {
     val annotatedString =
-        buildAnnotatedString {
-            val keyRegex = "\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"\\s*:".toRegex()
-            val stringRegex = "\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"".toRegex()
-            val numberRegex = "\\b(-?\\d+(\\.\\d+)?)\\b".toRegex()
-            val booleanRegex = "\\b(true|false|null)\\b".toRegex()
-
-            var lastIndex = 0
-
-            // Combine all candidates and sort by match start
-            val candidates =
-                (
-                    keyRegex.findAll(jsonString) +
-                        stringRegex.findAll(jsonString) +
-                        numberRegex.findAll(jsonString) +
-                        booleanRegex.findAll(jsonString)
-                ).sortedBy { it.range.first }
-
-            candidates.forEach { match ->
-                if (match.range.first >= lastIndex) {
-                    // Append text before match
-                    append(jsonString.substring(lastIndex, match.range.first))
-
-                    val style =
-                        when {
-                            keyRegex.matches(match.value) -> SpanStyle(color = Color(0xFF9CDCFE))
-
-                            // VSCode-like Light Blue for keys
-                            stringRegex.matches(match.value) -> SpanStyle(color = Color(0xFFCE9178))
-
-                            // VSCode-like Orange/Red for strings
-                            numberRegex.matches(match.value) -> SpanStyle(color = Color(0xFFB5CEA8))
-
-                            // VSCode-like Green for numbers
-                            booleanRegex.matches(match.value) -> SpanStyle(color = Color(0xFF569CD6))
-
-                            // VSCode-like Blue for booleans/null
-                            else -> SpanStyle(color = Color.White)
-                        }
-
-                    withStyle(style) {
-                        append(match.value)
-                    }
-                    lastIndex = match.range.last + 1
+        remember(jsonString) {
+            val parsed = runCatching { JsonParser.parseString(jsonString) }.getOrNull()
+            buildAnnotatedString {
+                if (parsed != null && (parsed.isJsonObject || parsed.isJsonArray)) {
+                    appendJsonElement(parsed, indent = 0)
+                } else {
+                    appendFlatHighlightedText(jsonString)
                 }
             }
-            append(jsonString.substring(lastIndex))
         }
 
     Text(
@@ -988,6 +980,179 @@ fun JsonCodeBlock(jsonString: String) {
                     shape = MaterialTheme.shapes.small,
                 ).padding(12.dp),
     )
+}
+
+/**
+ * Recursively pretty-prints a parsed [JsonElement], indenting nested objects/arrays. String
+ * leaves get a further pass: a value that is itself parseable JSON (a stringified nested object,
+ * as Gson serializes `Map<String, Any>` blueprint args) is expanded inline instead of shown as an
+ * escaped blob, and a value that looks like the flattened `key=value` text `toAINormalize()`
+ * produces gets its labels colorized so it reads as structure rather than a wall of text.
+ */
+private fun AnnotatedString.Builder.appendJsonElement(
+    element: JsonElement,
+    indent: Int,
+) {
+    val childPad = "  ".repeat(indent + 1)
+    val closePad = "  ".repeat(indent)
+    when {
+        element.isJsonObject -> {
+            val entries = element.asJsonObject.entrySet().toList()
+            withStyle(SpanStyle(color = JsonPunctuationColor)) { append("{") }
+            entries.forEachIndexed { index, (key, value) ->
+                append("\n$childPad")
+                withStyle(SpanStyle(color = JsonKeyColor)) { append("\"$key\"") }
+                withStyle(SpanStyle(color = JsonPunctuationColor)) { append(": ") }
+                appendJsonValue(value, indent + 1)
+                if (index != entries.lastIndex) withStyle(SpanStyle(color = JsonPunctuationColor)) { append(",") }
+            }
+            if (entries.isNotEmpty()) append("\n$closePad")
+            withStyle(SpanStyle(color = JsonPunctuationColor)) { append("}") }
+        }
+
+        element.isJsonArray -> {
+            val items = element.asJsonArray.toList()
+            withStyle(SpanStyle(color = JsonPunctuationColor)) { append("[") }
+            items.forEachIndexed { index, value ->
+                append("\n$childPad")
+                appendJsonValue(value, indent + 1)
+                if (index != items.lastIndex) withStyle(SpanStyle(color = JsonPunctuationColor)) { append(",") }
+            }
+            if (items.isNotEmpty()) append("\n$closePad")
+            withStyle(SpanStyle(color = JsonPunctuationColor)) { append("]") }
+        }
+
+        else -> appendJsonValue(element, indent)
+    }
+}
+
+private fun AnnotatedString.Builder.appendJsonValue(
+    element: JsonElement,
+    indent: Int,
+) {
+    when {
+        element.isJsonNull -> withStyle(SpanStyle(color = JsonKeywordColor)) { append("null") }
+        element.isJsonObject || element.isJsonArray -> appendJsonElement(element, indent)
+        else -> {
+            val primitive = element.asJsonPrimitive
+            when {
+                primitive.isBoolean -> withStyle(SpanStyle(color = JsonKeywordColor)) { append(primitive.asString) }
+                primitive.isNumber -> withStyle(SpanStyle(color = JsonNumberColor)) { append(primitive.asString) }
+                else -> appendStringValue(primitive.asString, indent)
+            }
+        }
+    }
+}
+
+private fun AnnotatedString.Builder.appendStringValue(
+    value: String,
+    indent: Int,
+) {
+    val trimmed = value.trim()
+    val nested = if (looksLikeJson(trimmed)) runCatching { JsonParser.parseString(trimmed) }.getOrNull() else null
+    when {
+        nested != null && (nested.isJsonObject || nested.isJsonArray) -> appendJsonElement(nested, indent)
+
+        // Kotlin's Map/List.toString() wrapping our own field dumps, e.g. worldContext's
+        // "{sagaContext=description: ..., genre: CRIME, ...}" — not valid JSON, but bracketed
+        // and structured enough to unwrap and render as a real tree instead of a flat string.
+        looksLikeJson(trimmed) && blobLabelRegex.containsMatchIn(trimmed) -> {
+            val isList = trimmed.startsWith("[")
+            val inner = trimmed.substring(1, trimmed.length - 1)
+            withStyle(SpanStyle(color = JsonPunctuationColor)) { append(if (isList) "[" else "{") }
+            appendStructuredBlob(inner, indent + 1)
+            append("\n" + "  ".repeat(indent))
+            withStyle(SpanStyle(color = JsonPunctuationColor)) { append(if (isList) "]" else "}") }
+        }
+
+        blobLabelRegex.containsMatchIn(value) -> {
+            withStyle(SpanStyle(color = JsonStringColor)) { append("\"") }
+            appendStructuredBlob(value, indent)
+            withStyle(SpanStyle(color = JsonStringColor)) { append("\"") }
+        }
+
+        else -> withStyle(SpanStyle(color = JsonStringColor)) { append("\"$value\"") }
+    }
+}
+
+/**
+ * Breaks a flattened, non-JSON text blob onto one line per detected `label:`/`label=` field
+ * instead of leaving it as one running paragraph. An `=` label (Kotlin's `Map.toString()` entry
+ * separator) starts at [indent]; a `:` label (this app's own `toAINormalize()` field separator,
+ * nested one level inside whatever `=` entry it belongs to) starts one level deeper — see
+ * [blobLabelRegex].
+ */
+private fun AnnotatedString.Builder.appendStructuredBlob(
+    text: String,
+    indent: Int,
+) {
+    val matches = blobLabelRegex.findAll(text).toList()
+    if (matches.isEmpty()) {
+        withStyle(SpanStyle(color = JsonStringColor)) { append(text.trim()) }
+        return
+    }
+
+    val entryIndent = "  ".repeat(indent)
+    val fieldIndent = "  ".repeat(indent + 1)
+    var lastEnd = 0
+
+    matches.forEachIndexed { index, match ->
+        val labelRange = match.groups[1]!!.range
+        val separator = match.groupValues[2]
+
+        if (index > 0) {
+            val precedingValue = text.substring(lastEnd, match.range.first).trim()
+            if (precedingValue.isNotEmpty()) {
+                withStyle(SpanStyle(color = JsonStringColor)) { append(" $precedingValue") }
+            }
+        }
+
+        append("\n" + if (separator == "=") entryIndent else fieldIndent)
+        withStyle(SpanStyle(color = JsonKeyColor)) {
+            append(text.substring(labelRange.first, labelRange.last + 1))
+        }
+        withStyle(SpanStyle(color = JsonPunctuationColor)) { append("$separator ") }
+        lastEnd = match.range.last + 1
+    }
+
+    val tail = text.substring(lastEnd).trim()
+    if (tail.isNotEmpty()) {
+        withStyle(SpanStyle(color = JsonStringColor)) { append(tail) }
+    }
+}
+
+/** Fallback for content that isn't valid JSON at all — flat token highlighting, same as before. */
+private fun AnnotatedString.Builder.appendFlatHighlightedText(text: String) {
+    val keyRegex = "\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"\\s*:".toRegex()
+    val stringRegex = "\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"".toRegex()
+    val numberRegex = "\\b(-?\\d+(\\.\\d+)?)\\b".toRegex()
+    val booleanRegex = "\\b(true|false|null)\\b".toRegex()
+
+    var lastIndex = 0
+    val candidates =
+        (
+            keyRegex.findAll(text) +
+                stringRegex.findAll(text) +
+                numberRegex.findAll(text) +
+                booleanRegex.findAll(text)
+        ).sortedBy { it.range.first }
+
+    candidates.forEach { match ->
+        if (match.range.first >= lastIndex) {
+            append(text.substring(lastIndex, match.range.first))
+            val style =
+                when {
+                    keyRegex.matches(match.value) -> SpanStyle(color = JsonKeyColor)
+                    stringRegex.matches(match.value) -> SpanStyle(color = JsonStringColor)
+                    numberRegex.matches(match.value) -> SpanStyle(color = JsonNumberColor)
+                    booleanRegex.matches(match.value) -> SpanStyle(color = JsonKeywordColor)
+                    else -> SpanStyle(color = JsonPunctuationColor)
+                }
+            withStyle(style) { append(match.value) }
+            lastIndex = match.range.last + 1
+        }
+    }
+    append(text.substring(lastIndex))
 }
 
 @Composable
