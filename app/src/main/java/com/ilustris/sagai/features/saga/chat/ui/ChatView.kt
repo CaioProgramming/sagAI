@@ -47,9 +47,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,12 +66,16 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -94,7 +96,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -118,7 +119,6 @@ import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.chapterNumber
@@ -132,15 +132,16 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
-import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiAction
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
+import com.ilustris.sagai.features.saga.chat.ui.components.ChapterScrollRail
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
+import com.ilustris.sagai.features.saga.chat.ui.components.ChatSearchBar
 import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDialog
 import com.ilustris.sagai.features.saga.chat.ui.components.MessageOptionsSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
@@ -174,8 +175,16 @@ import com.ilustris.sagai.ui.theme.shimmerize
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIconVector
 import com.ilustris.sagai.ui.theme.themePainter
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.time.Duration.Companion.seconds
+
+/** Matches the spacer at the bottom of the list, which is what the chat input and its gradient cover. */
+private val CHAPTER_JUMP_BOTTOM_INSET = 150.dp
+
+private const val SEARCH_AUTO_JUMP_DELAY_MS = 350L
+private const val SEARCH_HIGHLIGHT_MS = 2200L
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -480,8 +489,127 @@ fun ChatContent(
                 Modifier.fillMaxSize(),
             ) {
                 rememberCoroutineScope()
-                val (debugControls, messages, chatInput, topBar, bottomGradient) =
+                val (debugControls, messages, chatInput, topBar, bottomGradient, chapterRail) =
                     createRefs()
+
+                // Resolved ahead of composition so the chapter rail can look up where a chapter
+                // starts. Keyed on `reasoningChunk != null` rather than its text: the streaming
+                // chunk would otherwise rebuild the plan — and shift every index — per token.
+                val chatPlan =
+                    remember(
+                        uiState.messages,
+                        content.data.id,
+                        content.data.isEnded,
+                        content.data.endMessage,
+                        uiState.reasoningChunk != null,
+                    ) {
+                        buildChatPlan(
+                            actList = uiState.messages,
+                            sagaId = content.data.id,
+                            isEnded = content.data.isEnded,
+                            endMessage = content.data.endMessage,
+                            hasReasoning = uiState.reasoningChunk != null,
+                        )
+                    }
+
+                val chapters = remember(content) { content.flatChapters() }
+                val latestPlan by rememberUpdatedState(chatPlan)
+                val railScope = rememberCoroutineScope()
+
+                // The bottom of the list sits under the input bar and its gradient — the same gap
+                // the 150dp spacer at index 0 covers — so a bare scroll would park the chapter's
+                // first message behind them.
+                val chapterJumpInsetPx =
+                    with(LocalDensity.current) { CHAPTER_JUMP_BOTTOM_INSET.roundToPx() }
+
+                // reverseLayout puts the *newest* item at firstVisibleItemIndex, behind the input,
+                // so the chapter being read is the one nearest the middle of the viewport.
+                val currentChapterId by remember(chatPlan) {
+                    derivedStateOf {
+                        val layoutInfo = listState.layoutInfo
+                        val viewportCenter =
+                            (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
+                        layoutInfo.visibleItemsInfo
+                            .minByOrNull { abs(it.offset + it.size / 2 - viewportCenter) }
+                            ?.let { chatPlan.getOrNull(it.index)?.chapterId }
+                    }
+                }
+
+                // Jumping across hundreds of items composes a screenful of bubbles at the
+                // destination, which reads as a stutter. The list is hidden for the jump and faded
+                // back in once it settles, so the cost lands behind a deliberate transition — and
+                // the scroll itself is instant, since animating under a hidden list is wasted work.
+                var jumpsInFlight by remember { mutableIntStateOf(0) }
+                var isListHidden by remember { mutableStateOf(false) }
+
+                LaunchedEffect(jumpsInFlight > 0) {
+                    if (jumpsInFlight > 0) {
+                        isListHidden = true
+                    } else {
+                        // Absorbs the gaps between the rapid-fire jumps of a drag scrub, which
+                        // would otherwise flash the list back in between rows.
+                        delay(150)
+                        isListHidden = false
+                    }
+                }
+
+                val chatListAlpha by animateFloatAsState(
+                    targetValue = if (isListHidden) 0f else 1f,
+                    animationSpec = tween(if (isListHidden) 0 else 280),
+                    label = "chatListAlpha",
+                )
+
+                // Takes a resolver rather than an index so the target is computed inside the
+                // coroutine: a message landing meanwhile rebuilds the plan and shifts every index.
+                val jumpTo: ((List<ChatEntry>) -> Int) -> Unit = { resolveTarget ->
+                    railScope.launch {
+                        jumpsInFlight++
+                        try {
+                            val target = resolveTarget(latestPlan)
+                            if (target >= 0) {
+                                listState.scrollToItem(target, -chapterJumpInsetPx)
+                            }
+                        } finally {
+                            jumpsInFlight--
+                        }
+                    }
+                }
+
+                val onChapterSelected: (Int) -> Unit = { chapterId ->
+                    jumpTo { plan -> plan.chapterAnchorIndex(chapterId) }
+                }
+
+                var isSearchActive by rememberSaveable { mutableStateOf(false) }
+                var searchQuery by rememberSaveable { mutableStateOf("") }
+                var currentMatchIndex by rememberSaveable { mutableIntStateOf(0) }
+                var highlightedMessageId by remember { mutableStateOf<Int?>(null) }
+
+                val searchMatches =
+                    remember(chatPlan, searchQuery) { chatPlan.findMatches(searchQuery) }
+
+                val goToMatch: (Int) -> Unit = { position ->
+                    searchMatches.getOrNull(position)?.let { match ->
+                        currentMatchIndex = position
+                        highlightedMessageId = match.messageId
+                        jumpTo { plan -> plan.indexOfFirst { it.key == "message-${match.messageId}" } }
+                    }
+                }
+
+                // Lands on the first hit once typing pauses, not on every keystroke: each jump
+                // hides and fades the list back in, which mid-word would be a strobe.
+                LaunchedEffect(searchMatches) {
+                    if (searchMatches.isNotEmpty()) {
+                        delay(SEARCH_AUTO_JUMP_DELAY_MS)
+                        goToMatch(0)
+                    }
+                }
+
+                LaunchedEffect(highlightedMessageId) {
+                    if (highlightedMessageId != null) {
+                        delay(SEARCH_HIGHLIGHT_MS)
+                        highlightedMessageId = null
+                    }
+                }
 
                 val narrativeState = uiState.narrativeUiState
                 val advanceBlocksInput =
@@ -550,9 +678,10 @@ fun ChatContent(
                         { onAction(ChatUiAction.CancelEdit) }
                     }
 
-                ChatList(
-                    saga = content,
-                    actList = uiState.messages,
+                CompositionLocalProvider(LocalChatSearchTerm provides searchQuery) {
+                    ChatList(
+                        saga = content,
+                        plan = chatPlan,
                     mainCharacter = uiState.mainCharacter,
                     characters = uiState.characters,
                     wikis = uiState.wikis,
@@ -560,6 +689,7 @@ fun ChatContent(
                     flatEvents = uiState.flatEvents,
                     listState = listState,
                     reasoningChunk = uiState.reasoningChunk,
+                    highlightedMessageId = highlightedMessageId,
                     reviewGenerationState = reviewGenerationState,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
@@ -572,7 +702,8 @@ fun ChatContent(
                                 end.linkTo(parent.end)
                                 width = Dimension.fillToConstraints
                                 height = Dimension.fillToConstraints
-                            }.fillMaxSize(),
+                            }.fillMaxSize()
+                            .alpha(chatListAlpha),
                     onMessageAction =
                         remember(onAction, content) {
                             { action ->
@@ -639,8 +770,9 @@ fun ChatContent(
                     messageEffectsEnabled = uiState.messageEffectsEnabled,
                     isSelectionMode = uiState.selectionState.isSelectionMode,
                     selectedMessageIds = uiState.selectionState.selectedMessageIds,
-                    audioPlaybackState = uiState.audioPlaybackState,
-                )
+                        audioPlaybackState = uiState.audioPlaybackState,
+                    )
+                }
 
                 Box(
                     Modifier
@@ -650,6 +782,23 @@ fun ChatContent(
                         .fillMaxHeight(.2f)
                         .background(fadeGradientBottom(resolvedColor)),
                 )
+
+                if (!uiState.selectionState.isSelectionMode) {
+                    ChapterScrollRail(
+                        chapters = chapters,
+                        currentChapterId = currentChapterId,
+                        genre = uiState.activeGenre ?: content.data.genre,
+                        isListScrolling = listState.isScrollInProgress,
+                        onChapterSelected = onChapterSelected,
+                        modifier =
+                            Modifier
+                                .constrainAs(chapterRail) {
+                                    end.linkTo(parent.end)
+                                    top.linkTo(parent.top)
+                                    bottom.linkTo(parent.bottom)
+                                }.padding(end = 4.dp),
+                    )
+                }
 
                 val hasActiveTimeline = content.getCurrentTimeLine() != null
                 val activeMilestone = uiState.milestone
@@ -865,7 +1014,6 @@ fun ChatContent(
                 Column(
                     modifier =
                         Modifier
-                            .alpha(alpha)
                             .background(MaterialTheme.colorScheme.background)
                             .fillMaxWidth()
                             .animateContentSize()
@@ -888,44 +1036,60 @@ fun ChatContent(
                             )
                         }
 
-                    val topCharacters = uiState.topCharacters
-
-                    SagaTopBar(
-                        saga.title,
-                        subtitle,
-                        saga.genre,
-                        isLoading = uiState.isGenerating || uiState.isLoading,
-                        onBackClick = {
-                            onAction(ChatUiAction.Back)
-                        },
-                        modifier =
-                            Modifier
-                                .clickable {
-                                    onAction(
-                                        ChatUiAction.OpenSagaDetails,
-                                    )
-                                }.fillMaxWidth()
-                                .padding(start = 8.dp),
-                        titleModifier =
-                            Modifier.graphicsLayer(alpha = alpha),
-                        actionContent = {
-                            AnimatedContent(topCharacters, transitionSpec = {
-                                slideInVertically() + fadeIn() togetherWith fadeOut()
-                            }) { chars ->
-                                CharactersTopIcons(
-                                    chars,
-                                    saga.genre,
-                                    isLoading = uiState.isGenerating || uiState.isLoading,
-                                    sharedTransitionScope = sharedTransitionScope,
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                ) { _ ->
-                                    onAction(
-                                        ChatUiAction.OpenSagaDetails,
-                                    )
-                                }
-                            }
-                        },
-                    )
+                    AnimatedContent(isSearchActive, label = "chatTopBar") { searching ->
+                        if (searching) {
+                            ChatSearchBar(
+                                query = searchQuery,
+                                onQueryChange = { searchQuery = it },
+                                matchCount = searchMatches.size,
+                                currentMatch = currentMatchIndex + 1,
+                                recentSearches = uiState.recentSearches,
+                                onRecentSelected = { searchQuery = it },
+                                onOlder = { goToMatch(currentMatchIndex + 1) },
+                                onNewer = { goToMatch(currentMatchIndex - 1) },
+                                onClose = {
+                                    if (searchQuery.isNotBlank()) {
+                                        onAction(ChatUiAction.RecordSearchTerm(searchQuery))
+                                    }
+                                    isSearchActive = false
+                                    searchQuery = ""
+                                    currentMatchIndex = 0
+                                },
+                            )
+                        } else {
+                            SagaTopBar(
+                                saga.title,
+                                subtitle,
+                                saga.genre,
+                                isLoading = uiState.isGenerating || uiState.isLoading,
+                                onBackClick = {
+                                    onAction(ChatUiAction.Back)
+                                },
+                                modifier =
+                                    Modifier
+                                        .clickable {
+                                            onAction(
+                                                ChatUiAction.OpenSagaDetails,
+                                            )
+                                        }.fillMaxWidth()
+                                        .padding(start = 8.dp),
+                                titleModifier =
+                                    Modifier.graphicsLayer(alpha = alpha),
+                                actionContent = {
+                                    // Consumes its own click: the whole bar is clickable to open
+                                    // the saga details.
+                                    IconButton(onClick = { isSearchActive = true }) {
+                                        Icon(
+                                            painterResource(R.drawable.search),
+                                            contentDescription =
+                                                stringResource(R.string.chat_search_open),
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                    }
+                                },
+                            )
+                        }
+                    }
 
                     LinearProgressIndicator(
                         modifier =
@@ -1211,7 +1375,7 @@ fun SagaHeader(
 @Composable
 fun ChatList(
     saga: SagaMetadata,
-    actList: List<ActDisplayData>,
+    plan: List<ChatEntry>,
     mainCharacter: CharacterContent?,
     characters: List<Character>,
     wikis: List<Wiki>,
@@ -1227,6 +1391,7 @@ fun ChatList(
     selectedMessageIds: Set<Int> = emptySet(),
     audioPlaybackState: AudioPlaybackState? = null,
     reasoningChunk: String? = null,
+    highlightedMessageId: Int? = null,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
 ) {
@@ -1250,186 +1415,161 @@ fun ChatList(
         horizontalAlignment = Alignment.CenterHorizontally,
         reverseLayout = true,
     ) {
-        item {
-            Spacer(Modifier.height(150.dp))
-        }
+        items(
+            items = plan,
+            key = { it.key },
+            contentType = { it.contentType },
+        ) { entry ->
+            when (entry) {
+                ChatEntry.BottomSpacer -> Spacer(Modifier.height(150.dp))
 
-        reasoningChunk?.let {
-            item(key = "reasoning") {
-                AnimatedContent(
-                    reasoningChunk,
-                    transitionSpec = {
-                        fadeIn(tween(1200)) + slideInVertically { it } togetherWith
-                            fadeOut(tween(1500)) + slideOutVertically { it }
-                    },
-                ) {
-                    Text(
-                        text = it,
-                        style =
-                            MaterialTheme.typography.labelMedium.copy(
-                                shadow =
-                                    Shadow(
-                                        Color.White,
-                                        blurRadius = 5f,
-                                    ),
-                                fontWeight = FontWeight.Normal,
-                                brush = Brush.horizontalGradient(morphingGradient()),
-                            ),
-                        textAlign = TextAlign.Center,
-                        overflow = TextOverflow.Ellipsis,
+                ChatEntry.Reasoning ->
+                    AnimatedContent(
+                        reasoningChunk.orEmpty(),
+                        transitionSpec = {
+                            fadeIn(tween(1200)) + slideInVertically { it } togetherWith
+                                fadeOut(tween(1500)) + slideOutVertically { it }
+                        },
+                    ) {
+                        Text(
+                            text = it,
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    shadow =
+                                        Shadow(
+                                            Color.White,
+                                            blurRadius = 5f,
+                                        ),
+                                    fontWeight = FontWeight.Normal,
+                                    brush = Brush.horizontalGradient(morphingGradient()),
+                                ),
+                            textAlign = TextAlign.Center,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier =
+                                Modifier
+                                    .levitate()
+                                    .padding(16.dp)
+                                    .fillMaxWidth()
+                                    .alpha(.5f)
+                                    .reactiveShimmer(true, Color.White.shimmerize()),
+                        )
+                    }
+
+                ChatEntry.RecapHero ->
+                    RecapHeroCard(
+                        saga = saga.data,
+                        chaptersCount = saga.flatChapters().size,
+                        charactersCount = saga.characters.size,
+                        messagesCount = saga.flatMessages().size,
+                        reviewGenerationState = reviewGenerationState,
                         modifier =
                             Modifier
-                                .levitate()
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .alpha(.5f)
-                                .reactiveShimmer(true, Color.White.shimmerize()),
+                                .height(150.dp),
+                        onClick = { onAction(ChatUiAction.OpenReview) },
                     )
-                }
-            }
-        }
 
-        if (saga.data.isEnded && saga.data.endMessage.isNotEmpty()) {
-            item {
-                RecapHeroCard(
-                    saga = saga.data,
-                    chaptersCount = saga.flatChapters().size,
-                    charactersCount = saga.characters.size,
-                    messagesCount = saga.flatMessages().size,
-                    reviewGenerationState = reviewGenerationState,
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                            .height(150.dp),
-                    onClick = { onAction(ChatUiAction.OpenReview) },
-                )
-            }
+                ChatEntry.EndMessage ->
+                    Text(
+                        saga.data.endMessage,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                textAlign = TextAlign.Justify,
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                    )
 
-            item {
-                Text(
-                    saga.data.endMessage,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            textAlign = TextAlign.Justify,
-                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        ),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                )
-            }
-
-            item {
-                Text(
-                    stringResource(id = R.string.saga_ended_on, saga.data.endedAt.formatDate()),
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        ),
-                    modifier = Modifier,
-                )
-            }
-        }
-        actList.forEach { act ->
-
-            if (act.hasConclusionContent()) {
-                item(key = "act-${act.content.data.id}-conclusion") {
+                ChatEntry.EndedAt ->
+                    Text(
+                        stringResource(id = R.string.saga_ended_on, saga.data.endedAt.formatDate()),
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                            ),
+                        modifier = Modifier,
+                    )
+                is ChatEntry.ActConclusion ->
                     ActComponent(
-                        act.content,
-                        saga.acts.indexOf(act.content) + 1,
+                        entry.act,
+                        saga.acts.indexOf(entry.act) + 1,
                         saga,
                         modifier = Modifier,
                     )
-                }
-            }
 
-            act.chapters.forEach { chapter ->
+                is ChatEntry.ChapterCover ->
+                    ChapterContentView(
+                        chapter = entry.chapter.toInfo(saga.data.id),
+                        isLast = entry.isLast,
+                        imageSize = 400.dp,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onAction(ChatUiAction.OpenSagaDetails)
+                                },
+                    )
 
-                if (chapter.isComplete) {
-                    item(key = "chapter-${chapter.chapter.data.id}") {
-                        ChapterContentView(
-                            chapter = chapter.chapter.toInfo(saga.data.id),
-                            isLast = act.chapters.lastOrNull() == chapter,
-                            imageSize = 400.dp,
+                is ChatEntry.TimelineCard ->
+                    TimelineContentViewCard(
+                        saga = saga.data,
+                        eventCard = entry.timeline,
+                        modifier = Modifier.fillMaxWidth(),
+                        onAction = { },
+                    )
+
+                is ChatEntry.Message ->
+                    ChatBubble(
+                        entry.content,
+                        isLoading = false,
+                        mainCharacter = mainCharacter,
+                        characters = characters,
+                        wikis = wikis,
+                        genre = activeGenre ?: genre,
+                        flatEvents = flatEvents,
+                        // Only messages that haven't been revealed yet animate (typewriter +
+                        // sequential block pop-in) — already-seen ones render in full
+                        // instantly. Safe to re-tie this to the persisted viewed flag now:
+                        // the earlier regression was <think>'s hide/reveal riding on this same
+                        // signal (ExpressiveText.kt now hardcodes that independently), not this
+                        // value itself being wrong.
+                        canAnimate = !entry.content.message.viewed,
+                        messageEffectsEnabled = messageEffectsEnabled,
+                        audioPlaybackState = audioPlaybackState,
+                        modifier = Modifier,
+                        onAction = onMessageAction,
+                        isSelectionMode = isSelectionMode,
+                        isSelected = selectedMessageIds.contains(entry.content.message.id),
+                        isSearchHit = entry.content.message.id == highlightedMessageId,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    )
+
+                is ChatEntry.TimelineSpark ->
+                    Box(
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Image(
+                            themePainter(),
+                            null,
+                            colorFilter = ColorFilter.tint(resolvedColor),
                             modifier =
                                 Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onAction(ChatUiAction.OpenSagaDetails)
-                                    },
-                        )
-                    }
-                }
-
-                chapter.timelineSummaries.forEach { timelineDisplay ->
-                    val timeline = timelineDisplay.timeline
-                    timeline.let {
-                        if (it.canShowData) {
-                            item(key = "timeline-${timeline.timelineContent.data.id}") {
-                                TimelineContentViewCard(
-                                    saga = saga.data,
-                                    eventCard = it,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onAction = { },
-                                )
-                            }
-                        }
-                    }
-
-                    items(timeline.timelineContent.messages, key = { "message-${it.message.id}" }) {
-                        ChatBubble(
-                            it,
-                            isLoading = false,
-                            mainCharacter = mainCharacter,
-                            characters = characters,
-                            wikis = wikis,
-                            genre = activeGenre ?: genre,
-                            flatEvents = flatEvents,
-                            // Only messages that haven't been revealed yet animate (typewriter +
-                            // sequential block pop-in) — already-seen ones render in full
-                            // instantly. Safe to re-tie this to the persisted viewed flag now:
-                            // the earlier regression was <think>'s hide/reveal riding on this same
-                            // signal (ExpressiveText.kt now hardcodes that independently), not this
-                            // value itself being wrong.
-                            canAnimate = !it.message.viewed,
-                            messageEffectsEnabled = messageEffectsEnabled,
-                            audioPlaybackState = audioPlaybackState,
-                            modifier = Modifier,
-                            onAction = onMessageAction,
-                            isSelectionMode = isSelectionMode,
-                            isSelected = selectedMessageIds.contains(it.message.id),
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
+                                    .size(24.dp)
+                                    .padding(4.dp),
                         )
                     }
 
-                    timeline.let {
-                        item(key = "timeline-${it.timelineContent.data.id}-spark") {
-                            Box(
-                                Modifier
-                                    .padding(8.dp)
-                                    .fillMaxWidth(),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Image(
-                                    themePainter(),
-                                    null,
-                                    colorFilter = ColorFilter.tint(resolvedColor),
-                                    modifier =
-                                        Modifier
-                                            .size(24.dp)
-                                            .padding(4.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-
-                item(key = "chapter-${chapter.chapter.data.id}-intro") {
+                is ChatEntry.ChapterIntro ->
                     Text(
-                        chapter.chapter.data.introduction,
+                        entry.chapter.data.introduction,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
@@ -1440,14 +1580,13 @@ fun ChatList(
                                 .fillMaxWidth()
                                 .padding(16.dp),
                     )
-                }
 
-                item(key = "chapter-${chapter.chapter.data.id}-title") {
+                is ChatEntry.ChapterTitle -> {
                     val title =
-                        chapter.chapter.data.title.ifEmpty {
+                        entry.chapter.data.title.ifEmpty {
                             stringResource(
                                 id = R.string.chapter_title_template,
-                                saga.chapterNumber(chapter.chapter.data.id).toRoman(),
+                                saga.chapterNumber(entry.chapter.data.id).toRoman(),
                             )
                         }
                     Text(
@@ -1464,14 +1603,10 @@ fun ChatList(
                                 .padding(16.dp),
                     )
                 }
-            }
 
-            if (act.content.data.introduction
-                    .isNotEmpty()
-            ) {
-                item(key = "act-${act.content.data.id}-intro") {
+                is ChatEntry.ActIntro ->
                     Text(
-                        act.content.data.introduction,
+                        entry.act.data.introduction,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
@@ -1483,17 +1618,14 @@ fun ChatList(
                                 .fillMaxWidth()
                                 .padding(16.dp),
                     )
-                }
-            }
 
-            if (!act.hasConclusionContent()) {
-                item(key = "act-${act.content.data.id}-title") {
+                is ChatEntry.ActTitle -> {
                     val title =
-                        act.content.data.title
+                        entry.act.data.title
                             .ifEmpty {
                                 stringResource(
                                     id = R.string.act_title_template,
-                                    saga.actNumber(act.content.data.id).toRoman(),
+                                    saga.actNumber(entry.act.data.id).toRoman(),
                                 )
                             }
                     Text(
@@ -1510,24 +1642,18 @@ fun ChatList(
                                 .padding(16.dp),
                     )
                 }
+
+                is ChatEntry.SagaHeader ->
+                    SagaHeader(
+                        saga = saga.data,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth(),
+                        openSaga = { onAction(ChatUiAction.OpenSagaDetails) },
+                    )
             }
         }
-        item(key = "saga-${saga.data.id}-header") {
-            SagaHeader(
-                saga = saga.data,
-                modifier =
-                    Modifier
-                        .fillMaxWidth(),
-                openSaga = { onAction(ChatUiAction.OpenSagaDetails) },
-            )
-        }
     }
-}
-
-/** Act synthesis body shown in chat after its chapters (see [ChatList] item order with [reverseLayout]). */
-private fun ActDisplayData.hasConclusionContent(): Boolean {
-    val data = content.data
-    return data.content.isNotBlank() || !data.emotionalReview.isNullOrBlank()
 }
 
 private sealed interface BottomInputState {
@@ -1542,58 +1668,3 @@ private sealed interface BottomInputState {
     data object Unavailable : BottomInputState
 }
 
-@Composable
-fun CharactersTopIcons(
-    characters: List<Character>,
-    genre: Genre,
-    isLoading: Boolean = false,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedContentScope,
-    onCharacterSelected: (Character?) -> Unit = {},
-) {
-    val cornerSize = genre.cornerSize()
-    val overlapAmount = (-12).dp
-    val density = LocalDensity.current
-    val charactersToDisplay =
-        characters.take(3)
-    LazyRow(
-        Modifier
-            .clip(RoundedCornerShape(cornerSize))
-            .fillMaxWidth(.15f),
-        userScrollEnabled = false,
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        itemsIndexed(
-            charactersToDisplay,
-            key = { index, character -> "character-$index-${character.id}-${character.image}" },
-        ) { index, character ->
-            val overlapAmountPx = with(density) { overlapAmount.toPx() }
-            with(sharedTransitionScope) {
-                CharacterAvatar(
-                    character,
-                    borderSize = 2.dp,
-                    borderColor = MaterialTheme.colorScheme.background,
-                    innerPadding = 0.dp,
-                    genre = genre,
-                    pixelation = .1f,
-                    modifier =
-                        Modifier
-                            .zIndex(
-                                if (index ==
-                                    0
-                                ) {
-                                    charactersToDisplay.size.toFloat()
-                                } else {
-                                    (charactersToDisplay.size - 1 - index).toFloat()
-                                },
-                            ).graphicsLayer(
-                                translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                            ).clip(CircleShape)
-                            .size(24.dp)
-                            .clickable { onCharacterSelected(character) },
-                )
-            }
-        }
-    }
-}

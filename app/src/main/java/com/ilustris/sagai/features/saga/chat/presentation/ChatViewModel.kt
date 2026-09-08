@@ -13,7 +13,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
+import com.google.gson.Gson
+import com.ilustris.sagai.core.ai.gsonTypeOfStringList
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.narrative.NarrativeRules
@@ -66,6 +69,8 @@ import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
+private const val MAX_RECENT_SEARCHES = 5
+
 @OptIn(PublicPreviewAPI::class)
 @HiltViewModel
 class ChatViewModel
@@ -88,6 +93,7 @@ class ChatViewModel
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val chatGenerationService: ChatGenerationService,
+        private val dataStorePreferences: DataStorePreferences,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -126,7 +132,6 @@ class ChatViewModel
         private var objectiveObserverJob: kotlinx.coroutines.Job? = null
         private var reasoningObserverJob: kotlinx.coroutines.Job? = null
         private var characterObserverJob: kotlinx.coroutines.Job? = null
-        private var topCharacterObserverJob: kotlinx.coroutines.Job? = null
         private var fullWikiObserverJob: kotlinx.coroutines.Job? = null
         private var generationJob: kotlinx.coroutines.Job? = null
         private var narrativeObserverJob: kotlinx.coroutines.Job? = null
@@ -291,6 +296,10 @@ class ChatViewModel
 
                 is ChatUiAction.ClearSelection -> {
                     stateManager.clearSelection()
+                }
+
+                is ChatUiAction.RecordSearchTerm -> {
+                    recordSearchTerm(action.term)
                 }
 
                 is ChatUiAction.ShareConversation -> {
@@ -474,11 +483,10 @@ class ChatViewModel
             characterObserverJob?.cancel()
             characterObserverJob = observeCharacters(sagaId.toInt())
 
-            topCharacterObserverJob?.cancel()
-            topCharacterObserverJob = observeTopCharacters(sagaId.toInt())
-
             fullWikiObserverJob?.cancel()
             fullWikiObserverJob = observeFullWikis(sagaId.toInt())
+
+            loadRecentSearches(sagaId.toInt())
 
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
@@ -598,12 +606,33 @@ class ChatViewModel
             }
         }
 
-        private fun observeTopCharacters(sagaId: Int) =
+        private fun recentSearchesKey(sagaId: Int) = "chat_search_recents_$sagaId"
+
+        private fun loadRecentSearches(sagaId: Int) {
             viewModelScope.launch(Dispatchers.IO) {
-                characterUseCase.getTopCharacters(sagaId, 3).collectLatest { topCharacters ->
-                    stateManager.updateTopCharacters(topCharacters.map { it.data })
-                }
+                val stored = dataStorePreferences.getStringNow(recentSearchesKey(sagaId))
+                val terms =
+                    runCatching {
+                        Gson().fromJson(stored, gsonTypeOfStringList()) as? List<String>
+                    }.getOrNull().orEmpty()
+                stateManager.updateRecentSearches(terms)
             }
+        }
+
+        private fun recordSearchTerm(term: String) {
+            val sagaId = uiState.value.sagaContent?.data?.id ?: return
+            val cleaned = term.trim()
+            if (cleaned.isEmpty()) return
+
+            viewModelScope.launch(Dispatchers.IO) {
+                val updated =
+                    (listOf(cleaned) + uiState.value.recentSearches)
+                        .distinctBy { it.lowercase() }
+                        .take(MAX_RECENT_SEARCHES)
+                stateManager.updateRecentSearches(updated)
+                dataStorePreferences.setString(recentSearchesKey(sagaId), Gson().toJson(updated))
+            }
+        }
 
         private fun observeFullWikis(sagaId: Int) =
             viewModelScope.launch(Dispatchers.IO) {

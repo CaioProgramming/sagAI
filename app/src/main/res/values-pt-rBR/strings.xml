@@ -477,6 +477,13 @@
     <string name="faq_ai_reply_button">Entendido!</string>
     <string name="faq_title">FAQ</string>
     <string name="faq_search_placeholder">Pesquisar dúvidas...</string>
+    <string name="chat_search_placeholder">Buscar nesta saga…</string>
+    <string name="chat_search_counter">%1$d/%2$d</string>
+    <string name="chat_search_no_results">Sem resultados</string>
+    <string name="chat_search_close">Fechar busca</string>
+    <string name="chat_search_older">Resultado anterior</string>
+    <string name="chat_search_newer">Resultado seguinte</string>
+    <string name="chat_search_open">Buscar mensagens</string>
     <string name="faq_empty_state_title">Não encontramos o que você procura...</string>
     <string name="faq_ask_ai_button">Perguntar ao Mestre da Saga</string>
     <string name="faq_ask_ai_footer">Ainda em dúvida? Pergunte ao Mestre da Saga</string>

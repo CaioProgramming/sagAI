@@ -249,6 +249,8 @@ fun ChatBubble(
     messageEffectsEnabled: Boolean = true,
     isSelectionMode: Boolean = false,
     isSelected: Boolean = false,
+    /** The message a search jump just landed on, outlined briefly so the reader can spot it. */
+    isSearchHit: Boolean = false,
     // Lets a caller pace several unread messages one at a time instead of all typing at once —
     // see ChatView.kt's activeRevealId. Default true so callers that don't coordinate pacing
     // (previews, etc.) keep today's "animate as soon as visible" behavior.
@@ -365,7 +367,14 @@ fun ChatBubble(
     )
 
     val borderColorAnimation by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.onBackground else Color.Transparent,
+        targetValue =
+            when {
+                isSelected -> MaterialTheme.colorScheme.onBackground
+                // Reuses the selection border rather than tinting the row behind the bubble: the
+                // outline follows the bubble's own shape, which a background band cannot.
+                isSearchHit -> MaterialTheme.colorScheme.primary
+                else -> Color.Transparent
+            },
         animationSpec = tween(300, easing = FastOutSlowInEasing),
         label = "borderColorAnimation",
     )

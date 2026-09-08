@@ -67,6 +67,11 @@ sealed class ChatUiAction {
 
     data object ClearSelection : ChatUiAction()
 
+    /** A search the reader actually ran, kept per saga to offer back when the field reopens. */
+    data class RecordSearchTerm(
+        val term: String,
+    ) : ChatUiAction()
+
     data class ShareConversation(
         val show: Boolean,
     ) : ChatUiAction()
