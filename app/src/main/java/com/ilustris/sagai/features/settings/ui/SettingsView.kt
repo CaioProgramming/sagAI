@@ -57,8 +57,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
@@ -79,7 +77,6 @@ import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
-import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -247,7 +244,7 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 MaterialTheme.shapes.medium,
-                            ).padding(8.dp),
+                            ).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
@@ -279,7 +276,10 @@ fun SettingsView(
 
                     if (breakdown.cacheSize > 1) {
                         HorizontalDivider(
-                            modifier = Modifier.fillMaxWidth().height(1.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp),
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
                             thickness = 1.dp,
                         )
@@ -813,7 +813,11 @@ fun SettingsView(
             item {
                 Text(
                     stringResource(R.string.app_version),
-                    modifier = Modifier.padding(16.dp).fillMaxWidth().alpha(.4f),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                            .alpha(.4f),
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Light,
                     style = MaterialTheme.typography.labelSmall,
