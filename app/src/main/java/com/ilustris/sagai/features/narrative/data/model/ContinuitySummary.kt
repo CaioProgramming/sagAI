@@ -56,7 +56,7 @@ fun List<SceneSummary>.mergeSceneSummaries(): ContinuitySummary {
                     characterStates =
                         buildList {
                             if (scene.charactersPresent.isNotEmpty()) {
-                                add("Present: ${scene.charactersPresent.joinToString()}")
+                                add("Present: ${scene.charactersPresent.joinToString { it.name }}")
                             }
                             scene.currentLocation.takeIf { it.isNotBlank() }?.let {
                                 add("Last known location: $it")

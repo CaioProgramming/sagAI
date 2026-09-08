@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.ilustris.sagai.core.database.converters.BookConverters
+import com.ilustris.sagai.core.database.converters.CharacterPresenceListConverter
 import com.ilustris.sagai.core.database.converters.EnumConverters
 import com.ilustris.sagai.core.database.converters.FarewellListConverter
 import com.ilustris.sagai.core.database.converters.IntListConverter
@@ -66,6 +67,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
     StringListConverter::class,
     BookConverters::class,
     FarewellListConverter::class,
+    CharacterPresenceListConverter::class,
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao

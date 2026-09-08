@@ -431,12 +431,9 @@ class MessageUseCaseImpl
         ) {
             val result =
                 executeRequest {
-                    val sagaContent =
-                        sagaRepository.getSagaById(saga.data.id).first() as SagaContent
                     val prompt =
                         ChatPrompts.replyFalloutPrompt(
                             promptService = promptService,
-                            saga = sagaContent,
                             userMessage = userMessage,
                             replyMessage = replyMessage,
                             sceneSummary = sceneSummary,
@@ -590,17 +587,12 @@ class MessageUseCaseImpl
             if (sceneSummary.charactersPresent.isEmpty()) error("generateReaction: No characters related to react")
 
             val charactersInScene =
-                sceneSummary.charactersPresent.mapNotNull { characterName ->
-                    sagaContent.findCharacter(characterName)
+                sceneSummary.charactersPresent.mapNotNull { presence ->
+                    sagaContent.findCharacter(presence.name)
                 }
 
             if (charactersInScene.isEmpty()) {
                 error("generateReaction: No characters found in scene to react.")
-            }
-
-            sagaContent.mainCharacter!!.relationships.filter {
-                it.characterOne.id in charactersInScene.map { character -> character.data.id } ||
-                    it.characterTwo.id in charactersInScene.map { character -> character.data.id }
             }
 
             val narrativeRules = fetchNarrativeRules()
@@ -610,7 +602,6 @@ class MessageUseCaseImpl
                     summary = sceneSummary,
                     saga = sagaContent,
                     messageToReact = message,
-                    conversationDirective = emptyString(),
                     narrativeRules = narrativeRules,
                 )
 
@@ -763,7 +754,7 @@ class MessageUseCaseImpl
             val characterIds =
                 sceneSummary
                     ?.charactersPresent
-                    ?.mapNotNull { saga.findCharacter(it)?.data?.id }
+                    ?.mapNotNull { saga.findCharacter(it.name)?.data?.id }
                     .orEmpty()
             if (characterIds.isEmpty()) return emptyMap()
 
