@@ -103,7 +103,7 @@ class ChapterUseCaseImpl
                             promptSplit =
                                 prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
-                                    artworkConceptService.artworkInstructions(),
+                                    artworkConceptService.artworkInstructions(ImageType.COVER),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -149,7 +149,7 @@ class ChapterUseCaseImpl
                             promptSplit =
                                 prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
-                                    artworkConceptService.artworkInstructions(),
+                                    artworkConceptService.artworkInstructions(ImageType.COVER),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -339,6 +339,7 @@ class ChapterUseCaseImpl
             val artwork =
                 artworkConceptService
                     .ensureArtwork(
+                        imageType = ImageType.COVER,
                         contentType = "Chapter",
                         genre = saga.genre,
                         context = chapterArtworkContext(chapter),
@@ -538,7 +539,7 @@ class ChapterUseCaseImpl
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                             actContext.renderInstructions(),
-                                            artworkConceptService.artworkInstructions(),
+                                            artworkConceptService.artworkInstructions(ImageType.COVER),
                                         ),
                                     requirement = ModelRequirement.HIGH,
                                 ),

@@ -191,6 +191,7 @@ class CharacterUseCaseImpl
             val artwork =
                 artworkConceptService
                     .ensureArtwork(
+                        imageType = ImageType.ICON,
                         contentType = ImageType.ICON.name,
                         genre = saga.genre,
                         context = character.backstory,
