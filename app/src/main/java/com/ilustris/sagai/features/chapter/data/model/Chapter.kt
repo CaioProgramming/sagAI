@@ -5,6 +5,7 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.ilustris.sagai.features.narrative.data.model.ContinuitySummary
+import com.ilustris.sagai.features.narrative.data.model.LocationCheckpoint
 
 @Entity
 data class Chapter(
@@ -28,6 +29,12 @@ data class Chapter(
     val artwork: String? = null,
     @Embedded(prefix = "continuity_")
     val continuitySummary: ContinuitySummary? = null,
+    /** Where/when this chapter begins — carried forward from the previous chapter/act's [closingCheckpoint]. */
+    @Embedded(prefix = "opening_")
+    val openingCheckpoint: LocationCheckpoint? = null,
+    /** Where/when this chapter ends — populated by chapter synthesis, becomes the next chapter's [openingCheckpoint]. */
+    @Embedded(prefix = "closing_")
+    val closingCheckpoint: LocationCheckpoint? = null,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()
 }

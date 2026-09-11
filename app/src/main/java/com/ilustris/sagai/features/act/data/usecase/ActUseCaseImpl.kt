@@ -25,6 +25,7 @@ import com.ilustris.sagai.features.characters.data.model.ArcSourceType
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
 import com.ilustris.sagai.features.home.data.model.ActMetadata
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
@@ -51,6 +52,7 @@ class ActUseCaseImpl
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
+        private val worldLocationUseCase: WorldLocationUseCase,
     ) : ActUseCase {
         override fun getActsBySagaId(sagaId: Int): Flow<List<Act>> = actRepository.getActsBySagaId(sagaId)
 
@@ -312,14 +314,25 @@ class ActUseCaseImpl
 
                                     // 1. Update Act details & Narrative Guide
                                     val mergedAct = synthesis.act.mergeInto(actContent.data)
+                                    val closingCheckpoint =
+                                        synthesis.closingCheckpoint?.let {
+                                            worldLocationUseCase.resolveCheckpoint(
+                                                sagaId = saga.data.id,
+                                                generated = it,
+                                            )
+                                        }
                                     val updatedAct =
                                         updateAct(
                                             mergedAct.copy(
                                                 continuitySummary =
                                                     synthesis.continuitySummary
                                                         ?: mergedAct.continuitySummary,
+                                                closingCheckpoint = closingCheckpoint ?: mergedAct.closingCheckpoint,
                                             ),
                                         )
+                                    closingCheckpoint?.locationId?.let {
+                                        worldLocationUseCase.recordVisit(it, chapterId = actContent.data.currentChapterId)
+                                    }
 
                                     // 2. Save Landmark Wikis
                                     val persistedWikis = mutableListOf<Wiki>()

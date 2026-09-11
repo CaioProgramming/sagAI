@@ -146,6 +146,10 @@ import com.ilustris.sagai.features.timeline.domain.TimelineMapper
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCaseImpl
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
+import com.ilustris.sagai.features.geography.data.repository.WorldLocationRepository
+import com.ilustris.sagai.features.geography.data.repository.WorldLocationRepositoryImpl
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCaseImpl
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepositoryImpl
 import com.ilustris.sagai.features.wiki.data.source.WikiDao
@@ -634,6 +638,9 @@ abstract class UseCaseModule {
     abstract fun providesWikiUseCase(wikiUseCaseImpl: WikiUseCaseImpl): WikiUseCase
 
     @Binds
+    abstract fun providesWorldLocationUseCase(worldLocationUseCaseImpl: WorldLocationUseCaseImpl): WorldLocationUseCase
+
+    @Binds
     @Singleton
     abstract fun providesSagaContentManager(sagaContentManagerImpl: SagaContentManagerImpl): SagaContentManager
 
@@ -709,6 +716,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsWikiRepository(wikiRepositoryImpl: WikiRepositoryImpl): WikiRepository
+
+    @Binds
+    abstract fun bindsWorldLocationRepository(worldLocationRepositoryImpl: WorldLocationRepositoryImpl): WorldLocationRepository
 
     @Binds
     abstract fun bindsTimelineRepository(timelineRepositoryImpl: TimelineRepositoryImpl): TimelineRepository

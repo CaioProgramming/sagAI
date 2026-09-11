@@ -29,6 +29,9 @@ import com.ilustris.sagai.features.characters.relations.data.model.CharacterRela
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipUpdateEvent
 import com.ilustris.sagai.features.characters.relations.data.source.CharacterRelationDao
 import com.ilustris.sagai.features.characters.relations.data.source.RelationshipUpdateEventDao
+import com.ilustris.sagai.features.geography.data.model.WorldLocation
+import com.ilustris.sagai.features.geography.data.model.WorldLocationVisit
+import com.ilustris.sagai.features.geography.data.source.WorldLocationDao
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.Reaction
@@ -57,8 +60,10 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Reaction::class,
         AIAuditLog::class,
         CharacterArc::class,
+        WorldLocation::class,
+        WorldLocationVisit::class,
     ],
-    version = 31,
+    version = 32,
     exportSchema = true,
 )
 @TypeConverters(
@@ -99,6 +104,8 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun aiAuditLogDao(): AIAuditLogDao
 
     abstract fun characterArcDao(): CharacterArcDao
+
+    abstract fun worldLocationDao(): WorldLocationDao
 
     companion object {
         const val NAME = "SagaDatabase"

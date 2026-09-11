@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.act.data.model
 import com.ilustris.sagai.core.ai.model.GeneratedAct
 import com.ilustris.sagai.features.chapter.data.model.GeneratedCharacterArc
 import com.ilustris.sagai.features.narrative.data.model.ContinuitySummary
+import com.ilustris.sagai.features.narrative.data.model.GeneratedLocationCheckpoint
 import com.ilustris.sagai.features.timeline.data.model.GeneratedWikiUpdate
 
 data class UnifiedActUpdate(
@@ -11,4 +12,6 @@ data class UnifiedActUpdate(
     val landmarkWikis: List<GeneratedWikiUpdate> = emptyList(),
     val finalWorldState: String? = null,
     val continuitySummary: ContinuitySummary? = null,
+    /** Where/when this act ends — becomes the next act's opening checkpoint. */
+    val closingCheckpoint: GeneratedLocationCheckpoint? = null,
 )

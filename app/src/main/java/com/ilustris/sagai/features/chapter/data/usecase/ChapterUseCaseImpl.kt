@@ -32,6 +32,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
@@ -68,6 +69,7 @@ class ChapterUseCaseImpl
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val actRepository: com.ilustris.sagai.features.act.data.repository.ActRepository,
         private val artworkConceptService: ArtworkConceptService,
+        private val worldLocationUseCase: WorldLocationUseCase,
     ) : ChapterUseCase {
         private suspend fun fetchContext(chapterId: Int): Pair<SagaContent, ChapterContent> {
             val chapterContent =
@@ -552,14 +554,26 @@ class ChapterUseCaseImpl
 
                                     // 1. Update Chapter details & Narrative Guide
                                     val mergedChapter = synthesis.chapter.mergeInto(chapterContent.data)
+                                    val closingCheckpoint =
+                                        synthesis.closingCheckpoint?.let {
+                                            worldLocationUseCase.resolveCheckpoint(
+                                                sagaId = saga.data.id,
+                                                generated = it,
+                                                originChapterId = chapterContent.data.id,
+                                            )
+                                        }
                                     val updatedChapter =
                                         updateChapter(
                                             mergedChapter.copy(
                                                 continuitySummary =
                                                     synthesis.continuitySummary
                                                         ?: mergedChapter.continuitySummary,
+                                                closingCheckpoint = closingCheckpoint ?: mergedChapter.closingCheckpoint,
                                             ),
                                         )
+                                    closingCheckpoint?.locationId?.let {
+                                        worldLocationUseCase.recordVisit(it, chapterId = chapterContent.data.id)
+                                    }
 
                                     // 2. Save Landmark Wikis
                                     val persistedWikis = mutableListOf<Wiki>()

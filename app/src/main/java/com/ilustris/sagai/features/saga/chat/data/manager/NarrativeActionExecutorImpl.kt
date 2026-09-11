@@ -12,9 +12,12 @@ import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaEnding
 import com.ilustris.sagai.features.home.data.model.inheritSceneSummaryForChapter
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.narrative.data.model.LocationCheckpoint
 import com.ilustris.sagai.features.player.domain.PlayerProfileUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
@@ -44,6 +47,7 @@ class NarrativeActionExecutorImpl
         private val messageDao: MessageDao,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val playerProfileUseCase: PlayerProfileUseCase,
+        private val worldLocationUseCase: WorldLocationUseCase,
     ) : NarrativeActionExecutor {
         override suspend fun execute(
             action: NarrativeAction,
@@ -134,6 +138,7 @@ class NarrativeActionExecutorImpl
                     actUseCase.saveAct(
                         Act(
                             sagaId = saga.data.id,
+                            openingCheckpoint = resolveActOpeningCheckpoint(saga.data.id, fullSaga),
                         ),
                     )
                 sagaHistoryUseCase.updateSaga(
@@ -144,6 +149,17 @@ class NarrativeActionExecutorImpl
                     environment,
                 )
             }
+
+        /** Deterministic, no AI call: previous act's closing checkpoint, or the saga's anchor location for Act 1. */
+        private suspend fun resolveActOpeningCheckpoint(
+            sagaId: Int,
+            fullSaga: SagaContent,
+        ): LocationCheckpoint? {
+            fullSaga.acts.lastOrNull()?.data?.closingCheckpoint?.let { return it }
+            return worldLocationUseCase.getRootForSaga(sagaId)?.let {
+                LocationCheckpoint(locationId = it.id, locationName = it.name)
+            }
+        }
 
         private suspend fun generateActIntroduction(
             currentAct: ActContent,
@@ -199,7 +215,12 @@ class NarrativeActionExecutorImpl
                 actUseCase.updateAct(latestAct.data.copy(currentChapterId = lastChapter.data.id))
                 throw IllegalArgumentException("Chapter is already set at this act")
             }
-            val newChapter = chapterUseCase.saveChapter(Chapter(actId = latestAct.data.id))
+            val openingCheckpoint =
+                latestAct.chapters.lastOrNull()?.data?.closingCheckpoint ?: latestAct.data.openingCheckpoint
+            val newChapter =
+                chapterUseCase.saveChapter(
+                    Chapter(actId = latestAct.data.id, openingCheckpoint = openingCheckpoint),
+                )
             actUseCase.updateAct(latestAct.data.copy(currentChapterId = newChapter.id))
             generateChapterIntroductionContent(
                 ChapterContent(data = newChapter),

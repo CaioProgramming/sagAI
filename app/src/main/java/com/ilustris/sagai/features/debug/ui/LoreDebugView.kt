@@ -78,6 +78,7 @@ import com.ilustris.sagai.features.debug.presentation.LoreDebugViewModel
 import com.ilustris.sagai.features.home.data.model.ActMetadata
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.chapterNumber
+import com.ilustris.sagai.features.home.data.model.currentChapterInfo
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
@@ -198,6 +199,30 @@ fun LoreDebugView(
                                 Text(
                                     saga.data.worldState ?: "Nothing stated yet",
                                     style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f),
+                                )
+                            }
+                        }
+
+                        item {
+                            val currentChapter = saga.currentChapterInfo
+                            val opening = currentChapter?.data?.openingCheckpoint
+                            val closing = currentChapter?.data?.closingCheckpoint
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text("Geography checkpoints")
+                                Text(
+                                    "Opening: ${opening?.locationName ?: "-"} · ${opening?.timeOfDay ?: "-"}" +
+                                        (opening?.elapsedNote?.let { " · $it" } ?: ""),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f),
+                                )
+                                Text(
+                                    "Closing: ${closing?.locationName ?: "-"} · ${closing?.timeOfDay ?: "-"}" +
+                                        (closing?.elapsedNote?.let { " · $it" } ?: ""),
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f),
                                 )
                             }

@@ -19,6 +19,7 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.findCharacter
@@ -29,6 +30,7 @@ import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
+import com.ilustris.sagai.features.timeline.data.model.GeneratedLocationUpdate
 import com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -51,6 +53,7 @@ class TimelineUseCaseImpl
         private val characterRelationUseCase: CharacterRelationUseCase,
         private val chapterUseCase: ChapterUseCase,
         private val sagaHistoryUseCase: com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase,
+        private val worldLocationUseCase: WorldLocationUseCase,
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val remoteConfigService: RemoteConfigService,
@@ -111,6 +114,8 @@ class TimelineUseCaseImpl
                 persistedWikis.add(savedWiki)
             }
 
+            persistLocationUpdates(saga.data.id, timeline.chapterId, timeline.id, unifiedLore.locationUpdates)
+
             val charactersUpdates =
                 updateCharactersFromLore(
                     saga,
@@ -123,6 +128,27 @@ class TimelineUseCaseImpl
                     "${persistedCharacters.size}, wikis: ${persistedWikis.size}",
             )
             refreshChapterContinuityRollup(saga.data.id, timeline.chapterId)
+        }
+
+        private suspend fun persistLocationUpdates(
+            sagaId: Int,
+            chapterId: Int,
+            timelineId: Int,
+            locationUpdates: List<GeneratedLocationUpdate>,
+        ) {
+            locationUpdates.forEach { update ->
+                if (update.name.isBlank()) return@forEach
+                val location =
+                    worldLocationUseCase.findOrCreate(
+                        sagaId = sagaId,
+                        name = update.name,
+                        history = update.history,
+                        parentName = update.parentLocationTitle,
+                        emojiTag = update.emojiTag,
+                        originChapterId = chapterId,
+                    )
+                worldLocationUseCase.recordVisit(location.id, chapterId = chapterId, timelineId = timelineId)
+            }
         }
 
         private suspend fun refreshChapterContinuityRollup(
@@ -222,6 +248,13 @@ class TimelineUseCaseImpl
                                         }
                                     persistedWikis.add(savedWiki)
                                 }
+
+                                persistLocationUpdates(
+                                    saga.data.id,
+                                    timeline.chapterId,
+                                    timeline.id,
+                                    unifiedLore.locationUpdates,
+                                )
 
                                 val charactersUpdates =
                                     updateCharactersFromLore(
