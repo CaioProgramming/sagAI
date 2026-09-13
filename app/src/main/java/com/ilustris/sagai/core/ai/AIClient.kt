@@ -346,6 +346,18 @@ abstract class AIClient(
         quotaStatusService.statusForModels(candidateModelsFor(requirement))
 
     /**
+     * Whether the key can generate *anything*, anywhere in the app — every tier's own configured
+     * candidates, pooled together, so [QuotaStatus.DailyExhausted] only comes back once none of
+     * them have anywhere left to go. What a truly global "you're done for today" notice should
+     * gate on: with each tier able to rotate through several models now, one tier alone running
+     * dry no longer means the key itself is out — that only follows once all four are.
+     */
+    suspend fun allTiersQuotaStatus(): Flow<QuotaStatus> {
+        val allCandidates = ModelRequirement.entries.flatMap { candidateModelsFor(it) }.distinct()
+        return quotaStatusService.statusForModels(allCandidates)
+    }
+
+    /**
      * The next candidate after [excluding] in [requirement]'s own `availableModels` — a same-tier,
      * separately-quota'd sibling to try on a 503 before conceding to [fallbackModelName]'s full
      * tier-drop. Null when the tier has no further candidate (no `availableModels` configured,

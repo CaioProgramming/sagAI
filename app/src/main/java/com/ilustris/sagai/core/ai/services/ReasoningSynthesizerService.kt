@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.services
 
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.AIClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
@@ -20,6 +21,7 @@ import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -43,6 +45,7 @@ class ReasoningSynthesizerService
         apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
         modelFallbackNotifier: com.ilustris.sagai.core.ai.ModelFallbackNotifier,
         @PublishedApi internal val genreConfigService: GenreConfigService,
+        @PublishedApi internal val stringResourceHelper: com.ilustris.sagai.core.utils.StringResourceHelper,
     ) : AIClient(
             remoteConfigService,
             promptService,
@@ -121,6 +124,19 @@ class ReasoningSynthesizerService
          *
          * Seeded from Remote Config so there is something on screen at frame zero, then swaps to
          * the generated lines the moment they arrive rather than at the next tick.
+         *
+         * Also listens for [modelFallbackNotifier] the whole time: a 503 mid-request means the
+         * rotation the user has been watching just stopped meaning anything (the model behind it
+         * got swapped out), and letting it keep cycling unrelated flavor lines while the request
+         * quietly restarts elsewhere reads as the app not noticing its own hiccup. A fallback
+         * interrupts whatever line is currently showing — even mid-[ROTATION_MS] — and holds
+         * `R.string.generation_taking_longer` up for [TAKING_LONGER_MS] before the normal rotation
+         * resumes.
+         * Global rather than scoped to this one request's own model: [modelFallbackNotifier] fires
+         * for any generation in the app, so a concurrent, unrelated fallback can occasionally light
+         * this up too. Rare in practice (fallbacks are themselves rare) and harmless when it
+         * happens — the message is true of *a* generation, just not necessarily this exact one —
+         * so it isn't worth the extra plumbing a per-request tag would take.
          */
         @PublishedApi
         internal suspend fun <T> holdWithLoadingLines(
@@ -131,10 +147,30 @@ class ReasoningSynthesizerService
         ) {
             if (terminal.get() || scope.isClosedForSend) return
 
+            val takingLongerUntil = MutableStateFlow(0L)
+            val fallbackListener =
+                scope.launch {
+                    modelFallbackNotifier.fellBackToSubstitute.collect {
+                        takingLongerUntil.value = System.currentTimeMillis() + TAKING_LONGER_MS
+                    }
+                }
+
             try {
                 pool.value = configuredPool(genre)
                 var previous: String? = null
                 while (!terminal.get() && !scope.isClosedForSend) {
+                    val deadline = takingLongerUntil.value
+                    val now = System.currentTimeMillis()
+                    if (deadline > now) {
+                        scope.send(StreamingState.Reasoning(stringResourceHelper.getString(R.string.generation_taking_longer)))
+                        // Woken early by a fresh fallback pushing the deadline out further, same as
+                        // the normal-rotation wait below is woken early by the pool changing.
+                        withTimeoutOrNull(deadline - now) {
+                            takingLongerUntil.first { it > deadline }
+                        }
+                        previous = null
+                        continue
+                    }
                     val current = pool.value
                     if (current.isEmpty()) {
                         // No configured pool: nothing to show until the generated one lands.
@@ -145,12 +181,17 @@ class ReasoningSynthesizerService
                         current.filterNot { it == previous }.randomOrNull() ?: current.random()
                     previous = next
                     scope.send(StreamingState.Reasoning(next))
-                    withTimeoutOrNull(ROTATION_MS) { pool.first { it != current } }
+                    withTimeoutOrNull(ROTATION_MS) {
+                        combine(pool, takingLongerUntil) { p, until -> p to until }
+                            .first { (p, until) -> p != current || until > System.currentTimeMillis() }
+                    }
                 }
             } catch (_: CancellationException) {
                 // The request finished or the collector went away — nothing to clean up.
             } catch (e: Exception) {
                 Timber.e("Error rotating loading lines: ${e.message}")
+            } finally {
+                fallbackListener.cancel()
             }
         }
 
@@ -269,5 +310,9 @@ class ReasoningSynthesizerService
              */
             @PublishedApi
             internal val ROTATION_MS = 8000L
+
+            /** How long a fallback's "taking longer" line holds the screen before normal rotation resumes. */
+            @PublishedApi
+            internal val TAKING_LONGER_MS = 15_000L
         }
     }

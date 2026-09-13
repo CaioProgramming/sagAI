@@ -72,7 +72,7 @@ fun ApiKeyTroubleSheet(
     onOpenSettings: () -> Unit,
 ) {
     val quotaViewModel: QuotaStatusViewModel = hiltViewModel()
-    val quotaStatus by quotaViewModel.status.collectAsStateWithLifecycle()
+    val quotaStatus by quotaViewModel.globalStatus.collectAsStateWithLifecycle()
 
     val rejection = (apiKeyState as? ApiKeyState.Invalidated)?.reason
     val dailyBlock = quotaStatus as? QuotaStatus.DailyExhausted

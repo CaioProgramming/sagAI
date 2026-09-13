@@ -56,4 +56,21 @@ class QuotaStatusViewModel
                         initialValue = QuotaStatus.Clear,
                     )
             }
+
+        /**
+         * Whether the key can generate *anything*, anywhere in the app — every tier's own
+         * candidates pooled together. What a global, every-surface notice (e.g.
+         * [com.ilustris.sagai.ui.components.ApiKeyTroubleSheet]) should gate on instead of [status]:
+         * that sheet used to fire off [status]'s single-worst-model aggregate, which meant one tier
+         * (say HIGH, freshly exhausted on just one of its several candidates) could pop a "you're
+         * done for today" notice while every other tier — and the rest of HIGH's own array — still
+         * had plenty left.
+         */
+        val globalStatus: StateFlow<QuotaStatus> =
+            flow { emitAll(gemmaClient.allTiersQuotaStatus()) }
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5_000),
+                    initialValue = QuotaStatus.Clear,
+                )
     }
