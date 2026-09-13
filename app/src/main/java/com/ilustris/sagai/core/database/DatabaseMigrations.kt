@@ -355,6 +355,10 @@ object DatabaseMigrations {
     val MIGRATION_31_32 =
         object : Migration(31, 32) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                // Persistent, saga-wide signal of how the player prefers to engage (combat vs.
+                // relationship/introspection depth), rewritten every turn — see Saga.playerCompass.
+                db.execSQL("ALTER TABLE sagas ADD COLUMN `playerCompass` TEXT DEFAULT ''")
+
                 // World-building: WorldLocation replaces WikiType.LOCATION as the geography
                 // source of truth (hierarchical, with a visit log) — see LocationCheckpoint.kt.
                 db.execSQL(

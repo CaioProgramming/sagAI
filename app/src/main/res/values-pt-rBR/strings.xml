@@ -970,6 +970,11 @@
     <string name="api_key_setup_error_rejected">O Google recusou esta chave. Confira se você copiou ela inteira.</string>
     <string name="api_key_setup_error_network">Não deu para falar com o Google para conferir a chave. Verifique sua conexão e tente de novo.</string>
 
+    <!-- BYOK: a tela ficou sem chave configurada (sheet fechada, ou um erro em segundo plano a fechou) -->
+    <string name="api_key_required_title">Você precisa de uma chave de API para continuar</string>
+    <string name="api_key_required_message">O Sagas não consegue gerar nada sem a sua chave da API Gemini configurada.</string>
+    <string name="api_key_required_action">Configurar sua chave</string>
+
     <!-- BYOK: migração de instalações existentes -->
 
     <!-- BYOK: ajustes -->

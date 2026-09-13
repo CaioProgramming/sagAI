@@ -985,6 +985,10 @@
     <string name="api_key_setup_error_rejected">Google rejected this key. Check that you copied it whole.</string>
     <string name="api_key_setup_error_network">Couldn\'t reach Google to check the key. Check your connection and try again.</string>
 
+    <!-- BYOK: the sheet was left without a key set (dismissed, or a background error closed it) -->
+    <string name="api_key_required_title">You need an API key to continue</string>
+    <string name="api_key_required_message">Sagas can\'t generate anything without your Gemini API key set up.</string>
+    <string name="api_key_required_action">Set up your key</string>
 
     <!-- BYOK: settings -->
     <string name="api_key_settings_section">API key</string>

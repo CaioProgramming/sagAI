@@ -103,6 +103,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusViewModel
 import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
@@ -440,8 +441,11 @@ fun ChatContent(
     val content = uiState.sagaContent ?: stableContent ?: return
     val saga = remember(content) { content.data }
     val listState = rememberLazyListState()
+    // HIGH is the tier the actual chat reply generates on (see MessageUseCaseImpl) — gated on
+    // tierStatus, not the raw aggregate .status: HIGH now names several candidate models, and one
+    // of them being spent for the day no longer means HIGH itself has nothing left to try.
     val quotaStatus by hiltViewModel<QuotaStatusViewModel>()
-        .status
+        .tierStatus(ModelRequirement.HIGH)
         .collectAsStateWithLifecycle()
 
     var showReactions by remember {

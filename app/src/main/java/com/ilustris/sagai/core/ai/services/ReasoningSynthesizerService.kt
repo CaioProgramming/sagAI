@@ -262,11 +262,12 @@ class ReasoningSynthesizerService
             /**
              * How long each holding line stays up before the next one replaces it.
              *
-             * Sized to the lines, which are two to five words: they are read in well under a
-             * second, and holding a read line on screen is what made the old single sentence feel
-             * frozen.
+             * 1.5s (long enough to read the two-to-five words, but not to register as a pause)
+             * turned out too fast in practice — lines were swapping out mid-read. 8s paces it to
+             * an actual reading cadence for a short phrase, not just the minimum time the eye needs
+             * to pass over the words.
              */
             @PublishedApi
-            internal val ROTATION_MS = 1500L
+            internal val ROTATION_MS = 8000L
         }
     }

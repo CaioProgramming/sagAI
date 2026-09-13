@@ -89,6 +89,7 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
 import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
 import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyNamePrompt
+import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyRequiredScreen
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
 import com.ilustris.sagai.ui.components.ApiKeyTroubleSheet
@@ -696,12 +697,27 @@ class MainActivity : ComponentActivity() {
                                     } else if (gate == AppGate.Offline) {
                                         NoInternetScreen()
                                     } else if (gate == AppGate.NeedsApiKey) {
-                                        OnboardingHost(
-                                            type = OnboardingType.API_KEY_SETUP,
-                                            presentation = OnboardingPresentation.Sheet,
-                                            force = true,
-                                            dismissible = false,
+                                        // The sheet is meant to be undismissable while there is no
+                                        // key, but nothing here can fully guarantee that: an error
+                                        // surfacing inside OnboardingHost's own state machine force-
+                                        // dismisses regardless of `dismissible`, and a stray system
+                                        // back-gesture is never fully ruled out either. Keeping a
+                                        // real screen underneath — with its own way back in — means
+                                        // one of those closing the sheet strands the user on a blank
+                                        // screen instead of a recoverable one.
+                                        var showApiKeySheet by remember { mutableStateOf(true) }
+                                        ApiKeyRequiredScreen(
+                                            onConfigureClick = { showApiKeySheet = true },
                                         )
+                                        if (showApiKeySheet) {
+                                            OnboardingHost(
+                                                type = OnboardingType.API_KEY_SETUP,
+                                                presentation = OnboardingPresentation.Sheet,
+                                                force = true,
+                                                dismissible = false,
+                                                onDismiss = { showApiKeySheet = false },
+                                            )
+                                        }
                                         ApiKeyNamePrompt()
                                     }
                                 }

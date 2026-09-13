@@ -12,6 +12,15 @@ import com.ilustris.sagai.features.timeline.data.model.TimelineContent
  * name (not type) since [NarrativeExecutionResult.Failure] only carries a message string. */
 const val TIMELINE_ALREADY_ACTIVE_MESSAGE = "Timeline already set at this chapter"
 
+/** Thrown by [NarrativeAction.CreateChapter]'s executor when the act's last chapter is already
+ * active and mid-play — same self-heal shape as [TIMELINE_ALREADY_ACTIVE_MESSAGE], just one level
+ * up: `CreateChapter` gets (re)proposed while a chapter already exists for this act, the executor
+ * repoints `currentChapterId` at it, and this reports that as a no-op rather than a real failure. */
+const val CHAPTER_ALREADY_SET_MESSAGE = "Chapter is already set at this act"
+
+/** Same shape one level further up, for [NarrativeAction.CreateAct]. */
+const val ACT_ALREADY_SET_MESSAGE = "Act is already set at this saga"
+
 sealed class NarrativeAction {
     data object CreateAct : NarrativeAction()
 

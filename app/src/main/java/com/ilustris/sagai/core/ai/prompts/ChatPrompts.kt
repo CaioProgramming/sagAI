@@ -299,13 +299,16 @@ object ChatPrompts {
      * conversation history beyond the two messages being reacted to. What it does carry is per
      * character stake, sourced from the scene summary's [CharacterPresence.brief] rather than raw
      * profile fields, because without that the reactions come back interchangeable, which is the
-     * failure REACTION_NOT_TRANSFERABLE exists to catch.
+     * failure REACTION_NOT_TRANSFERABLE exists to catch. [playerCompass] rides along too, thin as it
+     * is: this is the only live path that voices *other* characters' reactions to a turn, and without
+     * it a bystander's reaction has no way to know the player is mid-vulnerability rather than mid-plot.
      */
     suspend fun replyFalloutPrompt(
         promptService: PromptService,
         userMessage: Message,
         replyMessage: Message,
         sceneSummary: SceneSummary?,
+        playerCompass: String? = null,
     ): SplitPrompt {
         val speakerNames =
             listOfNotNull(userMessage.speakerName, replyMessage.speakerName)
@@ -327,6 +330,7 @@ object ChatPrompts {
                 "reactingCast" to castWithStake,
                 "playerMessage" to userMessage.toAINormalize(messageExclusions),
                 "characterReply" to replyMessage.toAINormalize(messageExclusions),
+                "playerCompass" to playerCompass.orEmpty(),
             ),
         )
     }

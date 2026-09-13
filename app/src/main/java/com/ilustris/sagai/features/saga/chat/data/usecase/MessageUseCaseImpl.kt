@@ -368,6 +368,13 @@ class MessageUseCaseImpl
                                                     message.message.copy(emotionalTone = tone),
                                                 )
                                             }
+                                            reply.playerCompass
+                                                ?.takeIf { it.isNotBlank() && it != freshSaga.data.playerCompass }
+                                                ?.let { compass ->
+                                                    sagaRepository.updateSaga(
+                                                        freshSaga.data.copy(playerCompass = compass),
+                                                    )
+                                                }
                                             saved
                                         }
                                     }
@@ -437,6 +444,7 @@ class MessageUseCaseImpl
                             userMessage = userMessage,
                             replyMessage = replyMessage,
                             sceneSummary = sceneSummary,
+                            playerCompass = saga.data.playerCompass,
                         )
                     gemmaClient.generate<ReplyFallout>(
                         promptSplit =

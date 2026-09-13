@@ -952,7 +952,24 @@ class ChatViewModel
                         // MilestoneViewModel.showOnboarding) on top of the first act's
                         // introduction generating underneath, instead of chat gating generation
                         // on the tutorial being dismissed first.
-                        if (sagaContent.acts.isEmpty() || messagesChanged || sagaContent.getCurrentTimeLine() == null) {
+                        //
+                        // Skipped while a reply is actively generating for this saga: messagesChanged
+                        // fires the instant the user's own message lands, which is well before that
+                        // turn's reply exists. If message count alone already crosses the timeline's
+                        // close threshold, this used to close/advance the timeline right then —
+                        // racing the in-flight reply on a mutex (progressionMutex) that has no
+                        // relationship to the reply's own (per-model) one, so the new-event card could
+                        // pop up mid-reply. The two post-generation triggers above (the
+                        // wasGenerating-edge and ChatGenerationOutcome.Success collectors) already
+                        // re-check once that reply actually lands — this one only needs to cover the
+                        // cases generation can't: a brand-new saga, a message count that changed
+                        // without a generation (e.g. a guardrail-blocked message getting deleted), or
+                        // no current timeline yet.
+                        val isGeneratingForThisSaga =
+                            chatGenerationService.activeGenerations.value.containsKey(sagaContent.data.id)
+                        if (!isGeneratingForThisSaga &&
+                            (sagaContent.acts.isEmpty() || messagesChanged || sagaContent.getCurrentTimeLine() == null)
+                        ) {
                             sagaContentManager.checkNarrativeProgression(sagaContent)
                         }
 

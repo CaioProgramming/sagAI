@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai
 
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.key.ApiUsageTracker
+import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusService
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.SplitPrompt
@@ -11,6 +12,7 @@ import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -273,13 +275,17 @@ abstract class AIClient(
             ?: THINKING_LEVEL_LADDER.last()
     }
 
-    suspend fun modelName(requirement: ModelRequirement): String {
+    /**
+     * [requirement]'s configured candidates, best first — [availableModelsFor]'s own
+     * `availableModels` list when present, else the tier's single `model` as a one-element list.
+     * Never empty when the tier config itself is valid; throws/errors the same way [modelName]
+     * always did when it isn't.
+     */
+    private suspend fun candidateModelsFor(requirement: ModelRequirement): List<String> {
         val tierConfig =
             remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap()
         return when (val config = tierConfig[requirement.name]) {
-            is String -> {
-                config.replace("models/", "")
-            }
+            is String -> listOf(config.replace("models/", ""))
 
             is Map<*, *> -> {
                 val enabled = config["enabled"] as? Boolean ?: true
@@ -289,10 +295,18 @@ abstract class AIClient(
                         config["model"] as? String ?: "UNKNOWN",
                     )
                 }
-                val model =
+                val primary =
                     config["model"] as? String
                         ?: error("Model name not found in config for ${requirement.name}")
-                model.replace("models/", "")
+                // Optional, additive: a tier with only `model` set behaves exactly as before.
+                // Order is preference — best/most-capable first — read as-is, never resorted.
+                val available =
+                    (config["availableModels"] as? List<*>)
+                        ?.mapNotNull { it as? String }
+                        ?.map { it.replace("models/", "") }
+                        ?.filter { it.isNotBlank() }
+                        ?.takeIf { it.isNotEmpty() }
+                available ?: listOf(primary.replace("models/", ""))
             }
 
             else -> {
@@ -303,8 +317,58 @@ abstract class AIClient(
     }
 
     /**
+     * [requirement]'s model to actually use right now: the first of [candidateModelsFor] that
+     * isn't sitting on a spent daily quota, or the first candidate regardless if every one of them
+     * is — same as before this existed, a single-candidate tier always returns that one candidate,
+     * daily quota or not, and lets the normal 429 handling explain why.
+     */
+    suspend fun modelName(requirement: ModelRequirement): String {
+        val candidates = candidateModelsFor(requirement)
+        return candidates.firstOrNull { !quotaStatusService.isModelDailyExhausted(it) }
+            ?: candidates.first()
+    }
+
+    /**
+     * How many distinct models [requirement] could rotate through — [GeminiGenerationPolicy]'s
+     * retry budget is sized against this so a tier with more than one configured candidate is
+     * guaranteed at least one attempt per candidate, and one with only its old single `model`
+     * field keeps exactly the attempt count it always had.
+     */
+    @PublishedApi
+    internal suspend fun candidateModelCount(requirement: ModelRequirement): Int = candidateModelsFor(requirement).size
+
+    /**
+     * [requirement]'s own daily-quota status — [QuotaStatusService.statusForModels] scoped to its
+     * configured candidates, so a UI gating input on this only blocks once the whole tier is
+     * actually out, not the moment any one of its several models is.
+     */
+    suspend fun tierQuotaStatus(requirement: ModelRequirement): Flow<QuotaStatus> =
+        quotaStatusService.statusForModels(candidateModelsFor(requirement))
+
+    /**
+     * The next candidate after [excluding] in [requirement]'s own `availableModels` — a same-tier,
+     * separately-quota'd sibling to try on a 503 before conceding to [fallbackModelName]'s full
+     * tier-drop. Null when the tier has no further candidate (no `availableModels` configured,
+     * [excluding] is its last/only one, or every remaining candidate is daily-exhausted).
+     */
+    suspend fun siblingModelName(
+        requirement: ModelRequirement,
+        excluding: String,
+    ): String? {
+        val candidates = candidateModelsFor(requirement)
+        if (candidates.size < 2) return null
+        val normalizedExcluding = excluding.replace("models/", "")
+        val currentIndex = candidates.indexOf(normalizedExcluding)
+        if (currentIndex == -1) return null
+        return candidates
+            .drop(currentIndex + 1)
+            .firstOrNull { !quotaStatusService.isModelDailyExhausted(it) }
+    }
+
+    /**
      * The model a 503 ("this model is currently experiencing high demand") falls over to for
-     * [requirement], or null if this tier has nowhere sensible to fall back to.
+     * [requirement] once [siblingModelName] has nothing left to offer, or null if this tier has
+     * nowhere sensible to fall back to.
      *
      * Always LOW's own configured model, never a separate value — the free-tier model backing
      * LOW is already Gemma, a different serving stack from Gemini, and it is presumably the
@@ -335,25 +399,31 @@ abstract class AIClient(
      * held: quota is per Google Cloud project, so keys of the same project share one budget. Under
      * BYOK there is a single credential and nothing left to choose between.
      */
-    suspend fun apiConfig(): String {
-        ensureQuotaAvailable()
+    suspend fun apiConfig(model: String): String {
+        ensureQuotaAvailable(model)
         return userApiKeyStore.getKeyNow()?.takeIf { it.isNotBlank() }
             ?: throw MissingApiKeyException()
     }
 
     /**
-     * Refuses a call the daily quota has already lost, before it costs anything.
+     * Refuses a call [model] specifically has already lost its daily quota on, before it costs
+     * anything.
      *
      * Lives here rather than at the generation entry points because there are far more of those
      * than the obvious two — book export, image generation, character creation, milestone beats,
      * the epilogue chat — and gating them one screen at a time guarantees the ones nobody
      * remembered keep failing mutely. Every text generation, sync and streaming alike, resolves its
      * credential through [apiConfig], so this is the one road they all take.
+     *
+     * Checked per-[model] rather than [QuotaStatusService.activeDailyBlock]'s old aggregate: with a
+     * tier now able to name more than one candidate model, "some model somewhere is exhausted" and
+     * "the specific model this call is about to use is exhausted" stopped being the same question —
+     * the whole point of a same-tier sibling is that it keeps working while another one is spent.
      */
     @PublishedApi
-    internal suspend fun ensureQuotaAvailable() {
-        quotaStatusService.activeDailyBlock()?.let { block ->
-            throw QuotaExhaustedException(until = block.until, model = block.model)
+    internal suspend fun ensureQuotaAvailable(model: String) {
+        quotaStatusService.dailyExhaustionFor(model)?.let { until ->
+            throw QuotaExhaustedException(until = until, model = model)
         }
     }
 

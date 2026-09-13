@@ -23,6 +23,8 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
+import com.ilustris.sagai.features.saga.chat.domain.manager.ACT_ALREADY_SET_MESSAGE
+import com.ilustris.sagai.features.saga.chat.domain.manager.CHAPTER_ALREADY_SET_MESSAGE
 import com.ilustris.sagai.features.saga.chat.domain.manager.TIMELINE_ALREADY_ACTIVE_MESSAGE
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationCoordinator
@@ -132,7 +134,13 @@ class NarrativeActionExecutorImpl
                     sagaHistoryUseCase.updateSaga(
                         saga.data.copy(currentActId = lastAct.data.id),
                     )
-                    error("Act is already set at this saga")
+                    // The act itself exists but never got its own introduction — most likely an
+                    // earlier attempt at this same act was interrupted before that call finished.
+                    // Resume it instead of reporting a failure for an act that is otherwise fine.
+                    if (lastAct.data.introduction.isBlank()) {
+                        return@executeRequest generateActIntroductionContent(lastAct, environment)
+                    }
+                    throw IllegalArgumentException(ACT_ALREADY_SET_MESSAGE)
                 }
                 val newAct =
                     actUseCase.saveAct(
@@ -213,7 +221,15 @@ class NarrativeActionExecutorImpl
             val lastChapter = latestAct.chapters.lastOrNull()
             if (lastChapter?.isComplete(rules)?.not() == true) {
                 actUseCase.updateAct(latestAct.data.copy(currentChapterId = lastChapter.data.id))
-                throw IllegalArgumentException("Chapter is already set at this act")
+                // The chapter itself exists but never got its own introduction — most likely an
+                // earlier attempt at this same chapter was interrupted before that call finished
+                // (a 503, a killed process, a race). Resume it instead of reporting a failure for
+                // a chapter that only needs its intro finished, which otherwise left the player
+                // stuck bouncing off this same error with nothing actually being retried.
+                if (lastChapter.data.introduction.isBlank()) {
+                    return@executeRequest generateChapterIntroductionContent(lastChapter, environment)
+                }
+                throw IllegalArgumentException(CHAPTER_ALREADY_SET_MESSAGE)
             }
             val openingCheckpoint =
                 latestAct.chapters.lastOrNull()?.data?.closingCheckpoint ?: latestAct.data.openingCheckpoint
