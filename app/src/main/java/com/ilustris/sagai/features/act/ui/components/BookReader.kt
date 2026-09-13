@@ -106,7 +106,7 @@ fun BookReader(
                     .fillMaxSize(),
         ) {
             val readingProgress by animateFloatAsState(
-                if (act.book != null && pageItems.isNotEmpty()) (pagerState.currentPage.toFloat() / pageItems.size.toFloat()) else 0f,
+                if (act.hasReadableBook() && pageItems.isNotEmpty()) (pagerState.currentPage.toFloat() / pageItems.size.toFloat()) else 0f,
                 label = "readingProgress",
             )
 

@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.chapter.data.model
 import androidx.room.Embedded
 import androidx.room.Relation
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.features.act.data.model.BookChapterPages
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -23,6 +24,12 @@ data class ChapterContent(
         entity = Timeline::class,
     )
     val currentEventInfo: TimelineContent? = null,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "chapterId",
+        entity = BookChapterPages::class,
+    )
+    val bookPages: BookChapterPages? = null,
 ) {
     fun isFull(
         updateLimit: Int,

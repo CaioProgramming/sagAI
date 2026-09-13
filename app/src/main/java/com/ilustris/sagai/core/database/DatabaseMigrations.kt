@@ -352,6 +352,29 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_32_33 =
+        object : Migration(32, 33) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Books are now written incrementally: a volume header (prologue/epilogue) plus
+                // one pages row per chapter, written in the background as the saga is played.
+                db.execSQL("ALTER TABLE books ADD COLUMN `prologue` TEXT")
+                db.execSQL("ALTER TABLE books ADD COLUMN `prologueNotes` TEXT")
+                db.execSQL("ALTER TABLE books ADD COLUMN `epilogue` TEXT")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `book_chapter_pages` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`chapterId` INTEGER NOT NULL, " +
+                        "`pages` TEXT NOT NULL, " +
+                        "`writerNotes` TEXT NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`chapterId`) REFERENCES `Chapter`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_book_chapter_pages_chapterId` ON `book_chapter_pages` (`chapterId`)",
+                )
+            }
+        }
+
     val MIGRATION_31_32 =
         object : Migration(31, 32) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -555,5 +578,6 @@ object DatabaseMigrations {
             MIGRATION_29_30,
             MIGRATION_30_31,
             MIGRATION_31_32,
+            MIGRATION_32_33,
         )
 }

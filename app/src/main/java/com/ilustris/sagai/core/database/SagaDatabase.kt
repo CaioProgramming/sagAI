@@ -15,6 +15,7 @@ import com.ilustris.sagai.core.database.source.ApiUsageDao
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.Book
+import com.ilustris.sagai.features.act.data.model.BookChapterPages
 import com.ilustris.sagai.features.act.data.source.ActDao
 import com.ilustris.sagai.features.act.data.source.BookDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -54,6 +55,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Timeline::class,
         Act::class,
         Book::class,
+        BookChapterPages::class,
         CharacterEvent::class,
         CharacterRelation::class,
         RelationshipUpdateEvent::class,
@@ -63,7 +65,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         WorldLocation::class,
         WorldLocationVisit::class,
     ],
-    version = 32,
+    version = 33,
     exportSchema = true,
 )
 @TypeConverters(

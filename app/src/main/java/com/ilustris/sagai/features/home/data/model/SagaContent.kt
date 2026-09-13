@@ -77,6 +77,8 @@ data class SagaContent(
 
     fun messagesSize() = acts.sumOf { it.chapters.sumOf { it.events.sumOf { it.messages.size } } }
 
+    fun flatBookChapters() = acts.flatMap { it.volumeChapters() }
+
     fun completedChapters(narrativeRules: NarrativeRules) = flatChapters().count { it.isComplete(narrativeRules) }
 
     fun completedActs(narrativeRules: NarrativeRules) = acts.count { it.isComplete(narrativeRules) }

@@ -31,6 +31,7 @@ import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toRoman
+import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -140,6 +141,7 @@ class SagaContentManagerImpl
         private val narrativeProcessingGate: NarrativeProcessingGate,
         private val stringResourceHelper: StringResourceHelper,
         private val globalShellService: GlobalShellService,
+        private val bookGenerationService: BookGenerationService,
         private val chatIslandService: ChatIslandService,
         private val sagaNavigationTracker: SagaNavigationTracker,
         @ApplicationContext
@@ -456,6 +458,7 @@ class SagaContentManagerImpl
             sagaJob =
                 managerScope.launch {
                     Timber.d("Loading saga: $sagaId")
+                    sagaId.toIntOrNull()?.let(bookGenerationService::healOnce)
                     try {
                         if (milestoneReadinessObserverJob == null || milestoneReadinessObserverJob?.isActive == false) {
                             milestoneReadinessObserverJob = observeMilestoneChainReadiness()

@@ -7,8 +7,10 @@ import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
+import com.ilustris.sagai.features.act.data.usecase.BookUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
@@ -50,6 +52,8 @@ class NarrativeActionExecutorImpl
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val playerProfileUseCase: PlayerProfileUseCase,
         private val worldLocationUseCase: WorldLocationUseCase,
+        private val bookUseCase: BookUseCase,
+        private val bookGenerationService: BookGenerationService,
     ) : NarrativeActionExecutor {
         override suspend fun execute(
             action: NarrativeAction,
@@ -103,7 +107,39 @@ class NarrativeActionExecutorImpl
                         )
                     }
                 }
+            if (result is RequestResult.Success) {
+                onBookMaterialProduced(action, environment)
+            }
             return result.toNarrativeExecutionResult()
+        }
+
+        /**
+         * The book is written silently behind the narrative: every step that produces book material
+         * (act intro → prologue, chapter synthesis → chapter pages, act synthesis → volume closure)
+         * nudges the background writer, which fills whatever is missing in reading order.
+         */
+        private suspend fun onBookMaterialProduced(
+            action: NarrativeAction,
+            environment: NarrativeExecutionEnvironment,
+        ) {
+            if (environment.isDebugMode()) return
+            val producesBookMaterial =
+                when (action) {
+                    NarrativeAction.CreateAct,
+                    is NarrativeAction.GenerateActIntro,
+                    is NarrativeAction.GenerateAct,
+                    -> true
+
+                    is NarrativeAction.GenerateChapter -> {
+                        // A re-synthesized chapter no longer matches its old pages.
+                        if (action.chapter.bookPages != null) bookUseCase.invalidateChapter(action.chapter.data.id)
+                        true
+                    }
+
+                    else -> false
+                }
+            if (!producesBookMaterial) return
+            environment.getSagaMetadata()?.data?.id?.let(bookGenerationService::writeInBackground)
         }
 
         private fun RequestResult<Any>.toNarrativeExecutionResult(): NarrativeExecutionResult =

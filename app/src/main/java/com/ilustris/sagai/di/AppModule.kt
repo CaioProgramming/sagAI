@@ -379,7 +379,10 @@ object AppModule {
         )
 
     @Provides
-    fun providesBookPageMapper(fileHelper: FileHelper) = BookPageMapper(fileHelper)
+    fun providesBookPageMapper(
+        fileHelper: FileHelper,
+        stringResourceHelper: StringResourceHelper,
+    ) = BookPageMapper(fileHelper, stringResourceHelper)
 
     @Provides
     fun providesTimelineMapper(

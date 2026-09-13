@@ -4,12 +4,13 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.toRoman
+import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.ActContent
+import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.act.data.usecase.BookUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -55,6 +57,7 @@ class BookReaderViewModel
     constructor(
         private val sagaRepository: SagaRepository,
         private val bookUseCase: BookUseCase,
+        private val bookGenerationService: BookGenerationService,
         private val sharePlayUseCase: SharePlayUseCase,
         private val fileHelper: FileHelper,
         private val pageMapper: BookPageMapper,
@@ -69,6 +72,34 @@ class BookReaderViewModel
         private var sagaContent: SagaContent? = null
         private var currentActIndex: Int = 0
         private var initialActId: Int = -1
+
+        init {
+            viewModelScope.launch {
+                bookGenerationService.uiState.collectLatest { genState ->
+                    val act = sagaContent?.acts?.getOrNull(currentActIndex) ?: return@collectLatest
+                    when {
+                        genState is BookGenerationUiState.Generating && genState.actId == act.data.id -> {
+                            _state.value = BookReaderState.Generating(act.data.title, genState.reasoning)
+                        }
+
+                        genState is BookGenerationUiState.Error && genState.actId == act.data.id -> {
+                            _state.value = BookReaderState.Error(genState.message)
+                        }
+                    }
+                }
+            }
+
+            viewModelScope.launch {
+                bookGenerationService.completed.collect { key ->
+                    val saga = sagaContent ?: return@collect
+                    if (saga.acts.getOrNull(currentActIndex)?.data?.id != key.initialActId) return@collect
+                    sagaRepository.getSagaById(key.sagaId).first()?.let {
+                        sagaContent = it
+                        renderCurrentAct(it)
+                    }
+                }
+            }
+        }
 
         // ---------------------------------------------------------------------------
         // Public API
@@ -106,7 +137,7 @@ class BookReaderViewModel
             currentActIndex = nextIndex
             val nextAct = saga.acts[nextIndex]
 
-            if (nextAct.book != null) {
+            if (nextAct.hasReadableBook()) {
                 renderCurrentAct(saga)
             } else {
                 generateAndAdvance(saga, nextAct)
@@ -117,30 +148,16 @@ class BookReaderViewModel
             val saga = sagaContent ?: return
             val act = saga.acts.getOrNull(currentActIndex) ?: return
             viewModelScope.launch {
-                bookUseCase.resetBook(act)
                 _state.value = BookReaderState.Generating(act.data.title, null)
-                bookUseCase.generateBookStream(saga, act).collect { streamState ->
-                    when (streamState) {
-                        is StreamingState.Success -> {
-                            renderCurrentAct(saga)
-                        }
-
-                        is StreamingState.Error -> {
-                            _state.value = BookReaderState.Error(streamState.message)
-                        }
-
-                        is StreamingState.Reasoning -> {
-                            _state.value = BookReaderState.Generating(act.data.title, streamState.chunk)
-                        }
-                    }
-                }
+                bookUseCase.resetVolume(act.data.id)
+                bookGenerationService.generate(saga, act)
             }
         }
 
         fun shareCurrentBook() {
             val saga = sagaContent ?: return
             val act = saga.acts.getOrNull(currentActIndex) ?: return
-            val book = act.book ?: return
+            val book = act.book?.takeIf { it.isSealed() } ?: return
             viewModelScope.launch {
                 _state.value =
                     BookReaderState.Generating(
@@ -183,6 +200,15 @@ class BookReaderViewModel
                     _state.value = BookReaderState.Error(stringResourceHelper.getString(R.string.act_not_found))
                     return
                 }
+            if (!act.hasReadableBook()) {
+                // Chapter pages land one by one while a volume is written; keep showing progress
+                // (or the last error) instead of an empty book, and start writing only once.
+                val current = _state.value
+                if (current !is BookReaderState.Generating && current !is BookReaderState.Error) {
+                    generateAndAdvance(saga, act)
+                }
+                return
+            }
             viewModelScope.launch {
                 pageMapper.validateImages(saga, act)
                 val pages = pageMapper.buildPages(saga, act, saga.characters)
@@ -200,23 +226,7 @@ class BookReaderViewModel
             saga: SagaContent,
             act: ActContent,
         ) {
-            viewModelScope.launch {
-                _state.value = BookReaderState.Generating(act.data.title, null)
-                bookUseCase.generateBookStream(saga, act).collect { streamState ->
-                    when (streamState) {
-                        is StreamingState.Success -> {
-                            renderCurrentAct(saga)
-                        }
-
-                        is StreamingState.Error -> {
-                            _state.value = BookReaderState.Error(streamState.message)
-                        }
-
-                        is StreamingState.Reasoning -> {
-                            _state.value = BookReaderState.Generating(act.data.title, streamState.chunk)
-                        }
-                    }
-                }
-            }
+            _state.value = BookReaderState.Generating(act.data.title, null)
+            bookGenerationService.generate(saga, act)
         }
     }

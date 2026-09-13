@@ -1,8 +1,11 @@
 package com.ilustris.sagai.features.act.ui
 
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.ActContent
+import com.ilustris.sagai.features.act.data.model.BookChapter
 import com.ilustris.sagai.features.act.data.model.BookPage
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -41,6 +44,7 @@ class BookPageMapper
     @Inject
     constructor(
         private val fileHelper: FileHelper,
+        private val stringResourceHelper: StringResourceHelper,
     ) {
         /**
          * @param saga       Full saga context (icon, title, genre).
@@ -54,10 +58,7 @@ class BookPageMapper
             characters: List<CharacterContent>,
         ): List<PageItem> =
             buildList {
-                val book = act.book ?: return emptyList()
-                val addedImages = mutableSetOf<String>()
-                val allImages = act.chapters.filter { fileHelper.readFile(it.data.coverImage) != null }
-
+                val book = act.book?.takeIf { it.isSealed() } ?: return emptyList()
                 add(
                     PageItem.BookCover(
                         sagaTitle = book.sagaTitle,
@@ -74,25 +75,31 @@ class BookPageMapper
                     }
                 }
 
-                // Chapter pages
-                book.chapters.forEachIndexed { index, chapter ->
-                    add(PageItem.ChapterStart(chapter.title))
-                    allImages.randomOrNull()?.let {
-                        if (!addedImages.contains(it.data.coverImage)) {
-                            add(PageItem.Illustration(it.data.coverImage, chapter.title))
-                            addedImages.add(it.data.coverImage)
-                        }
+                book.prologue?.takeIf { it.isNotEmpty() }?.let { pages ->
+                    addSection(BookChapter(stringResourceHelper.getString(R.string.book_prologue_title), pages))
+                }
+
+                if (book.isLegacy()) {
+                    val allImages = act.chapters.filter { fileHelper.readFile(it.data.coverImage) != null }
+                    val addedImages = mutableSetOf<String>()
+                    book.chapters.forEach { chapter ->
+                        val image = allImages.randomOrNull()?.data?.coverImage?.takeIf { addedImages.add(it) }
+                        addSection(chapter, image)
                     }
-                    // Body pages
-                    chapter.pages.forEachIndexed { pageIndex, page ->
-                        add(
-                            PageItem.Content(
-                                chapterTitle = chapter.title,
-                                page = page,
-                                showDropCap = pageIndex == 0,
-                            ),
-                        )
+                } else {
+                    act.volumeChapters().forEach { chapter ->
+                        val cover =
+                            act.chapters
+                                .find { it.data.id == chapter.chapterId }
+                                ?.data
+                                ?.coverImage
+                                ?.takeIf { fileHelper.readFile(it) != null }
+                        addSection(chapter, cover)
                     }
+                }
+
+                book.epilogue?.takeIf { it.isNotEmpty() }?.let { pages ->
+                    addSection(BookChapter(stringResourceHelper.getString(R.string.book_epilogue_title), pages))
                 }
 
                 val presentCharacters = act.getPresentCharacters(characters)
@@ -100,6 +107,23 @@ class BookPageMapper
                     add(PageItem.CharacterGrid(presentCharacters))
                 }
             }
+
+        private fun MutableList<PageItem>.addSection(
+            chapter: BookChapter,
+            illustration: String? = null,
+        ) {
+            add(PageItem.ChapterStart(chapter.title))
+            illustration?.let { add(PageItem.Illustration(it, chapter.title)) }
+            chapter.pages.forEachIndexed { pageIndex, page ->
+                add(
+                    PageItem.Content(
+                        chapterTitle = chapter.title,
+                        page = page,
+                        showDropCap = pageIndex == 0,
+                    ),
+                )
+            }
+        }
 
         /** Pre-validates all images required to render the given act and returns the result map. */
         suspend fun validateImages(

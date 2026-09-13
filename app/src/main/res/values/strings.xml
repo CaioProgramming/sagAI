@@ -533,6 +533,12 @@
     <string name="share_book_pdf_subject">Sharing %1$s from Sagas</string>
     <string name="regenerate_book_cd">Regenerate Book</string>
     <string name="share_pdf_cd">Share PDF</string>
+    <string name="book_writing_prologue">Writing the prologue…</string>
+    <string name="book_writing_chapter">Writing chapter %1$d of %2$d: %3$s…</string>
+    <string name="book_writing_closure">Writing the author\'s note…</string>
+    <string name="book_volume_not_finished">This volume will be complete once the act ends.</string>
+    <string name="book_prologue_title">Prologue</string>
+    <string name="book_epilogue_title">Epilogue</string>
     <string name="book_share_preparing">Preparing your chronicle for sharing…</string>
     <string name="book_share_error_uri">Failed to get file URI</string>
     <string name="book_share_error_pdf">Failed to generate PDF</string>

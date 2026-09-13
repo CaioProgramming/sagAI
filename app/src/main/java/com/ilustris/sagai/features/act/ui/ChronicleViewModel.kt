@@ -124,7 +124,7 @@ class ChronicleViewModel
                 act ?: return@launch
                 val saga = currentSagaContent ?: return@launch
 
-                if (act.book != null) {
+                if (act.hasReadableBook()) {
                     _navigationEvent.tryEmit(BookReaderKey(saga.data.id, act.data.id))
                 } else {
                     generateNextVolume(act)
@@ -145,7 +145,7 @@ class ChronicleViewModel
         fun generateNextVolume(actContent: ActContent) {
             val saga = currentSagaContent ?: return
 
-            if (actContent.book != null) {
+            if (actContent.hasReadableBook()) {
                 _navigationEvent.tryEmit(BookReaderKey(saga.data.id, actContent.data.id))
                 return
             }

@@ -225,7 +225,7 @@ private fun BookShelfPager(
                             .sharedBounds(
                                 rememberSharedContentState(key = "book-${act.data.id}"),
                                 animatedVisibilityScope,
-                            ).saturation(if (act.book == null) 0f else 1f)
+                            ).saturation(if (act.hasReadableBook()) 1f else 0f)
                             .width(280.dp)
                             .fillMaxHeight(.75f)
                             .padding(vertical = 16.dp)
