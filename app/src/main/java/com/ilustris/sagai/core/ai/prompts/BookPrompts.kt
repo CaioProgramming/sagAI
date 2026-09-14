@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.characters.data.model.ArcSourceType
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 data class BookPrologueArgs(
     val sagaContext: String,
@@ -28,6 +29,7 @@ data class BookChapterArgs(
     val chapter: String,
     val scenes: String,
     val characters: String,
+    val worldReference: String,
     val writerNotes: String,
     val previousTail: String,
     val position: String,
@@ -53,6 +55,11 @@ object BookPrompts {
     private const val PREVIOUS_TAIL_CHARS = 1_200
 
     private const val NONE = "None"
+
+    /** Cap on saga wikis pulled in only because their title was mentioned in the chapter's chat. */
+    private const val MENTIONED_WIKIS_LIMIT = 8
+
+    private val WIKI_EXCLUDED_FIELDS = listOf("id", "sagaId", "timelineId", "chapterId", "isFeatured", "createdAt")
 
     suspend fun prologuePrompt(
         promptService: PromptService,
@@ -126,6 +133,7 @@ object BookPrompts {
                 chapter = chapter.data.toAINormalize(ChapterPrompts.CHAPTER_EXCLUSIONS),
                 scenes = scenes(chapter),
                 characters = characters,
+                worldReference = worldReference(saga, chapter),
                 writerNotes = previousNotes?.toJsonFormat() ?: NONE,
                 previousTail =
                     previousPages
@@ -235,6 +243,30 @@ object BookPrompts {
             size += block.length
         }
         return kept.joinToString("\n")
+    }
+
+    /**
+     * Wikis to ground the prose in world lore, without inviting invention: everything this
+     * chapter's events actually updated, plus any other saga wiki whose title is mentioned in the
+     * chapter's chat (a place or character resurfacing without a fresh lore update), capped so it
+     * stays a reference and not the whole codex.
+     */
+    private fun worldReference(
+        saga: SagaContent,
+        chapter: ChapterContent,
+    ): String {
+        val chapterWikis = chapter.fetchChapterWikis()
+        val chapterWikiIds = chapterWikis.map { it.id }.toSet()
+
+        val text = chapter.fetchChapterMessages().joinToString(" ") { it.message.text }
+        val mentioned =
+            saga.wikis
+                .filter { it.id !in chapterWikiIds && it.title.isNotBlank() && text.contains(it.title, ignoreCase = true) }
+                .take(MENTIONED_WIKIS_LIMIT)
+
+        val entries = chapterWikis + mentioned
+        if (entries.isEmpty()) return NONE
+        return entries.normalizetoAIItems(WIKI_EXCLUDED_FIELDS)
     }
 
     private fun MessageContent.transcriptLine(): String {
