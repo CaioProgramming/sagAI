@@ -38,10 +38,9 @@ data class ActContent(
         rules: NarrativeRules,
     ): Boolean = chapters.count { it.isComplete(rules) } >= chapterLimit
 
-    fun isComplete(rules: NarrativeRules): Boolean =
-        isFull(rules.actUpdateLimit, rules) &&
-            data.title.isNotEmpty() &&
-            data.content.isNotEmpty()
+    // Synthesized, not "has enough chapters" — see NarrativeCheck.narrativelyCompleteTimeline.
+    @Suppress("UNUSED_PARAMETER")
+    fun isComplete(rules: NarrativeRules): Boolean = data.title.isNotEmpty() && data.content.isNotEmpty()
 
     fun emotionalSummary() =
         buildMap {

@@ -36,10 +36,9 @@ data class ChapterContent(
         narrativeRules: NarrativeRules,
     ): Boolean = events.count { it.isComplete(narrativeRules) } >= updateLimit
 
-    fun isComplete(narrativeRules: NarrativeRules): Boolean =
-        isFull(narrativeRules.chapterUpdateLimit, narrativeRules) &&
-            data.title.isNotEmpty() &&
-            data.content.isNotEmpty()
+    // Synthesized, not "has enough events" — see NarrativeCheck.narrativelyCompleteTimeline.
+    @Suppress("UNUSED_PARAMETER")
+    fun isComplete(narrativeRules: NarrativeRules): Boolean = data.title.isNotEmpty() && data.content.isNotEmpty()
 
     fun fetchCharacters(saga: SagaContent) =
         this.data.featuredCharacters.map {

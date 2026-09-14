@@ -80,7 +80,8 @@ data class ActMetadata(
 
     fun isFull(rules: NarrativeRules): Boolean = chapters.count { it.isComplete(rules) } >= rules.chapterUpdateLimit
 
-    fun isComplete(rules: NarrativeRules): Boolean = isFull(rules) && data.title.isNotBlank() && data.content.isNotBlank()
+    @Suppress("UNUSED_PARAMETER")
+    fun isComplete(rules: NarrativeRules): Boolean = data.title.isNotBlank() && data.content.isNotBlank()
 
     fun actSummary(showEvents: Boolean = true): String =
         buildString {
@@ -117,7 +118,8 @@ data class ChapterMetadata(
 ) {
     fun isFull(rules: NarrativeRules): Boolean = events.size >= rules.chapterUpdateLimit
 
-    fun isComplete(rules: NarrativeRules): Boolean = isFull(rules) && data.title.isNotBlank() && data.content.isNotBlank()
+    @Suppress("UNUSED_PARAMETER")
+    fun isComplete(rules: NarrativeRules): Boolean = data.title.isNotBlank() && data.content.isNotBlank()
 }
 
 fun ChapterMetadata.toInfo(sagaId: Int) =
@@ -174,10 +176,8 @@ data class TimelineMetadata(
 ) {
     fun isFull(limit: Int): Boolean = messages.size >= limit
 
-    fun isComplete(rules: NarrativeRules): Boolean =
-        isFull(rules.loreUpdateLimit) &&
-            data.title.isNotBlank() &&
-            data.content.isNotBlank()
+    @Suppress("UNUSED_PARAMETER")
+    fun isComplete(rules: NarrativeRules): Boolean = data.title.isNotBlank() && data.content.isNotBlank()
 }
 
 fun SagaMetadata.flatMessages() = acts.flatMap { it.chapters.flatMap { it.events.flatMap { it.messages } } }

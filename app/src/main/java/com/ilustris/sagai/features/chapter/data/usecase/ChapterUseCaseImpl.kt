@@ -457,7 +457,7 @@ class ChapterUseCaseImpl
                 )!!
             val updated = chapterContent.copy(introduction = intro.data)
             val updatedChapter = chapterRepository.updateChapter(updated)
-            GeneratedContent(updatedChapter, intro.finalMessage)
+            GeneratedContent(updatedChapter, (intro.finalMessage as String?).orEmpty())
         }
 
         override suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>> =
@@ -495,7 +495,10 @@ class ChapterUseCaseImpl
                                         StreamingState.Success(
                                             GeneratedContent(
                                                 updatedChapter,
-                                                introContent.finalMessage,
+                                                // Gson leaves a field the model omitted as null despite the
+                                                // non-null type; passing that on NPEs *after* the intro
+                                                // was already saved, failing an action that succeeded.
+                                                (introContent.finalMessage as String?).orEmpty(),
                                             ),
                                         ),
                                     )
