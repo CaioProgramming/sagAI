@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.AIClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusService
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.LoadingLines
@@ -204,8 +205,9 @@ class ReasoningSynthesizerService
             pool: MutableStateFlow<List<String>>,
             terminal: AtomicBoolean,
         ) {
-            // A holding line is never worth someone's last request of the day.
-            if (quotaStatusService.activeDailyBlock() != null) return
+            // A holding line is never worth someone's last request of the day — judged against the
+            // MINIMAL tier these lines are written on, not the worst model anywhere on the key.
+            if (tierQuotaStatus(ModelRequirement.MINIMAL).first() is QuotaStatus.DailyExhausted) return
 
             try {
                 val aesthetic =

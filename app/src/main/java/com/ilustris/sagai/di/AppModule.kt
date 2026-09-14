@@ -457,20 +457,18 @@ object AppModule {
     @Provides
     @Singleton
     fun provideImageGenerator(
-        remoteConfigService: RemoteConfigService,
         debugImageFallbackService: DebugImageFallbackService,
         geminiApiClient: GeminiApiClient,
         userApiKeyStore: UserApiKeyStore,
-        quotaStatusService: QuotaStatusService,
         sideEffectService: SideEffectService,
+        mediaModelResolver: com.ilustris.sagai.core.ai.MediaModelResolver,
     ): ImageGenerator =
         ImageGeneratorImpl(
-            remoteConfigService,
             debugImageFallbackService,
             geminiApiClient,
             userApiKeyStore,
-            quotaStatusService,
             sideEffectService,
+            mediaModelResolver,
         )
 
     @Provides

@@ -5,7 +5,6 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
-import com.ilustris.sagai.core.ai.key.QuotaStatusService
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.GeminiContent
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
@@ -18,7 +17,6 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.network.GeminiHttpException
 import com.ilustris.sagai.core.services.SideEffectService
-import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.toJsonFormat
 import timber.log.Timber
 import javax.inject.Inject
@@ -45,29 +43,19 @@ interface ImageGenerator {
 class ImageGeneratorImpl
     @Inject
     constructor(
-        private val remoteConfigService: RemoteConfigService,
         private val debugImageFallbackService: DebugImageFallbackService,
         private val geminiApiClient: GeminiApiClient,
         private val userApiKeyStore: UserApiKeyStore,
-        private val quotaStatusService: QuotaStatusService,
         private val sideEffectService: SideEffectService,
+        private val mediaModelResolver: MediaModelResolver,
     ) : ImageGenerator {
-        private suspend fun modelName() =
-            remoteConfigService.getString(IMAGE_MODEL_FLAG)
-                ?: error("Couldn't find model for Image generation")
-
-        private suspend fun apiKey(): String {
-            quotaStatusService.activeDailyBlock()?.let { block ->
-                throw QuotaExhaustedException(until = block.until, model = block.model)
-            }
-            return userApiKeyStore.getKeyNow()?.takeIf { it.isNotBlank() }
+        private suspend fun apiKey(): String =
+            userApiKeyStore.getKeyNow()?.takeIf { it.isNotBlank() }
                 ?: throw MissingApiKeyException()
-        }
 
         override suspend fun generateImage(prompt: String): Bitmap? {
-            val modelName = modelName()
             val trimmedPrompt = prompt.trim()
-            Timber.tag(TAG).i("Generating image with ➡ $modelName")
+            Timber.tag(TAG).i("Generating image with ➡ ${mediaModelResolver.candidates(MediaRequirement.IMAGE)}")
             Timber
                 .tag(TAG)
                 .i("🚀 TEST THIS PROMPT ON GEMINI: https://gemini.google.com/app")
@@ -97,11 +85,20 @@ class ImageGeneratorImpl
 
                     val response =
                         try {
-                            geminiApiClient.generateContent(
-                                model = modelName.replace("models/", ""),
-                                apiKey = apiKey(),
-                                request = request,
-                            )
+                            // Rotates across IMAGE's candidates on a 503 or a spent daily quota;
+                            // the exceptions below are what's left once it runs out of them.
+                            mediaModelResolver.withRotation(MediaRequirement.IMAGE) { model ->
+                                geminiApiClient.generateContent(
+                                    model = model,
+                                    apiKey = apiKey(),
+                                    request = request,
+                                )
+                            }
+                        } catch (e: QuotaExhaustedException) {
+                            // Same debug escape hatch as the 403/429 branch below: a spent image
+                            // quota shouldn't dead-end testing the flow around it.
+                            if (BuildConfig.DEBUG) return@run null
+                            throw e
                         } catch (e: GeminiHttpException) {
                             // Every image model is "Not available" on the Gemini free tier, so a
                             // key without billing fails here and nowhere else. Detected by which
@@ -166,6 +163,5 @@ class ImageGeneratorImpl
 
         companion object {
             private const val TAG = "🖼️ ImageGenerator"
-            private const val IMAGE_MODEL_FLAG = "imageGenModelPremium"
         }
     }

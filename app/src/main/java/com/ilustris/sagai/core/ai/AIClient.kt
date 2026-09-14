@@ -284,36 +284,14 @@ abstract class AIClient(
     private suspend fun candidateModelsFor(requirement: ModelRequirement): List<String> {
         val tierConfig =
             remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap()
-        return when (val config = tierConfig[requirement.name]) {
-            is String -> listOf(config.replace("models/", ""))
-
-            is Map<*, *> -> {
-                val enabled = config["enabled"] as? Boolean ?: true
-                if (!enabled) {
-                    throw ModelOutageException(
-                        requirement,
-                        config["model"] as? String ?: "UNKNOWN",
-                    )
-                }
-                val primary =
-                    config["model"] as? String
-                        ?: error("Model name not found in config for ${requirement.name}")
-                // Optional, additive: a tier with only `model` set behaves exactly as before.
-                // Order is preference — best/most-capable first — read as-is, never resorted.
-                val available =
-                    (config["availableModels"] as? List<*>)
-                        ?.mapNotNull { it as? String }
-                        ?.map { it.replace("models/", "") }
-                        ?.filter { it.isNotBlank() }
-                        ?.takeIf { it.isNotEmpty() }
-                available ?: listOf(primary.replace("models/", ""))
-            }
-
-            else -> {
-                Timber.e("Invalid model configuration for ${requirement.name}: $config")
+        val raw = tierConfig[requirement.name]
+        val config =
+            raw.toTierModelConfig() ?: run {
+                Timber.e("Invalid model configuration for ${requirement.name}: $raw")
                 error("Invalid model configuration for ${requirement.name}")
             }
-        }
+        if (!config.enabled) throw ModelOutageException(requirement, config.primary)
+        return config.candidates
     }
 
     /**
