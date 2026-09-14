@@ -61,6 +61,24 @@ sealed class NarrativeAction {
     ) : NarrativeAction()
 }
 
+/**
+ * What an action acts on, independent of the content snapshot embedded in it — two actions with the
+ * same key are the same decision, even if one carries a staler copy of its chapter/act/timeline.
+ */
+fun NarrativeAction.targetKey(): String =
+    when (this) {
+        NarrativeAction.CreateAct -> "CreateAct"
+        is NarrativeAction.GenerateActIntro -> "GenerateActIntro:${act.data.id}"
+        is NarrativeAction.CreateChapter -> "CreateChapter:${act.data.id}"
+        is NarrativeAction.GenerateChapter -> "GenerateChapter:${chapter.data.id}"
+        is NarrativeAction.GenerateChapterIntro -> "GenerateChapterIntro:${chapter.data.id}"
+        is NarrativeAction.CreateTimeline -> "CreateTimeline:${chapter.data.id}"
+        is NarrativeAction.EvolveTimeline -> "EvolveTimeline:${timeline.data.id}"
+        is NarrativeAction.CloseTimeline -> "CloseTimeline:${chapter.data.id}"
+        is NarrativeAction.GenerateAct -> "GenerateAct:${act.data.id}"
+        is NarrativeAction.GenerateEnding -> "GenerateEnding:${saga.data.id}"
+    }
+
 enum class NarrativeExecutionMode {
     UserTriggered,
     Automatic,

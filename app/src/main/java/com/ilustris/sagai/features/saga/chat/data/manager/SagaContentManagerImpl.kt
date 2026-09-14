@@ -79,6 +79,7 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.ACT_ALREADY_SET_MESS
 import com.ilustris.sagai.features.saga.chat.domain.manager.CHAPTER_ALREADY_SET_MESSAGE
 import com.ilustris.sagai.features.saga.chat.domain.manager.TIMELINE_ALREADY_ACTIVE_MESSAGE
 import com.ilustris.sagai.features.saga.chat.domain.manager.executionMode
+import com.ilustris.sagai.features.saga.chat.domain.manager.targetKey
 import com.ilustris.sagai.features.saga.chat.domain.manager.narrativelyCompleteTimeline
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -279,7 +280,7 @@ class SagaContentManagerImpl
         }
 
         private suspend fun executeNarrativeAction(
-            action: NarrativeAction,
+            requestedAction: NarrativeAction,
             isRetry: Boolean,
             // False only when called from inside requestNarrativeProgression()'s own automatic-
             // action loop (progressionMutex already held on this coroutine) — Mutex.withLock
@@ -289,6 +290,31 @@ class SagaContentManagerImpl
             chainNext: Boolean = true,
         ) {
             val sagaMetadata = content.value ?: return
+            // A user-triggered action is decided, parked as pending, and only executed later (a
+            // milestone tap, an auto-advance, a snackbar retry) — by which point a sibling trigger
+            // may already have executed it, and the chapter/act/timeline snapshot embedded in it is
+            // stale. Executing it anyway is how a timeline got its lore generated twice, a chapter got
+            // a sixth event, and an act got a fourth chapter past its limit. Re-decide from a fresh
+            // read and run that instead; if the fresh decision is something else, this one is spent.
+            // The automatic loop (chainNext = false) already hands in a freshly decided action.
+            val action =
+                if (chainNext) {
+                    val fresh = freshNarrativeAction()
+                    if (fresh == null || fresh.targetKey() != requestedAction.targetKey()) {
+                        Timber.w(
+                            "Dropping stale ${requestedAction.targetKey()} — fresh decision is ${fresh?.targetKey()}.",
+                        )
+                        narrativeCoordinator.onActionCompleted(
+                            requestedAction,
+                            NarrativeExecutionResult.Success(value = null, shouldEmitMilestone = false),
+                        )
+                        requestNarrativeProgression(isRetry = false)
+                        return
+                    }
+                    fresh
+                } else {
+                    requestedAction
+                }
             setNarrativeProcessingStatus(true)
             narrativeCoordinator.markProcessing(true)
             try {
@@ -972,6 +998,14 @@ class SagaContentManagerImpl
                     is StreamingState.Reasoning -> Unit
                 }
             }
+        }
+
+        private suspend fun freshNarrativeAction(): NarrativeAction? {
+            val sagaContent = getSagaContent() ?: return null
+            val intent =
+                NarrativeCheck.validateProgressionMetadata(sagaContent.toNarrativeMetadata(), fetchNarrativeRules())
+                    ?: return null
+            return NarrativeActionMaterializer.materialize(intent, sagaContent)
         }
 
         private suspend fun requestNarrativeProgression(
