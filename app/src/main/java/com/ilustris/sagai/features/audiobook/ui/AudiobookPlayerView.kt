@@ -10,15 +10,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -34,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,7 +42,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -104,9 +99,7 @@ fun AudiobookPlayerView(
 
     val bookTitle = act.book?.actTitle?.takeIf(String::isNotBlank) ?: act.data.title
     val chapterTitle = audiobook?.playingSectionKey?.let { audiobook.section(it)?.title }.orEmpty()
-    val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + TOPBAR_HEIGHT
     val hasAnyReadySection = audiobook?.sections?.any { it.isReady } == true
-    var playerHeightPx by remember { mutableIntStateOf(0) }
 
     // Mirrors the old headset-click behavior: land on the player already playing when there is
     // narrated audio and nothing is loaded into the player yet (a fresh open, not a resume).
@@ -180,152 +173,153 @@ fun AudiobookPlayerView(
                     .background(Color.Black.copy(alpha = .3f)),
         )
 
-        val isGenerating = audiobook?.narration != null
-        val error = audiobook?.error
-        when {
-            error != null -> {
-                Column(
-                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.audiobook_generation_failed_cd),
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                color = MaterialTheme.colorScheme.error,
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
-                    Text(
-                        text = error,
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
-                    IconButton(
-                        onClick = { onAction(AudiobookAction.DismissFailure) },
-                        modifier =
-                            Modifier
-                                .background(MaterialTheme.colorScheme.errorContainer, shape = CircleShape)
-                                .padding(4.dp),
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.round_close_24),
-                            contentDescription = stringResource(R.string.audiobook_dismiss_error_cd),
-                            tint = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                }
-            }
-
-            isGenerating -> {
-                Text(
-                    text = stringResource(R.string.audiobook_generating_cd),
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .9f),
-                            textAlign = TextAlign.Center,
-                        ),
-                    modifier =
-                        Modifier
-                            .align(Alignment.Center)
-                            .padding(horizontal = 32.dp)
-                            .reactiveShimmer(true, saga.data.genre.shimmerColors()),
-                )
-            }
-
-            else -> {
-                AudiobookChapterPager(
-                    pagerState = pagerState,
-                    pageSections = pagerSections,
-                    pages = pages,
-                    characters = saga.characters,
-                    audiobook = audiobook,
-                    onNarrateSection = { sectionKey -> onAction(AudiobookAction.Listen(sectionKey, 0)) },
-                    topInset = topInset,
-                    bottomInsetPx = playerHeightPx,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-        }
-
-        Row(
-            modifier =
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .height(TOPBAR_HEIGHT),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            IconButton(onClick = onBack, modifier = Modifier.padding(8.dp)) {
-                Icon(
-                    painterResource(R.drawable.ic_back_left),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-
-            var showMenu by remember { mutableStateOf(false) }
-            Box {
-                IconButton(onClick = { showMenu = true }, modifier = Modifier.padding(8.dp)) {
+        // Structured as a real Column instead of overlaying everything with align(): the lyrics
+        // area is boxed in by weight(1f) between the topbar and the player, so it is physically
+        // impossible for text to be laid out behind either one — no manual inset math needed.
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .height(TOPBAR_HEIGHT),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                IconButton(onClick = onBack, modifier = Modifier.padding(8.dp)) {
                     Icon(
-                        painterResource(R.drawable.ic_more_vert),
-                        contentDescription = stringResource(R.string.book_options_cd),
+                        painterResource(R.drawable.ic_back_left),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
-                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    val playingSectionKey = audiobook?.playingSectionKey
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.audiobook_stop_cd)) },
-                        enabled = playingSectionKey != null,
-                        onClick = {
-                            showMenu = false
-                            onAction(AudiobookAction.Stop)
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.audiobook_export_video_cd)) },
-                        enabled = playingSectionKey != null,
-                        onClick = {
-                            showMenu = false
-                            playingSectionKey?.let { onAction(AudiobookAction.ExportVideo(it)) }
-                        },
-                    )
-                    if (audiobook?.showDebug == true) {
-                        DropdownMenuItem(
-                            text = { Text("Sync: ${audiobook.syncSource}") },
-                            onClick = {
-                                showMenu = false
-                                onAction(AudiobookAction.ToggleSyncSource)
-                            },
+
+                var showMenu by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { showMenu = true }, modifier = Modifier.padding(8.dp)) {
+                        Icon(
+                            painterResource(R.drawable.ic_more_vert),
+                            contentDescription = stringResource(R.string.book_options_cd),
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
+                    }
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        val playingSectionKey = audiobook?.playingSectionKey
                         DropdownMenuItem(
-                            text = { Text("Realign") },
+                            text = { Text(stringResource(R.string.audiobook_stop_cd)) },
                             enabled = playingSectionKey != null,
                             onClick = {
                                 showMenu = false
-                                playingSectionKey?.let { onAction(AudiobookAction.Realign(it)) }
+                                onAction(AudiobookAction.Stop)
                             },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.audiobook_export_video_cd)) },
+                            enabled = playingSectionKey != null,
+                            onClick = {
+                                showMenu = false
+                                playingSectionKey?.let { onAction(AudiobookAction.ExportVideo(it)) }
+                            },
+                        )
+                        if (audiobook?.showDebug == true) {
+                            DropdownMenuItem(
+                                text = { Text("Sync: ${audiobook.syncSource}") },
+                                onClick = {
+                                    showMenu = false
+                                    onAction(AudiobookAction.ToggleSyncSource)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Realign") },
+                                enabled = playingSectionKey != null,
+                                onClick = {
+                                    showMenu = false
+                                    playingSectionKey?.let { onAction(AudiobookAction.Realign(it)) }
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+
+            val isGenerating = audiobook?.narration != null
+            val error = audiobook?.error
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                when {
+                    error != null -> {
+                        Column(
+                            modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.audiobook_generation_failed_cd),
+                                style =
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                        color = MaterialTheme.colorScheme.error,
+                                        textAlign = TextAlign.Center,
+                                    ),
+                            )
+                            Text(
+                                text = error,
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
+                                        textAlign = TextAlign.Center,
+                                    ),
+                            )
+                            IconButton(
+                                onClick = { onAction(AudiobookAction.DismissFailure) },
+                                modifier =
+                                    Modifier
+                                        .background(MaterialTheme.colorScheme.errorContainer, shape = CircleShape)
+                                        .padding(4.dp),
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.round_close_24),
+                                    contentDescription = stringResource(R.string.audiobook_dismiss_error_cd),
+                                    tint = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+
+                    isGenerating -> {
+                        Text(
+                            text = stringResource(R.string.audiobook_generating_cd),
+                            style =
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .9f),
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .padding(horizontal = 32.dp)
+                                    .reactiveShimmer(true, saga.data.genre.shimmerColors()),
+                        )
+                    }
+
+                    else -> {
+                        AudiobookChapterPager(
+                            pagerState = pagerState,
+                            pageSections = pagerSections,
+                            pages = pages,
+                            characters = saga.characters,
+                            audiobook = audiobook,
+                            onNarrateSection = { sectionKey -> onAction(AudiobookAction.Listen(sectionKey, 0)) },
+                            modifier = Modifier.fillMaxSize(),
                         )
                     }
                 }
             }
-        }
 
-        if (hasAnyReadySection) {
+            if (hasAnyReadySection) {
             Column(
                 modifier =
                     Modifier
-                        .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .onSizeChanged { playerHeightPx = it.height }
                         .background(fadeGradientBottom(tintColor = morphingColor(duration = 3.seconds)))
                         .navigationBarsPadding()
                         .padding(top = 96.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
@@ -489,6 +483,7 @@ fun AudiobookPlayerView(
                         )
                     }
                 }
+            }
             }
         }
     }

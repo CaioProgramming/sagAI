@@ -55,6 +55,10 @@ private data class LyricLine(
 private val SENTENCE_SPLIT = Regex("(?<=[.!?…])\\s+")
 private const val HIGHLIGHT_SCALE = 1.25f
 private const val MAX_BLUR_DP = 10
+
+/** Fraction of the readable area, starting at the anchor, that stays perfectly sharp before the
+ * blur/dim ramp begins. */
+private const val SHARP_ZONE_FRACTION = 0.5f
 private const val HIGHLIGHT_ANIM_MS = 400
 
 /**
@@ -73,10 +77,6 @@ fun AudiobookChapterPager(
     characters: List<CharacterContent>,
     audiobook: AudiobookUiState?,
     onNarrateSection: (sectionKey: String) -> Unit,
-    topInset: Dp,
-    /** Height in px of the bottom transport bar overlapping each page, so the fade-out reaches
-     * its max before text disappears under it — not only at the true bottom of the screen. */
-    bottomInsetPx: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val highlight = audiobook?.highlight
@@ -94,20 +94,19 @@ fun AudiobookChapterPager(
                 characters = characters,
                 highlight = highlight?.takeIf { it.sectionKey == section.key },
                 isCurrentlyPlaying = section.key == playingSectionKey,
-                topInset = topInset,
-                bottomInsetPx = bottomInsetPx,
             )
         } else {
-            NarrateSectionPrompt(topInset = topInset, onClick = { onNarrateSection(section.key) })
+            NarrateSectionPrompt(onClick = { onNarrateSection(section.key) })
         }
     }
 }
 
 /**
  * Apple-Music-lyrics-style scroller for one chapter's prose: the currently narrated line rests
- * right under the top bar and sharpens there, everything below it dims and blurs the further away
- * it sits. Only auto-follows the highlight while this chapter is the one actually playing — a page
- * the user swiped to just to read ahead stays put.
+ * right at the top and sharpens there, everything below it dims and blurs the further away it
+ * sits. Only auto-follows the highlight while this chapter is the one actually playing — a page
+ * the user swiped to just to read ahead stays put, and the whole page reads 100% sharp whenever
+ * there is no active highlight (nothing narrating, or narration for this chapter has finished).
  */
 @Composable
 private fun SectionLyrics(
@@ -116,8 +115,6 @@ private fun SectionLyrics(
     characters: List<CharacterContent>,
     highlight: AudioHighlight?,
     isCurrentlyPlaying: Boolean,
-    topInset: Dp,
-    bottomInsetPx: Int,
 ) {
     val lines =
         remember(pages, sectionKey) {
@@ -147,54 +144,53 @@ private fun SectionLyrics(
                 if (exact >= 0) exact else if (lines.isNotEmpty()) 0 else -1
             }
         }
+    // Nothing to focus on: either this chapter isn't the one playing, or narration for it hasn't
+    // started/has already finished. Reading is the point here, so leave every line fully sharp.
+    val hasActiveHighlight = isCurrentlyPlaying && currentLineIndex >= 0
 
     val listState = rememberLazyListState()
     var viewportHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
-    // The anchor sits at contentPadding.top below (16.dp) — a fixed, small offset, unlike topInset
-    // which used to leak the topbar problem: see the padding(top = topInset) on the LazyColumn
-    // itself below. LazyListItemInfo.offset is measured from there, so it must be subtracted before
-    // any distance is normalized, or the anchor line itself reads as already partway faded.
+    // The anchor sits at contentPadding.top below (16.dp), a small fixed offset. The lyrics area
+    // itself is already boxed in between the topbar and the player by the caller's weight(1f), so
+    // this component only ever needs to fill that exact space — no manual inset compensation.
     val anchorOffsetPx = remember(density) { with(density) { 16.dp.roundToPx() } }
 
     LaunchedEffect(currentLineIndex, isCurrentlyPlaying) {
         if (!isCurrentlyPlaying || currentLineIndex < 0) return@LaunchedEffect
-        // scrollOffset = 0 lands the item's top edge right at the content area's start, which is
-        // exactly the top bar's bottom edge thanks to contentPadding below.
+        // scrollOffset = 0 lands the item's top edge right at the content area's start.
         listState.animateScrollToItem(currentLineIndex, scrollOffset = 0)
     }
 
     LazyColumn(
         state = listState,
-        // topInset is real layout padding, not contentPadding: contentPadding only spaces the
-        // list's own extremes and does NOT clip it, so once a mid-list line is anchored, earlier
-        // lines scroll up into the space behind it — and since the transparent topbar is just an
-        // overlay, that text was showing straight through it. A real padding shrinks the
-        // component itself, so Compose's normal clip-to-bounds keeps everything under the topbar.
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(top = topInset)
-                .onSizeChanged { viewportHeightPx = it.height },
-        contentPadding = PaddingValues(top = 16.dp, start = 32.dp, end = 32.dp, bottom = 260.dp),
+        modifier = Modifier.fillMaxSize().onSizeChanged { viewportHeightPx = it.height },
+        contentPadding = PaddingValues(top = 16.dp, start = 32.dp, end = 32.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(lines.size, key = { "${lines[it].pageIndex}_${lines[it].range.first}" }) { index ->
             val line = lines[index]
 
-            val distanceBelowAnchor by
-                remember {
-                    derivedStateOf {
-                        val info = listState.layoutInfo.visibleItemsInfo.find { it.index == index }
-                        val centerY = info?.let { it.offset + it.size / 2 }?.toFloat() ?: 0f
-                        (centerY - anchorOffsetPx).coerceAtLeast(0f)
+            val fraction: Float
+            if (hasActiveHighlight) {
+                val distanceBelowAnchor by
+                    remember {
+                        derivedStateOf {
+                            val info = listState.layoutInfo.visibleItemsInfo.find { it.index == index }
+                            val centerY = info?.let { it.offset + it.size / 2 }?.toFloat() ?: 0f
+                            (centerY - anchorOffsetPx).coerceAtLeast(0f)
+                        }
                     }
-                }
-            // Fades out over the readable area only (viewport minus the transport bar and the
-            // anchor's own offset), so lines reach max blur right as they slide under the player
-            // instead of at the screen's edge.
-            val readableHeightPx = (viewportHeightPx - bottomInsetPx - anchorOffsetPx).coerceAtLeast(1)
-            val fraction = (distanceBelowAnchor / readableHeightPx).coerceIn(0f, 1f)
+                // Fades out over the readable area only, so lines reach max blur right as they
+                // slide off screen. The first SHARP_ZONE_FRACTION of it stays fully sharp — at
+                // displaySmall a single line already fills a good chunk of the viewport, so fading
+                // from the anchor itself blurred text the reader hadn't scrolled past yet.
+                val readableHeightPx = (viewportHeightPx - anchorOffsetPx).coerceAtLeast(1)
+                val rawFraction = (distanceBelowAnchor / readableHeightPx).coerceIn(0f, 1f)
+                fraction = ((rawFraction - SHARP_ZONE_FRACTION) / (1f - SHARP_ZONE_FRACTION)).coerceIn(0f, 1f)
+            } else {
+                fraction = 0f
+            }
             val blurRadius = (fraction * MAX_BLUR_DP).dp
 
             LyricLineText(
@@ -209,12 +205,9 @@ private fun SectionLyrics(
 }
 
 @Composable
-private fun NarrateSectionPrompt(
-    topInset: Dp,
-    onClick: () -> Unit,
-) {
+private fun NarrateSectionPrompt(onClick: () -> Unit) {
     Box(
-        modifier = Modifier.fillMaxSize().padding(top = topInset, start = 32.dp, end = 32.dp),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
         contentAlignment = Alignment.Center,
     ) {
         Button(
