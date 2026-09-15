@@ -3,6 +3,11 @@
 package com.ilustris.sagai.features.audiobook.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -132,7 +137,7 @@ fun AudiobookPlayerView(
                     .background(
                         Brush.verticalGradient(
                             morphingGradient(
-                                colors = MaterialTheme.colorScheme.primary.darkerPalette(),
+                                colors = MaterialTheme.colorScheme.primary.darkerPalette(factor = .15f),
                                 duration = 6.seconds,
                             ),
                         ),
@@ -275,20 +280,24 @@ fun AudiobookPlayerView(
                     }
 
                     isGenerating -> {
-                        Text(
-                            text = stringResource(R.string.audiobook_generating_cd),
-                            style =
-                                MaterialTheme.typography.titleLarge.copy(
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .9f),
-                                    textAlign = TextAlign.Center,
-                                ),
-                            modifier =
-                                Modifier
-                                    .align(Alignment.Center)
-                                    .padding(horizontal = 32.dp)
-                                    .reactiveShimmer(true, saga.data.genre.shimmerColors()),
-                        )
+                        val fallback = stringResource(R.string.audiobook_generating_cd)
+                        AnimatedContent(
+                            targetState = audiobook?.narratingReasoningText ?: fallback,
+                            label = "audiobookReasoning",
+                            transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
+                            modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
+                        ) { text ->
+                            Text(
+                                text = text,
+                                style =
+                                    MaterialTheme.typography.titleLarge.copy(
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .9f),
+                                        textAlign = TextAlign.Center,
+                                    ),
+                                modifier = Modifier.reactiveShimmer(true, saga.data.genre.shimmerColors()),
+                            )
+                        }
                     }
 
                     else -> {
@@ -314,8 +323,8 @@ fun AudiobookPlayerView(
                 ) {
                     Text(
                         text = bookTitle,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                     )

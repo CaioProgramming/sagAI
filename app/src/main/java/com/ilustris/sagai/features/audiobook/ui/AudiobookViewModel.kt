@@ -5,7 +5,9 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.key.QuotaStatus
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -30,6 +32,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,8 +44,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -96,9 +101,19 @@ data class AudiobookUiState(
      * of quota for the day — lets the "listen to next chapter" prompt hide itself instead of
      * inviting a request that is already known to fail. */
     val ttsQuotaResetAt: Long? = null,
+    /** In-character loading line for the "Narrando…" state, same mechanism every other generation
+     * in the app uses. Null until the first one lands — the UI falls back to a static string. */
+    val narratingReasoningText: String? = null,
 ) {
     fun section(key: String?) = sections.find { it.key == key }
 }
+
+private data class ExtraState(
+    val syncSource: SyncSource,
+    val videoExport: VideoExportUi?,
+    val quotaStatus: QuotaStatus,
+    val reasoningText: String?,
+)
 
 private data class BoundBook(
     val saga: SagaContent,
@@ -119,6 +134,7 @@ class AudiobookViewModel
         private val player: BookAudioPlayer,
         private val videoExporter: BookVideoExporter,
         private val sharePlayUseCase: SharePlayUseCase,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
         @ApplicationContext private val context: Context,
     ) : ViewModel() {
         private val bound = MutableStateFlow<BoundBook?>(null)
@@ -139,19 +155,46 @@ class AudiobookViewModel
         /** Whether TTS is already known to be out of daily quota, ahead of trying anything. */
         private val ttsQuotaStatus: Flow<QuotaStatus> = flow { emitAll(bookAudioUseCase.ttsQuotaStatus()) }
 
+        /**
+         * In-character loading lines while narration is running, same mechanism (and pool) every
+         * other generation in the app uses — reusing [ReasoningSynthesizerService.synthesizeReasoning]
+         * with a trigger flow that never completes while a job is active, instead of decorating
+         * narrateSection's own NarrationProgress flow directly: that flow already carries delicate
+         * per-segment resume logic and the friendly-quota-error plumbing, and threading it through
+         * StreamingState<T> and back would risk both for a purely cosmetic addition. Cancelling the
+         * trigger (a new job starting, or none running) tears down synthesizeReasoning's internal
+         * coroutines the same way switching sagas would.
+         */
+        private val narratingReasoningText: Flow<String?> =
+            bookAudioService.job
+                .map { it != null }
+                .distinctUntilChanged()
+                .flatMapLatest { isNarrating ->
+                    if (!isNarrating) {
+                        flowOf(null)
+                    } else {
+                        val genre = bound.value?.saga?.data?.genre
+                        val neverCompletes = flow<StreamingState<Unit>> { awaitCancellation() }
+                        reasoningSynthesizerService
+                            .synthesizeReasoning(neverCompletes, context = "Narrando o audiolivro", genre = genre)
+                            .filterIsInstance<StreamingState.Reasoning>()
+                            .map { it.chunk }
+                    }
+                }
+
         val state: StateFlow<AudiobookUiState?> =
             combine(
                 bound,
                 segmentsFlow,
                 bookAudioService.job,
                 player.state,
-                combine(syncSource, videoExport, ttsQuotaStatus, ::Triple),
+                combine(syncSource, videoExport, ttsQuotaStatus, narratingReasoningText, ::ExtraState),
             ) {
                 book,
                 bookSegments,
                 job,
                 playback,
-                (source, export, quotaStatus),
+                extra,
                 ->
                 book ?: return@combine null
                 segments = bookSegments
@@ -171,15 +214,16 @@ class AudiobookViewModel
                     narration = currentJob,
                     playingSectionKey = playing?.sectionKey,
                     isPlaying = playing != null && playback.isPlaying,
-                    highlight = playing?.let { highlight(book, playback, source) },
-                    syncSource = source,
+                    highlight = playing?.let { highlight(book, playback, extra.syncSource) },
+                    syncSource = extra.syncSource,
                     showDebug = BuildConfig.DEBUG,
-                    videoExport = export,
+                    videoExport = extra.videoExport,
                     positionMs = if (playing != null) elapsedBeforeCurrent + playback.positionMs else 0L,
                     durationMs = sectionTracks.sumOf { it.durationMs },
                     error = failure?.message,
                     quotaResetAt = failure?.quotaResetAt,
-                    ttsQuotaResetAt = (quotaStatus as? QuotaStatus.DailyExhausted)?.until,
+                    ttsQuotaResetAt = (extra.quotaStatus as? QuotaStatus.DailyExhausted)?.until,
+                    narratingReasoningText = extra.reasoningText,
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
