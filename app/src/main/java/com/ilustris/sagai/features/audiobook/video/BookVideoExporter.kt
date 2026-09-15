@@ -289,31 +289,47 @@ private class LyricsOverlay(
 
         for (line in (currentLine - VISIBLE_BEFORE)..(currentLine + VISIBLE_AFTER)) {
             if (line < 0 || line >= layout.lineCount) continue
-            val distance = kotlin.math.abs(line - currentLine)
             val y = anchorY + (line - currentLine) * lineHeight
             val start = layout.getLineStart(line)
             val end = layout.getLineEnd(line)
             val text = page.substring(start, end).trimEnd()
 
-            if (distance != 0) {
-                bodyPaint.color = Color.WHITE
-                bodyPaint.alpha = (150 - distance * 35).coerceAtLeast(30)
-                canvas.drawText(text, margin, y, bodyPaint)
-                continue
-            }
+            when {
+                // Already narrated: stays bright — a fill, not a spotlight that moves on and
+                // leaves past lines behind. Distance only adds a light hierarchy cue.
+                line < currentLine -> {
+                    val distance = currentLine - line
+                    bodyPaint.color = Color.WHITE
+                    bodyPaint.alpha = (230 - distance * 15).coerceAtLeast(160)
+                    canvas.drawText(text, margin, y, bodyPaint)
+                }
 
-            val wordStart = (word.timing.charStart - start).coerceIn(0, text.length)
-            val wordEnd = (word.timing.charEnd - start).coerceIn(wordStart, text.length)
-            var x = margin
-            listOf(
-                text.substring(0, wordStart) to Color.WHITE,
-                text.substring(wordStart, wordEnd) to accent,
-                text.substring(wordEnd) to Color.WHITE,
-            ).forEach { (piece, color) ->
-                bodyPaint.color = color
-                bodyPaint.alpha = 255
-                canvas.drawText(piece, x, y, bodyPaint)
-                x += bodyPaint.measureText(piece)
+                // Not narrated yet: dims further the more lines away it sits, same as before.
+                line > currentLine -> {
+                    val distance = line - currentLine
+                    bodyPaint.color = Color.WHITE
+                    bodyPaint.alpha = (150 - distance * 35).coerceAtLeast(30)
+                    canvas.drawText(text, margin, y, bodyPaint)
+                }
+
+                // The active line: fill up to the word being spoken right now — everything before
+                // it is already narrated (bright), the word itself carries the genre accent, and
+                // what comes after hasn't been said yet (dim, matching the not-yet-narrated lines).
+                else -> {
+                    val wordStart = (word.timing.charStart - start).coerceIn(0, text.length)
+                    val wordEnd = (word.timing.charEnd - start).coerceIn(wordStart, text.length)
+                    var x = margin
+                    listOf(
+                        Triple(text.substring(0, wordStart), Color.WHITE, 255),
+                        Triple(text.substring(wordStart, wordEnd), accent, 255),
+                        Triple(text.substring(wordEnd), Color.WHITE, 130),
+                    ).forEach { (piece, color, alpha) ->
+                        bodyPaint.color = color
+                        bodyPaint.alpha = alpha
+                        canvas.drawText(piece, x, y, bodyPaint)
+                        x += bodyPaint.measureText(piece)
+                    }
+                }
             }
         }
     }
