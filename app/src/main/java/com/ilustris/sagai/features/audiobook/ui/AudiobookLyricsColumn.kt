@@ -55,7 +55,7 @@ private data class LyricLine(
 private val SENTENCE_SPLIT = Regex("(?<=[.!?…])\\s+")
 private const val HIGHLIGHT_SCALE = 1.25f
 private const val MAX_BLUR_DP = 10
-private const val HIGHLIGHT_ANIM_MS = 200
+private const val HIGHLIGHT_ANIM_MS = 400
 
 /**
  * One page per chapter, swipeable like an album's track list. The page currently narrating
@@ -237,7 +237,7 @@ private fun LyricLineText(
 ) {
     val bodyFontFamily = MaterialTheme.typography.bodyLarge.fontFamily
     val titleFontFamily = MaterialTheme.typography.titleLarge.fontFamily
-    val baseStyle = MaterialTheme.typography.titleLarge.copy(fontFamily = bodyFontFamily)
+    val baseStyle = MaterialTheme.typography.displaySmall.copy(fontFamily = bodyFontFamily)
     val baseColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .8f)
     val primaryColor = MaterialTheme.colorScheme.primary
     val highlightBg = primaryColor.copy(alpha = .15f)

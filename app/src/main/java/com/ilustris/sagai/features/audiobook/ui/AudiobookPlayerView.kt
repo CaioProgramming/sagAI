@@ -365,7 +365,7 @@ fun AudiobookPlayerView(
                         onSeekToFraction(dragFraction)
                         dragFraction = -1f
                     },
-                    thumb = { MorphingThemeIcon(modifier = Modifier.size(16.dp)) },
+                    thumb = { MorphingThemeIcon(modifier = Modifier.size(16.dp), glowIntensity = 0f) },
                     track = { sliderState ->
                         Box(
                             Modifier
