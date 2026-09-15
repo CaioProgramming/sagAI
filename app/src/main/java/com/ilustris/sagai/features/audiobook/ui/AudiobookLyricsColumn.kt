@@ -71,6 +71,10 @@ private const val WORD_REVEAL_ANIM_MS = 350
 private const val WORD_GLOW_ANIM_MS = 250
 private const val WORD_SCALE_BUMP = 0.06f
 
+/** Max blur (dp) an unspoken word carries before it sharpens into focus as narration reaches it —
+ * subtle: the word stays legible the whole time, just a little softer than the spoken text. */
+private const val WORD_BLUR_DP = 3f
+
 /** Fraction of the readable area, starting at the anchor, that stays perfectly sharp before the
  * blur/dim ramp begins. */
 private const val SHARP_ZONE_FRACTION = 0.5f
@@ -320,6 +324,10 @@ private fun LyricWordText(
     // word — only this word's own isSpoken/isCurrent flip retargets it.
     val brightness by animateFloatAsState(if (isSpoken) 1f else 0f, tween(WORD_REVEAL_ANIM_MS), label = "wordBrightness")
     val glow by animateFloatAsState(if (isCurrent) 1f else 0f, tween(WORD_GLOW_ANIM_MS), label = "wordGlow")
+    // Rides the same brightness curve as the color, so a word sharpens into focus exactly as it
+    // brightens — a subtle cross-blur, not a reveal that hides unspoken text (still legible ahead,
+    // just a little softer, matching how future lines already read today).
+    val wordBlur = (1f - brightness) * WORD_BLUR_DP
 
     Text(
         text = word.text,
@@ -329,6 +337,9 @@ private fun LyricWordText(
                 shadow = Shadow(glowColor.copy(alpha = glow), blurRadius = GLOW_BLUR_RADIUS),
                 textAlign = TextAlign.Start,
             ),
-        modifier = Modifier.scale(1f + WORD_SCALE_BUMP * glow),
+        modifier =
+            Modifier
+                .scale(1f + WORD_SCALE_BUMP * glow)
+                .let { if (wordBlur > 0f) it.blur(wordBlur.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded) else it },
     )
 }

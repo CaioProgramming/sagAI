@@ -38,7 +38,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -49,10 +48,10 @@ import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
-import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.themePainter
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -349,12 +348,14 @@ fun AudiobookPlayerView(
                             dragFraction = -1f
                         },
                         thumb = {
-                            MorphingThemeIcon(
+                            // Plain themed icon, not MorphingThemeIcon: this screen only exists
+                            // inside an already-open saga, so the genre never changes while it's
+                            // on screen — nothing to morph between.
+                            Icon(
+                                painter = themePainter(),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(16.dp),
-                                // ThemeIcon fills with brush when it's non-null and ignores tint
-                                // entirely in that case — a solid brush is how to get a flat color.
-                                brush = SolidColor(MaterialTheme.colorScheme.onPrimary),
-                                glowIntensity = 0f,
                             )
                         },
                         track = { sliderState ->
