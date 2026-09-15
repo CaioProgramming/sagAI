@@ -1,8 +1,5 @@
 package com.ilustris.sagai.features.audiobook.ui
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -35,15 +32,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.ui.PageItem
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
-import com.ilustris.sagai.ui.theme.hexToColor
 
 /** One narratable beat of prose, split for the karaoke-style scroller — usually a sentence. */
 private data class LyricLine(
@@ -54,13 +48,12 @@ private data class LyricLine(
 )
 
 private val SENTENCE_SPLIT = Regex("(?<=[.!?…])\\s+")
-private const val HIGHLIGHT_SCALE = 1.25f
 private const val MAX_BLUR_DP = 10
+private const val GLOW_BLUR_RADIUS = 24f
 
 /** Fraction of the readable area, starting at the anchor, that stays perfectly sharp before the
  * blur/dim ramp begins. */
 private const val SHARP_ZONE_FRACTION = 0.5f
-private const val HIGHLIGHT_ANIM_MS = 400
 
 /**
  * One page per chapter, swipeable like an album's track list. The page currently narrating
@@ -75,7 +68,6 @@ fun AudiobookChapterPager(
     pagerState: PagerState,
     pageSections: List<AudiobookSectionUi>,
     pages: List<PageItem>,
-    characters: List<CharacterContent>,
     audiobook: AudiobookUiState?,
     onNarrateSection: (sectionKey: String) -> Unit,
     modifier: Modifier = Modifier,
@@ -92,7 +84,6 @@ fun AudiobookChapterPager(
             SectionLyrics(
                 sectionKey = section.key,
                 pages = pages,
-                characters = characters,
                 highlight = highlight?.takeIf { it.sectionKey == section.key },
                 isCurrentlyPlaying = section.key == playingSectionKey,
             )
@@ -116,7 +107,6 @@ fun AudiobookChapterPager(
 private fun SectionLyrics(
     sectionKey: String,
     pages: List<PageItem>,
-    characters: List<CharacterContent>,
     highlight: AudioHighlight?,
     isCurrentlyPlaying: Boolean,
 ) {
@@ -211,7 +201,6 @@ private fun SectionLyrics(
 
             LyricLineText(
                 line = line,
-                characters = characters,
                 highlight = highlight?.takeIf { index == currentLineIndex },
                 dimAlpha = 1f - fraction * 0.75f,
                 blurRadius = blurRadius,
@@ -248,58 +237,35 @@ private fun NarrateSectionPrompt(
 @Composable
 private fun LyricLineText(
     line: LyricLine,
-    characters: List<CharacterContent>,
     highlight: AudioHighlight?,
     dimAlpha: Float,
     blurRadius: Dp,
 ) {
     val bodyFontFamily = MaterialTheme.typography.bodyLarge.fontFamily
-    val titleFontFamily = MaterialTheme.typography.titleLarge.fontFamily
     val baseStyle = MaterialTheme.typography.headlineLarge.copy(fontFamily = bodyFontFamily)
     val baseColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .85f)
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val highlightBg = primaryColor.copy(alpha = .15f)
+    val glowColor = MaterialTheme.colorScheme.primary
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
 
     val annotated =
-        remember(line, characters, highlight, primaryColor, titleFontFamily) {
+        remember(line, highlight, glowColor, onPrimaryColor) {
             buildAnnotatedString {
                 append(line.text)
 
-                // The narrated word only gets special styling — a character name lights up in
-                // their color exactly while it is being spoken, not for the whole line forever.
+                // No per-character styling — just the word being spoken right now, lit in
+                // onPrimary with a soft glow from the theme's primary color behind it.
                 highlight?.let { h ->
                     val start = (h.charStart - line.range.first).coerceIn(0, line.text.length)
                     val end = (h.charEnd - line.range.first).coerceIn(start, line.text.length)
                     if (end > start) {
-                        val speakingCharacter =
-                            characters.firstOrNull { character ->
-                                val name = character.data.name
-                                name.isNotBlank() &&
-                                    line.text.regionMatches(start, name, 0, name.length, ignoreCase = true).let { atStart ->
-                                        // Either the highlight sits inside a name occurrence, or a name occurrence
-                                        // overlaps the highlighted range — check both directions cheaply.
-                                        atStart ||
-                                            line.text.indexOf(name, ignoreCase = true).let { found ->
-                                                found in 0 until end && found + name.length > start
-                                            }
-                                    }
-                            }
-                        if (speakingCharacter != null) {
-                            val color = speakingCharacter.data.hexColor.hexToColor() ?: primaryColor
-                            addStyle(
-                                SpanStyle(
-                                    fontWeight = FontWeight.Bold,
-                                    color = color,
-                                    fontFamily = titleFontFamily,
-                                    fontSize = baseStyle.fontSize * HIGHLIGHT_SCALE,
-                                    shadow = Shadow(color, blurRadius = 18f),
-                                ),
-                                start,
-                                end,
-                            )
-                        } else {
-                            addStyle(SpanStyle(color = primaryColor, background = highlightBg), start, end)
-                        }
+                        addStyle(
+                            SpanStyle(
+                                color = onPrimaryColor,
+                                shadow = Shadow(glowColor, blurRadius = GLOW_BLUR_RADIUS),
+                            ),
+                            start,
+                            end,
+                        )
                     }
                 }
             }
@@ -310,9 +276,6 @@ private fun LyricLineText(
         style = baseStyle.copy(color = baseColor, textAlign = TextAlign.Start),
         modifier =
             Modifier
-                // The highlighted character's name grows 1.25x and can push the line to wrap
-                // differently — this eases that height change instead of popping straight to it.
-                .animateContentSize(animationSpec = tween(HIGHLIGHT_ANIM_MS, easing = EaseIn))
                 .alpha(dimAlpha)
                 .let { if (blurRadius > 0.dp) it.blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded) else it },
     )

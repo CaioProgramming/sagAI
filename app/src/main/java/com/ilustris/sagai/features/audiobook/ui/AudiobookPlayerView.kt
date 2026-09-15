@@ -3,14 +3,11 @@
 package com.ilustris.sagai.features.audiobook.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,17 +35,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -57,14 +51,10 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.morphingColor
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.themeFilter
-import com.ilustris.sagai.ui.theme.zoomAnimation
-import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.launch
 
 /**
  * Spotify/Apple-Music-style now-playing screen for the audiobook, deliberately separate from the
@@ -79,37 +69,10 @@ fun AudiobookPlayerView(
     audiobook: AudiobookUiState?,
     onAction: (AudiobookAction) -> Unit,
     onSeekToFraction: (Float) -> Unit,
-    onSeekBy: (Long) -> Unit,
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
     val context = LocalContext.current
-
-    val backgrounds =
-        remember(saga, act) {
-            buildList {
-                act.chapters.forEach {
-                    it.data.coverImage
-                        .takeIf(String::isNotBlank)
-                        ?.let(::add)
-                }
-                saga.data.icon
-                    .takeIf(String::isNotBlank)
-                    ?.let(::add)
-                saga.characters.forEach {
-                    it.data.image
-                        .takeIf(String::isNotBlank)
-                        ?.let(::add)
-                }
-            }.ifEmpty { listOf(saga.data.icon) }
-        }
-    var backgroundIndex by remember(backgrounds) { mutableStateOf(0) }
-    LaunchedEffect(backgrounds) {
-        while (true) {
-            kotlinx.coroutines.delay(BACKGROUND_CYCLE.inWholeMilliseconds)
-            backgroundIndex = (backgroundIndex + 1) % backgrounds.size
-        }
-    }
 
     val bookTitle = act.book?.actTitle?.takeIf(String::isNotBlank) ?: act.data.title
     val chapterTitle = audiobook?.playingSectionKey?.let { audiobook.section(it)?.title }.orEmpty()
@@ -162,37 +125,13 @@ fun AudiobookPlayerView(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Crossfade(
-            targetState = backgrounds.getOrNull(backgroundIndex),
-            animationSpec = tween(BACKGROUND_CROSSFADE_MS),
-            label = "audiobookBackground",
-        ) { image ->
-            AsyncImage(
-                model = image,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .themeFilter()
-                        .zoomAnimation(),
-            )
-        }
-
+        // Deliberately just a slow-morphing genre-colored gradient, not the illustration crossfade
+        // this used to be: real art competed with the text for attention instead of backing it.
         Box(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = .6f)),
-        )
-
-        Box(
-            modifier =
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .fillMaxHeight(.6f)
-                    .background(fadeGradientBottom(tintColor = morphingColor(duration = 3.seconds))),
+                    .background(Brush.verticalGradient(morphingGradient(duration = 6.seconds))),
         )
 
         // Structured as a real Column instead of overlaying everything with align(): the lyrics
@@ -352,7 +291,6 @@ fun AudiobookPlayerView(
                             pagerState = pagerState,
                             pageSections = pagerSections,
                             pages = pages,
-                            characters = saga.characters,
                             audiobook = audiobook,
                             onNarrateSection = { sectionKey -> onAction(AudiobookAction.Listen(sectionKey, 0)) },
                             modifier = Modifier.fillMaxSize(),
@@ -478,15 +416,6 @@ fun AudiobookPlayerView(
                             )
                         }
 
-                        IconButton(onClick = { onSeekBy(-SEEK_STEP_MS) }) {
-                            Icon(
-                                painterResource(R.drawable.ic_replay_arrow),
-                                contentDescription = stringResource(R.string.audiobook_seek_back_cd),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.scale(1.4f),
-                            )
-                        }
-
                         IconButton(
                             onClick = { onAction(AudiobookAction.TogglePlayback) },
                             modifier =
@@ -513,15 +442,6 @@ fun AudiobookPlayerView(
                             )
                         }
 
-                        IconButton(onClick = { onSeekBy(SEEK_STEP_MS) }) {
-                            Icon(
-                                painterResource(R.drawable.ic_replay_arrow),
-                                contentDescription = stringResource(R.string.audiobook_seek_forward_cd),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.scale(-1.4f, 1.4f),
-                            )
-                        }
-
                         IconButton(
                             onClick = {
                                 val target = (pagerState.currentPage + 1).coerceAtMost(pagerSections.lastIndex.coerceAtLeast(0))
@@ -543,9 +463,6 @@ fun AudiobookPlayerView(
 }
 
 private val TOPBAR_HEIGHT = 56.dp
-private val BACKGROUND_CYCLE = 8.seconds
-private const val BACKGROUND_CROSSFADE_MS = 1_400
-private const val SEEK_STEP_MS = 10_000L
 
 private fun Long.asClock(): String {
     val totalSeconds = (this / 1000).coerceAtLeast(0)

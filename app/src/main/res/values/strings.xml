@@ -1095,8 +1095,6 @@
     <string name="audiobook_share_video_chooser">Share narration video</string>
     <string name="audiobook_open_player_cd">Open audiobook player</string>
     <string name="audiobook_generating_cd">Narrating…</string>
-    <string name="audiobook_seek_back_cd">Rewind 10 seconds</string>
-    <string name="audiobook_seek_forward_cd">Forward 10 seconds</string>
     <string name="audiobook_mute_music_cd">Mute ambient music</string>
     <string name="audiobook_unmute_music_cd">Unmute ambient music</string>
     <string name="audiobook_generation_failed_cd">Narration failed</string>

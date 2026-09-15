@@ -288,12 +288,6 @@ class AudiobookViewModel
             }
         }
 
-        /** [deltaMs] positive skips forward, negative rewinds — e.g. the ±10s transport buttons. */
-        fun seekBy(deltaMs: Long) {
-            val current = state.value ?: return
-            seekToSectionMs((current.positionMs + deltaMs).coerceIn(0L, current.durationMs))
-        }
-
         private fun toggleSyncSource() {
             syncSource.value = if (syncSource.value == SyncSource.TRANSCRIBED) SyncSource.ESTIMATED else SyncSource.TRANSCRIBED
         }

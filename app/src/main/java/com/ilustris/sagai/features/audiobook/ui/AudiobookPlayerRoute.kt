@@ -51,7 +51,6 @@ fun AudiobookPlayerRoute(
             val duration = audiobook?.durationMs ?: 0L
             audiobookViewModel.seekToSectionMs((fraction * duration).toLong())
         },
-        onSeekBy = audiobookViewModel::seekBy,
         onBack = onBack,
     )
 }
