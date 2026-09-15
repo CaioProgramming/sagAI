@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -347,7 +348,15 @@ fun AudiobookPlayerView(
                             onSeekToFraction(dragFraction)
                             dragFraction = -1f
                         },
-                        thumb = { MorphingThemeIcon(modifier = Modifier.size(16.dp), glowIntensity = 0f) },
+                        thumb = {
+                            MorphingThemeIcon(
+                                modifier = Modifier.size(16.dp),
+                                // ThemeIcon fills with brush when it's non-null and ignores tint
+                                // entirely in that case — a solid brush is how to get a flat color.
+                                brush = SolidColor(MaterialTheme.colorScheme.onPrimary),
+                                glowIntensity = 0f,
+                            )
+                        },
                         track = { sliderState ->
                             Box(
                                 Modifier
