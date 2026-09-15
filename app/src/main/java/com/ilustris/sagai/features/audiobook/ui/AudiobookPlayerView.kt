@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,7 +42,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,9 +56,12 @@ import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.morphingColor
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -96,6 +102,19 @@ fun AudiobookPlayerView(
     val bookTitle = act.book?.actTitle?.takeIf(String::isNotBlank) ?: act.data.title
     val chapterTitle = audiobook?.playingSectionKey?.let { audiobook.section(it)?.title }.orEmpty()
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + TOPBAR_HEIGHT
+    val hasAnyReadySection = audiobook?.sections?.any { it.isReady } == true
+    var playerHeightPx by remember { mutableIntStateOf(0) }
+
+    // Mirrors the old headset-click behavior: land on the player already playing when there is
+    // narrated audio and nothing is loaded into the player yet (a fresh open, not a resume).
+    LaunchedEffect(audiobook?.bookId) {
+        val current = audiobook ?: return@LaunchedEffect
+        if (current.playingSectionKey == null && current.narration == null) {
+            current.sections.firstOrNull { it.isReady }?.let { section ->
+                onAction(AudiobookAction.Listen(section.key, 0))
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Crossfade(
@@ -110,8 +129,9 @@ fun AudiobookPlayerView(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .blur(28.dp)
-                        .scale(1.15f), // hides blur edge artifacts
+                        .effectForGenre(genre = saga.data.genre)
+                        .blur(5.dp)
+                        .scale(1.06f), // hides blur edge artifacts
             )
         }
 
@@ -119,7 +139,7 @@ fun AudiobookPlayerView(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background.copy(alpha = .35f)),
+                    .background(Color.Black.copy(alpha = .3f)),
         )
 
         val isGenerating = audiobook?.narration != null
@@ -173,7 +193,11 @@ fun AudiobookPlayerView(
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = .9f),
                             textAlign = TextAlign.Center,
                         ),
-                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = 32.dp)
+                            .reactiveShimmer(true, saga.data.genre.shimmerColors()),
                 )
             }
 
@@ -184,6 +208,7 @@ fun AudiobookPlayerView(
                     audiobook = audiobook,
                     onNarrateNextSection = { sectionKey -> onAction(AudiobookAction.Listen(sectionKey, 0)) },
                     topInset = topInset,
+                    bottomInsetPx = playerHeightPx,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -246,145 +271,155 @@ fun AudiobookPlayerView(
             }
         }
 
-        Column(
-            modifier =
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(fadeGradientBottom(tintColor = morphingColor(duration = 3.seconds)))
-                    .navigationBarsPadding()
-                    .padding(top = 96.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
-        ) {
-            Text(
-                text = bookTitle,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
+        if (hasAnyReadySection) {
+            Column(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .onSizeChanged { playerHeightPx = it.height }
+                        .background(fadeGradientBottom(tintColor = morphingColor(duration = 3.seconds)))
+                        .navigationBarsPadding()
+                        .padding(top = 96.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
+            ) {
+                Text(
+                    text = bookTitle,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
-            Text(
-                text = chapterTitle,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
+                Text(
+                    text = chapterTitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
-            var dragFraction by remember { mutableFloatStateOf(-1f) }
-            val duration = audiobook?.durationMs ?: 0L
-            val position = audiobook?.positionMs ?: 0L
-            val fraction = if (dragFraction >= 0f) dragFraction else if (duration > 0) (position.toFloat() / duration).coerceIn(0f, 1f) else 0f
+                var dragFraction by remember { mutableFloatStateOf(-1f) }
+                val duration = audiobook?.durationMs ?: 0L
+                val position = audiobook?.positionMs ?: 0L
+                val fraction =
+                    if (dragFraction >= 0f) {
+                        dragFraction
+                    } else if (duration > 0) {
+                        (position.toFloat() / duration).coerceIn(0f, 1f)
+                    } else {
+                        0f
+                    }
 
-            Slider(
-                value = fraction,
-                onValueChange = { dragFraction = it },
-                onValueChangeFinished = {
-                    onSeekToFraction(dragFraction)
-                    dragFraction = -1f
-                },
-                thumb = { MorphingThemeIcon(modifier = Modifier.size(16.dp)) },
-                track = { sliderState ->
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(3.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .2f)),
-                    ) {
+                Slider(
+                    value = fraction,
+                    onValueChange = { dragFraction = it },
+                    onValueChangeFinished = {
+                        onSeekToFraction(dragFraction)
+                        dragFraction = -1f
+                    },
+                    thumb = { MorphingThemeIcon(modifier = Modifier.size(16.dp)) },
+                    track = { sliderState ->
                         Box(
                             Modifier
-                                .fillMaxWidth(sliderState.value.coerceIn(0f, 1f))
+                                .fillMaxWidth()
                                 .height(3.dp)
                                 .clip(RoundedCornerShape(50))
-                                .background(MaterialTheme.colorScheme.primary),
+                                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .2f)),
+                        ) {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth(sliderState.value.coerceIn(0f, 1f))
+                                    .height(3.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(MaterialTheme.colorScheme.primary),
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = (if (dragFraction >= 0f) (dragFraction * duration).toLong() else position).asClock(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
+                    )
+                    Text(
+                        text = duration.asClock(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
+                    )
+                }
+
+                var musicMuted by remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(
+                        onClick = {
+                            musicMuted = !musicMuted
+                            val action = if (musicMuted) SagaPlaybackService.ACTION_PAUSE else SagaPlaybackService.ACTION_RESUME
+                            SagaPlaybackService.startSafely(context, SagaPlaybackService.playbackIntent(context, action))
+                        },
+                    ) {
+                        Icon(
+                            painterResource(if (musicMuted) R.drawable.ic_volume_off else R.drawable.ic_volume_up),
+                            contentDescription =
+                                stringResource(
+                                    if (musicMuted) R.string.audiobook_unmute_music_cd else R.string.audiobook_mute_music_cd,
+                                ),
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = (if (dragFraction >= 0f) (dragFraction * duration).toLong() else position).asClock(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
-                )
-                Text(
-                    text = duration.asClock(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
-                )
-            }
+                    IconButton(onClick = { onSeekBy(-SEEK_STEP_MS) }) {
+                        Icon(
+                            painterResource(R.drawable.ic_replay_arrow),
+                            contentDescription = stringResource(R.string.audiobook_seek_back_cd),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.scale(1.4f),
+                        )
+                    }
 
-            var musicMuted by remember { mutableStateOf(false) }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(
-                    onClick = {
-                        musicMuted = !musicMuted
-                        val action = if (musicMuted) SagaPlaybackService.ACTION_PAUSE else SagaPlaybackService.ACTION_RESUME
-                        SagaPlaybackService.startSafely(context, SagaPlaybackService.playbackIntent(context, action))
-                    },
-                ) {
-                    Icon(
-                        painterResource(if (musicMuted) R.drawable.ic_volume_off else R.drawable.ic_volume_up),
-                        contentDescription =
-                            stringResource(
-                                if (musicMuted) R.string.audiobook_unmute_music_cd else R.string.audiobook_mute_music_cd,
-                            ),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
+                    IconButton(
+                        onClick = { onAction(AudiobookAction.TogglePlayback) },
+                        modifier =
+                            Modifier
+                                .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
+                                .padding(4.dp),
+                    ) {
+                        Icon(
+                            painterResource(if (audiobook?.isPlaying == true) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24),
+                            contentDescription =
+                                stringResource(
+                                    if (audiobook?.isPlaying == true) R.string.audiobook_pause_cd else R.string.audiobook_play_cd,
+                                ),
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.scale(1.3f),
+                        )
+                    }
 
-                IconButton(onClick = { onSeekBy(-SEEK_STEP_MS) }) {
-                    Icon(
-                        painterResource(R.drawable.ic_replay_arrow),
-                        contentDescription = stringResource(R.string.audiobook_seek_back_cd),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.scale(1.4f),
-                    )
-                }
+                    IconButton(onClick = { onSeekBy(SEEK_STEP_MS) }) {
+                        Icon(
+                            painterResource(R.drawable.ic_replay_arrow),
+                            contentDescription = stringResource(R.string.audiobook_seek_forward_cd),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.scale(-1.4f, 1.4f),
+                        )
+                    }
 
-                IconButton(
-                    onClick = { onAction(AudiobookAction.TogglePlayback) },
-                    modifier =
-                        Modifier
-                            .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
-                            .padding(4.dp),
-                ) {
-                    Icon(
-                        painterResource(if (audiobook?.isPlaying == true) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24),
-                        contentDescription =
-                            stringResource(
-                                if (audiobook?.isPlaying == true) R.string.audiobook_pause_cd else R.string.audiobook_play_cd,
-                            ),
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.scale(1.3f),
-                    )
-                }
-
-                IconButton(onClick = { onSeekBy(SEEK_STEP_MS) }) {
-                    Icon(
-                        painterResource(R.drawable.ic_replay_arrow),
-                        contentDescription = stringResource(R.string.audiobook_seek_forward_cd),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.scale(-1.4f, 1.4f),
-                    )
-                }
-
-                IconButton(onClick = { onAction(AudiobookAction.Stop) }) {
-                    Icon(
-                        painterResource(R.drawable.ic_stop),
-                        contentDescription = stringResource(R.string.audiobook_stop_cd),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
+                    IconButton(onClick = { onAction(AudiobookAction.Stop) }) {
+                        Icon(
+                            painterResource(R.drawable.ic_stop),
+                            contentDescription = stringResource(R.string.audiobook_stop_cd),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
                 }
             }
         }

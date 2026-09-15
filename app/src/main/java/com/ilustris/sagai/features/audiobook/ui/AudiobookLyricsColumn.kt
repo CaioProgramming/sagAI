@@ -3,11 +3,11 @@ package com.ilustris.sagai.features.audiobook.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,16 +19,19 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.ui.theme.hexToColor
@@ -61,6 +64,9 @@ fun AudiobookLyricsColumn(
     audiobook: AudiobookUiState?,
     onNarrateNextSection: (sectionKey: String) -> Unit,
     topInset: Dp,
+    /** Height in px of the bottom transport bar overlapping this column, so the fade-out reaches
+     * its max before text disappears under it — not only at the true bottom of the screen. */
+    bottomInsetPx: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val sections = audiobook?.sections.orEmpty()
@@ -139,7 +145,10 @@ fun AudiobookLyricsColumn(
                         centerY.coerceAtLeast(0f)
                     }
                 }
-            val fraction = (distanceBelowAnchor / viewportHeightPx.coerceAtLeast(1)).coerceIn(0f, 1f)
+            // Fades out over the readable area only (viewport minus the transport bar), so lines
+            // reach max blur right as they slide under the player instead of at the screen's edge.
+            val readableHeightPx = (viewportHeightPx - bottomInsetPx).coerceAtLeast(1)
+            val fraction = (distanceBelowAnchor / readableHeightPx).coerceIn(0f, 1f)
             val blurRadius = (fraction * MAX_BLUR_DP).dp
 
             LyricLineText(
@@ -152,23 +161,21 @@ fun AudiobookLyricsColumn(
         }
 
         nextSectionKey?.let { key ->
-            val title = sections.find { it.key == key }?.title.orEmpty()
             item(key = "narrate_$key") {
-                NarrateSectionPrompt(chapterTitle = title, onClick = { onNarrateNextSection(key) })
+                NarrateSectionPrompt(onClick = { onNarrateNextSection(key) })
             }
         }
     }
 }
 
 @Composable
-private fun NarrateSectionPrompt(
-    chapterTitle: String,
-    onClick: () -> Unit,
-) {
-    Box(Modifier.padding(vertical = 12.dp)) {
-        Button(onClick = onClick, shape = RoundedCornerShape(50)) {
-            Text(chapterTitle)
-        }
+private fun NarrateSectionPrompt(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+    ) {
+        Text(stringResource(R.string.audiobook_listen_next_chapter_cd))
     }
 }
 
@@ -238,6 +245,6 @@ private fun LyricLineText(
         modifier =
             Modifier
                 .alpha(dimAlpha)
-                .let { if (blurRadius > 0.dp) it.blur(blurRadius) else it },
+                .let { if (blurRadius > 0.dp) it.blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded) else it },
     )
 }

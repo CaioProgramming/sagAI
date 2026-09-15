@@ -1088,6 +1088,7 @@
     <string name="audiobook_unmute_music_cd">Reativar música ambiente</string>
     <string name="audiobook_generation_failed_cd">Narração falhou</string>
     <string name="audiobook_dismiss_error_cd">Descartar erro</string>
+    <string name="audiobook_listen_next_chapter_cd">Ouvir próximo capítulo</string>
     <string name="book_options_cd">Mais opções</string>
 </resources>
 
