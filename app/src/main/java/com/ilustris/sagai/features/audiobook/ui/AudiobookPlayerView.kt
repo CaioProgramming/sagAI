@@ -38,23 +38,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Spotify/Apple-Music-style now-playing screen for the audiobook, deliberately separate from the
@@ -72,7 +71,6 @@ fun AudiobookPlayerView(
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
-    val context = LocalContext.current
 
     val bookTitle = act.book?.actTitle?.takeIf(String::isNotBlank) ?: act.data.title
     val chapterTitle = audiobook?.playingSectionKey?.let { audiobook.section(it)?.title }.orEmpty()
@@ -131,7 +129,14 @@ fun AudiobookPlayerView(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(Brush.verticalGradient(morphingGradient(duration = 6.seconds))),
+                    .background(
+                        Brush.verticalGradient(
+                            morphingGradient(
+                                colors = MaterialTheme.colorScheme.primary.darkerPalette(),
+                                duration = 6.seconds,
+                            ),
+                        ),
+                    ),
         )
 
         // Structured as a real Column instead of overlaying everything with align(): the lyrics
@@ -356,7 +361,7 @@ fun AudiobookPlayerView(
                                         .fillMaxWidth(sliderState.value.coerceIn(0f, 1f))
                                         .height(3.dp)
                                         .clip(RoundedCornerShape(50))
-                                        .background(MaterialTheme.colorScheme.primary),
+                                        .background(MaterialTheme.colorScheme.onPrimary),
                                 )
                             }
                         },
@@ -379,29 +384,11 @@ fun AudiobookPlayerView(
                         )
                     }
 
-                    var musicMuted by remember { mutableStateOf(false) }
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        IconButton(
-                            onClick = {
-                                musicMuted = !musicMuted
-                                val action = if (musicMuted) SagaPlaybackService.ACTION_PAUSE else SagaPlaybackService.ACTION_RESUME
-                                SagaPlaybackService.startSafely(context, SagaPlaybackService.playbackIntent(context, action))
-                            },
-                        ) {
-                            Icon(
-                                painterResource(if (musicMuted) R.drawable.ic_volume_off else R.drawable.ic_volume_up),
-                                contentDescription =
-                                    stringResource(
-                                        if (musicMuted) R.string.audiobook_unmute_music_cd else R.string.audiobook_mute_music_cd,
-                                    ),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-
                         IconButton(
                             onClick = {
                                 val target = (pagerState.currentPage - 1).coerceAtLeast(0)

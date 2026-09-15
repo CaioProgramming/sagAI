@@ -1082,8 +1082,6 @@
     <string name="audiobook_share_video_chooser">Compartilhar vídeo da narração</string>
     <string name="audiobook_open_player_cd">Abrir player do audiolivro</string>
     <string name="audiobook_generating_cd">Narrando…</string>
-    <string name="audiobook_mute_music_cd">Silenciar música ambiente</string>
-    <string name="audiobook_unmute_music_cd">Reativar música ambiente</string>
     <string name="audiobook_generation_failed_cd">Narração falhou</string>
     <string name="audiobook_dismiss_error_cd">Descartar erro</string>
     <string name="audiobook_listen_next_chapter_cd">Ouvir próximo capítulo</string>
