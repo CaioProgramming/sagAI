@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.characters.data.model.ArcSourceType
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.timeline.data.model.NotableExchange
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 data class BookPrologueArgs(
@@ -233,6 +234,12 @@ object BookPrompts {
                         event.messages
                             .sortedBy { it.message.timestamp }
                             .forEach { appendLine(it.transcriptLine()) }
+                        event.data.notableExchanges?.takeIf { it.isNotEmpty() }?.let { exchanges ->
+                            // Kept last so it survives the tail-trim below even if this scene
+                            // alone blows the budget — these lines matter more than the full dump.
+                            appendLine("### NOTABLE EXCHANGES")
+                            exchanges.forEach { appendLine(it.render()) }
+                        }
                     }
                 }
         val kept = ArrayDeque<String>()
@@ -272,6 +279,12 @@ object BookPrompts {
     private fun MessageContent.transcriptLine(): String {
         val speaker = character?.name ?: message.speakerName ?: message.senderType.name
         return "$speaker: ${message.text}"
+    }
+
+    private fun NotableExchange.render(): String {
+        val opening = "- ${sender.speaker}: \"${sender.line}\""
+        val reply = respondent?.let { " → ${it.speaker}: \"${it.line}\"" } ?: emptyString()
+        return opening + reply
     }
 
     private fun SagaContent.previousActOf(act: ActContent): ActContent? {

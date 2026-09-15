@@ -60,6 +60,8 @@ data class Book(
     val prologue: List<BookPage>? = null,
     val prologueNotes: WriterNotes? = null,
     val epilogue: List<BookPage>? = null,
+    /** Audiobook narrator, drawn once per volume so the voice never changes between chapters. */
+    val narrationVoice: String? = null,
 ) {
     fun isSealed() = coverQuote.isNotBlank()
 

@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.ilustris.sagai.core.database.converters.BookConverters
 import com.ilustris.sagai.core.database.converters.CharacterPresenceListConverter
+import com.ilustris.sagai.core.database.converters.TimelineConverters
 import com.ilustris.sagai.core.database.converters.EnumConverters
 import com.ilustris.sagai.core.database.converters.FarewellListConverter
 import com.ilustris.sagai.core.database.converters.IntListConverter
@@ -18,6 +19,8 @@ import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.model.BookChapterPages
 import com.ilustris.sagai.features.act.data.source.ActDao
 import com.ilustris.sagai.features.act.data.source.BookDao
+import com.ilustris.sagai.features.audiobook.data.model.BookAudioSegment
+import com.ilustris.sagai.features.audiobook.data.source.BookAudioDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -56,6 +59,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Act::class,
         Book::class,
         BookChapterPages::class,
+        BookAudioSegment::class,
         CharacterEvent::class,
         CharacterRelation::class,
         RelationshipUpdateEvent::class,
@@ -65,7 +69,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         WorldLocation::class,
         WorldLocationVisit::class,
     ],
-    version = 33,
+    version = 35,
     exportSchema = true,
 )
 @TypeConverters(
@@ -75,6 +79,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
     BookConverters::class,
     FarewellListConverter::class,
     CharacterPresenceListConverter::class,
+    TimelineConverters::class,
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
@@ -94,6 +99,8 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun actDao(): ActDao
 
     abstract fun bookDao(): BookDao
+
+    abstract fun bookAudioDao(): BookAudioDao
 
     abstract fun characterEventDao(): CharacterEventDao
 

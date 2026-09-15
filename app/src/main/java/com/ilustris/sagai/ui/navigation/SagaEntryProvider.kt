@@ -6,6 +6,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.features.act.ui.BookReaderView
+import com.ilustris.sagai.features.audiobook.ui.AudiobookPlayerRoute
 import com.ilustris.sagai.features.act.ui.SagaActsView
 import com.ilustris.sagai.features.act.ui.SagaStoryReaderView
 import com.ilustris.sagai.features.brain.ui.CharacterBrainView
@@ -268,8 +269,19 @@ fun createSagaEntryProvider(
             sagaId = key.sagaId,
             initialActId = key.initialActId,
             onBack = { navigator.goBack() },
+            onOpenAudiobookPlayer = { actId ->
+                navigator.navigate(AudiobookPlayerKey(key.sagaId, actId))
+            },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    entry<AudiobookPlayerKey> { key ->
+        AudiobookPlayerRoute(
+            sagaId = key.sagaId,
+            actId = key.actId,
+            onBack = { navigator.goBack() },
         )
     }
 

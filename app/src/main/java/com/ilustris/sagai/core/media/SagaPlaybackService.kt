@@ -34,6 +34,7 @@ class SagaPlaybackService : Service() {
     private var musicObserverJob: Job? = null
     private var currentMusicPath: String? = null
     private var musicEnabledBySettings = true
+    private var targetVolume = NORMAL_VOLUME
 
     private val TAG = "SagaPlaybackService"
 
@@ -89,6 +90,7 @@ class SagaPlaybackService : Service() {
                     path,
                     looping = true,
                     onPrepared = {
+                        mediaPlayerManager.setVolume(targetVolume)
                         mediaPlayerManager.play()
                     },
                 )
@@ -123,6 +125,17 @@ class SagaPlaybackService : Service() {
         updatePlayback()
     }
 
+    /** Lowers ambient music under narration (e.g. the audiobook player) without pausing it. */
+    fun duckMusic() {
+        targetVolume = DUCK_VOLUME
+        mediaPlayerManager.setVolume(targetVolume)
+    }
+
+    fun unduckMusic() {
+        targetVolume = NORMAL_VOLUME
+        mediaPlayerManager.setVolume(targetVolume)
+    }
+
     private fun isSilentMode(): Boolean {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val ringerMode = audioManager.ringerMode
@@ -148,6 +161,8 @@ class SagaPlaybackService : Service() {
             ACTION_STOP -> stopMusic()
             ACTION_PAUSE -> pauseMusic()
             ACTION_RESUME -> resumeMusic()
+            ACTION_DUCK -> duckMusic()
+            ACTION_UNDUCK -> unduckMusic()
         }
 
         return START_NOT_STICKY
@@ -166,7 +181,13 @@ class SagaPlaybackService : Service() {
         const val ACTION_STOP = "com.ilustris.sagai.ACTION_STOP_MUSIC"
         const val ACTION_PAUSE = "com.ilustris.sagai.ACTION_PAUSE_MUSIC"
         const val ACTION_RESUME = "com.ilustris.sagai.ACTION_RESUME_MUSIC"
+        const val ACTION_DUCK = "com.ilustris.sagai.ACTION_DUCK_MUSIC"
+        const val ACTION_UNDUCK = "com.ilustris.sagai.ACTION_UNDUCK_MUSIC"
         const val EXTRA_MUSIC_PATH = "EXTRA_MUSIC_PATH"
+        private const val NORMAL_VOLUME = 1f
+
+        /** How quiet the ambient track goes while the audiobook narrates — audible bed, never competing. */
+        private const val DUCK_VOLUME = 0.1f
 
         fun playbackIntent(
             context: Context,

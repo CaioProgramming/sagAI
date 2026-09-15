@@ -4,6 +4,7 @@ import android.graphics.Canvas
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -12,11 +13,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
@@ -155,6 +166,51 @@ object ChapterDropCap {
     }
 }
 
+/** Styles the part of [text] (from [offset] in the full page) that overlaps [highlight]; color-only so layout never shifts. */
+private fun highlighted(
+    text: String,
+    offset: Int,
+    highlight: TextRange?,
+    style: SpanStyle,
+): AnnotatedString =
+    buildAnnotatedString {
+        append(text)
+        if (highlight == null) return@buildAnnotatedString
+        val start = (highlight.start - offset).coerceIn(0, text.length)
+        val end = (highlight.end - offset).coerceIn(0, text.length)
+        if (end > start) addStyle(style, start, end)
+    }
+
+/** Text that reports taps as character offsets in the full page ([offset] is where [text] starts). */
+@Composable
+private fun PageText(
+    text: AnnotatedString,
+    offset: Int,
+    style: TextStyle,
+    onTap: ((Int) -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    // The highlight recomposes this every playback tick; keep the gesture detector alive across it.
+    val currentOnTap by rememberUpdatedState(onTap)
+    val currentOffset by rememberUpdatedState(offset)
+    Text(
+        text = text,
+        style = style,
+        onTextLayout = { layout = it },
+        modifier =
+            if (onTap == null) {
+                modifier
+            } else {
+                modifier.pointerInput(Unit) {
+                    detectTapGestures { position ->
+                        layout?.let { currentOnTap?.invoke(currentOffset + it.getOffsetForPosition(position)) }
+                    }
+                }
+            },
+    )
+}
+
 @Composable
 fun ChapterDropCapText(
     text: String,
@@ -165,17 +221,27 @@ fun ChapterDropCapText(
             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
             fontWeight = FontWeight.Normal,
         ),
+    /** Range of [text] being narrated right now, e.g. the current word of the audiobook. */
+    highlight: TextRange? = null,
+    highlightStyle: SpanStyle =
+        SpanStyle(
+            color = MaterialTheme.colorScheme.primary,
+            background = MaterialTheme.colorScheme.primary.copy(alpha = .12f),
+        ),
+    /** Receives the tapped character offset in [text], e.g. to seek the audiobook there. */
+    onTextTap: ((Int) -> Unit)? = null,
 ) {
     if (!showDropCap) {
-        Text(text = text, style = bodyStyle, modifier = modifier)
+        PageText(highlighted(text, 0, highlight, highlightStyle), 0, bodyStyle, onTextTap, modifier)
         return
     }
 
     val split = remember(text) { ChapterDropCap.split(text) }
     if (split == null) {
-        Text(text = text, style = bodyStyle, modifier = modifier)
+        PageText(highlighted(text, 0, highlight, highlightStyle), 0, bodyStyle, onTextTap, modifier)
         return
     }
+    val remainderOffset = text.length - text.trimStart().length + 1
 
     val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
     val density = LocalDensity.current
@@ -238,7 +304,9 @@ fun ChapterDropCapText(
             }
 
         val besideText = split.remainder.substring(0, breakIndex)
-        val belowText = split.remainder.substring(breakIndex).trimStart()
+        val belowRaw = split.remainder.substring(breakIndex)
+        val belowText = belowRaw.trimStart()
+        val belowOffset = remainderOffset + breakIndex + (belowRaw.length - belowText.length)
 
         Box(Modifier.fillMaxWidth()) {
             Text(
@@ -248,14 +316,16 @@ fun ChapterDropCapText(
             )
             Column(Modifier.fillMaxWidth()) {
                 if (besideText.isNotEmpty()) {
-                    Text(
-                        text = besideText,
+                    PageText(
+                        text = highlighted(besideText, remainderOffset, highlight, highlightStyle),
+                        offset = remainderOffset,
                         style = bodyStyle,
+                        onTap = onTextTap,
                         modifier = Modifier.padding(start = indentStart),
                     )
                 }
                 if (belowText.isNotEmpty()) {
-                    Text(text = belowText, style = bodyStyle)
+                    PageText(highlighted(belowText, belowOffset, highlight, highlightStyle), belowOffset, bodyStyle, onTextTap)
                 }
             }
         }

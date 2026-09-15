@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -65,6 +67,8 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.BookPage
 import com.ilustris.sagai.features.act.ui.PageItem
+import com.ilustris.sagai.features.audiobook.ui.AudiobookAction
+import com.ilustris.sagai.features.audiobook.ui.AudiobookUiState
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -91,6 +95,9 @@ fun BookReader(
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     onSelectNextVolume: () -> Unit,
+    audiobook: AudiobookUiState? = null,
+    onAudiobookAction: (AudiobookAction) -> Unit = {},
+    onCurrentPageChanged: (PageItem.Content?) -> Unit = {},
 ) {
     val pageItems = pages
     val pagerState =
@@ -98,6 +105,17 @@ fun BookReader(
             rememberPagerState { pageItems.size + 1 }
         }
     val genre = remember { saga.data.genre }
+
+    // Narration turns the pages: follow the highlighted word onto its page while playing.
+    val highlight = audiobook?.highlight
+    LaunchedEffect(highlight?.sectionKey, highlight?.pageIndex, audiobook?.isPlaying) {
+        if (highlight == null || audiobook?.isPlaying != true) return@LaunchedEffect
+        val target =
+            pageItems.indexOfFirst {
+                it is PageItem.Content && it.sectionKey == highlight.sectionKey && it.pageIndex == highlight.pageIndex
+            }
+        if (target >= 0 && target != pagerState.currentPage) pagerState.animateScrollToPage(target)
+    }
 
     with(sharedTransitionScope) {
         Box(
@@ -176,11 +194,21 @@ fun BookReader(
                             }
 
                             is PageItem.Content -> {
+                                val pageHighlight =
+                                    highlight?.takeIf { it.sectionKey == item.sectionKey && it.pageIndex == item.pageIndex }
+                                val canSeek = audiobook?.section(item.sectionKey)?.narrated?.let { it > 0 } == true
                                 ReaderPage(
                                     chapterTitle = item.chapterTitle,
                                     page = item.page,
                                     showDropCap = item.showDropCap,
                                     genre = genre,
+                                    highlight = pageHighlight?.let { TextRange(it.charStart, it.charEnd) },
+                                    onTextTap =
+                                        if (canSeek) {
+                                            { offset -> onAudiobookAction(AudiobookAction.SeekToText(item.sectionKey, item.pageIndex, offset)) }
+                                        } else {
+                                            null
+                                        },
                                     titleModifier =
                                         Modifier.sharedElement(
                                             rememberSharedContentState(key = "book-${act.data.id}"),
@@ -227,6 +255,9 @@ fun BookReader(
                     .align(Alignment.BottomCenter),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                val currentContent = pageItems.getOrNull(pagerState.currentPage) as? PageItem.Content
+                LaunchedEffect(currentContent) { onCurrentPageChanged(currentContent) }
+
                 Image(
                     painterResource(genre.icon),
                     contentDescription = null,
@@ -430,6 +461,8 @@ fun ReaderPage(
     showDropCap: Boolean,
     genre: Genre,
     titleModifier: Modifier,
+    highlight: TextRange? = null,
+    onTextTap: ((Int) -> Unit)? = null,
 ) {
     Column(
         modifier =
@@ -443,6 +476,8 @@ fun ReaderPage(
         ChapterDropCapText(
             text = page.content,
             showDropCap = showDropCap,
+            highlight = highlight,
+            onTextTap = onTextTap,
         )
         Spacer(Modifier.height(100.dp))
     }

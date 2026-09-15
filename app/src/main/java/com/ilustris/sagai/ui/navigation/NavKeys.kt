@@ -109,6 +109,13 @@ data class BookReaderKey(
     val initialActId: Int,
 ) : NavKey
 
+/** Its own destination — deliberately not an overlay on [BookReaderKey], own ViewModel scope. */
+@Serializable
+data class AudiobookPlayerKey(
+    val sagaId: Int,
+    val actId: Int,
+) : NavKey
+
 /**
  * Not reachable via deep link on purpose — the only way in is the single collector on
  * [com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager.milestoneChainReady]
@@ -151,6 +158,8 @@ fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
         this is LoreDebugKey && other is LoreDebugKey -> sagaId == other.sagaId
         this is BookReaderKey && other is BookReaderKey ->
             sagaId == other.sagaId && initialActId == other.initialActId
+        this is AudiobookPlayerKey && other is AudiobookPlayerKey ->
+            sagaId == other.sagaId && actId == other.actId
         this is MilestoneKey && other is MilestoneKey -> sagaId == other.sagaId
         else -> false
     }

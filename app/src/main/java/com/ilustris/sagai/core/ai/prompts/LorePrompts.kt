@@ -59,6 +59,7 @@ object LorePrompts {
             "sceneSummary",
             "currentObjective",
             "emotionalReview",
+            "notableExchanges",
         )
 
     val CHAPTER_EXCLUDED_FIELDS =

@@ -15,9 +15,7 @@ import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
-import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.MainActivity
-import com.ilustris.sagai.core.data.SideEffect
 import timber.log.Timber
 import com.ilustris.sagai.features.premium.data.BillingCatalog
 import com.ilustris.sagai.features.premium.data.BillingProductEntry
@@ -34,8 +32,6 @@ class BillingService
     constructor(
         context: Context,
         private val remoteConfigService: RemoteConfigService,
-        private val firebaseInstallationService: FirebaseInstallationService,
-        private val sideEffectService: SideEffectService,
     ) {
         val state = MutableStateFlow<BillingState?>(null)
         val purchaseFlowResult = MutableStateFlow<PurchaseFlowResult>(PurchaseFlowResult.Idle)
@@ -290,17 +286,6 @@ class BillingService
 
         fun isPremium() = state.value is BillingState.SignatureEnabled
 
-        suspend fun <R> runPremiumRequest(
-            bypass: Boolean = false,
-            block: suspend () -> R,
-        ): R =
-            if (isPremium() || (bypass && BuildConfig.DEBUG)) {
-                block()
-            } else {
-                sideEffectService.emit(SideEffect.ShowPremiumOnboarding)
-                throw PremiumException(firebaseInstallationService.getCurrentInstallationId())
-            }
-
         private suspend fun ensureConnected(): BillingResult {
             if (billingClient.isReady) {
                 return BillingResult
@@ -409,21 +394,6 @@ class BillingService
                 BillingClient.BillingResponseCode.NETWORK_ERROR -> "Network error"
                 else -> "Billing error (code $responseCode)"
             }
-
-        class PremiumException(
-            val deviceId: String? = null,
-        ) : Exception(
-                buildString {
-                    appendLine(" ❌ Premium feature accessed without signature.")
-                    if (BuildConfig.DEBUG) {
-                        appendLine("If you are a tester, request the developer to bypass this restriction.")
-                        appendLine("Send the device ID and try again.")
-                        if (deviceId != null) {
-                            appendLine("Device ID: $deviceId")
-                        }
-                    }
-                },
-            )
 
         sealed interface BillingState {
             object SignatureEnabled : BillingState

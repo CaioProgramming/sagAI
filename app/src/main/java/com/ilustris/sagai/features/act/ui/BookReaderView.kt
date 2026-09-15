@@ -19,9 +19,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,6 +33,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.ui.components.BookReader
+import com.ilustris.sagai.features.audiobook.ui.AudiobookViewModel
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 
 /**
@@ -59,12 +66,18 @@ fun BookReaderView(
     sagaId: Int,
     initialActId: Int,
     onBack: () -> Unit,
+    onOpenAudiobookPlayer: (actId: Int) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
     viewModel: BookReaderViewModel = hiltViewModel(),
+    audiobookViewModel: AudiobookViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val audiobook by audiobookViewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    var showBookMenu by remember { mutableStateOf(false) }
+    var currentContentPage by remember { mutableStateOf<PageItem.Content?>(null) }
 
     BackHandler { onBack() }
 
@@ -85,6 +98,18 @@ fun BookReaderView(
             context.startActivity(
                 Intent.createChooser(intent, context.getString(R.string.share_book_pdf_chooser)),
             )
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        audiobookViewModel.videoReady.collect { uri ->
+            val intent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "video/mp4"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            context.startActivity(Intent.createChooser(intent, context.getString(R.string.audiobook_share_video_chooser)))
         }
     }
 
@@ -131,6 +156,9 @@ fun BookReaderView(
                     }
 
                     is BookReaderState.Ready -> {
+                        LaunchedEffect(currentState.currentAct) {
+                            audiobookViewModel.bind(currentState.saga, currentState.currentAct)
+                        }
                         SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
                             BookReader(
                                 saga = currentState.saga,
@@ -140,6 +168,9 @@ fun BookReaderView(
                                 sharedTransitionScope = this@SharedTransitionLayout,
                                 animatedContentScope = this@AnimatedContent,
                                 onSelectNextVolume = viewModel::goToNextVolume,
+                                audiobook = audiobook?.takeIf { it.bookId == currentState.currentAct.book?.id },
+                                onAudiobookAction = audiobookViewModel::onAction,
+                                onCurrentPageChanged = { currentContentPage = it },
                             )
                         }
                     }
@@ -189,26 +220,56 @@ fun BookReaderView(
                 actionContent = {
                     if (state is BookReaderState.Ready) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(
-                                onClick = viewModel::regenerateBook,
-                                modifier = Modifier.clip(CircleShape),
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.baseline_refresh_24),
-                                    contentDescription = stringResource(R.string.regenerate_book_cd),
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                )
+                            val isGenerating = audiobook?.narration != null
+                            Box(contentAlignment = Alignment.Center) {
+                                IconButton(
+                                    onClick = { onOpenAudiobookPlayer((state as BookReaderState.Ready).currentAct.data.id) },
+                                    modifier = Modifier.clip(CircleShape),
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_headset),
+                                        contentDescription = stringResource(R.string.audiobook_open_player_cd),
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                    )
+                                }
+                                if (isGenerating) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(36.dp),
+                                        strokeWidth = 2.dp,
+                                    )
+                                }
                             }
 
-                            IconButton(
-                                onClick = viewModel::shareCurrentBook,
-                                modifier = Modifier.clip(CircleShape),
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_share),
-                                    contentDescription = stringResource(R.string.share_pdf_cd),
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                )
+                            Box {
+                                IconButton(
+                                    onClick = { showBookMenu = true },
+                                    modifier = Modifier.clip(CircleShape),
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_more_vert),
+                                        contentDescription = stringResource(R.string.book_options_cd),
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = showBookMenu,
+                                    onDismissRequest = { showBookMenu = false },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.share_pdf_cd)) },
+                                        onClick = {
+                                            showBookMenu = false
+                                            viewModel.shareCurrentBook()
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.regenerate_book_cd)) },
+                                        onClick = {
+                                            showBookMenu = false
+                                            viewModel.regenerateBook()
+                                        },
+                                    )
+                                }
                             }
                         }
                     }

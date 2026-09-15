@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.BookChapter
 import com.ilustris.sagai.features.act.data.model.BookPage
+import com.ilustris.sagai.features.audiobook.data.model.AudioSection
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
@@ -21,6 +22,9 @@ sealed class PageItem {
         val chapterTitle: String,
         val page: BookPage,
         val showDropCap: Boolean = false,
+        /** [AudioSection.key] this page is narrated under, and its index inside that section. */
+        val sectionKey: String,
+        val pageIndex: Int,
     ) : PageItem()
 
     data class Illustration(
@@ -76,15 +80,15 @@ class BookPageMapper
                 }
 
                 book.prologue?.takeIf { it.isNotEmpty() }?.let { pages ->
-                    addSection(BookChapter(stringResourceHelper.getString(R.string.book_prologue_title), pages))
+                    addSection(BookChapter(stringResourceHelper.getString(R.string.book_prologue_title), pages), AudioSection.PROLOGUE)
                 }
 
                 if (book.isLegacy()) {
                     val allImages = act.chapters.filter { fileHelper.readFile(it.data.coverImage) != null }
                     val addedImages = mutableSetOf<String>()
-                    book.chapters.forEach { chapter ->
+                    book.chapters.forEachIndexed { index, chapter ->
                         val image = allImages.randomOrNull()?.data?.coverImage?.takeIf { addedImages.add(it) }
-                        addSection(chapter, image)
+                        addSection(chapter, AudioSection.legacyKey(index), image)
                     }
                 } else {
                     act.volumeChapters().forEach { chapter ->
@@ -94,12 +98,12 @@ class BookPageMapper
                                 ?.data
                                 ?.coverImage
                                 ?.takeIf { fileHelper.readFile(it) != null }
-                        addSection(chapter, cover)
+                        addSection(chapter, AudioSection.chapterKey(chapter.chapterId ?: 0), cover)
                     }
                 }
 
                 book.epilogue?.takeIf { it.isNotEmpty() }?.let { pages ->
-                    addSection(BookChapter(stringResourceHelper.getString(R.string.book_epilogue_title), pages))
+                    addSection(BookChapter(stringResourceHelper.getString(R.string.book_epilogue_title), pages), AudioSection.EPILOGUE)
                 }
 
                 val presentCharacters = act.getPresentCharacters(characters)
@@ -110,6 +114,7 @@ class BookPageMapper
 
         private fun MutableList<PageItem>.addSection(
             chapter: BookChapter,
+            sectionKey: String,
             illustration: String? = null,
         ) {
             add(PageItem.ChapterStart(chapter.title))
@@ -120,6 +125,8 @@ class BookPageMapper
                         chapterTitle = chapter.title,
                         page = page,
                         showDropCap = pageIndex == 0,
+                        sectionKey = sectionKey,
+                        pageIndex = pageIndex,
                     ),
                 )
             }

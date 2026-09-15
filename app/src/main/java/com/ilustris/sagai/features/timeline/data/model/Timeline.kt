@@ -36,6 +36,8 @@ data class Timeline(
     val sceneSummary: SceneSummary? = null,
     @ColumnInfo(defaultValue = "")
     val narrativeGuide: String? = null,
+    /** Verbatim dialogue pairs from this event's real chat, captured for later fidelity. */
+    val notableExchanges: List<NotableExchange>? = null,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()
 

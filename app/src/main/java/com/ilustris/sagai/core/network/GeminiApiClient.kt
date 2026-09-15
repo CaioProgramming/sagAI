@@ -8,6 +8,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.ResponseBody
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,10 +19,17 @@ class GeminiApiClient
     constructor(
         private val okHttpClient: OkHttpClient,
     ) {
+        /**
+         * @param readTimeoutSeconds overrides the shared client's read timeout for this call. A
+         *   non-streaming call sends nothing back until generation finishes, so for long outputs
+         *   (TTS of a multi-minute narration segment) the read timeout is effectively the whole
+         *   generation time.
+         */
         suspend fun generateContent(
             model: String,
             apiKey: String,
             request: GeminiRequest,
+            readTimeoutSeconds: Long? = null,
         ): GeminiResponse =
             withContext(Dispatchers.IO) {
                 val httpRequest =
@@ -32,7 +40,11 @@ class GeminiApiClient
                         .post(GeminiApiCodec.encodeRequest(request))
                         .build()
 
-                okHttpClient.newCall(httpRequest).execute().use { response ->
+                val client =
+                    readTimeoutSeconds?.let {
+                        okHttpClient.newBuilder().readTimeout(it, TimeUnit.SECONDS).build()
+                    } ?: okHttpClient
+                client.newCall(httpRequest).execute().use { response ->
                     val bodyString = response.body?.string().orEmpty()
                     if (!response.isSuccessful) {
                         throw GeminiHttpException(response.code, bodyString)

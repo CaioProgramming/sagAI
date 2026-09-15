@@ -256,6 +256,11 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideBookAudioDao(database: SagaDatabase): com.ilustris.sagai.features.audiobook.data.source.BookAudioDao =
+        database.bookAudioDao()
+
+    @Provides
+    @Singleton
     fun provideCharacterArcDao(database: SagaDatabase): com.ilustris.sagai.features.characters.data.source.CharacterArcDao =
         database.characterArcDao()
 
@@ -499,18 +504,14 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAudioGenClient(
-        billingService: BillingService,
-        remoteConfigService: RemoteConfigService,
         geminiApiClient: GeminiApiClient,
         userApiKeyStore: UserApiKeyStore,
-        quotaStatusService: QuotaStatusService,
+        mediaModelResolver: com.ilustris.sagai.core.ai.MediaModelResolver,
     ): AudioGenClient =
         AudioGenClientImpl(
-            billingService,
-            remoteConfigService,
             geminiApiClient,
             userApiKeyStore,
-            quotaStatusService,
+            mediaModelResolver,
         )
 
     @Provides
@@ -530,9 +531,7 @@ object AppModule {
     fun provideBillingService(
         @ApplicationContext context: Context,
         remoteConfigService: RemoteConfigService,
-        firebaseInstallationService: FirebaseInstallationService,
-        sideEffectService: SideEffectService,
-    ): BillingService = BillingService(context, remoteConfigService, firebaseInstallationService, sideEffectService)
+    ): BillingService = BillingService(context, remoteConfigService)
 
     @Provides
     @Singleton
@@ -656,6 +655,11 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesBookUseCase(bookUseCaseImpl: BookUseCaseImpl): BookUseCase
+
+    @Binds
+    abstract fun providesBookAudioUseCase(
+        bookAudioUseCaseImpl: com.ilustris.sagai.features.audiobook.data.usecase.BookAudioUseCaseImpl,
+    ): com.ilustris.sagai.features.audiobook.data.usecase.BookAudioUseCase
 
     @Binds
     abstract fun providesGetInputSuggestionsUseCase(

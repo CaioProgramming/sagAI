@@ -352,6 +352,48 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_33_34 =
+        object : Migration(33, 34) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Audiobook: each volume section is narrated in segments with word timings for the
+                // synced reader, and the narrator voice is fixed per volume.
+                db.execSQL("ALTER TABLE books ADD COLUMN `narrationVoice` TEXT")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `book_audio_segments` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`bookId` INTEGER NOT NULL, " +
+                        "`sectionKey` TEXT NOT NULL, " +
+                        "`segmentIndex` INTEGER NOT NULL, " +
+                        "`startPageIndex` INTEGER NOT NULL, " +
+                        "`startChar` INTEGER NOT NULL, " +
+                        "`endPageIndex` INTEGER NOT NULL, " +
+                        "`endChar` INTEGER NOT NULL, " +
+                        "`textHash` INTEGER NOT NULL, " +
+                        "`audioPath` TEXT NOT NULL, " +
+                        "`durationMs` INTEGER NOT NULL, " +
+                        "`voice` TEXT NOT NULL, " +
+                        "`alignmentStatus` TEXT NOT NULL, " +
+                        "`alignmentScore` REAL, " +
+                        "`timings` TEXT NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`bookId`) REFERENCES `books`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_book_audio_segments_bookId_sectionKey_segmentIndex` " +
+                        "ON `book_audio_segments` (`bookId`, `sectionKey`, `segmentIndex`)",
+                )
+            }
+        }
+
+    val MIGRATION_34_35 =
+        object : Migration(34, 35) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Verbatim dialogue pairs captured at event-synthesis time, when the raw chat is
+                // still on hand — see Timeline.notableExchanges.
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `notableExchanges` TEXT")
+            }
+        }
+
     val MIGRATION_32_33 =
         object : Migration(32, 33) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -579,5 +621,7 @@ object DatabaseMigrations {
             MIGRATION_30_31,
             MIGRATION_31_32,
             MIGRATION_32_33,
+            MIGRATION_33_34,
+            MIGRATION_34_35,
         )
 }
