@@ -2,7 +2,9 @@ package com.ilustris.sagai.features.audiobook.data.usecase
 
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.AudioGenClient
+import com.ilustris.sagai.core.ai.QuotaExhaustedException
 import com.ilustris.sagai.core.ai.TranscribeClient
+import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.PromptBlueprint
 import com.ilustris.sagai.core.ai.model.Voice
@@ -138,7 +140,8 @@ class BookAudioUseCaseImpl
                         }
 
                     if (result is RequestResult.Error) {
-                        return@flow emit(NarrationProgress.Failed(result.value.message.orEmpty()))
+                        val quota = result.value as? QuotaExhaustedException
+                        return@flow emit(NarrationProgress.Failed(result.value.message.orEmpty(), quotaResetAt = quota?.until))
                     }
                 }
 
@@ -168,6 +171,8 @@ class BookAudioUseCaseImpl
         ) {
             discard(bookId, sectionKey, bookAudioDao.getSectionSegments(bookId, sectionKey))
         }
+
+        override suspend fun ttsQuotaStatus(): Flow<QuotaStatus> = audioGenClient.quotaStatus()
 
         private suspend fun narrate(
             sagaId: Int,

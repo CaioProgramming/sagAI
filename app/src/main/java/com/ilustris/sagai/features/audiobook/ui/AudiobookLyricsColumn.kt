@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.theme.hexToColor
 
 /** One narratable beat of prose, split for the karaoke-style scroller — usually a sentence. */
@@ -96,7 +97,10 @@ fun AudiobookChapterPager(
                 isCurrentlyPlaying = section.key == playingSectionKey,
             )
         } else {
-            NarrateSectionPrompt(onClick = { onNarrateSection(section.key) })
+            NarrateSectionPrompt(
+                quotaResetAt = audiobook?.ttsQuotaResetAt,
+                onClick = { onNarrateSection(section.key) },
+            )
         }
     }
 }
@@ -125,7 +129,10 @@ private fun SectionLyrics(
                     val sentences = SENTENCE_SPLIT.split(page.page.content)
                     var cursor = 0
                     sentences.mapNotNull { sentence ->
-                        val start = page.page.content.indexOf(sentence, cursor).takeIf { it >= 0 } ?: cursor
+                        val start =
+                            page.page.content
+                                .indexOf(sentence, cursor)
+                                .takeIf { it >= 0 } ?: cursor
                         val end = start + sentence.length
                         cursor = end
                         sentence.trim().takeIf(String::isNotEmpty)?.let {
@@ -141,7 +148,13 @@ private fun SectionLyrics(
                 -1
             } else {
                 val exact = lines.indexOfFirst { highlight.charStart in it.range && it.pageIndex == highlight.pageIndex }
-                if (exact >= 0) exact else if (lines.isNotEmpty()) 0 else -1
+                if (exact >= 0) {
+                    exact
+                } else if (lines.isNotEmpty()) {
+                    0
+                } else {
+                    -1
+                }
             }
         }
     // Nothing to focus on: either this chapter isn't the one playing, or narration for it hasn't
@@ -165,7 +178,7 @@ private fun SectionLyrics(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize().onSizeChanged { viewportHeightPx = it.height },
-        contentPadding = PaddingValues(top = 16.dp, start = 32.dp, end = 32.dp, bottom = 32.dp),
+        contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(lines.size, key = { "${lines[it].pageIndex}_${lines[it].range.first}" }) { index ->
@@ -208,11 +221,20 @@ private fun SectionLyrics(
 }
 
 @Composable
-private fun NarrateSectionPrompt(onClick: () -> Unit) {
+private fun NarrateSectionPrompt(
+    quotaResetAt: Long?,
+    onClick: () -> Unit,
+) {
     Box(
         modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
         contentAlignment = Alignment.Center,
     ) {
+        // TTS is already known to be out of quota for the day — showing the button would just
+        // invite a request known to fail, so the reset time replaces it instead.
+        if (quotaResetAt != null) {
+            QuotaLimitNotice(until = quotaResetAt)
+            return@Box
+        }
         Button(
             onClick = onClick,
             shape = MaterialTheme.shapes.medium,
@@ -233,8 +255,8 @@ private fun LyricLineText(
 ) {
     val bodyFontFamily = MaterialTheme.typography.bodyLarge.fontFamily
     val titleFontFamily = MaterialTheme.typography.titleLarge.fontFamily
-    val baseStyle = MaterialTheme.typography.displaySmall.copy(fontFamily = bodyFontFamily)
-    val baseColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .8f)
+    val baseStyle = MaterialTheme.typography.headlineLarge.copy(fontFamily = bodyFontFamily)
+    val baseColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .85f)
     val primaryColor = MaterialTheme.colorScheme.primary
     val highlightBg = primaryColor.copy(alpha = .15f)
 

@@ -1,10 +1,12 @@
 package com.ilustris.sagai.core.ai
 
 import com.ilustris.sagai.core.ai.key.ApiKeyDiagnosis
+import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusService
 import com.ilustris.sagai.core.ai.key.classifyApiKeyFailure
 import com.ilustris.sagai.core.network.GeminiHttpException
 import com.ilustris.sagai.core.services.RemoteConfigService
+import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -84,6 +86,16 @@ class MediaModelResolver
             val legacy = legacyModel ?: requirement.legacyFlag?.let { remoteConfigService.getString(it) }
             return listOfNotNull(legacy?.replace("models/", "")?.takeIf { it.isNotBlank() })
         }
+
+        /**
+         * [requirement]'s quota state, scoped to its own candidates — the pre-flight check a caller
+         * runs before offering to generate at all, mirroring [AIClient.tierQuotaStatus] for the text
+         * tiers. Only reports [QuotaStatus.DailyExhausted] once every candidate is spent for the day.
+         */
+        suspend fun tierQuotaStatus(
+            requirement: MediaRequirement,
+            legacyModel: String? = null,
+        ): Flow<QuotaStatus> = quotaStatusService.statusForModels(candidates(requirement, legacyModel))
 
         /**
          * Runs [block] against [requirement]'s candidates in order, skipping ones already spent for

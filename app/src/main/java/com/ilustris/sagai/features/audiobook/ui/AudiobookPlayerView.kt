@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -54,13 +55,16 @@ import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.morphingColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import kotlin.time.Duration.Companion.seconds
+import com.ilustris.sagai.ui.theme.themeFilter
+import com.ilustris.sagai.ui.theme.zoomAnimation
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Spotify/Apple-Music-style now-playing screen for the audiobook, deliberately separate from the
@@ -84,9 +88,19 @@ fun AudiobookPlayerView(
     val backgrounds =
         remember(saga, act) {
             buildList {
-                act.chapters.forEach { it.data.coverImage.takeIf(String::isNotBlank)?.let(::add) }
-                saga.data.icon.takeIf(String::isNotBlank)?.let(::add)
-                saga.characters.forEach { it.data.image.takeIf(String::isNotBlank)?.let(::add) }
+                act.chapters.forEach {
+                    it.data.coverImage
+                        .takeIf(String::isNotBlank)
+                        ?.let(::add)
+                }
+                saga.data.icon
+                    .takeIf(String::isNotBlank)
+                    ?.let(::add)
+                saga.characters.forEach {
+                    it.data.image
+                        .takeIf(String::isNotBlank)
+                        ?.let(::add)
+                }
             }.ifEmpty { listOf(saga.data.icon) }
         }
     var backgroundIndex by remember(backgrounds) { mutableStateOf(0) }
@@ -160,9 +174,8 @@ fun AudiobookPlayerView(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .effectForGenre(genre = saga.data.genre)
-                        .blur(5.dp)
-                        .scale(1.06f), // hides blur edge artifacts
+                        .themeFilter()
+                        .zoomAnimation(),
             )
         }
 
@@ -170,7 +183,16 @@ fun AudiobookPlayerView(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = .3f)),
+                    .background(Color.Black.copy(alpha = .6f)),
+        )
+
+        Box(
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight(.6f)
+                    .background(fadeGradientBottom(tintColor = morphingColor(duration = 3.seconds))),
         )
 
         // Structured as a real Column instead of overlaying everything with align(): the lyrics
@@ -243,8 +265,32 @@ fun AudiobookPlayerView(
 
             val isGenerating = audiobook?.narration != null
             val error = audiobook?.error
+            val quotaResetAt = audiobook?.quotaResetAt
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 when {
+                    quotaResetAt != null -> {
+                        Column(
+                            modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
+                            QuotaLimitNotice(until = quotaResetAt)
+                            IconButton(
+                                onClick = { onAction(AudiobookAction.DismissFailure) },
+                                modifier =
+                                    Modifier
+                                        .background(MaterialTheme.colorScheme.errorContainer, shape = CircleShape)
+                                        .padding(4.dp),
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.round_close_24),
+                                    contentDescription = stringResource(R.string.audiobook_dismiss_error_cd),
+                                    tint = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+
                     error != null -> {
                         Column(
                             modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
@@ -320,7 +366,6 @@ fun AudiobookPlayerView(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .background(fadeGradientBottom(tintColor = morphingColor(duration = 3.seconds)))
                             .navigationBarsPadding()
                             .padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
                 ) {
@@ -450,7 +495,15 @@ fun AudiobookPlayerView(
                                     .padding(4.dp),
                         ) {
                             Icon(
-                                painterResource(if (audiobook?.isPlaying == true) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24),
+                                painterResource(
+                                    if (audiobook?.isPlaying ==
+                                        true
+                                    ) {
+                                        R.drawable.round_pause_24
+                                    } else {
+                                        R.drawable.round_play_arrow_24
+                                    },
+                                ),
                                 contentDescription =
                                     stringResource(
                                         if (audiobook?.isPlaying == true) R.string.audiobook_pause_cd else R.string.audiobook_play_cd,

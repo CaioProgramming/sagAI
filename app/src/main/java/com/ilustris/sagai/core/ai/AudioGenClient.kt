@@ -1,8 +1,10 @@
 package com.ilustris.sagai.core.ai
 
 import android.util.Base64
+import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.createAudioGenerationRequest
+import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.network.GeminiApiClient
@@ -16,6 +18,9 @@ interface AudioGenClient {
      * @return ByteArray of the generated audio or null if failed
      */
     suspend fun generateAudio(audioConfig: AudioConfig): ByteArray?
+
+    /** Whether TTS generation is currently blocked by a spent daily quota, and when it clears. */
+    suspend fun quotaStatus(): Flow<QuotaStatus>
 }
 
 class AudioGenClientImpl
@@ -36,6 +41,8 @@ class AudioGenClientImpl
         private suspend fun apiKey(): String =
             userApiKeyStore.getKeyNow()?.takeIf { it.isNotBlank() }
                 ?: throw MissingApiKeyException()
+
+        override suspend fun quotaStatus(): Flow<QuotaStatus> = mediaModelResolver.tierQuotaStatus(MediaRequirement.AUDIO)
 
         override suspend fun generateAudio(audioConfig: AudioConfig): ByteArray? {
             Timber.tag(TAG).i("Audio Config: ${audioConfig.toJsonFormat()}")

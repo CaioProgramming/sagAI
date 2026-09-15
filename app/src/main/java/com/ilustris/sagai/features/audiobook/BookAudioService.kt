@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.audiobook
 
+import com.ilustris.sagai.core.ai.QuotaExhaustedException
 import com.ilustris.sagai.features.audiobook.data.usecase.BookAudioUseCase
 import com.ilustris.sagai.features.audiobook.data.usecase.NarrationProgress
 import kotlinx.coroutines.CoroutineScope
@@ -65,7 +66,10 @@ class BookAudioService
             _job.value = NarrationJob(bookId, sectionKey, null)
             scope.launch {
                 work()
-                    .catch { emit(NarrationProgress.Failed(it.message.orEmpty())) }
+                    .catch {
+                        val quota = it as? QuotaExhaustedException
+                        emit(NarrationProgress.Failed(it.message.orEmpty(), quotaResetAt = quota?.until))
+                    }
                     .collect { progress ->
                         _job.value =
                             when (progress) {

@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -29,6 +30,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,7 +40,9 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -85,6 +89,13 @@ data class AudiobookUiState(
     val positionMs: Long = 0L,
     val durationMs: Long = 0L,
     val error: String? = null,
+    /** Set when the error came from a spent daily TTS quota, so the UI can show a friendly reset
+     * time instead of the raw exception text. */
+    val quotaResetAt: Long? = null,
+    /** Set even before the user tries narrating anything, whenever TTS is already known to be out
+     * of quota for the day — lets the "listen to next chapter" prompt hide itself instead of
+     * inviting a request that is already known to fail. */
+    val ttsQuotaResetAt: Long? = null,
 ) {
     fun section(key: String?) = sections.find { it.key == key }
 }
@@ -125,13 +136,22 @@ class AudiobookViewModel
         private val segmentsFlow =
             bound.flatMapLatest { book -> book?.let { bookAudioUseCase.observeSegments(it.bookId) } ?: emptyFlow() }
 
+        /** Whether TTS is already known to be out of daily quota, ahead of trying anything. */
+        private val ttsQuotaStatus: Flow<QuotaStatus> = flow { emitAll(bookAudioUseCase.ttsQuotaStatus()) }
+
         val state: StateFlow<AudiobookUiState?> =
-            combine(bound, segmentsFlow, bookAudioService.job, player.state, combine(syncSource, videoExport, ::Pair)) {
+            combine(
+                bound,
+                segmentsFlow,
+                bookAudioService.job,
+                player.state,
+                combine(syncSource, videoExport, ttsQuotaStatus, ::Triple),
+            ) {
                 book,
                 bookSegments,
                 job,
                 playback,
-                (source, export),
+                (source, export, quotaStatus),
                 ->
                 book ?: return@combine null
                 segments = bookSegments
@@ -144,6 +164,7 @@ class AudiobookViewModel
                         ?.filter { it.sectionKey == playing?.sectionKey }
                         ?.sumOf { it.durationMs } ?: 0L
                 val currentJob = job?.takeIf { it.bookId == book.bookId }
+                val failure = currentJob?.progress as? NarrationProgress.Failed
                 AudiobookUiState(
                     bookId = book.bookId,
                     sections = book.sections.map { section -> sectionUi(book, section, bookSegments) },
@@ -156,7 +177,9 @@ class AudiobookViewModel
                     videoExport = export,
                     positionMs = if (playing != null) elapsedBeforeCurrent + playback.positionMs else 0L,
                     durationMs = sectionTracks.sumOf { it.durationMs },
-                    error = (currentJob?.progress as? NarrationProgress.Failed)?.message,
+                    error = failure?.message,
+                    quotaResetAt = failure?.quotaResetAt,
+                    ttsQuotaResetAt = (quotaStatus as? QuotaStatus.DailyExhausted)?.until,
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
