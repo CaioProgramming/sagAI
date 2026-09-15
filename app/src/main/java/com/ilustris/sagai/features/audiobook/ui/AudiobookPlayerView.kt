@@ -316,174 +316,174 @@ fun AudiobookPlayerView(
             }
 
             if (hasAnyReadySection) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .background(fadeGradientBottom(tintColor = morphingColor(duration = 3.seconds)))
-                        .navigationBarsPadding()
-                        .padding(top = 96.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
-            ) {
-                Text(
-                    text = bookTitle,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(fadeGradientBottom(tintColor = morphingColor(duration = 3.seconds)))
+                            .navigationBarsPadding()
+                            .padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
+                ) {
+                    Text(
+                        text = bookTitle,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
 
-                Text(
-                    text = chapterTitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                    Text(
+                        text = chapterTitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
 
-                var dragFraction by remember { mutableFloatStateOf(-1f) }
-                val duration = audiobook?.durationMs ?: 0L
-                val position = audiobook?.positionMs ?: 0L
-                val fraction =
-                    if (dragFraction >= 0f) {
-                        dragFraction
-                    } else if (duration > 0) {
-                        (position.toFloat() / duration).coerceIn(0f, 1f)
-                    } else {
-                        0f
-                    }
+                    var dragFraction by remember { mutableFloatStateOf(-1f) }
+                    val duration = audiobook?.durationMs ?: 0L
+                    val position = audiobook?.positionMs ?: 0L
+                    val fraction =
+                        if (dragFraction >= 0f) {
+                            dragFraction
+                        } else if (duration > 0) {
+                            (position.toFloat() / duration).coerceIn(0f, 1f)
+                        } else {
+                            0f
+                        }
 
-                Slider(
-                    value = fraction,
-                    onValueChange = { dragFraction = it },
-                    onValueChangeFinished = {
-                        onSeekToFraction(dragFraction)
-                        dragFraction = -1f
-                    },
-                    thumb = { MorphingThemeIcon(modifier = Modifier.size(16.dp), glowIntensity = 0f) },
-                    track = { sliderState ->
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(3.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .2f)),
-                        ) {
+                    Slider(
+                        value = fraction,
+                        onValueChange = { dragFraction = it },
+                        onValueChangeFinished = {
+                            onSeekToFraction(dragFraction)
+                            dragFraction = -1f
+                        },
+                        thumb = { MorphingThemeIcon(modifier = Modifier.size(16.dp), glowIntensity = 0f) },
+                        track = { sliderState ->
                             Box(
                                 Modifier
-                                    .fillMaxWidth(sliderState.value.coerceIn(0f, 1f))
+                                    .fillMaxWidth()
                                     .height(3.dp)
                                     .clip(RoundedCornerShape(50))
-                                    .background(MaterialTheme.colorScheme.primary),
+                                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .2f)),
+                            ) {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth(sliderState.value.coerceIn(0f, 1f))
+                                        .height(3.dp)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(MaterialTheme.colorScheme.primary),
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = (if (dragFraction >= 0f) (dragFraction * duration).toLong() else position).asClock(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
+                        )
+                        Text(
+                            text = duration.asClock(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
+                        )
+                    }
+
+                    var musicMuted by remember { mutableStateOf(false) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconButton(
+                            onClick = {
+                                musicMuted = !musicMuted
+                                val action = if (musicMuted) SagaPlaybackService.ACTION_PAUSE else SagaPlaybackService.ACTION_RESUME
+                                SagaPlaybackService.startSafely(context, SagaPlaybackService.playbackIntent(context, action))
+                            },
+                        ) {
+                            Icon(
+                                painterResource(if (musicMuted) R.drawable.ic_volume_off else R.drawable.ic_volume_up),
+                                contentDescription =
+                                    stringResource(
+                                        if (musicMuted) R.string.audiobook_unmute_music_cd else R.string.audiobook_mute_music_cd,
+                                    ),
+                                tint = MaterialTheme.colorScheme.onBackground,
                             )
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = (if (dragFraction >= 0f) (dragFraction * duration).toLong() else position).asClock(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
-                    )
-                    Text(
-                        text = duration.asClock(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
-                    )
-                }
+                        IconButton(
+                            onClick = {
+                                val target = (pagerState.currentPage - 1).coerceAtLeast(0)
+                                pagerScope.launch { pagerState.animateScrollToPage(target) }
+                            },
+                            enabled = pagerState.currentPage > 0,
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.round_skip_previous_24),
+                                contentDescription = stringResource(R.string.audiobook_previous_chapter_cd),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
 
-                var musicMuted by remember { mutableStateOf(false) }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(
-                        onClick = {
-                            musicMuted = !musicMuted
-                            val action = if (musicMuted) SagaPlaybackService.ACTION_PAUSE else SagaPlaybackService.ACTION_RESUME
-                            SagaPlaybackService.startSafely(context, SagaPlaybackService.playbackIntent(context, action))
-                        },
-                    ) {
-                        Icon(
-                            painterResource(if (musicMuted) R.drawable.ic_volume_off else R.drawable.ic_volume_up),
-                            contentDescription =
-                                stringResource(
-                                    if (musicMuted) R.string.audiobook_unmute_music_cd else R.string.audiobook_mute_music_cd,
-                                ),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
+                        IconButton(onClick = { onSeekBy(-SEEK_STEP_MS) }) {
+                            Icon(
+                                painterResource(R.drawable.ic_replay_arrow),
+                                contentDescription = stringResource(R.string.audiobook_seek_back_cd),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.scale(1.4f),
+                            )
+                        }
 
-                    IconButton(
-                        onClick = {
-                            val target = (pagerState.currentPage - 1).coerceAtLeast(0)
-                            pagerScope.launch { pagerState.animateScrollToPage(target) }
-                        },
-                        enabled = pagerState.currentPage > 0,
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.round_skip_previous_24),
-                            contentDescription = stringResource(R.string.audiobook_previous_chapter_cd),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
+                        IconButton(
+                            onClick = { onAction(AudiobookAction.TogglePlayback) },
+                            modifier =
+                                Modifier
+                                    .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
+                                    .padding(4.dp),
+                        ) {
+                            Icon(
+                                painterResource(if (audiobook?.isPlaying == true) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24),
+                                contentDescription =
+                                    stringResource(
+                                        if (audiobook?.isPlaying == true) R.string.audiobook_pause_cd else R.string.audiobook_play_cd,
+                                    ),
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.scale(1.3f),
+                            )
+                        }
 
-                    IconButton(onClick = { onSeekBy(-SEEK_STEP_MS) }) {
-                        Icon(
-                            painterResource(R.drawable.ic_replay_arrow),
-                            contentDescription = stringResource(R.string.audiobook_seek_back_cd),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.scale(1.4f),
-                        )
-                    }
+                        IconButton(onClick = { onSeekBy(SEEK_STEP_MS) }) {
+                            Icon(
+                                painterResource(R.drawable.ic_replay_arrow),
+                                contentDescription = stringResource(R.string.audiobook_seek_forward_cd),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.scale(-1.4f, 1.4f),
+                            )
+                        }
 
-                    IconButton(
-                        onClick = { onAction(AudiobookAction.TogglePlayback) },
-                        modifier =
-                            Modifier
-                                .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
-                                .padding(4.dp),
-                    ) {
-                        Icon(
-                            painterResource(if (audiobook?.isPlaying == true) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24),
-                            contentDescription =
-                                stringResource(
-                                    if (audiobook?.isPlaying == true) R.string.audiobook_pause_cd else R.string.audiobook_play_cd,
-                                ),
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.scale(1.3f),
-                        )
-                    }
-
-                    IconButton(onClick = { onSeekBy(SEEK_STEP_MS) }) {
-                        Icon(
-                            painterResource(R.drawable.ic_replay_arrow),
-                            contentDescription = stringResource(R.string.audiobook_seek_forward_cd),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.scale(-1.4f, 1.4f),
-                        )
-                    }
-
-                    IconButton(
-                        onClick = {
-                            val target = (pagerState.currentPage + 1).coerceAtMost(pagerSections.lastIndex.coerceAtLeast(0))
-                            pagerScope.launch { pagerState.animateScrollToPage(target) }
-                        },
-                        enabled = pagerState.currentPage < pagerSections.lastIndex,
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.round_skip_next_24),
-                            contentDescription = stringResource(R.string.audiobook_next_chapter_cd),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
+                        IconButton(
+                            onClick = {
+                                val target = (pagerState.currentPage + 1).coerceAtMost(pagerSections.lastIndex.coerceAtLeast(0))
+                                pagerScope.launch { pagerState.animateScrollToPage(target) }
+                            },
+                            enabled = pagerState.currentPage < pagerSections.lastIndex,
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.round_skip_next_24),
+                                contentDescription = stringResource(R.string.audiobook_next_chapter_cd),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
                     }
                 }
-            }
             }
         }
     }

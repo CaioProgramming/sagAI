@@ -173,12 +173,15 @@ private fun SectionLyrics(
 
             val fraction: Float
             if (hasActiveHighlight) {
+                // Measured from the item's TOP, not its center: at displaySmall a wrapped
+                // paragraph can be tall enough that half its own height alone would already read
+                // as a big "distance" — which blurred the anchored, currently-playing line itself.
                 val distanceBelowAnchor by
                     remember {
                         derivedStateOf {
                             val info = listState.layoutInfo.visibleItemsInfo.find { it.index == index }
-                            val centerY = info?.let { it.offset + it.size / 2 }?.toFloat() ?: 0f
-                            (centerY - anchorOffsetPx).coerceAtLeast(0f)
+                            val topY = info?.offset?.toFloat() ?: 0f
+                            (topY - anchorOffsetPx).coerceAtLeast(0f)
                         }
                     }
                 // Fades out over the readable area only, so lines reach max blur right as they
