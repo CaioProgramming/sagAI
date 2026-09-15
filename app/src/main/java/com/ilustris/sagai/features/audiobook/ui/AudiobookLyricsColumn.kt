@@ -151,11 +151,11 @@ private fun SectionLyrics(
     val listState = rememberLazyListState()
     var viewportHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
-    // LazyListItemInfo.offset is measured from the viewport's physical top, which already
-    // includes contentPadding.top — so the anchored line (scrollOffset = 0 below) sits at this
-    // offset, not at 0. Every fraction below must be measured from here, or the anchor line itself
-    // reads as already partway faded and everything past it blurs out far too soon.
-    val anchorOffsetPx = remember(topInset, density) { with(density) { (topInset + 16.dp).roundToPx() } }
+    // The anchor sits at contentPadding.top below (16.dp) — a fixed, small offset, unlike topInset
+    // which used to leak the topbar problem: see the padding(top = topInset) on the LazyColumn
+    // itself below. LazyListItemInfo.offset is measured from there, so it must be subtracted before
+    // any distance is normalized, or the anchor line itself reads as already partway faded.
+    val anchorOffsetPx = remember(density) { with(density) { 16.dp.roundToPx() } }
 
     LaunchedEffect(currentLineIndex, isCurrentlyPlaying) {
         if (!isCurrentlyPlaying || currentLineIndex < 0) return@LaunchedEffect
@@ -166,8 +166,17 @@ private fun SectionLyrics(
 
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize().onSizeChanged { viewportHeightPx = it.height },
-        contentPadding = PaddingValues(top = topInset + 16.dp, start = 32.dp, end = 32.dp, bottom = 260.dp),
+        // topInset is real layout padding, not contentPadding: contentPadding only spaces the
+        // list's own extremes and does NOT clip it, so once a mid-list line is anchored, earlier
+        // lines scroll up into the space behind it — and since the transparent topbar is just an
+        // overlay, that text was showing straight through it. A real padding shrinks the
+        // component itself, so Compose's normal clip-to-bounds keeps everything under the topbar.
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(top = topInset)
+                .onSizeChanged { viewportHeightPx = it.height },
+        contentPadding = PaddingValues(top = 16.dp, start = 32.dp, end = 32.dp, bottom = 260.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(lines.size, key = { "${lines[it].pageIndex}_${lines[it].range.first}" }) { index ->
