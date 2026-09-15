@@ -1,7 +1,11 @@
 package com.ilustris.sagai.features.audiobook.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,12 +30,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -39,21 +45,43 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
 
+/** One word of a [LyricLine], with trailing whitespace kept so joining every word's [text] back
+ * together reproduces the line exactly — that lets a plain [FlowRow] wrap them with no extra
+ * inter-word spacing logic. [start]/[end] are absolute page-content offsets, matching [AudioHighlight]. */
+private data class LyricWord(
+    val text: String,
+    val start: Int,
+    val end: Int,
+)
+
 /** One narratable beat of prose, split for the karaoke-style scroller — usually a sentence. */
 private data class LyricLine(
     val pageIndex: Int,
     val text: String,
     /** This line's char offset range inside its page's full text, to match against [AudioHighlight]. */
     val range: IntRange,
+    val words: List<LyricWord>,
 )
 
 private val SENTENCE_SPLIT = Regex("(?<=[.!?…])\\s+")
+private val WORD_SPLIT = Regex("\\S+\\s*")
 private const val MAX_BLUR_DP = 10
 private const val GLOW_BLUR_RADIUS = 24f
+private const val WORD_REVEAL_ANIM_MS = 350
+private const val WORD_GLOW_ANIM_MS = 250
+private const val WORD_SCALE_BUMP = 0.06f
 
 /** Fraction of the readable area, starting at the anchor, that stays perfectly sharp before the
  * blur/dim ramp begins. */
 private const val SHARP_ZONE_FRACTION = 0.5f
+
+private fun splitWords(
+    text: String,
+    baseOffset: Int,
+): List<LyricWord> =
+    WORD_SPLIT.findAll(text).map { match ->
+        LyricWord(text = match.value, start = baseOffset + match.range.first, end = baseOffset + match.range.last + 1)
+    }.toList()
 
 /**
  * One page per chapter, swipeable like an album's track list. The page currently narrating
@@ -126,7 +154,7 @@ private fun SectionLyrics(
                         val end = start + sentence.length
                         cursor = end
                         sentence.trim().takeIf(String::isNotEmpty)?.let {
-                            LyricLine(pageIndex = page.pageIndex, text = it, range = start..end)
+                            LyricLine(pageIndex = page.pageIndex, text = it, range = start..end, words = splitWords(it, start))
                         }
                     }
                 }
@@ -234,6 +262,13 @@ private fun NarrateSectionPrompt(
     }
 }
 
+/**
+ * Karaoke-style fill: everything up to the word being spoken right now reads at full brightness
+ * (already-heard text stays that way, not just the exact current word), and the current word gets
+ * a brief glow + subtle grow as narration reaches it. Lines with no highlight (not the one playing,
+ * or read-ahead pages) skip the per-word machinery entirely — a single [Text] is all they need.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LyricLineText(
     line: LyricLine,
@@ -244,39 +279,56 @@ private fun LyricLineText(
     val bodyFontFamily = MaterialTheme.typography.bodyLarge.fontFamily
     val baseStyle = MaterialTheme.typography.headlineLarge.copy(fontFamily = bodyFontFamily)
     val baseColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .85f)
-    val glowColor = MaterialTheme.colorScheme.primary
-    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
 
-    val annotated =
-        remember(line, highlight, glowColor, onPrimaryColor) {
-            buildAnnotatedString {
-                append(line.text)
+    val modifier =
+        Modifier
+            .alpha(dimAlpha)
+            .let { if (blurRadius > 0.dp) it.blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded) else it }
 
-                // No per-character styling — just the word being spoken right now, lit in
-                // onPrimary with a soft glow from the theme's primary color behind it.
-                highlight?.let { h ->
-                    val start = (h.charStart - line.range.first).coerceIn(0, line.text.length)
-                    val end = (h.charEnd - line.range.first).coerceIn(start, line.text.length)
-                    if (end > start) {
-                        addStyle(
-                            SpanStyle(
-                                color = onPrimaryColor,
-                                shadow = Shadow(glowColor, blurRadius = GLOW_BLUR_RADIUS),
-                            ),
-                            start,
-                            end,
-                        )
-                    }
-                }
+    if (highlight == null) {
+        Text(
+            text = line.text,
+            style = baseStyle.copy(color = baseColor, textAlign = TextAlign.Start),
+            modifier = modifier,
+        )
+    } else {
+        FlowRow(modifier = modifier) {
+            line.words.forEach { word ->
+                LyricWordText(word = word, highlight = highlight, baseStyle = baseStyle, baseColor = baseColor)
             }
         }
+    }
+}
+
+@Composable
+private fun LyricWordText(
+    word: LyricWord,
+    highlight: AudioHighlight,
+    baseStyle: TextStyle,
+    baseColor: Color,
+) {
+    // "Spoken" covers both words already fully said and the one being said right now — the fill.
+    // "Current" is just the leading edge of that fill, the word narration is on at this instant.
+    val isSpoken = word.start < highlight.charEnd
+    val isCurrent = isSpoken && highlight.charStart < word.end
+
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
+    val glowColor = MaterialTheme.colorScheme.primary
+
+    // Independent per-word animations: each word's own reveal/glow plays out on its own and is
+    // never interrupted by the next word starting, since it isn't sharing state with any other
+    // word — only this word's own isSpoken/isCurrent flip retargets it.
+    val brightness by animateFloatAsState(if (isSpoken) 1f else 0f, tween(WORD_REVEAL_ANIM_MS), label = "wordBrightness")
+    val glow by animateFloatAsState(if (isCurrent) 1f else 0f, tween(WORD_GLOW_ANIM_MS), label = "wordGlow")
 
     Text(
-        text = annotated,
-        style = baseStyle.copy(color = baseColor, textAlign = TextAlign.Start),
-        modifier =
-            Modifier
-                .alpha(dimAlpha)
-                .let { if (blurRadius > 0.dp) it.blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded) else it },
+        text = word.text,
+        style =
+            baseStyle.copy(
+                color = lerp(baseColor, onPrimaryColor, brightness),
+                shadow = Shadow(glowColor.copy(alpha = glow), blurRadius = GLOW_BLUR_RADIUS),
+                textAlign = TextAlign.Start,
+            ),
+        modifier = Modifier.scale(1f + WORD_SCALE_BUMP * glow),
     )
 }
