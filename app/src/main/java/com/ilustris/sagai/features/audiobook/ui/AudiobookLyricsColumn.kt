@@ -75,10 +75,6 @@ private const val WORD_SCALE_BUMP = 0.06f
  * subtle: the word stays legible the whole time, just a little softer than the spoken text. */
 private const val WORD_BLUR_DP = 3f
 
-/** Fraction of the readable area, starting at the anchor, that stays perfectly sharp before the
- * blur/dim ramp begins. */
-private const val SHARP_ZONE_FRACTION = 0.5f
-
 private fun splitWords(
     text: String,
     baseOffset: Int,
@@ -197,6 +193,19 @@ private fun SectionLyrics(
         listState.animateScrollToItem(currentLineIndex, scrollOffset = 0)
     }
 
+    // Where the active line's own bottom edge actually sits, measured live instead of guessed —
+    // a fixed "sharp zone" fraction of the viewport used to stand in for this, but a wrapped
+    // paragraph's real height varies a lot at this text size: a short one left a gap of "free"
+    // sharpness the next paragraph sat in before blur resumed, and a tall one could still get
+    // blurred at its own end. Anything below this exact point starts fading immediately.
+    val activeLineBottomPx by
+        remember {
+            derivedStateOf {
+                val info = listState.layoutInfo.visibleItemsInfo.find { it.index == currentLineIndex }
+                info?.let { it.offset + it.size }?.toFloat() ?: anchorOffsetPx.toFloat()
+            }
+        }
+
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize().onSizeChanged { viewportHeightPx = it.height },
@@ -207,26 +216,20 @@ private fun SectionLyrics(
             val line = lines[index]
 
             val fraction: Float
-            if (hasActiveHighlight) {
-                // Measured from the item's TOP, not its center: at displaySmall a wrapped
-                // paragraph can be tall enough that half its own height alone would already read
-                // as a big "distance" — which blurred the anchored, currently-playing line itself.
-                val distanceBelowAnchor by
+            if (hasActiveHighlight && index != currentLineIndex) {
+                val distanceBelowActiveLine by
                     remember {
                         derivedStateOf {
                             val info = listState.layoutInfo.visibleItemsInfo.find { it.index == index }
                             val topY = info?.offset?.toFloat() ?: 0f
-                            (topY - anchorOffsetPx).coerceAtLeast(0f)
+                            (topY - activeLineBottomPx).coerceAtLeast(0f)
                         }
                     }
-                // Fades out over the readable area only, so lines reach max blur right as they
-                // slide off screen. The first SHARP_ZONE_FRACTION of it stays fully sharp — at
-                // displaySmall a single line already fills a good chunk of the viewport, so fading
-                // from the anchor itself blurred text the reader hadn't scrolled past yet.
-                val readableHeightPx = (viewportHeightPx - anchorOffsetPx).coerceAtLeast(1)
-                val rawFraction = (distanceBelowAnchor / readableHeightPx).coerceIn(0f, 1f)
-                fraction = ((rawFraction - SHARP_ZONE_FRACTION) / (1f - SHARP_ZONE_FRACTION)).coerceIn(0f, 1f)
+                val readableHeightPx = (viewportHeightPx - activeLineBottomPx).coerceAtLeast(1f)
+                fraction = (distanceBelowActiveLine / readableHeightPx).coerceIn(0f, 1f)
             } else {
+                // The active line itself always reads sharp at the line level — its own per-word
+                // blur (inside LyricLineText) is what actually tracks reading progress within it.
                 fraction = 0f
             }
             val blurRadius = (fraction * MAX_BLUR_DP).dp
