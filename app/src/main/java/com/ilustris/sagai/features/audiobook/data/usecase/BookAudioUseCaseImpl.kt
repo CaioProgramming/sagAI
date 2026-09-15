@@ -19,6 +19,7 @@ import com.ilustris.sagai.features.audiobook.data.model.BookAudioConfig
 import com.ilustris.sagai.features.audiobook.data.model.BookAudioSegment
 import com.ilustris.sagai.features.audiobook.data.model.WordTiming
 import com.ilustris.sagai.features.audiobook.data.source.BookAudioDao
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -101,8 +102,8 @@ class BookAudioUseCaseImpl
         ): Flow<NarrationProgress> =
             flow {
                 val context = resolve(sagaId, actId, sectionKey) ?: return@flow
-                val (book, section, config) = context
-                val voice = narratorVoice(book, config)
+                val (saga, book, section, config) = context
+                val voice = narratorVoice(saga, book, config)
                 val plans = BookAudioSegmenter.plan(section.pages, config.maxSegmentChars)
 
                 val existing = bookAudioDao.getSectionSegments(book.id, section.key)
@@ -150,7 +151,7 @@ class BookAudioUseCaseImpl
             sectionKey: String,
         ): Flow<NarrationProgress> =
             flow {
-                val (book, section, config) = resolve(sagaId, actId, sectionKey) ?: return@flow
+                val (_, book, section, config) = resolve(sagaId, actId, sectionKey) ?: return@flow
                 val segments = bookAudioDao.getSectionSegments(book.id, section.key)
                 segments.forEachIndexed { position, segment ->
                     emit(NarrationProgress.Aligning(position + 1, segments.size))
@@ -245,6 +246,7 @@ class BookAudioUseCaseImpl
         }
 
         private data class Resolved(
+            val saga: Saga,
             val book: Book,
             val section: AudioSection,
             val config: BookAudioConfig,
@@ -256,26 +258,38 @@ class BookAudioUseCaseImpl
             sectionKey: String,
         ): Resolved? {
             val config = config() ?: return null.also { emit(NarrationProgress.Failed("Audiobook is not configured")) }
-            val saga = sagaRepository.getSagaById(sagaId).first()
-            val act = saga?.acts?.find { it.data.id == actId }
+            val sagaContent = sagaRepository.getSagaById(sagaId).first()
+            val act = sagaContent?.acts?.find { it.data.id == actId }
             val book = act?.book?.takeIf { it.isSealed() }
             val section = act?.let { sections(it) }?.find { it.key == sectionKey }
-            if (book == null || section == null) {
+            if (sagaContent == null || book == null || section == null) {
                 emit(NarrationProgress.Failed("Section $sectionKey not found for act $actId"))
                 return null
             }
-            return Resolved(book, section, config)
+            return Resolved(sagaContent.data, book, section, config)
         }
 
+        /**
+         * One narrator voice per saga, not per volume — otherwise each book picks its own random
+         * voice the first time it is narrated, and the same saga ends up sounding like a different
+         * person book to book. Priority: this book already has one (its own narration existed
+         * before the saga-wide field did) > the saga's persisted voice, if still a known one > pick
+         * a random voice and persist it on the saga so every future book reuses it.
+         */
         private suspend fun narratorVoice(
+            saga: Saga,
             book: Book,
             config: BookAudioConfig,
         ): Voice {
             Voice.findByName(book.narrationVoice)?.let { return it }
-            val voice =
-                config.voices.mapNotNull { Voice.findByName(it) }.randomOrNull()
-                    ?: error("book_audio_config has no known voices")
+            val knownVoices = config.voices.mapNotNull { Voice.findByName(it) }
+            Voice.findByName(saga.narratorVoice)?.takeIf { it in knownVoices }?.let { voice ->
+                bookAudioDao.setNarrationVoice(book.id, voice.id)
+                return voice
+            }
+            val voice = knownVoices.randomOrNull() ?: error("book_audio_config has no known voices")
             bookAudioDao.setNarrationVoice(book.id, voice.id)
+            sagaRepository.updateSaga(saga.copy(narratorVoice = voice.id))
             return voice
         }
 

@@ -1089,6 +1089,8 @@
     <string name="audiobook_generation_failed_cd">Narração falhou</string>
     <string name="audiobook_dismiss_error_cd">Descartar erro</string>
     <string name="audiobook_listen_next_chapter_cd">Ouvir próximo capítulo</string>
+    <string name="audiobook_previous_chapter_cd">Capítulo anterior</string>
+    <string name="audiobook_next_chapter_cd">Próximo capítulo</string>
     <string name="book_options_cd">Mais opções</string>
 </resources>
 

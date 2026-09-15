@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -36,6 +37,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +65,7 @@ import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.morphingColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.launch
 
 /**
  * Spotify/Apple-Music-style now-playing screen for the audiobook, deliberately separate from the
@@ -113,6 +116,41 @@ fun AudiobookPlayerView(
             current.sections.firstOrNull { it.isReady }?.let { section ->
                 onAction(AudiobookAction.Listen(section.key, 0))
             }
+        }
+    }
+
+    // One page per chapter: the readable run in order, plus the single pending chapter next in
+    // line to narrate (front-to-back only — see AudiobookLyricsColumn's docs).
+    val allSections = audiobook?.sections.orEmpty()
+    val readableSectionKeys = remember(allSections) { allSections.takeWhile { it.isReady }.map { it.key }.toSet() }
+    val pagerSections =
+        remember(allSections, readableSectionKeys) {
+            buildList {
+                allSections.filterTo(this) { it.key in readableSectionKeys }
+                allSections.getOrNull(readableSectionKeys.size)?.let(::add)
+            }
+        }
+    val pagerState = rememberPagerState(pageCount = { pagerSections.size.coerceAtLeast(1) })
+    val pagerScope = rememberCoroutineScope()
+
+    // Narration crossing into the next chapter on its own slides the pager along with it.
+    val playingPageIndex =
+        remember(pagerSections, audiobook?.playingSectionKey) {
+            pagerSections.indexOfFirst { it.key == audiobook?.playingSectionKey }.takeIf { it >= 0 }
+        }
+    LaunchedEffect(playingPageIndex) {
+        playingPageIndex?.let { target ->
+            if (pagerState.currentPage != target) pagerState.animateScrollToPage(target)
+        }
+    }
+
+    // Landing on a different chapter by hand — swipe or the skip buttons — jumps playback there
+    // too, same as skipping tracks. Settling back on the chapter already playing (the pager's own
+    // auto-follow above) is a no-op since the keys already match.
+    LaunchedEffect(pagerState.settledPage) {
+        val settled = pagerSections.getOrNull(pagerState.settledPage) ?: return@LaunchedEffect
+        if (settled.key != audiobook?.playingSectionKey && settled.isReady) {
+            onAction(AudiobookAction.Listen(settled.key, 0))
         }
     }
 
@@ -202,11 +240,13 @@ fun AudiobookPlayerView(
             }
 
             else -> {
-                AudiobookLyricsColumn(
+                AudiobookChapterPager(
+                    pagerState = pagerState,
+                    pageSections = pagerSections,
                     pages = pages,
                     characters = saga.characters,
                     audiobook = audiobook,
-                    onNarrateNextSection = { sectionKey -> onAction(AudiobookAction.Listen(sectionKey, 0)) },
+                    onNarrateSection = { sectionKey -> onAction(AudiobookAction.Listen(sectionKey, 0)) },
                     topInset = topInset,
                     bottomInsetPx = playerHeightPx,
                     modifier = Modifier.fillMaxSize(),
@@ -242,6 +282,14 @@ fun AudiobookPlayerView(
                 }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     val playingSectionKey = audiobook?.playingSectionKey
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.audiobook_stop_cd)) },
+                        enabled = playingSectionKey != null,
+                        onClick = {
+                            showMenu = false
+                            onAction(AudiobookAction.Stop)
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.audiobook_export_video_cd)) },
                         enabled = playingSectionKey != null,
@@ -377,6 +425,20 @@ fun AudiobookPlayerView(
                         )
                     }
 
+                    IconButton(
+                        onClick = {
+                            val target = (pagerState.currentPage - 1).coerceAtLeast(0)
+                            pagerScope.launch { pagerState.animateScrollToPage(target) }
+                        },
+                        enabled = pagerState.currentPage > 0,
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.round_skip_previous_24),
+                            contentDescription = stringResource(R.string.audiobook_previous_chapter_cd),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+
                     IconButton(onClick = { onSeekBy(-SEEK_STEP_MS) }) {
                         Icon(
                             painterResource(R.drawable.ic_replay_arrow),
@@ -413,10 +475,16 @@ fun AudiobookPlayerView(
                         )
                     }
 
-                    IconButton(onClick = { onAction(AudiobookAction.Stop) }) {
+                    IconButton(
+                        onClick = {
+                            val target = (pagerState.currentPage + 1).coerceAtMost(pagerSections.lastIndex.coerceAtLeast(0))
+                            pagerScope.launch { pagerState.animateScrollToPage(target) }
+                        },
+                        enabled = pagerState.currentPage < pagerSections.lastIndex,
+                    ) {
                         Icon(
-                            painterResource(R.drawable.ic_stop),
-                            contentDescription = stringResource(R.string.audiobook_stop_cd),
+                            painterResource(R.drawable.round_skip_next_24),
+                            contentDescription = stringResource(R.string.audiobook_next_chapter_cd),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
