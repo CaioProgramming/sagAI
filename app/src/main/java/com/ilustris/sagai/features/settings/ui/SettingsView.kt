@@ -87,7 +87,6 @@ fun SettingsView(
     onBack: () -> Unit = {},
     navToFAQ: () -> Unit = {},
     navToApiSettings: () -> Unit = {},
-    navToAuditLogs: () -> Unit = {},
     navToPlaythrough: () -> Unit = {},
     navToPlayerProfile: () -> Unit = {},
     navToDesignSystemPreview: () -> Unit = {},
@@ -747,21 +746,6 @@ fun SettingsView(
                             ).padding(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        PreferencesContainer(
-                            stringResource(R.string.audit_logs_title),
-                            stringResource(R.string.settings_audit_logs_subtitle),
-                            showSwitch = false,
-                            onClickSwitch = {
-                                navToAuditLogs()
-                            },
-                            isActivated = true,
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
-                            thickness = 1.dp,
-                        )
-
                         PreferencesContainer(
                             stringResource(R.string.design_system_preview_title),
                             stringResource(R.string.settings_design_system_subtitle),

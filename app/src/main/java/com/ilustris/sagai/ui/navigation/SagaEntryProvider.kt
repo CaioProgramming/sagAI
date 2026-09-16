@@ -54,7 +54,6 @@ fun createSagaEntryProvider(
             onBack = { navigator.goBack() },
             navToFAQ = { navigator.navigate(FAQKey) },
             navToApiSettings = { navigator.navigate(ApiSettingsKey) },
-            navToAuditLogs = { navigator.navigate(AuditLogsKey) },
             navToPlaythrough = { navigator.navigate(PlaythroughKey) },
             navToPlayerProfile = { navigator.navigate(PlayerProfileKey) },
             navToDesignSystemPreview = { navigator.navigate(DesignSystemPreviewKey) },
@@ -82,6 +81,7 @@ fun createSagaEntryProvider(
     entry<ApiSettingsKey> {
         ApiSettingsView(
             onBack = { navigator.goBack() },
+            navToAuditLogs = { navigator.navigate(AuditLogsKey) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )

@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +45,7 @@ import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyManageSheet
 import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
 import com.ilustris.sagai.features.settings.ui.components.ApiKeySettingsSection
 import com.ilustris.sagai.features.settings.ui.components.ApiUsageBoard
+import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.settings.ui.components.rememberTimeUntilPacificMidnight
 
 /**
@@ -56,6 +58,7 @@ import com.ilustris.sagai.features.settings.ui.components.rememberTimeUntilPacif
 @Composable
 fun ApiSettingsView(
     onBack: () -> Unit = {},
+    navToAuditLogs: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
 ) {
@@ -175,6 +178,33 @@ fun ApiSettingsView(
                     },
                 ) {
                     Text(stringResource(R.string.api_key_docs))
+                }
+            }
+
+            // Debug-only: raw request/response history for every AI call, text and media alike —
+            // lives here now instead of Settings' own debug section, since it is entirely about
+            // what this screen already shows the summary of (the key's usage against Gemini).
+            if (com.ilustris.sagai.BuildConfig.DEBUG) {
+                item {
+                    Text(
+                        stringResource(R.string.settings_debug_section),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.fillMaxWidth().alpha(.5f),
+                    )
+                }
+                item {
+                    PreferencesContainer(
+                        stringResource(R.string.audit_logs_title),
+                        stringResource(R.string.settings_audit_logs_subtitle),
+                        showSwitch = false,
+                        onClickSwitch = { navToAuditLogs() },
+                        isActivated = true,
+                        modifier =
+                            Modifier.background(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                RoundedCornerShape(15.dp),
+                            ),
+                    )
                 }
             }
         }
