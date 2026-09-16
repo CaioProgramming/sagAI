@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
+import com.ilustris.sagai.core.ai.key.ApiUsageTracker
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.GeminiContent
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
@@ -48,6 +49,7 @@ class ImageGeneratorImpl
         private val userApiKeyStore: UserApiKeyStore,
         private val sideEffectService: SideEffectService,
         private val mediaModelResolver: MediaModelResolver,
+        private val apiUsageTracker: ApiUsageTracker,
     ) : ImageGenerator {
         private suspend fun apiKey(): String =
             userApiKeyStore.getKeyNow()?.takeIf { it.isNotBlank() }
@@ -88,11 +90,12 @@ class ImageGeneratorImpl
                             // Rotates across IMAGE's candidates on a 503 or a spent daily quota;
                             // the exceptions below are what's left once it runs out of them.
                             mediaModelResolver.withRotation(MediaRequirement.IMAGE) { model ->
-                                geminiApiClient.generateContent(
-                                    model = model,
-                                    apiKey = apiKey(),
-                                    request = request,
-                                )
+                                geminiApiClient
+                                    .generateContent(
+                                        model = model,
+                                        apiKey = apiKey(),
+                                        request = request,
+                                    ).also { apiUsageTracker.record(model, it.usageMetadata) }
                             }
                         } catch (e: QuotaExhaustedException) {
                             // Same debug escape hatch as the 403/429 branch below: a spent image

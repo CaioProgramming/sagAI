@@ -467,6 +467,7 @@ object AppModule {
         userApiKeyStore: UserApiKeyStore,
         sideEffectService: SideEffectService,
         mediaModelResolver: com.ilustris.sagai.core.ai.MediaModelResolver,
+        apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
     ): ImageGenerator =
         ImageGeneratorImpl(
             debugImageFallbackService,
@@ -474,6 +475,7 @@ object AppModule {
             userApiKeyStore,
             sideEffectService,
             mediaModelResolver,
+            apiUsageTracker,
         )
 
     @Provides

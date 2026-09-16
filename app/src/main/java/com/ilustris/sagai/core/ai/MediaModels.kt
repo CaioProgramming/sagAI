@@ -70,6 +70,7 @@ class MediaModelResolver
     constructor(
         private val remoteConfigService: RemoteConfigService,
         private val quotaStatusService: QuotaStatusService,
+        private val auditLogger: AIAuditLogger,
     ) {
         /** Configured candidates, best first; empty when the tier is disabled or not configured at all. */
         suspend fun candidates(
@@ -113,15 +114,38 @@ class MediaModelResolver
             val usable = candidates.filterNot { quotaStatusService.isModelDailyExhausted(it) }
             if (usable.isEmpty()) {
                 val until = candidates.mapNotNull { quotaStatusService.dailyExhaustionFor(it) }.minOrNull() ?: 0L
+                auditLogger.record(
+                    AIAuditSnapshot.error(
+                        model = candidates.first(),
+                        blueprintKey = null,
+                        dataType = requirement.name,
+                        errorMessage = "Every ${requirement.name} candidate is daily-exhausted: $candidates",
+                        responseTimeMs = 0,
+                        systemInstruction = null,
+                        sentVariables = null,
+                    ),
+                )
                 throw QuotaExhaustedException(until = until, model = candidates.first())
             }
 
             var lastFailure: GeminiHttpException? = null
             for (model in usable) {
+                val attemptStart = System.currentTimeMillis()
                 try {
                     return block(model)
                 } catch (e: GeminiHttpException) {
                     lastFailure = e
+                    auditLogger.record(
+                        AIAuditSnapshot.error(
+                            model = model,
+                            blueprintKey = null,
+                            dataType = requirement.name,
+                            errorMessage = e.message ?: "HTTP ${e.code}",
+                            responseTimeMs = System.currentTimeMillis() - attemptStart,
+                            systemInstruction = null,
+                            sentVariables = null,
+                        ),
+                    )
                     val rotate =
                         when {
                             e.code == 503 -> {
