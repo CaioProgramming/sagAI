@@ -1,5 +1,9 @@
 package com.ilustris.sagai.features.audiobook.ui
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -13,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -48,6 +53,7 @@ private val ENVELOPE_STEP = 6.dp
 private val WAVE_LENGTH = 20.dp
 private val STROKE_WIDTH = 2.5.dp
 private val PATH_STEP = 1.5.dp
+private const val PROGRESS_EASE_MS = 150
 private const val MIN_LEVEL = 0.06f
 private const val LEVEL_CURVE = 0.6f
 private val BAR_HEIGHT = 44.dp
@@ -74,29 +80,30 @@ fun WaveformSeekBar(
     val thumbPx = remember(density) { with(density) { THUMB_SIZE.toPx() } }
     val strokePx = remember(density) { with(density) { STROKE_WIDTH.toPx() } }
 
-    val path =
+    val curve =
         remember(levels, widthPx, heightPx, density) {
-            if (widthPx <= 0) return@remember Path()
+            if (widthPx <= 0) return@remember null
             val envelopeStep = with(density) { ENVELOPE_STEP.toPx() }
-            val waveLength = with(density) { WAVE_LENGTH.toPx() }
+            WaveCurve(
+                samples = envelopeLevels(levels, (widthPx / envelopeStep).toInt().coerceAtLeast(2)),
+                width = widthPx.toFloat(),
+                centerY = heightPx / 2f,
+                maxSwing = heightPx / 2f - strokePx,
+                waveLength = with(density) { WAVE_LENGTH.toPx() },
+            )
+        }
+    val path =
+        remember(curve, density) {
+            val wave = curve ?: return@remember Path()
             val pathStep = with(density) { PATH_STEP.toPx() }
-            val samples = envelopeLevels(levels, (widthPx / envelopeStep).toInt().coerceAtLeast(2))
-            val centerY = heightPx / 2f
-            val maxSwing = centerY - strokePx
-            val width = widthPx.toFloat()
             Path().apply {
-                moveTo(0f, centerY)
+                moveTo(0f, wave.centerY)
                 var x = pathStep
-                while (x < width) {
-                    val position = x / width * (samples.size - 1)
-                    val index = floor(position).toInt().coerceIn(0, samples.size - 2)
-                    val t = position - index
-                    val eased = t * t * (3f - 2f * t)
-                    val level = samples[index] + (samples[index + 1] - samples[index]) * eased
-                    lineTo(x, centerY + sin(2.0 * PI * x / waveLength).toFloat() * level * maxSwing)
+                while (x < wave.width) {
+                    lineTo(x, wave.yAt(x))
                     x += pathStep
                 }
-                lineTo(width, centerY)
+                lineTo(wave.width, wave.centerY)
             }
         }
 
@@ -105,6 +112,17 @@ fun WaveformSeekBar(
     val stroke = remember(strokePx) { Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round) }
     val currentOnChange by rememberUpdatedState(onFractionChange)
     val currentOnFinished by rememberUpdatedState(onFractionChangeFinished)
+
+    // Position arrives in ~150ms steps while the curve swings fast under the thumb, so following it
+    // raw would hop. Easing between ticks (and snapping while a finger drives it) is read only in
+    // the draw/layout lambdas below, so it animates without recomposing anything.
+    var dragging by remember { mutableStateOf(false) }
+    val progress =
+        animateFloatAsState(
+            targetValue = fraction.coerceIn(0f, 1f),
+            animationSpec = if (dragging) snap() else tween(PROGRESS_EASE_MS, easing = LinearEasing),
+            label = "waveformProgress",
+        )
 
     Box(
         modifier =
@@ -119,9 +137,18 @@ fun WaveformSeekBar(
                     }
                 }.pointerInput(Unit) {
                     detectHorizontalDragGestures(
-                        onDragStart = { offset -> currentOnChange((offset.x / size.width).coerceIn(0f, 1f)) },
-                        onDragEnd = { currentOnFinished() },
-                        onDragCancel = { currentOnFinished() },
+                        onDragStart = { offset ->
+                            dragging = true
+                            currentOnChange((offset.x / size.width).coerceIn(0f, 1f))
+                        },
+                        onDragEnd = {
+                            dragging = false
+                            currentOnFinished()
+                        },
+                        onDragCancel = {
+                            dragging = false
+                            currentOnFinished()
+                        },
                         onHorizontalDrag = { change, _ ->
                             change.consume()
                             currentOnChange((change.position.x / size.width).coerceIn(0f, 1f))
@@ -129,7 +156,7 @@ fun WaveformSeekBar(
                     )
                 }.drawBehind {
                     drawPath(path, remainingColor, style = stroke)
-                    clipRect(left = 0f, top = 0f, right = fraction.coerceIn(0f, 1f) * size.width, bottom = size.height) {
+                    clipRect(left = 0f, top = 0f, right = progress.value * size.width, bottom = size.height) {
                         drawPath(path, playedColor, style = stroke)
                     }
                 },
@@ -141,9 +168,32 @@ fun WaveformSeekBar(
             modifier =
                 Modifier
                     .align(Alignment.CenterStart)
-                    .offset { IntOffset((fraction.coerceIn(0f, 1f) * widthPx - thumbPx / 2f).roundToInt(), 0) }
+                    // Rides the line itself: same curve the path is drawn from, evaluated at the progress x.
+                    .offset {
+                        val x = progress.value * widthPx
+                        val lift = curve?.let { it.yAt(x) - it.centerY } ?: 0f
+                        IntOffset((x - thumbPx / 2f).roundToInt(), lift.roundToInt())
+                    }
                     .size(THUMB_SIZE),
         )
+    }
+}
+
+/** The line's shape: a sine swinging by the loudness at each x, smoothly interpolated between samples. */
+private class WaveCurve(
+    private val samples: FloatArray,
+    val width: Float,
+    val centerY: Float,
+    private val maxSwing: Float,
+    private val waveLength: Float,
+) {
+    fun yAt(x: Float): Float {
+        val position = (x / width).coerceIn(0f, 1f) * (samples.size - 1)
+        val index = floor(position).toInt().coerceIn(0, samples.size - 2)
+        val t = position - index
+        val eased = t * t * (3f - 2f * t)
+        val level = samples[index] + (samples[index + 1] - samples[index]) * eased
+        return centerY + sin(2.0 * PI * x / waveLength).toFloat() * level * maxSwing
     }
 }
 
