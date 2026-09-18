@@ -46,7 +46,16 @@ import kotlin.math.sin
 class Waveform(
     val sectionKey: String,
     val levels: FloatArray,
-)
+) {
+    private val peak = levels.maxOrNull() ?: 0f
+
+    /** How loud the narration is at [fraction] of the section, 0..1 relative to its loudest moment. */
+    fun levelAt(fraction: Float): Float {
+        if (peak <= 0f) return 0f
+        val index = (fraction.coerceIn(0f, 1f) * (levels.size - 1)).roundToInt()
+        return (levels[index] / peak).coerceIn(0f, 1f).pow(LEVEL_CURVE)
+    }
+}
 
 /** How finely the loudness is sampled along the bar; the line interpolates smoothly between these. */
 private val ENVELOPE_STEP = 6.dp

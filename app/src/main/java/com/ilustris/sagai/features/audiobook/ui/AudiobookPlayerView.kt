@@ -4,6 +4,7 @@ package com.ilustris.sagai.features.audiobook.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -165,6 +166,17 @@ fun AudiobookPlayerView(
         }
     }
 
+    // How loud the narration is right now, so the backdrop can breathe with the voice. Silent when
+    // paused/nothing playing; the background eases between the 150ms position ticks itself.
+    val narrationPulse =
+        if (audiobook?.isPlaying == true && (audiobook.durationMs) > 0) {
+            waveform
+                ?.takeIf { it.sectionKey == audiobook.playingSectionKey }
+                ?.levelAt(audiobook.positionMs.toFloat() / audiobook.durationMs) ?: 0f
+        } else {
+            0f
+        }
+
     Box(modifier = Modifier.fillMaxSize()) {
         // Deliberately just a slow-morphing genre-colored gradient, not the illustration crossfade
         // this used to be: real art competed with the text for attention instead of backing it.
@@ -173,6 +185,7 @@ fun AudiobookPlayerView(
         AudiobookMorphingBackground(
             colors = MaterialTheme.colorScheme.primary.darkerPalette(factor = .15f),
             duration = 6.seconds,
+            pulse = narrationPulse,
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -566,6 +579,11 @@ private fun NarrationStepProgress(progress: NarrationProgress?) {
 
 private val TOPBAR_HEIGHT = 56.dp
 
+/** Backdrop pulse: how far a full-volume moment lifts the colors and moves the middle stop. */
+private const val PULSE_BRIGHTEN = 0.45f
+private const val PULSE_STOP_SHIFT = 0.12f
+private const val PULSE_EASE_MS = 250
+
 /**
  * Same "living, genre-colored gradient" feel as [morphingGradient], but the color interpolation
  * is read only in the draw phase (the way [reactiveShimmer] already does), not in this
@@ -581,8 +599,16 @@ private val TOPBAR_HEIGHT = 56.dp
 private fun AudiobookMorphingBackground(
     colors: List<Color>,
     duration: Duration,
+    pulse: Float,
     modifier: Modifier = Modifier,
 ) {
+    // Read only in the draw lambda below, so easing between position ticks never recomposes.
+    val breath =
+        animateFloatAsState(
+            targetValue = pulse,
+            animationSpec = tween(PULSE_EASE_MS, easing = LinearEasing),
+            label = "audiobookBackgroundPulse",
+        )
     val shift =
         rememberInfiniteTransition(label = "audiobookBackground").animateFloat(
             initialValue = 0f,
@@ -599,13 +625,17 @@ private fun AudiobookMorphingBackground(
             modifier.drawWithCache {
                 onDrawBehind {
                     val f = shift.value
-                    val stops =
-                        listOf(
-                            lerp(colors[0], colors[2], f),
-                            lerp(colors[1], colors[3], f),
-                            lerp(colors[2], colors[0], f),
-                        )
-                    drawRect(Brush.verticalGradient(stops))
+                    val voice = breath.value
+                    // Louder narration lifts every stop toward the palette's brightest color and
+                    // pushes the middle stop down, so the whole wash swells with the voice.
+                    val lit = voice * PULSE_BRIGHTEN
+                    drawRect(
+                        Brush.verticalGradient(
+                            0f to lerp(lerp(colors[0], colors[2], f), colors[0], lit),
+                            (0.5f + PULSE_STOP_SHIFT * voice) to lerp(lerp(colors[1], colors[3], f), colors[0], lit),
+                            1f to lerp(lerp(colors[2], colors[0], f), colors[0], lit),
+                        ),
+                    )
                 }
             },
     )
