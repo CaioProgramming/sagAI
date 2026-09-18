@@ -98,16 +98,19 @@ fun AudiobookChapterPager(
     pagerState: PagerState,
     pageSections: List<AudiobookSectionUi>,
     pages: List<PageItem>,
-    audiobook: AudiobookUiState?,
+    // Narrowed down from the whole AudiobookUiState on purpose: that object re-emits on every
+    // playback position tick, which would otherwise drag this whole subtree (and its per-word
+    // blur/animation work) along for the ride. The caller collapses it to just these two values
+    // via derivedStateOf, so this only recomposes at a real word/section-boundary change.
+    highlight: AudioHighlight?,
+    playingSectionKey: String?,
+    ttsQuotaResetAt: Long?,
     onNarrateSection: (sectionKey: String) -> Unit,
     modifier: Modifier = Modifier,
     /** Bumped to ask the currently-playing chapter to scroll back to the narrated line — the
      * reader may have scrolled away to look ahead/behind, or jumped by seeking. */
     recenterSignal: Int = 0,
 ) {
-    val highlight = audiobook?.highlight
-    val playingSectionKey = audiobook?.playingSectionKey
-
     HorizontalPager(
         state = pagerState,
         modifier = modifier,
@@ -123,7 +126,7 @@ fun AudiobookChapterPager(
             )
         } else {
             NarrateSectionPrompt(
-                quotaResetAt = audiobook?.ttsQuotaResetAt,
+                quotaResetAt = ttsQuotaResetAt,
                 onClick = { onNarrateSection(section.key) },
             )
         }

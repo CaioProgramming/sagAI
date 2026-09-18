@@ -187,6 +187,9 @@ class BookAudioPlayer
         }
 
         companion object {
-            private const val TICK_MS = 50L
+            /** Every tick republishes state, which cascades into a full recomposition of the
+             * "now playing" screen (nothing downstream dedupes it) — 50ms drove that ~20x/sec,
+             * far more than a slider or word-boundary highlight actually needs to look smooth. */
+            private const val TICK_MS = 150L
         }
     }
