@@ -4,7 +4,11 @@ package com.ilustris.sagai.features.audiobook.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -51,8 +55,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -68,10 +75,10 @@ import com.ilustris.sagai.ui.components.IosStyleMenu
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.themePainter
 import kotlinx.coroutines.launch
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -146,18 +153,12 @@ fun AudiobookPlayerView(
     Box(modifier = Modifier.fillMaxSize()) {
         // Deliberately just a slow-morphing genre-colored gradient, not the illustration crossfade
         // this used to be: real art competed with the text for attention instead of backing it.
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            morphingGradient(
-                                colors = MaterialTheme.colorScheme.primary.darkerPalette(factor = .15f),
-                                duration = 6.seconds,
-                            ),
-                        ),
-                    ),
+        // A local, draw-phase-only version of morphingGradient() — see AudiobookMorphingBackground's
+        // doc for why: this screen stays mounted far longer than morphingGradient()'s other callers.
+        AudiobookMorphingBackground(
+            colors = MaterialTheme.colorScheme.primary.darkerPalette(factor = .15f),
+            duration = 6.seconds,
+            modifier = Modifier.fillMaxSize(),
         )
 
         // Structured as a real Column instead of overlaying everything with align(): the lyrics
@@ -342,7 +343,7 @@ fun AudiobookPlayerView(
                 ) {
                     Text(
                         text = bookTitle,
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onPrimary,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
@@ -435,7 +436,7 @@ fun AudiobookPlayerView(
                             enabled = pagerState.currentPage > 0,
                         ) {
                             Icon(
-                                painterResource(R.drawable.round_skip_previous_24),
+                                painterResource(R.drawable.ic_previous),
                                 contentDescription = stringResource(R.string.audiobook_previous_chapter_cd),
                                 tint = MaterialTheme.colorScheme.onBackground,
                             )
@@ -445,7 +446,6 @@ fun AudiobookPlayerView(
                             onClick = { onAction(AudiobookAction.TogglePlayback) },
                             modifier =
                                 Modifier
-                                    .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
                                     .padding(4.dp),
                         ) {
                             Icon(
@@ -475,7 +475,7 @@ fun AudiobookPlayerView(
                             enabled = pagerState.currentPage < pagerSections.lastIndex,
                         ) {
                             Icon(
-                                painterResource(R.drawable.round_skip_next_24),
+                                painterResource(R.drawable.ic_next),
                                 contentDescription = stringResource(R.string.audiobook_next_chapter_cd),
                                 tint = MaterialTheme.colorScheme.onBackground,
                             )
@@ -511,7 +511,7 @@ fun AudiobookPlayerView(
                             enabled = playingSectionKey != null,
                         ) {
                             Icon(
-                                painterResource(R.drawable.ic_recenter_24),
+                                painterResource(R.drawable.ic_sync),
                                 contentDescription = stringResource(R.string.audiobook_recenter_cd),
                                 tint = dimmed,
                             )
@@ -540,11 +540,17 @@ fun AudiobookPlayerView(
 private fun NarrationStepProgress(progress: NarrationProgress?) {
     val (position, total, stepLabel) =
         when (progress) {
-            is NarrationProgress.Narrating ->
+            is NarrationProgress.Narrating -> {
                 Triple(progress.position, progress.total, stringResource(R.string.audiobook_progress_narrating))
-            is NarrationProgress.Aligning ->
+            }
+
+            is NarrationProgress.Aligning -> {
                 Triple(progress.position, progress.total, stringResource(R.string.audiobook_progress_transcribing))
-            else -> return
+            }
+
+            else -> {
+                return
+            }
         }
     val fraction by animateFloatAsState(
         targetValue = if (total > 0) position / total.toFloat() else 0f,
@@ -569,6 +575,51 @@ private fun NarrationStepProgress(progress: NarrationProgress?) {
 }
 
 private val TOPBAR_HEIGHT = 56.dp
+
+/**
+ * Same "living, genre-colored gradient" feel as [morphingGradient], but the color interpolation
+ * is read only in the draw phase (the way [reactiveShimmer] already does), not in this
+ * composable's own body. [morphingGradient] reads its animated `State.value` directly in its
+ * function body, which forces a full recomposition of whoever calls it on every animation frame —
+ * cheap everywhere else it's used (short-lived loaders, a single small element), but this screen
+ * keeps it mounted for as long as the player is open, stacked on top of the lyrics scroller's own
+ * per-word animations. Recomposing a full-screen Box that often for a background nobody reads
+ * directly was a real, measurable cost worth cutting locally rather than reworking the shared
+ * helper (used in ~20 other places) just for this one screen.
+ */
+@Composable
+private fun AudiobookMorphingBackground(
+    colors: List<Color>,
+    duration: Duration,
+    modifier: Modifier = Modifier,
+) {
+    val shift =
+        rememberInfiniteTransition(label = "audiobookBackground").animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(duration.inWholeMilliseconds.toInt()),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "audiobookBackgroundShift",
+        )
+    Box(
+        modifier =
+            modifier.drawWithCache {
+                onDrawBehind {
+                    val f = shift.value
+                    val stops =
+                        listOf(
+                            lerp(colors[0], colors[2], f),
+                            lerp(colors[1], colors[3], f),
+                            lerp(colors[2], colors[0], f),
+                        )
+                    drawRect(Brush.verticalGradient(stops))
+                }
+            },
+    )
+}
 
 private fun Long.asClock(): String {
     val totalSeconds = (this / 1000).coerceAtLeast(0)

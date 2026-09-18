@@ -295,6 +295,9 @@ class AudiobookViewModel
             val book = bound.value ?: return
             val section = state.value?.section(sectionKey) ?: return
             if (section.isReady) {
+                // A failure from a previous, different section (e.g. picked from the queue) must
+                // not keep blocking the screen behind an error banner once playback has moved on.
+                bookAudioService.dismissFailure()
                 play(book, sectionKey, pageIndex)
             } else {
                 bookAudioService.narrate(book.saga.data.id, book.act.data.id, book.bookId, sectionKey)
