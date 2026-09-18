@@ -196,6 +196,7 @@ fun AudiobookPlayerView(
                         IosStyleMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             IosStyleMenuItem(
                                 text = "Sync: ${audiobook.syncSource}",
+                                icon = painterResource(R.drawable.ic_sync),
                                 onClick = {
                                     showMenu = false
                                     onAction(AudiobookAction.ToggleSyncSource)
