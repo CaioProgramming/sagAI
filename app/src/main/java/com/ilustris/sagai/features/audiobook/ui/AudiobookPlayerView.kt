@@ -145,10 +145,21 @@ fun AudiobookPlayerView(
         }
     }
 
+    // audiobook resolves asynchronously (bind() fetches config/sections before the first combine
+    // emission), so the pager's own default initial page (0) settles *before* we know what's
+    // really playing — e.g. reopening the screen from the mini player while the last chapter is
+    // playing would otherwise read as "the reader picked page 0" and hijack playback back to
+    // chapter 1. Ignore settle events until we've seen a real audiobook state at least once.
+    var hasResolvedInitialState by remember { mutableStateOf(false) }
+    LaunchedEffect(audiobook != null) {
+        if (audiobook != null) hasResolvedInitialState = true
+    }
+
     // Landing on a different chapter by hand — swipe or the skip buttons — jumps playback there
     // too, same as skipping tracks. Settling back on the chapter already playing (the pager's own
     // auto-follow above) is a no-op since the keys already match.
     LaunchedEffect(pagerState.settledPage) {
+        if (!hasResolvedInitialState) return@LaunchedEffect
         val settled = pagerSections.getOrNull(pagerState.settledPage) ?: return@LaunchedEffect
         if (settled.key != audiobook?.playingSectionKey && settled.isReady) {
             onAction(AudiobookAction.Listen(settled.key, 0))
