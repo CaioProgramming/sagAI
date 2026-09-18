@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.audiobook.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -23,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -99,6 +101,9 @@ fun AudiobookChapterPager(
     audiobook: AudiobookUiState?,
     onNarrateSection: (sectionKey: String) -> Unit,
     modifier: Modifier = Modifier,
+    /** Bumped to ask the currently-playing chapter to scroll back to the narrated line — the
+     * reader may have scrolled away to look ahead/behind, or jumped by seeking. */
+    recenterSignal: Int = 0,
 ) {
     val highlight = audiobook?.highlight
     val playingSectionKey = audiobook?.playingSectionKey
@@ -114,6 +119,7 @@ fun AudiobookChapterPager(
                 pages = pages,
                 highlight = highlight?.takeIf { it.sectionKey == section.key },
                 isCurrentlyPlaying = section.key == playingSectionKey,
+                recenterSignal = recenterSignal,
             )
         } else {
             NarrateSectionPrompt(
@@ -137,6 +143,7 @@ private fun SectionLyrics(
     pages: List<PageItem>,
     highlight: AudioHighlight?,
     isCurrentlyPlaying: Boolean,
+    recenterSignal: Int,
 ) {
     val lines =
         remember(pages, sectionKey) {
@@ -187,10 +194,24 @@ private fun SectionLyrics(
     // this component only ever needs to fill that exact space — no manual inset compensation.
     val anchorOffsetPx = remember(density) { with(density) { 16.dp.roundToPx() } }
 
-    LaunchedEffect(currentLineIndex, isCurrentlyPlaying) {
-        if (!isCurrentlyPlaying || currentLineIndex < 0) return@LaunchedEffect
+    // A manual drag means the reader left the narrated line on purpose (reading ahead/back) —
+    // auto-follow stops fighting them until they explicitly ask to come back via recenterSignal.
+    var followPlayback by remember(sectionKey) { mutableStateOf(true) }
+    val isDragged by listState.interactionSource.collectIsDraggedAsState()
+    LaunchedEffect(isDragged) {
+        if (isDragged) followPlayback = false
+    }
+
+    LaunchedEffect(currentLineIndex, isCurrentlyPlaying, followPlayback) {
+        if (!followPlayback || !isCurrentlyPlaying || currentLineIndex < 0) return@LaunchedEffect
         // scrollOffset = 0 lands the item's top edge right at the content area's start.
         listState.animateScrollToItem(currentLineIndex, scrollOffset = 0)
+    }
+
+    LaunchedEffect(recenterSignal) {
+        if (recenterSignal == 0) return@LaunchedEffect
+        followPlayback = true
+        if (currentLineIndex >= 0) listState.animateScrollToItem(currentLineIndex, scrollOffset = 0)
     }
 
     // Where the active line's own bottom edge actually sits, measured live instead of guessed —

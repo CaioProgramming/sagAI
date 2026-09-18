@@ -1081,6 +1081,7 @@
     <string name="audiobook_export_failed">Não deu pra exportar o vídeo: %1$s</string>
     <string name="audiobook_share_video_chooser">Compartilhar vídeo da narração</string>
     <string name="audiobook_open_player_cd">Abrir player do audiolivro</string>
+    <string name="audiobook_recenter_cd">Voltar para o trecho atual</string>
     <string name="audiobook_queue_cd">Ver fila de capítulos</string>
     <string name="audiobook_queue_title">Capítulos</string>
     <string name="audiobook_generating_cd">Narrando…</string>

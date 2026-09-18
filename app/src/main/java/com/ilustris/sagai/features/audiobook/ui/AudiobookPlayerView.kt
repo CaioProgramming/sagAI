@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -119,6 +120,7 @@ fun AudiobookPlayerView(
     val pagerState = rememberPagerState(pageCount = { pagerSections.size.coerceAtLeast(1) })
     val pagerScope = rememberCoroutineScope()
     var showQueue by remember { mutableStateOf(false) }
+    var recenterSignal by remember { mutableIntStateOf(0) }
 
     // Narration crossing into the next chapter on its own slides the pager along with it.
     val playingPageIndex =
@@ -322,6 +324,7 @@ fun AudiobookPlayerView(
                             pages = pages,
                             audiobook = audiobook,
                             onNarrateSection = { sectionKey -> onAction(AudiobookAction.Listen(sectionKey, 0)) },
+                            recenterSignal = recenterSignal,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -503,12 +506,12 @@ fun AudiobookPlayerView(
                             )
                         }
                         IconButton(
-                            onClick = { onAction(AudiobookAction.Stop) },
+                            onClick = { recenterSignal++ },
                             enabled = playingSectionKey != null,
                         ) {
                             Icon(
-                                painterResource(R.drawable.ic_stop),
-                                contentDescription = stringResource(R.string.audiobook_stop_cd),
+                                painterResource(R.drawable.ic_recenter_24),
+                                contentDescription = stringResource(R.string.audiobook_recenter_cd),
                                 tint = dimmed,
                             )
                         }
