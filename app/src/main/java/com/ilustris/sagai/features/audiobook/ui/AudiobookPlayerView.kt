@@ -26,8 +26,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -58,6 +56,9 @@ import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.audiobook.data.usecase.NarrationProgress
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.ui.components.IosStyleMenu
+import com.ilustris.sagai.ui.components.IosStyleMenuDivider
+import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.morphingGradient
@@ -179,18 +180,20 @@ fun AudiobookPlayerView(
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
-                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    IosStyleMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         val playingSectionKey = audiobook?.playingSectionKey
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.audiobook_stop_cd)) },
+                        IosStyleMenuItem(
+                            text = stringResource(R.string.audiobook_stop_cd),
+                            icon = painterResource(R.drawable.ic_stop),
                             enabled = playingSectionKey != null,
                             onClick = {
                                 showMenu = false
                                 onAction(AudiobookAction.Stop)
                             },
                         )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.audiobook_export_video_cd)) },
+                        IosStyleMenuItem(
+                            text = stringResource(R.string.audiobook_export_video_cd),
+                            icon = painterResource(R.drawable.ic_share),
                             enabled = playingSectionKey != null,
                             onClick = {
                                 showMenu = false
@@ -198,15 +201,17 @@ fun AudiobookPlayerView(
                             },
                         )
                         if (audiobook?.showDebug == true) {
-                            DropdownMenuItem(
-                                text = { Text("Sync: ${audiobook.syncSource}") },
+                            IosStyleMenuDivider()
+                            IosStyleMenuItem(
+                                text = "Sync: ${audiobook.syncSource}",
                                 onClick = {
                                     showMenu = false
                                     onAction(AudiobookAction.ToggleSyncSource)
                                 },
                             )
-                            DropdownMenuItem(
-                                text = { Text("Realign") },
+                            IosStyleMenuItem(
+                                text = "Realign",
+                                icon = painterResource(R.drawable.baseline_refresh_24),
                                 enabled = playingSectionKey != null,
                                 onClick = {
                                     showMenu = false
