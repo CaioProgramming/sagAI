@@ -28,6 +28,7 @@ fun AudiobookPlayerRoute(
 ) {
     val state by readerViewModel.state.collectAsStateWithLifecycle()
     val audiobook by audiobookViewModel.state.collectAsStateWithLifecycle()
+    val waveform by audiobookViewModel.waveform.collectAsStateWithLifecycle()
 
     LaunchedEffect(sagaId, actId) { readerViewModel.load(sagaId, actId) }
 
@@ -47,6 +48,7 @@ fun AudiobookPlayerRoute(
         pages = readyState.pages,
         audiobook = audiobook?.takeIf { it.bookId == readyState.currentAct.book?.id },
         highlightFlow = audiobookViewModel.highlightFlow,
+        waveform = waveform,
         onAction = audiobookViewModel::onAction,
         onSeekToFraction = { fraction ->
             val duration = audiobook?.durationMs ?: 0L

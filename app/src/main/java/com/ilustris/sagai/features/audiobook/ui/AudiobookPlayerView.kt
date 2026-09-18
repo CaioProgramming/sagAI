@@ -39,7 +39,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -76,7 +75,6 @@ import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.themePainter
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
@@ -95,6 +93,7 @@ fun AudiobookPlayerView(
     audiobook: AudiobookUiState?,
     /** Collected directly inside the lyrics scroller, not here — see its own doc for why. */
     highlightFlow: StateFlow<AudioHighlight?>,
+    waveform: Waveform?,
     onAction: (AudiobookAction) -> Unit,
     onSeekToFraction: (Float) -> Unit,
     onBack: () -> Unit,
@@ -387,40 +386,13 @@ fun AudiobookPlayerView(
                             0f
                         }
 
-                    Slider(
-                        value = fraction,
-                        onValueChange = { dragFraction = it },
-                        onValueChangeFinished = {
-                            onSeekToFraction(dragFraction)
+                    WaveformSeekBar(
+                        levels = waveform?.takeIf { it.sectionKey == audiobook?.playingSectionKey }?.levels,
+                        fraction = fraction,
+                        onFractionChange = { dragFraction = it },
+                        onFractionChangeFinished = {
+                            if (dragFraction >= 0f) onSeekToFraction(dragFraction)
                             dragFraction = -1f
-                        },
-                        thumb = {
-                            // Plain themed icon, not MorphingThemeIcon: this screen only exists
-                            // inside an already-open saga, so the genre never changes while it's
-                            // on screen — nothing to morph between.
-                            Icon(
-                                painter = themePainter(),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(16.dp),
-                            )
-                        },
-                        track = { sliderState ->
-                            Box(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(3.dp)
-                                    .clip(RoundedCornerShape(50))
-                                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .2f)),
-                            ) {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth(sliderState.value.coerceIn(0f, 1f))
-                                        .height(3.dp)
-                                        .clip(RoundedCornerShape(50))
-                                        .background(MaterialTheme.colorScheme.onPrimary),
-                                )
-                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                     )

@@ -21,6 +21,7 @@ import com.ilustris.sagai.features.audiobook.data.model.WordTiming
 import com.ilustris.sagai.features.audiobook.data.usecase.BookAudioSegmenter
 import com.ilustris.sagai.features.audiobook.data.usecase.BookAudioUseCase
 import com.ilustris.sagai.features.audiobook.data.usecase.TimingAligner
+import com.ilustris.sagai.features.audiobook.data.usecase.WaveformExtractor
 import com.ilustris.sagai.features.audiobook.player.BookAudioPlayer
 import com.ilustris.sagai.features.audiobook.player.PlaybackState
 import com.ilustris.sagai.features.audiobook.player.PlaybackTrack
@@ -49,6 +50,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -198,6 +200,27 @@ class AudiobookViewModel
                 highlight(book, playback, source, bookSegments)
             }.distinctUntilChanged()
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+        /**
+         * Loudness envelope of the section playing right now, for the waveform seek bar. Computed
+         * once per (section, set of clips) off the main thread from the WAVs already on disk and
+         * kept out of [state] on purpose: it is heavy to build and never changes between ticks.
+         */
+        val waveform: StateFlow<Waveform?> =
+            combine(segmentsFlow, player.state.map { it?.current?.sectionKey }.distinctUntilChanged()) { bookSegments, sectionKey ->
+                sectionKey?.let { key ->
+                    key to
+                        bookSegments
+                            .filter { it.sectionKey == key }
+                            .sortedBy { it.segmentIndex }
+                            .map { it.audioPath }
+                }
+            }.distinctUntilChanged()
+                .mapLatest { target ->
+                    target?.takeIf { it.second.isNotEmpty() }?.let { (key, paths) ->
+                        Waveform(key, WaveformExtractor.extract(paths))
+                    }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
         val state: StateFlow<AudiobookUiState?> =
             combine(
