@@ -2,6 +2,8 @@ package com.ilustris.sagai.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -64,11 +66,15 @@ fun IosStyleMenu(
             AnimatedVisibility(
                 visibleState = transitionState,
                 enter =
-                    fadeIn(tween(160)) +
-                        scaleIn(tween(200), initialScale = 0.75f, transformOrigin = transformOrigin),
+                    fadeIn(tween(200)) +
+                        scaleIn(
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
+                            initialScale = 0.75f,
+                            transformOrigin = transformOrigin,
+                        ),
                 exit =
-                    fadeOut(tween(120)) +
-                        scaleOut(tween(150), targetScale = 0.85f, transformOrigin = transformOrigin),
+                    fadeOut(tween(140)) +
+                        scaleOut(tween(160), targetScale = 0.85f, transformOrigin = transformOrigin),
             ) {
                 Surface(
                     modifier = modifier.width(width).padding(4.dp),

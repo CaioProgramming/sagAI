@@ -15,7 +15,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -24,8 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +50,9 @@ import com.ilustris.sagai.features.act.ui.components.BookReader
 import com.ilustris.sagai.features.audiobook.ui.AudiobookAction
 import com.ilustris.sagai.features.audiobook.ui.AudiobookMiniPlayer
 import com.ilustris.sagai.features.audiobook.ui.AudiobookViewModel
+import com.ilustris.sagai.ui.components.IosStyleMenu
+import com.ilustris.sagai.ui.components.IosStyleMenuDivider
+import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 
 /**
@@ -222,57 +222,50 @@ fun BookReaderView(
                 onBackClick = onBack,
                 actionContent = {
                     if (state is BookReaderState.Ready) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            val isGenerating = audiobook?.narration != null
-                            Box(contentAlignment = Alignment.Center) {
-                                IconButton(
-                                    onClick = { onOpenAudiobookPlayer((state as BookReaderState.Ready).currentAct.data.id) },
-                                    modifier = Modifier.clip(CircleShape),
-                                ) {
-                                    Icon(
-                                        painterResource(R.drawable.ic_headset),
-                                        contentDescription = stringResource(R.string.audiobook_open_player_cd),
-                                        tint = MaterialTheme.colorScheme.onBackground,
-                                    )
-                                }
-                                if (isGenerating) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(36.dp),
-                                        strokeWidth = 2.dp,
-                                    )
-                                }
+                        val isGenerating = audiobook?.narration != null
+                        Box(contentAlignment = Alignment.Center) {
+                            IconButton(
+                                onClick = { showBookMenu = true },
+                                modifier = Modifier.clip(CircleShape),
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_more_vert),
+                                    contentDescription = stringResource(R.string.book_options_cd),
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                )
                             }
-
-                            Box {
-                                IconButton(
-                                    onClick = { showBookMenu = true },
-                                    modifier = Modifier.clip(CircleShape),
-                                ) {
-                                    Icon(
-                                        painterResource(R.drawable.ic_more_vert),
-                                        contentDescription = stringResource(R.string.book_options_cd),
-                                        tint = MaterialTheme.colorScheme.onBackground,
-                                    )
-                                }
-                                DropdownMenu(
-                                    expanded = showBookMenu,
-                                    onDismissRequest = { showBookMenu = false },
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.share_pdf_cd)) },
-                                        onClick = {
-                                            showBookMenu = false
-                                            viewModel.shareCurrentBook()
-                                        },
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.regenerate_book_cd)) },
-                                        onClick = {
-                                            showBookMenu = false
-                                            viewModel.regenerateBook()
-                                        },
-                                    )
-                                }
+                            if (isGenerating) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(36.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            }
+                            IosStyleMenu(expanded = showBookMenu, onDismissRequest = { showBookMenu = false }) {
+                                IosStyleMenuItem(
+                                    text = stringResource(R.string.audiobook_open_player_cd),
+                                    icon = painterResource(R.drawable.ic_headset),
+                                    onClick = {
+                                        showBookMenu = false
+                                        onOpenAudiobookPlayer((state as BookReaderState.Ready).currentAct.data.id)
+                                    },
+                                )
+                                IosStyleMenuDivider()
+                                IosStyleMenuItem(
+                                    text = stringResource(R.string.share_pdf_cd),
+                                    icon = painterResource(R.drawable.ic_share),
+                                    onClick = {
+                                        showBookMenu = false
+                                        viewModel.shareCurrentBook()
+                                    },
+                                )
+                                IosStyleMenuItem(
+                                    text = stringResource(R.string.regenerate_book_cd),
+                                    icon = painterResource(R.drawable.baseline_refresh_24),
+                                    onClick = {
+                                        showBookMenu = false
+                                        viewModel.regenerateBook()
+                                    },
+                                )
                             }
                         }
                     }
