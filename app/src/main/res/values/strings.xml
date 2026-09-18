@@ -1094,6 +1094,8 @@
     <string name="audiobook_export_failed">Video export failed: %1$s</string>
     <string name="audiobook_share_video_chooser">Share narration video</string>
     <string name="audiobook_open_player_cd">Open audiobook player</string>
+    <string name="audiobook_queue_cd">View chapter queue</string>
+    <string name="audiobook_queue_title">Chapters</string>
     <string name="audiobook_generating_cd">Narrating…</string>
     <string name="audiobook_progress_narrating">Generating audio</string>
     <string name="audiobook_progress_transcribing">Transcribing</string>

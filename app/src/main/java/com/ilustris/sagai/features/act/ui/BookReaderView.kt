@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -49,6 +50,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.ui.components.BookReader
+import com.ilustris.sagai.features.audiobook.ui.AudiobookAction
+import com.ilustris.sagai.features.audiobook.ui.AudiobookMiniPlayer
 import com.ilustris.sagai.features.audiobook.ui.AudiobookViewModel
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 
@@ -275,6 +278,21 @@ fun BookReaderView(
                     }
                 },
             )
+
+            val readyState = state as? BookReaderState.Ready
+            val activeAudiobook = audiobook?.takeIf { it.bookId == readyState?.currentAct?.book?.id }
+            if (readyState != null && activeAudiobook != null) {
+                AudiobookMiniPlayer(
+                    audiobook = activeAudiobook,
+                    onClick = { onOpenAudiobookPlayer(readyState.currentAct.data.id) },
+                    onTogglePlayback = { audiobookViewModel.onAction(AudiobookAction.TogglePlayback) },
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                )
+            }
         }
     }
 }

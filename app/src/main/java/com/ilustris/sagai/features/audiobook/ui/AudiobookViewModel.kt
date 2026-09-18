@@ -68,6 +68,8 @@ data class AudiobookSectionUi(
     /** Lowest transcription match among narrated clips; null when none was transcribed. */
     val worstScore: Float?,
     val estimatedClips: Int,
+    /** Sum of narrated clips' duration so far; grows as more segments are narrated. */
+    val durationMs: Long,
 ) {
     val isReady get() = planned > 0 && narrated >= planned
 }
@@ -420,6 +422,7 @@ class AudiobookViewModel
                 planned = book.plannedSegments[section.key] ?: 0,
                 worstScore = narrated.mapNotNull { it.alignmentScore }.minOrNull(),
                 estimatedClips = narrated.count { it.alignmentStatus == AlignmentStatus.ESTIMATED },
+                durationMs = narrated.sumOf { it.durationMs },
             )
         }
 

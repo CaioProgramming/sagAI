@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,17 +23,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,6 +55,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -112,6 +119,7 @@ fun AudiobookPlayerView(
         }
     val pagerState = rememberPagerState(pageCount = { pagerSections.size.coerceAtLeast(1) })
     val pagerScope = rememberCoroutineScope()
+    var showQueue by remember { mutableStateOf(false) }
 
     // Narration crossing into the next chapter on its own slides the pager along with it.
     val playingPageIndex =
@@ -171,53 +179,63 @@ fun AudiobookPlayerView(
                     )
                 }
 
-                var showMenu by remember { mutableStateOf(false) }
-                Box {
-                    IconButton(onClick = { showMenu = true }, modifier = Modifier.padding(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { showQueue = true }, modifier = Modifier.padding(8.dp)) {
                         Icon(
-                            painterResource(R.drawable.ic_more_vert),
-                            contentDescription = stringResource(R.string.book_options_cd),
+                            painterResource(R.drawable.round_queue_music_24),
+                            contentDescription = stringResource(R.string.audiobook_queue_cd),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
-                    IosStyleMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                        val playingSectionKey = audiobook?.playingSectionKey
-                        IosStyleMenuItem(
-                            text = stringResource(R.string.audiobook_stop_cd),
-                            icon = painterResource(R.drawable.ic_stop),
-                            enabled = playingSectionKey != null,
-                            onClick = {
-                                showMenu = false
-                                onAction(AudiobookAction.Stop)
-                            },
-                        )
-                        IosStyleMenuItem(
-                            text = stringResource(R.string.audiobook_export_video_cd),
-                            icon = painterResource(R.drawable.ic_share),
-                            enabled = playingSectionKey != null,
-                            onClick = {
-                                showMenu = false
-                                playingSectionKey?.let { onAction(AudiobookAction.ExportVideo(it)) }
-                            },
-                        )
-                        if (audiobook?.showDebug == true) {
-                            IosStyleMenuDivider()
-                            IosStyleMenuItem(
-                                text = "Sync: ${audiobook.syncSource}",
-                                onClick = {
-                                    showMenu = false
-                                    onAction(AudiobookAction.ToggleSyncSource)
-                                },
+
+                    var showMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { showMenu = true }, modifier = Modifier.padding(8.dp)) {
+                            Icon(
+                                painterResource(R.drawable.ic_more_vert),
+                                contentDescription = stringResource(R.string.book_options_cd),
+                                tint = MaterialTheme.colorScheme.onBackground,
                             )
+                        }
+                        IosStyleMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            val playingSectionKey = audiobook?.playingSectionKey
                             IosStyleMenuItem(
-                                text = "Realign",
-                                icon = painterResource(R.drawable.baseline_refresh_24),
+                                text = stringResource(R.string.audiobook_stop_cd),
+                                icon = painterResource(R.drawable.ic_stop),
                                 enabled = playingSectionKey != null,
                                 onClick = {
                                     showMenu = false
-                                    playingSectionKey?.let { onAction(AudiobookAction.Realign(it)) }
+                                    onAction(AudiobookAction.Stop)
                                 },
                             )
+                            IosStyleMenuItem(
+                                text = stringResource(R.string.audiobook_export_video_cd),
+                                icon = painterResource(R.drawable.ic_share),
+                                enabled = playingSectionKey != null,
+                                onClick = {
+                                    showMenu = false
+                                    playingSectionKey?.let { onAction(AudiobookAction.ExportVideo(it)) }
+                                },
+                            )
+                            if (audiobook?.showDebug == true) {
+                                IosStyleMenuDivider()
+                                IosStyleMenuItem(
+                                    text = "Sync: ${audiobook.syncSource}",
+                                    onClick = {
+                                        showMenu = false
+                                        onAction(AudiobookAction.ToggleSyncSource)
+                                    },
+                                )
+                                IosStyleMenuItem(
+                                    text = "Realign",
+                                    icon = painterResource(R.drawable.baseline_refresh_24),
+                                    enabled = playingSectionKey != null,
+                                    onClick = {
+                                        showMenu = false
+                                        playingSectionKey?.let { onAction(AudiobookAction.Realign(it)) }
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -490,6 +508,18 @@ fun AudiobookPlayerView(
                 }
             }
         }
+
+        if (showQueue) {
+            QueueBottomSheet(
+                sections = audiobook?.sections.orEmpty(),
+                playingSectionKey = audiobook?.playingSectionKey,
+                onSelect = { sectionKey ->
+                    showQueue = false
+                    onAction(AudiobookAction.Listen(sectionKey, 0))
+                },
+                onDismiss = { showQueue = false },
+            )
+        }
     }
 }
 
@@ -533,4 +563,91 @@ private fun Long.asClock(): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return "%d:%02d".format(minutes, seconds)
+}
+
+/** Full chapter list of the current volume — a track list, tapping a row seeks/narrates it. */
+@Composable
+private fun QueueBottomSheet(
+    sections: List<AudiobookSectionUi>,
+    playingSectionKey: String?,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(),
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .4f))
+        },
+    ) {
+        Text(
+            text = stringResource(R.string.audiobook_queue_title),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+        )
+        LazyColumn(modifier = Modifier.navigationBarsPadding()) {
+            items(sections, key = { it.key }) { section ->
+                QueueSectionRow(
+                    section = section,
+                    isPlaying = section.key == playingSectionKey,
+                    onClick = { onSelect(section.key) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun QueueSectionRow(
+    section: AudiobookSectionUi,
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+) {
+    val tint = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painterResource(R.drawable.round_play_arrow_24),
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(20.dp),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = section.title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = tint,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (!section.isReady) {
+                Text(
+                    text =
+                        if (section.narrated == 0) {
+                            stringResource(R.string.audiobook_narrate)
+                        } else {
+                            stringResource(R.string.audiobook_continue_narration, section.narrated, section.planned)
+                        },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
+                )
+            }
+        }
+        if (section.durationMs > 0) {
+            Text(
+                text = section.durationMs.asClock(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
+            )
+        }
+    }
 }
