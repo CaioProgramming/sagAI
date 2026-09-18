@@ -4,6 +4,7 @@ package com.ilustris.sagai.features.audiobook.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,16 +21,20 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.PageItem
+import com.ilustris.sagai.features.audiobook.data.usecase.NarrationProgress
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
@@ -244,7 +250,7 @@ fun AudiobookPlayerView(
                         Column(
                             modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
                                 text = stringResource(R.string.audiobook_generation_failed_cd),
@@ -255,25 +261,33 @@ fun AudiobookPlayerView(
                                         textAlign = TextAlign.Center,
                                     ),
                             )
+                            // The raw exception text (a "Gemini HTTP 503: ..." or similar) never
+                            // reaches the user — same as everywhere else in the app, a fixed
+                            // friendly message stands in for it.
                             Text(
-                                text = error,
+                                text = stringResource(R.string.audiobook_generation_failed_message),
                                 style =
                                     MaterialTheme.typography.bodySmall.copy(
                                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
                                         textAlign = TextAlign.Center,
                                     ),
                             )
-                            IconButton(
-                                onClick = { onAction(AudiobookAction.DismissFailure) },
-                                modifier =
-                                    Modifier
-                                        .background(MaterialTheme.colorScheme.errorContainer, shape = CircleShape)
-                                        .padding(4.dp),
+                            TextButton(
+                                onClick = {
+                                    val sectionKey = audiobook?.narration?.sectionKey
+                                    onAction(AudiobookAction.DismissFailure)
+                                    if (sectionKey != null) onAction(AudiobookAction.Listen(sectionKey, 0))
+                                },
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                             ) {
                                 Icon(
-                                    painterResource(R.drawable.round_close_24),
-                                    contentDescription = stringResource(R.string.audiobook_dismiss_error_cd),
-                                    tint = MaterialTheme.colorScheme.error,
+                                    painterResource(R.drawable.baseline_refresh_24),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Text(
+                                    text = stringResource(R.string.audiobook_retry),
+                                    modifier = Modifier.padding(start = 6.dp),
                                 )
                             }
                         }
@@ -281,22 +295,28 @@ fun AudiobookPlayerView(
 
                     isGenerating -> {
                         val fallback = stringResource(R.string.audiobook_generating_cd)
-                        AnimatedContent(
-                            targetState = audiobook?.narratingReasoningText ?: fallback,
-                            label = "audiobookReasoning",
-                            transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
+                        Column(
                             modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
-                        ) { text ->
-                            Text(
-                                text = text,
-                                style =
-                                    MaterialTheme.typography.titleLarge.copy(
-                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .9f),
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier = Modifier.reactiveShimmer(true, saga.data.genre.shimmerColors()),
-                            )
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(20.dp),
+                        ) {
+                            AnimatedContent(
+                                targetState = audiobook?.narratingReasoningText ?: fallback,
+                                label = "audiobookReasoning",
+                                transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
+                            ) { text ->
+                                Text(
+                                    text = text,
+                                    style =
+                                        MaterialTheme.typography.titleLarge.copy(
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .9f),
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                    modifier = Modifier.reactiveShimmer(true, saga.data.genre.shimmerColors()),
+                                )
+                            }
+                            NarrationStepProgress(audiobook?.narration?.progress)
                         }
                     }
 
@@ -465,6 +485,39 @@ fun AudiobookPlayerView(
                 }
             }
         }
+    }
+}
+
+/** "Gerando áudio (2/5)" / "Transcrevendo (2/5)" — hidden until the first segment's progress arrives. */
+@Composable
+private fun NarrationStepProgress(progress: NarrationProgress?) {
+    val (position, total, stepLabel) =
+        when (progress) {
+            is NarrationProgress.Narrating ->
+                Triple(progress.position, progress.total, stringResource(R.string.audiobook_progress_narrating))
+            is NarrationProgress.Aligning ->
+                Triple(progress.position, progress.total, stringResource(R.string.audiobook_progress_transcribing))
+            else -> return
+        }
+    val fraction by animateFloatAsState(
+        targetValue = if (total > 0) position / total.toFloat() else 0f,
+        label = "narrationStepProgress",
+    )
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.audiobook_progress_format, stepLabel, position, total),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f),
+        )
+        LinearProgressIndicator(
+            progress = { fraction },
+            modifier = Modifier.width(160.dp).height(3.dp).clip(RoundedCornerShape(50)),
+            color = MaterialTheme.colorScheme.onPrimary,
+            trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = .15f),
+        )
     }
 }
 

@@ -1082,7 +1082,11 @@
     <string name="audiobook_share_video_chooser">Compartilhar vídeo da narração</string>
     <string name="audiobook_open_player_cd">Abrir player do audiolivro</string>
     <string name="audiobook_generating_cd">Narrando…</string>
+    <string name="audiobook_progress_narrating">Gerando áudio</string>
+    <string name="audiobook_progress_transcribing">Transcrevendo</string>
+    <string name="audiobook_progress_format">%1$s (%2$d/%3$d)</string>
     <string name="audiobook_generation_failed_cd">Narração falhou</string>
+    <string name="audiobook_generation_failed_message">Não foi possível narrar esse trecho.</string>
     <string name="audiobook_dismiss_error_cd">Descartar erro</string>
     <string name="audiobook_listen_next_chapter_cd">Ouvir próximo capítulo</string>
     <string name="audiobook_previous_chapter_cd">Capítulo anterior</string>

@@ -128,7 +128,7 @@ class BookAudioUseCaseImpl
                             do {
                                 if (!firstCall && config.requestIntervalMs > 0) delay(config.requestIntervalMs)
                                 firstCall = false
-                                segment = narrate(sagaId, book, section, plan, voice, config)
+                                segment = narrate(sagaId, book, section, plan, plans.size, voice, config)
                                 attempt++
                                 val diverged = segment.alignmentStatus == AlignmentStatus.DIVERGED
                                 if (diverged && attempt <= config.maxRegenerations) {
@@ -174,11 +174,12 @@ class BookAudioUseCaseImpl
 
         override suspend fun ttsQuotaStatus(): Flow<QuotaStatus> = audioGenClient.quotaStatus()
 
-        private suspend fun narrate(
+        private suspend fun FlowCollector<NarrationProgress>.narrate(
             sagaId: Int,
             book: Book,
             section: AudioSection,
             plan: SegmentPlan,
+            total: Int,
             voice: Voice,
             config: BookAudioConfig,
         ): BookAudioSegment {
@@ -200,6 +201,7 @@ class BookAudioUseCaseImpl
                 ) ?: error("Couldn't save narration audio")
 
             val durationMs = (wav.size - WAV_HEADER_BYTES).coerceAtLeast(0) / PCM_BYTES_PER_MS
+            emit(NarrationProgress.Aligning(plan.index + 1, total))
             val alignment = align(section, plan, wav, durationMs, config)
             return BookAudioSegment(
                 bookId = book.id,
