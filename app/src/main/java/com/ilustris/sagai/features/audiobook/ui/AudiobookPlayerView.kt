@@ -64,7 +64,6 @@ import com.ilustris.sagai.features.audiobook.data.usecase.NarrationProgress
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.IosStyleMenu
-import com.ilustris.sagai.ui.components.IosStyleMenuDivider
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.theme.darkerPalette
@@ -179,16 +178,11 @@ fun AudiobookPlayerView(
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { showQueue = true }, modifier = Modifier.padding(8.dp)) {
-                        Icon(
-                            painterResource(R.drawable.round_queue_music_24),
-                            contentDescription = stringResource(R.string.audiobook_queue_cd),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-
+                // Stop/export/queue live in the bottom icon row now, Apple-Music-style — the only
+                // thing left behind "..." is debug-only tooling, so it's hidden outside debug.
+                if (audiobook?.showDebug == true) {
                     var showMenu by remember { mutableStateOf(false) }
+                    val playingSectionKey = audiobook.playingSectionKey
                     Box {
                         IconButton(onClick = { showMenu = true }, modifier = Modifier.padding(8.dp)) {
                             Icon(
@@ -198,44 +192,22 @@ fun AudiobookPlayerView(
                             )
                         }
                         IosStyleMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            val playingSectionKey = audiobook?.playingSectionKey
                             IosStyleMenuItem(
-                                text = stringResource(R.string.audiobook_stop_cd),
-                                icon = painterResource(R.drawable.ic_stop),
-                                enabled = playingSectionKey != null,
+                                text = "Sync: ${audiobook.syncSource}",
                                 onClick = {
                                     showMenu = false
-                                    onAction(AudiobookAction.Stop)
+                                    onAction(AudiobookAction.ToggleSyncSource)
                                 },
                             )
                             IosStyleMenuItem(
-                                text = stringResource(R.string.audiobook_export_video_cd),
-                                icon = painterResource(R.drawable.ic_share),
+                                text = "Realign",
+                                icon = painterResource(R.drawable.baseline_refresh_24),
                                 enabled = playingSectionKey != null,
                                 onClick = {
                                     showMenu = false
-                                    playingSectionKey?.let { onAction(AudiobookAction.ExportVideo(it)) }
+                                    playingSectionKey?.let { onAction(AudiobookAction.Realign(it)) }
                                 },
                             )
-                            if (audiobook?.showDebug == true) {
-                                IosStyleMenuDivider()
-                                IosStyleMenuItem(
-                                    text = "Sync: ${audiobook.syncSource}",
-                                    onClick = {
-                                        showMenu = false
-                                        onAction(AudiobookAction.ToggleSyncSource)
-                                    },
-                                )
-                                IosStyleMenuItem(
-                                    text = "Realign",
-                                    icon = painterResource(R.drawable.baseline_refresh_24),
-                                    enabled = playingSectionKey != null,
-                                    onClick = {
-                                        showMenu = false
-                                        playingSectionKey?.let { onAction(AudiobookAction.Realign(it)) }
-                                    },
-                                )
-                            }
                         }
                     }
                 }
@@ -502,6 +474,42 @@ fun AudiobookPlayerView(
                                 painterResource(R.drawable.round_skip_next_24),
                                 contentDescription = stringResource(R.string.audiobook_next_chapter_cd),
                                 tint = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        val playingSectionKey = audiobook?.playingSectionKey
+                        val dimmed = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f)
+                        IconButton(onClick = { showQueue = true }) {
+                            Icon(
+                                painterResource(R.drawable.round_queue_music_24),
+                                contentDescription = stringResource(R.string.audiobook_queue_cd),
+                                tint = dimmed,
+                            )
+                        }
+                        IconButton(
+                            onClick = { playingSectionKey?.let { onAction(AudiobookAction.ExportVideo(it)) } },
+                            enabled = playingSectionKey != null,
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_share),
+                                contentDescription = stringResource(R.string.audiobook_export_video_cd),
+                                tint = dimmed,
+                            )
+                        }
+                        IconButton(
+                            onClick = { onAction(AudiobookAction.Stop) },
+                            enabled = playingSectionKey != null,
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_stop),
+                                contentDescription = stringResource(R.string.audiobook_stop_cd),
+                                tint = dimmed,
                             )
                         }
                     }
