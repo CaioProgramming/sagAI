@@ -45,7 +45,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -130,13 +129,13 @@ fun AudiobookPlayerView(
     var showQueue by remember { mutableStateOf(false) }
     var recenterSignal by remember { mutableIntStateOf(0) }
 
-    // audiobook re-emits on every ~150ms playback tick (position keeps advancing), but the
-    // lyrics/pager subtree only actually needs to react at real word/section boundaries. Reading
-    // it through derivedStateOf collapses the in-between ticks so AudiobookChapterPager — and its
-    // per-word blur/animation machinery — only recomposes when these specific values change,
-    // instead of ~7x/sec regardless of whether anything visible actually moved.
-    val currentHighlight by remember { derivedStateOf { audiobook?.highlight } }
-    val currentPlayingSectionKey by remember { derivedStateOf { audiobook?.playingSectionKey } }
+    // audiobook re-emits on every ~150ms playback tick (position keeps advancing), so this whole
+    // function recomposes that often — but AudioHighlight/String? are Compose-stable types, so
+    // passing just these two values (instead of the whole AudiobookUiState) into
+    // AudiobookChapterPager lets Compose's own equality-based skip keep that subtree — and its
+    // per-word blur/animation machinery — from recomposing except at a real word/section boundary.
+    val currentHighlight = audiobook?.highlight
+    val currentPlayingSectionKey = audiobook?.playingSectionKey
 
     // Narration crossing into the next chapter on its own slides the pager along with it.
     val playingPageIndex =
