@@ -184,6 +184,21 @@ class AudiobookViewModel
                     }
                 }
 
+        /**
+         * The word highlight, decoupled from [state] on purpose: [player.state] ticks every
+         * [BookAudioPlayer]'s TICK_MS while playing, and [state]'s combine can't avoid re-emitting
+         * on every one of those (positionMs always differs). Word-boundary changes are far rarer
+         * than that, so this flow is deduped right at the source — the lyrics scroller collects
+         * *this*, not [state], so its per-word blur/animation work only ever runs on a real
+         * boundary crossing instead of on every position tick.
+         */
+        val highlightFlow: StateFlow<AudioHighlight?> =
+            combine(bound, segmentsFlow, player.state, syncSource) { book, bookSegments, playback, source ->
+                if (book == null || playback == null || playback.current?.bookId != book.bookId) return@combine null
+                highlight(book, playback, source, bookSegments)
+            }.distinctUntilChanged()
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
         val state: StateFlow<AudiobookUiState?> =
             combine(
                 bound,
@@ -216,7 +231,7 @@ class AudiobookViewModel
                     narration = currentJob,
                     playingSectionKey = playing?.sectionKey,
                     isPlaying = playing != null && playback.isPlaying,
-                    highlight = playing?.let { highlight(book, playback, extra.syncSource) },
+                    highlight = playing?.let { highlight(book, playback, extra.syncSource, bookSegments) },
                     syncSource = extra.syncSource,
                     showDebug = BuildConfig.DEBUG,
                     videoExport = extra.videoExport,
@@ -433,9 +448,10 @@ class AudiobookViewModel
             book: BoundBook,
             playback: PlaybackState,
             source: SyncSource,
+            bookSegments: List<BookAudioSegment>,
         ): AudioHighlight? {
             val track = playback.current ?: return null
-            val segment = segments.find { it.id == track.segmentId } ?: return null
+            val segment = bookSegments.find { it.id == track.segmentId } ?: return null
             val timings = timingsFor(book, segment, source)
             val word = timings.lastOrNull { it.startMs <= playback.positionMs } ?: timings.firstOrNull() ?: return null
             return AudioHighlight(segment.sectionKey, word.pageIndex, word.charStart, word.charEnd)

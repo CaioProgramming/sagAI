@@ -77,6 +77,7 @@ import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.themePainter
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -92,6 +93,8 @@ fun AudiobookPlayerView(
     act: ActContent,
     pages: List<PageItem>,
     audiobook: AudiobookUiState?,
+    /** Collected directly inside the lyrics scroller, not here — see its own doc for why. */
+    highlightFlow: StateFlow<AudioHighlight?>,
     onAction: (AudiobookAction) -> Unit,
     onSeekToFraction: (Float) -> Unit,
     onBack: () -> Unit,
@@ -129,12 +132,6 @@ fun AudiobookPlayerView(
     var showQueue by remember { mutableStateOf(false) }
     var recenterSignal by remember { mutableIntStateOf(0) }
 
-    // audiobook re-emits on every ~150ms playback tick (position keeps advancing), so this whole
-    // function recomposes that often — but AudioHighlight/String? are Compose-stable types, so
-    // passing just these two values (instead of the whole AudiobookUiState) into
-    // AudiobookChapterPager lets Compose's own equality-based skip keep that subtree — and its
-    // per-word blur/animation machinery — from recomposing except at a real word/section boundary.
-    val currentHighlight = audiobook?.highlight
     val currentPlayingSectionKey = audiobook?.playingSectionKey
 
     // Narration crossing into the next chapter on its own slides the pager along with it.
@@ -332,7 +329,7 @@ fun AudiobookPlayerView(
                             pagerState = pagerState,
                             pageSections = pagerSections,
                             pages = pages,
-                            highlight = currentHighlight,
+                            highlightFlow = highlightFlow,
                             playingSectionKey = currentPlayingSectionKey,
                             ttsQuotaResetAt = audiobook?.ttsQuotaResetAt,
                             onNarrateSection = { sectionKey -> onAction(AudiobookAction.Listen(sectionKey, 0)) },

@@ -46,6 +46,7 @@ fun AudiobookPlayerRoute(
         act = readyState.currentAct,
         pages = readyState.pages,
         audiobook = audiobook?.takeIf { it.bookId == readyState.currentAct.book?.id },
+        highlightFlow = audiobookViewModel.highlightFlow,
         onAction = audiobookViewModel::onAction,
         onSeekToFraction = { fraction ->
             val duration = audiobook?.durationMs ?: 0L

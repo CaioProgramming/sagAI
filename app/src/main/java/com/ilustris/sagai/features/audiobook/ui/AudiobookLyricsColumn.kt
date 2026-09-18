@@ -43,9 +43,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
+import kotlinx.coroutines.flow.StateFlow
 
 /** One word of a [LyricLine], with trailing whitespace kept so joining every word's [text] back
  * together reproduces the line exactly — that lets a plain [FlowRow] wrap them with no extra
@@ -98,11 +100,12 @@ fun AudiobookChapterPager(
     pagerState: PagerState,
     pageSections: List<AudiobookSectionUi>,
     pages: List<PageItem>,
-    // Narrowed down from the whole AudiobookUiState on purpose: that object re-emits on every
-    // playback position tick, which would otherwise drag this whole subtree (and its per-word
-    // blur/animation work) along for the ride. The caller collapses it to just these two values
-    // via derivedStateOf, so this only recomposes at a real word/section-boundary change.
-    highlight: AudioHighlight?,
+    // A dedicated, source-deduped flow instead of a plain value on purpose: AudiobookUiState
+    // (which used to feed this) re-emits on every playback position tick, dragging this whole
+    // subtree — and its per-word blur/animation work — along for the ride regardless of whether
+    // the narrated word actually changed. Collecting it here, at the top of this subtree, scopes
+    // that recomposition to exactly the lyrics scroller and nothing above it.
+    highlightFlow: StateFlow<AudioHighlight?>,
     playingSectionKey: String?,
     ttsQuotaResetAt: Long?,
     onNarrateSection: (sectionKey: String) -> Unit,
@@ -111,6 +114,8 @@ fun AudiobookChapterPager(
      * reader may have scrolled away to look ahead/behind, or jumped by seeking. */
     recenterSignal: Int = 0,
 ) {
+    val highlight by highlightFlow.collectAsStateWithLifecycle()
+
     HorizontalPager(
         state = pagerState,
         modifier = modifier,
