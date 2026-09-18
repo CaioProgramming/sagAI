@@ -43,6 +43,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.ui.PageItem
@@ -70,7 +71,11 @@ private data class LyricLine(
 private val SENTENCE_SPLIT = Regex("(?<=[.!?…])\\s+")
 private val WORD_SPLIT = Regex("\\S+\\s*")
 private const val MAX_BLUR_DP = 10
-private const val GLOW_BLUR_RADIUS = 24f
+private const val GLOW_BLUR_RADIUS = 48f
+private const val SPOKEN_GLOW_BLUR_RADIUS = 28f
+
+/** Share of the current word's glow that words already narrated keep behind it. */
+private const val SPOKEN_GLOW_ALPHA = 0.45f
 private const val WORD_REVEAL_ANIM_MS = 350
 private const val WORD_GLOW_ANIM_MS = 250
 private const val WORD_SCALE_BUMP = 0.06f
@@ -349,13 +354,19 @@ private fun LyricWordText(
     val isCurrent = isSpoken && highlight.charStart < word.end
 
     val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
-    val glowColor = MaterialTheme.colorScheme.primary
+    // Light, not the genre's primary: the backdrop is a darkened primary gradient, so a primary-
+    // colored glow was the same hue as what sits behind it and simply disappeared into it.
+    val glowColor = onPrimaryColor
 
     // Independent per-word animations: each word's own reveal/glow plays out on its own and is
     // never interrupted by the next word starting, since it isn't sharing state with any other
     // word — only this word's own isSpoken/isCurrent flip retargets it.
     val brightness by animateFloatAsState(if (isSpoken) 1f else 0f, tween(WORD_REVEAL_ANIM_MS), label = "wordBrightness")
     val glow by animateFloatAsState(if (isCurrent) 1f else 0f, tween(WORD_GLOW_ANIM_MS), label = "wordGlow")
+    // Already-narrated words keep a softer halo instead of going dark the moment narration moves
+    // on, so the filled part of the line reads as luminous, with the current word the brightest.
+    val glowAlpha = SPOKEN_GLOW_ALPHA * brightness + (1f - SPOKEN_GLOW_ALPHA) * glow
+    val glowRadius = lerp(SPOKEN_GLOW_BLUR_RADIUS, GLOW_BLUR_RADIUS, glow)
     // Rides the same brightness curve as the color, so a word sharpens into focus exactly as it
     // brightens — a subtle cross-blur, not a reveal that hides unspoken text (still legible ahead,
     // just a little softer, matching how future lines already read today).
@@ -366,7 +377,7 @@ private fun LyricWordText(
         style =
             baseStyle.copy(
                 color = lerp(baseColor, onPrimaryColor, brightness),
-                shadow = Shadow(glowColor.copy(alpha = glow), blurRadius = GLOW_BLUR_RADIUS),
+                shadow = Shadow(glowColor.copy(alpha = glowAlpha), blurRadius = glowRadius),
                 textAlign = TextAlign.Start,
             ),
         modifier =
