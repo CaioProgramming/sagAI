@@ -4,26 +4,29 @@ package com.ilustris.sagai.features.audiobook.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -55,11 +58,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -74,12 +78,10 @@ import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.IosStyleMenu
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Spotify/Apple-Music-style now-playing screen for the audiobook, deliberately separate from the
@@ -166,8 +168,8 @@ fun AudiobookPlayerView(
         }
     }
 
-    // How loud the narration is right now, so the backdrop can breathe with the voice. Silent when
-    // paused/nothing playing; the background eases between the 150ms position ticks itself.
+    // How loud the narration is right now, so the aurora can swell with the voice. Silent when
+    // paused/nothing playing; the aurora eases between the 150ms position ticks itself.
     val narrationPulse =
         if (audiobook?.isPlaying == true && (audiobook.durationMs) > 0) {
             waveform
@@ -177,17 +179,41 @@ fun AudiobookPlayerView(
             0f
         }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Deliberately just a slow-morphing genre-colored gradient, not the illustration crossfade
-        // this used to be: real art competed with the text for attention instead of backing it.
-        // A local, draw-phase-only version of morphingGradient() — see AudiobookMorphingBackground's
-        // doc for why: this screen stays mounted far longer than morphingGradient()'s other callers.
-        AudiobookMorphingBackground(
-            colors = MaterialTheme.colorScheme.primary.darkerPalette(factor = .15f),
-            duration = 6.seconds,
-            pulse = narrationPulse,
-            modifier = Modifier.fillMaxSize(),
-        )
+    // Once narration is running the controls get out of the way and the text gets the whole screen.
+    // Any touch, a pause, a chapter change or an error brings them back (and restarts the timer).
+    var controlsVisible by remember { mutableStateOf(true) }
+    var touches by remember { mutableIntStateOf(0) }
+    val isPlaying = audiobook?.isPlaying == true
+    LaunchedEffect(isPlaying, audiobook?.playingSectionKey, audiobook?.error, showQueue, touches) {
+        controlsVisible = true
+        if (isPlaying && audiobook?.error == null && !showQueue) {
+            delay(CONTROLS_HIDE_DELAY_MS)
+            controlsVisible = false
+        }
+    }
+    val controlsShown = hasAnyReadySection && controlsVisible
+    val navigationBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
+    val scheme = MaterialTheme.colorScheme
+    val auroraColors =
+        remember(scheme.primary, scheme.secondary, scheme.tertiary) {
+            listOf(scheme.primary, scheme.tertiary, scheme.secondary).map { lerp(it, Color.White, .2f) }
+        }
+
+    Box(
+        modifier =
+            Modifier.fillMaxSize().pointerInput(Unit) {
+                // Watches every touch without consuming it, so buttons and scrolling still work.
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    touches++
+                }
+            },
+    ) {
+        // Dark and only lightly tinted on purpose: all the color lives in the aurora, which would
+        // otherwise be the same hue as what sits behind it and lose its contrast.
+        AudiobookBackdrop(tint = scheme.primary, modifier = Modifier.fillMaxSize())
+        AudiobookAurora(level = narrationPulse, colors = auroraColors, modifier = Modifier.fillMaxSize())
 
         // Structured as a real Column instead of overlaying everything with align(): the lyrics
         // area is boxed in by weight(1f) between the topbar and the player, so it is physically
@@ -199,7 +225,7 @@ fun AudiobookPlayerView(
                         .fillMaxWidth()
                         .statusBarsPadding()
                         .height(TOPBAR_HEIGHT),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack, modifier = Modifier.padding(8.dp)) {
                     Icon(
@@ -207,6 +233,25 @@ fun AudiobookPlayerView(
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
+                }
+
+                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                    Text(
+                        text = bookTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (chapterTitle.isNotBlank()) {
+                        Text(
+                            text = chapterTitle,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
 
                 // Stop/export/queue live in the bottom icon row now, Apple-Music-style — the only
@@ -248,7 +293,7 @@ fun AudiobookPlayerView(
             val isGenerating = audiobook?.narration != null
             val error = audiobook?.error
             val quotaResetAt = audiobook?.quotaResetAt
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth().padding(bottom = if (controlsShown) 0.dp else navigationBottom)) {
                 when {
                     quotaResetAt != null -> {
                         Column(
@@ -363,30 +408,18 @@ fun AudiobookPlayerView(
                 }
             }
 
-            if (hasAnyReadySection) {
+            AnimatedVisibility(
+                visible = controlsShown,
+                enter = fadeIn(tween(250)) + slideInVertically(tween(250)) { it / 3 },
+                exit = fadeOut(tween(250)) + slideOutVertically(tween(250)) { it / 3 },
+            ) {
                 Column(
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
+                            .padding(top = 8.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
                 ) {
-                    Text(
-                        text = bookTitle,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    Text(
-                        text = chapterTitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
                     var dragFraction by remember { mutableFloatStateOf(-1f) }
                     val duration = audiobook?.durationMs ?: 0L
                     val position = audiobook?.positionMs ?: 0L
@@ -579,66 +612,22 @@ private fun NarrationStepProgress(progress: NarrationProgress?) {
 
 private val TOPBAR_HEIGHT = 56.dp
 
-/** Backdrop pulse: how far a full-volume moment lifts the colors and moves the middle stop. */
-private const val PULSE_BRIGHTEN = 0.45f
-private const val PULSE_STOP_SHIFT = 0.12f
-private const val PULSE_EASE_MS = 250
+private const val CONTROLS_HIDE_DELAY_MS = 4_000L
 
 /**
- * Same "living, genre-colored gradient" feel as [morphingGradient], but the color interpolation
- * is read only in the draw phase (the way [reactiveShimmer] already does), not in this
- * composable's own body. [morphingGradient] reads its animated `State.value` directly in its
- * function body, which forces a full recomposition of whoever calls it on every animation frame —
- * cheap everywhere else it's used (short-lived loaders, a single small element), but this screen
- * keeps it mounted for as long as the player is open, stacked on top of the lyrics scroller's own
- * per-word animations. Recomposing a full-screen Box that often for a background nobody reads
- * directly was a real, measurable cost worth cutting locally rather than reworking the shared
- * helper (used in ~20 other places) just for this one screen.
+ * Near-black with just a hint of the genre's color: the aurora carries the color, and a colored
+ * backdrop in the same hue would swallow it. Static, so it costs nothing per frame.
  */
 @Composable
-private fun AudiobookMorphingBackground(
-    colors: List<Color>,
-    duration: Duration,
-    pulse: Float,
+private fun AudiobookBackdrop(
+    tint: Color,
     modifier: Modifier = Modifier,
 ) {
-    // Read only in the draw lambda below, so easing between position ticks never recomposes.
-    val breath =
-        animateFloatAsState(
-            targetValue = pulse,
-            animationSpec = tween(PULSE_EASE_MS, easing = LinearEasing),
-            label = "audiobookBackgroundPulse",
-        )
-    val shift =
-        rememberInfiniteTransition(label = "audiobookBackground").animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec =
-                infiniteRepeatable(
-                    animation = tween(duration.inWholeMilliseconds.toInt()),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-            label = "audiobookBackgroundShift",
-        )
-    Box(
-        modifier =
-            modifier.drawWithCache {
-                onDrawBehind {
-                    val f = shift.value
-                    val voice = breath.value
-                    // Louder narration lifts every stop toward the palette's brightest color and
-                    // pushes the middle stop down, so the whole wash swells with the voice.
-                    val lit = voice * PULSE_BRIGHTEN
-                    drawRect(
-                        Brush.verticalGradient(
-                            0f to lerp(lerp(colors[0], colors[2], f), colors[0], lit),
-                            (0.5f + PULSE_STOP_SHIFT * voice) to lerp(lerp(colors[1], colors[3], f), colors[0], lit),
-                            1f to lerp(lerp(colors[2], colors[0], f), colors[0], lit),
-                        ),
-                    )
-                }
-            },
-    )
+    val brush =
+        remember(tint) {
+            Brush.verticalGradient(listOf(lerp(Color.Black, tint, .16f), lerp(Color.Black, tint, .05f)))
+        }
+    Box(modifier.background(brush))
 }
 
 private fun Long.asClock(): String {
