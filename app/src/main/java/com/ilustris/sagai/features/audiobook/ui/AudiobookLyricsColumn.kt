@@ -87,6 +87,42 @@ private const val WORD_SCALE_BUMP = 0.06f
  * subtle: the word stays legible the whole time, just a little softer than the spoken text. */
 private const val WORD_BLUR_DP = 3f
 
+/** A beat is one lyric line: short enough that the narrated word is never pushed off-screen. */
+private const val MIN_BEAT_CHARS = 28
+internal const val MAX_BEAT_CHARS = 72
+private const val MIN_TAIL_CHARS = 18
+private const val CLAUSE_ENDINGS = ",;:"
+
+/**
+ * Splits a sentence into lyric-sized beats, as inclusive char ranges that tile it exactly. A whole
+ * sentence used to be one line, and with the big display font a long one is taller than the screen:
+ * the scroller pins a line's top to the top edge, so the word being narrated sat below the fold.
+ * Breaks land after a comma/semicolon/colon once there is enough on the line, or at a word boundary
+ * when the line would otherwise pass [MAX_BEAT_CHARS]; a clause break never strands a tiny tail.
+ */
+internal fun splitBeats(text: String): List<IntRange> {
+    if (text.isEmpty()) return emptyList()
+    val words = WORD_SPLIT.findAll(text).toList()
+    val beats = mutableListOf<IntRange>()
+    var beatStart = 0
+    var count = 0
+    for (i in 0 until words.size - 1) {
+        val word = words[i]
+        count += word.value.length
+        val cut = word.range.last + 1
+        val endsClause = word.value.trimEnd().lastOrNull()?.let { it in CLAUSE_ENDINGS } == true
+        val clauseBreak = endsClause && count >= MIN_BEAT_CHARS && text.length - cut >= MIN_TAIL_CHARS
+        val hardBreak = count + words[i + 1].value.length > MAX_BEAT_CHARS
+        if (clauseBreak || hardBreak) {
+            beats.add(beatStart until cut)
+            beatStart = cut
+            count = 0
+        }
+    }
+    beats.add(beatStart until text.length)
+    return beats
+}
+
 private fun splitWords(
     text: String,
     baseOffset: Int,
@@ -169,15 +205,24 @@ private fun SectionLyrics(
                 .flatMap { page ->
                     val sentences = SENTENCE_SPLIT.split(page.page.content)
                     var cursor = 0
-                    sentences.mapNotNull { sentence ->
+                    sentences.flatMap { sentence ->
                         val start =
                             page.page.content
                                 .indexOf(sentence, cursor)
                                 .takeIf { it >= 0 } ?: cursor
                         val end = start + sentence.length
                         cursor = end
-                        sentence.trim().takeIf(String::isNotEmpty)?.let {
-                            LyricLine(pageIndex = page.pageIndex, text = it, range = start..end, words = splitWords(it, start))
+                        val beats = splitBeats(sentence)
+                        beats.mapIndexedNotNull { index, beat ->
+                            val from = start + beat.first
+                            // Beats are contiguous — each owns everything up to where the next one
+                            // begins — and the last keeps the sentence's trailing separator, so no
+                            // char offset ever falls between two lines.
+                            val to = if (index == beats.lastIndex) end else start + beat.last
+                            val raw = sentence.substring(beat.first, beat.last + 1)
+                            raw.trim().takeIf(String::isNotEmpty)?.let {
+                                LyricLine(pageIndex = page.pageIndex, text = it, range = from..to, words = splitWords(raw, from))
+                            }
                         }
                     }
                 }
