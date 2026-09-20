@@ -11,9 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.lerp
 import kotlin.math.sin
 
 private const val TWO_PI = 6.2831855f
@@ -21,10 +23,14 @@ private const val LEVEL_EASE_MS = 250
 private const val DRIFT_MS = 14_000
 
 /** Share of the screen height the glow reaches in silence / at the narration's loudest moment. */
-private const val MIN_HEIGHT = 0.16f
-private const val MAX_HEIGHT = 0.38f
-private const val MIN_ALPHA = 0.30f
-private const val MAX_ALPHA = 0.70f
+private const val MIN_HEIGHT = 0.18f
+private const val MAX_HEIGHT = 0.40f
+private const val MIN_ALPHA = 0.85f
+private const val MAX_ALPHA = 1.0f
+
+/** Opacity of the solid floor under the blobs, so the very bottom fully covers the lyrics. */
+private const val FLOOR_ALPHA = 0.95f
+private const val FLOOR_SHARE = 0.55f
 private const val DRIFT_RANGE = 0.12f
 private const val WIDTH_STRETCH = 2.2f
 
@@ -63,6 +69,18 @@ fun AudiobookAurora(
                 val phase = drift.value
                 val regionHeight = size.height * (MIN_HEIGHT + (MAX_HEIGHT - MIN_HEIGHT) * voice)
                 val alpha = MIN_ALPHA + (MAX_ALPHA - MIN_ALPHA) * voice
+                // Solid floor first: the blobs alone leave gaps between them and at the edges.
+                val floorHeight = regionHeight * FLOOR_SHARE
+                drawRect(
+                    brush =
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, lerp(colors[0], Color.Black, .45f).copy(alpha = FLOOR_ALPHA)),
+                            startY = size.height - floorHeight,
+                            endY = size.height,
+                        ),
+                    topLeft = Offset(0f, size.height - floorHeight),
+                    size = Size(size.width, floorHeight),
+                )
                 colors.forEachIndexed { index, color ->
                     val share = (index + 0.5f) / colors.size
                     val centerX = size.width * share + sin(phase + index * 2.1f) * size.width * DRIFT_RANGE
@@ -73,7 +91,7 @@ fun AudiobookAurora(
                         drawCircle(
                             brush =
                                 Brush.radialGradient(
-                                    colors = listOf(color.copy(alpha = alpha), color.copy(alpha = alpha * 0.4f), Color.Transparent),
+                                    colors = listOf(color.copy(alpha = alpha), color.copy(alpha = alpha * 0.5f), Color.Transparent),
                                     center = center,
                                     radius = radius,
                                 ),

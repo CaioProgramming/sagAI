@@ -20,13 +20,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -192,7 +189,6 @@ fun AudiobookPlayerView(
         }
     }
     val controlsShown = hasAnyReadySection && controlsVisible
-    val navigationBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     val scheme = MaterialTheme.colorScheme
     val auroraColors =
@@ -213,8 +209,6 @@ fun AudiobookPlayerView(
         // Dark and only lightly tinted on purpose: all the color lives in the aurora, which would
         // otherwise be the same hue as what sits behind it and lose its contrast.
         AudiobookBackdrop(tint = scheme.primary, modifier = Modifier.fillMaxSize())
-        AudiobookAurora(level = narrationPulse, colors = auroraColors, modifier = Modifier.fillMaxSize())
-
         // Structured as a real Column instead of overlaying everything with align(): the lyrics
         // area is boxed in by weight(1f) between the topbar and the player, so it is physically
         // impossible for text to be laid out behind either one — no manual inset math needed.
@@ -293,7 +287,7 @@ fun AudiobookPlayerView(
             val isGenerating = audiobook?.narration != null
             val error = audiobook?.error
             val quotaResetAt = audiobook?.quotaResetAt
-            Box(modifier = Modifier.weight(1f).fillMaxWidth().padding(bottom = if (controlsShown) 0.dp else navigationBottom)) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 when {
                     quotaResetAt != null -> {
                         Column(
@@ -408,150 +402,156 @@ fun AudiobookPlayerView(
                 }
             }
 
-            AnimatedVisibility(
-                visible = controlsShown,
-                enter = fadeIn(tween(250)) + slideInVertically(tween(250)) { it / 3 },
-                exit = fadeOut(tween(250)) + slideOutVertically(tween(250)) { it / 3 },
+        }
+
+        // Drawn over the lyrics, not behind them: near-opaque at the bottom edge so the text coming
+        // up from below reads as emerging out of it. Only draws, so touches still reach the text.
+        AudiobookAurora(level = narrationPulse, colors = auroraColors, modifier = Modifier.fillMaxSize())
+
+        AnimatedVisibility(
+            visible = controlsShown,
+            modifier = Modifier.align(Alignment.BottomCenter),
+            enter = fadeIn(tween(250)) + slideInVertically(tween(250)) { it / 3 },
+            exit = fadeOut(tween(250)) + slideOutVertically(tween(250)) { it / 3 },
+        ) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(top = 8.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
             ) {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(top = 8.dp, start = 24.dp, end = 24.dp, bottom = 16.dp),
+                var dragFraction by remember { mutableFloatStateOf(-1f) }
+                val duration = audiobook?.durationMs ?: 0L
+                val position = audiobook?.positionMs ?: 0L
+                val fraction =
+                    if (dragFraction >= 0f) {
+                        dragFraction
+                    } else if (duration > 0) {
+                        (position.toFloat() / duration).coerceIn(0f, 1f)
+                    } else {
+                        0f
+                    }
+
+                WaveformSeekBar(
+                    levels = waveform?.takeIf { it.sectionKey == audiobook?.playingSectionKey }?.levels,
+                    fraction = fraction,
+                    onFractionChange = { dragFraction = it },
+                    onFractionChangeFinished = {
+                        if (dragFraction >= 0f) onSeekToFraction(dragFraction)
+                        dragFraction = -1f
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    var dragFraction by remember { mutableFloatStateOf(-1f) }
-                    val duration = audiobook?.durationMs ?: 0L
-                    val position = audiobook?.positionMs ?: 0L
-                    val fraction =
-                        if (dragFraction >= 0f) {
-                            dragFraction
-                        } else if (duration > 0) {
-                            (position.toFloat() / duration).coerceIn(0f, 1f)
-                        } else {
-                            0f
-                        }
-
-                    WaveformSeekBar(
-                        levels = waveform?.takeIf { it.sectionKey == audiobook?.playingSectionKey }?.levels,
-                        fraction = fraction,
-                        onFractionChange = { dragFraction = it },
-                        onFractionChangeFinished = {
-                            if (dragFraction >= 0f) onSeekToFraction(dragFraction)
-                            dragFraction = -1f
-                        },
-                        modifier = Modifier.fillMaxWidth(),
+                    Text(
+                        text = (if (dragFraction >= 0f) (dragFraction * duration).toLong() else position).asClock(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
                     )
+                    Text(
+                        text = duration.asClock(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
+                    )
+                }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(
+                        onClick = {
+                            val target = (pagerState.currentPage - 1).coerceAtLeast(0)
+                            pagerScope.launch { pagerState.animateScrollToPage(target) }
+                        },
+                        enabled = pagerState.currentPage > 0,
                     ) {
-                        Text(
-                            text = (if (dragFraction >= 0f) (dragFraction * duration).toLong() else position).asClock(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
-                        )
-                        Text(
-                            text = duration.asClock(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
+                        Icon(
+                            painterResource(R.drawable.ic_previous),
+                            contentDescription = stringResource(R.string.audiobook_previous_chapter_cd),
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically,
+                    IconButton(
+                        onClick = { onAction(AudiobookAction.TogglePlayback) },
+                        modifier =
+                            Modifier
+                                .padding(4.dp),
                     ) {
-                        IconButton(
-                            onClick = {
-                                val target = (pagerState.currentPage - 1).coerceAtLeast(0)
-                                pagerScope.launch { pagerState.animateScrollToPage(target) }
-                            },
-                            enabled = pagerState.currentPage > 0,
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_previous),
-                                contentDescription = stringResource(R.string.audiobook_previous_chapter_cd),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-
-                        IconButton(
-                            onClick = { onAction(AudiobookAction.TogglePlayback) },
-                            modifier =
-                                Modifier
-                                    .padding(4.dp),
-                        ) {
-                            Icon(
-                                painterResource(
-                                    if (audiobook?.isPlaying ==
-                                        true
-                                    ) {
-                                        R.drawable.round_pause_24
-                                    } else {
-                                        R.drawable.round_play_arrow_24
-                                    },
+                        Icon(
+                            painterResource(
+                                if (audiobook?.isPlaying ==
+                                    true
+                                ) {
+                                    R.drawable.round_pause_24
+                                } else {
+                                    R.drawable.round_play_arrow_24
+                                },
+                            ),
+                            contentDescription =
+                                stringResource(
+                                    if (audiobook?.isPlaying == true) R.string.audiobook_pause_cd else R.string.audiobook_play_cd,
                                 ),
-                                contentDescription =
-                                    stringResource(
-                                        if (audiobook?.isPlaying == true) R.string.audiobook_pause_cd else R.string.audiobook_play_cd,
-                                    ),
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.scale(1.3f),
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                val target = (pagerState.currentPage + 1).coerceAtMost(pagerSections.lastIndex.coerceAtLeast(0))
-                                pagerScope.launch { pagerState.animateScrollToPage(target) }
-                            },
-                            enabled = pagerState.currentPage < pagerSections.lastIndex,
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_next),
-                                contentDescription = stringResource(R.string.audiobook_next_chapter_cd),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.scale(1.3f),
+                        )
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically,
+                    IconButton(
+                        onClick = {
+                            val target = (pagerState.currentPage + 1).coerceAtMost(pagerSections.lastIndex.coerceAtLeast(0))
+                            pagerScope.launch { pagerState.animateScrollToPage(target) }
+                        },
+                        enabled = pagerState.currentPage < pagerSections.lastIndex,
                     ) {
-                        val playingSectionKey = audiobook?.playingSectionKey
-                        val dimmed = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f)
-                        IconButton(onClick = { showQueue = true }) {
-                            Icon(
-                                painterResource(R.drawable.round_queue_music_24),
-                                contentDescription = stringResource(R.string.audiobook_queue_cd),
-                                tint = dimmed,
-                            )
-                        }
-                        IconButton(
-                            onClick = { playingSectionKey?.let { onAction(AudiobookAction.ExportVideo(it)) } },
-                            enabled = playingSectionKey != null,
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_share),
-                                contentDescription = stringResource(R.string.audiobook_export_video_cd),
-                                tint = dimmed,
-                            )
-                        }
-                        IconButton(
-                            onClick = { recenterSignal++ },
-                            enabled = playingSectionKey != null,
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_sync),
-                                contentDescription = stringResource(R.string.audiobook_recenter_cd),
-                                tint = dimmed,
-                            )
-                        }
+                        Icon(
+                            painterResource(R.drawable.ic_next),
+                            contentDescription = stringResource(R.string.audiobook_next_chapter_cd),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val playingSectionKey = audiobook?.playingSectionKey
+                    val dimmed = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f)
+                    IconButton(onClick = { showQueue = true }) {
+                        Icon(
+                            painterResource(R.drawable.round_queue_music_24),
+                            contentDescription = stringResource(R.string.audiobook_queue_cd),
+                            tint = dimmed,
+                        )
+                    }
+                    IconButton(
+                        onClick = { playingSectionKey?.let { onAction(AudiobookAction.ExportVideo(it)) } },
+                        enabled = playingSectionKey != null,
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_share),
+                            contentDescription = stringResource(R.string.audiobook_export_video_cd),
+                            tint = dimmed,
+                        )
+                    }
+                    IconButton(
+                        onClick = { recenterSignal++ },
+                        enabled = playingSectionKey != null,
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_sync),
+                            contentDescription = stringResource(R.string.audiobook_recenter_cd),
+                            tint = dimmed,
+                        )
                     }
                 }
             }

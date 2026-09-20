@@ -71,6 +71,9 @@ private data class LyricLine(
 private val SENTENCE_SPLIT = Regex("(?<=[.!?…])\\s+")
 private val WORD_SPLIT = Regex("\\S+\\s*")
 private const val MAX_BLUR_DP = 10
+
+/** Room after the last line so it can scroll up out from under the aurora at the bottom edge. */
+private val LYRICS_END_PADDING = 220.dp
 private const val GLOW_BLUR_RADIUS = 48f
 private const val SPOKEN_GLOW_BLUR_RADIUS = 28f
 
@@ -243,7 +246,7 @@ private fun SectionLyrics(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize().onSizeChanged { viewportHeightPx = it.height },
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = LYRICS_END_PADDING),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(lines.size, key = { "${lines[it].pageIndex}_${lines[it].range.first}" }) { index ->
