@@ -23,8 +23,8 @@ private const val LEVEL_EASE_MS = 250
 private const val DRIFT_MS = 14_000
 
 /** Share of the screen height the glow reaches in silence / at the narration's loudest moment. */
-private const val MIN_HEIGHT = 0.18f
-private const val MAX_HEIGHT = 0.40f
+private const val MIN_HEIGHT = 0.28f
+private const val MAX_HEIGHT = 0.55f
 private const val MIN_ALPHA = 0.85f
 private const val MAX_ALPHA = 1.0f
 
