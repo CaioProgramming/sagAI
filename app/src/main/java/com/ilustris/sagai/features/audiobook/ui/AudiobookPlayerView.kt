@@ -66,12 +66,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.audiobook.data.usecase.NarrationProgress
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.IosStyleMenu
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
@@ -230,12 +232,12 @@ fun AudiobookPlayerView(
                 }
 
                 Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                    Text(
+                    // Shrinks to fit instead of truncating: the genre's display fonts are wide, and a cut-off
+                    // "O PREÇO DA CAR…" hides the one thing this header is for.
+                    AutoResizeText(
                         text = bookTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.onPrimary),
+                        minFontSize = 11.sp,
                     )
                     if (chapterTitle.isNotBlank()) {
                         Text(
