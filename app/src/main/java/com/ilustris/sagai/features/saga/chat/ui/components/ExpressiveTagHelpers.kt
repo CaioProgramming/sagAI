@@ -360,6 +360,20 @@ fun escapeCursorFromTagAndClean(currentValue: TextFieldValue): TextFieldValue {
     )
 }
 
+private val expressiveTagMarkers = Regex("<(action|narrator|think)>|</(action|narrator|think)>")
+
+/**
+ * The message as the reader sees it: the tag markers go, the words inside them stay. Distinct from
+ * `RichTextParser.stripTags`, which drops the tagged content entirely for TTS.
+ *
+ * @param text The text to clean
+ * @return The same text without the tag markup
+ */
+fun stripExpressiveTags(text: String): String {
+    if (!text.contains('<')) return text
+    return expressiveTagMarkers.replace(normalizeThinkTags(text), "")
+}
+
 /**
  * Calculates the length of user's actual content, excluding tag markup.
  * Used for character limit validation.
@@ -367,11 +381,7 @@ fun escapeCursorFromTagAndClean(currentValue: TextFieldValue): TextFieldValue {
  * @param text The text to measure
  * @return The length of content without tag overhead
  */
-fun getCleanTextLength(text: String): Int {
-    if (!text.contains('<')) return text.length
-    val tagPattern = Regex("<(action|narrator|think)>|</(action|narrator|think)>")
-    return tagPattern.replace(normalizeThinkTags(text), "").length
-}
+fun getCleanTextLength(text: String): Int = stripExpressiveTags(text).length
 
 /**
  * Checks if cursor is positioned right after a closing tag.

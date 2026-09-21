@@ -141,17 +141,19 @@ object NarrativeCheck {
  * [SagaContentManagerImpl.pruneOrphanTimelines][com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManagerImpl]
  * (valid = current pointer target OR narrativelyCompleteTimeline; anything else is an orphan),
  * so both stay in sync with a single source of truth instead of drifting apart. */
+// "Complete" means already synthesized — title and content generated. The rules' limits decide *when*
+// that synthesis fires (see validateProgressionMetadata), but must not re-judge work already done:
+// they live in Remote Config and can change mid-saga, and raising LORE_UPDATE_LIMIT from 15 to 16 once
+// turned every closed 15-message event back into an "incomplete" one — adding a sixth event to a
+// chapter, a fourth chapter to an act, and regenerating old events' lore on every load.
+@Suppress("UNUSED_PARAMETER")
 fun TimelineMetadata.narrativelyCompleteTimeline(rules: NarrativeRules): Boolean =
-    messages.size >= rules.loreUpdateLimit &&
-        data.title.isNotEmpty() &&
-        data.content.isNotEmpty()
+    data.title.isNotEmpty() && data.content.isNotEmpty()
 
+@Suppress("UNUSED_PARAMETER")
 private fun ChapterMetadata.narrativelyCompleteChapter(rules: NarrativeRules): Boolean =
-    events.count { event -> event.narrativelyCompleteTimeline(rules) } >= rules.chapterUpdateLimit &&
-        data.title.isNotEmpty() &&
-        data.content.isNotEmpty()
+    data.title.isNotEmpty() && data.content.isNotEmpty()
 
+@Suppress("UNUSED_PARAMETER")
 private fun ActMetadata.narrativelyCompleteAct(rules: NarrativeRules): Boolean =
-    chapters.count { chapter -> chapter.narrativelyCompleteChapter(rules) } >= rules.actUpdateLimit &&
-        data.title.isNotEmpty() &&
-        data.content.isNotEmpty()
+    data.title.isNotEmpty() && data.content.isNotEmpty()

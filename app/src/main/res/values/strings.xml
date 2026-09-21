@@ -533,6 +533,12 @@
     <string name="share_book_pdf_subject">Sharing %1$s from Sagas</string>
     <string name="regenerate_book_cd">Regenerate Book</string>
     <string name="share_pdf_cd">Share PDF</string>
+    <string name="book_writing_prologue">Writing the prologue…</string>
+    <string name="book_writing_chapter">Writing chapter %1$d of %2$d: %3$s…</string>
+    <string name="book_writing_closure">Writing the author\'s note…</string>
+    <string name="book_volume_not_finished">This volume will be complete once the act ends.</string>
+    <string name="book_prologue_title">Prologue</string>
+    <string name="book_epilogue_title">Epilogue</string>
     <string name="book_share_preparing">Preparing your chronicle for sharing…</string>
     <string name="book_share_error_uri">Failed to get file URI</string>
     <string name="book_share_error_pdf">Failed to generate PDF</string>
@@ -618,6 +624,13 @@
     <string name="faq_ai_reply_button">Got it!</string>
     <string name="faq_title">FAQ</string>
     <string name="faq_search_placeholder">Search questions...</string>
+    <string name="chat_search_placeholder">Search this saga…</string>
+    <string name="chat_search_counter">%1$d/%2$d</string>
+    <string name="chat_search_no_results">No results</string>
+    <string name="chat_search_close">Close search</string>
+    <string name="chat_search_older">Older result</string>
+    <string name="chat_search_newer">Newer result</string>
+    <string name="chat_search_open">Search messages</string>
     <string name="faq_empty_state_title">We didn\'t find what you\'re looking for...</string>
     <string name="faq_ask_ai_button">Ask the Saga Master</string>
     <string name="faq_ask_ai_footer">Still unsure? Ask the Saga Master</string>
@@ -978,6 +991,10 @@
     <string name="api_key_setup_error_rejected">Google rejected this key. Check that you copied it whole.</string>
     <string name="api_key_setup_error_network">Couldn\'t reach Google to check the key. Check your connection and try again.</string>
 
+    <!-- BYOK: the sheet was left without a key set (dismissed, or a background error closed it) -->
+    <string name="api_key_required_title">You need an API key to continue</string>
+    <string name="api_key_required_message">Sagas can\'t generate anything without your Gemini API key set up.</string>
+    <string name="api_key_required_action">Set up your key</string>
 
     <!-- BYOK: settings -->
     <string name="api_key_settings_section">API key</string>
@@ -1060,4 +1077,40 @@
     <string name="plan_term_lifetime">Forever</string>
     <string name="billing_result_pending_title">Payment on its way</string>
     <string name="billing_result_pending_message">Your payment method takes a little longer to clear. Ads come off as soon as it does, and you do not need to do anything else.</string>
+    <string name="audiobook_listen">Listen</string>
+    <string name="audiobook_narrate">Narrate this chapter</string>
+    <string name="audiobook_continue_narration">Continue narration (%1$d/%2$d)</string>
+    <string name="audiobook_preparing">Preparing narration…</string>
+    <string name="audiobook_narrating">Narrating part %1$d of %2$d…</string>
+    <string name="audiobook_syncing">Syncing text %1$d of %2$d…</string>
+    <string name="audiobook_failed">Narration stopped: %1$s</string>
+    <string name="audiobook_retry">Try again</string>
+    <string name="audiobook_play_cd">Play narration</string>
+    <string name="audiobook_pause_cd">Pause narration</string>
+    <string name="audiobook_stop_cd">Stop narration</string>
+    <string name="audiobook_export_video_cd">Export narration as video</string>
+    <string name="audiobook_exporting">Preparing video…</string>
+    <string name="audiobook_exporting_percent">Rendering video %1$d%%</string>
+    <string name="audiobook_export_failed">Video export failed: %1$s</string>
+    <string name="audiobook_share_video_chooser">Share narration video</string>
+    <string name="audiobook_open_player_cd">Open audiobook player</string>
+    <string name="audiobook_recenter_cd">Jump to current line</string>
+    <string name="audiobook_queue_cd">View chapter queue</string>
+    <string name="audiobook_queue_title">Chapters</string>
+    <string name="audiobook_generating_cd">Narrating…</string>
+    <string name="audiobook_progress_narrating">Generating audio</string>
+    <string name="audiobook_progress_transcribing">Transcribing</string>
+    <string name="audiobook_progress_format">%1$s (%2$d/%3$d)</string>
+    <string name="audiobook_generation_failed_cd">Narration failed</string>
+    <string name="audiobook_generation_failed_message">Couldn\'t narrate this section.</string>
+    <string name="audiobook_dismiss_error_cd">Dismiss error</string>
+    <string name="audiobook_listen_next_chapter_cd">Listen to next chapter</string>
+    <string name="audiobook_previous_chapter_cd">Previous chapter</string>
+    <string name="audiobook_next_chapter_cd">Next chapter</string>
+    <string name="book_options_cd">More options</string>
+    <string name="audiobook_delete_narration">Delete narration</string>
+    <string name="audiobook_delete_narration_title">Delete this narration?</string>
+    <string name="audiobook_delete_narration_message">The audio files for \u0022%1$s\u0022 are removed. Narrating it again spends your daily voice quota.</string>
+    <string name="audiobook_open_player">Play book</string>
+    <string name="audiobook_shelf_badge">Listen · %1$d min</string>
 </resources>

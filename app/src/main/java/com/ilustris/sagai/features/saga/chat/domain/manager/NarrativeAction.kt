@@ -12,6 +12,15 @@ import com.ilustris.sagai.features.timeline.data.model.TimelineContent
  * name (not type) since [NarrativeExecutionResult.Failure] only carries a message string. */
 const val TIMELINE_ALREADY_ACTIVE_MESSAGE = "Timeline already set at this chapter"
 
+/** Thrown by [NarrativeAction.CreateChapter]'s executor when the act's last chapter is already
+ * active and mid-play — same self-heal shape as [TIMELINE_ALREADY_ACTIVE_MESSAGE], just one level
+ * up: `CreateChapter` gets (re)proposed while a chapter already exists for this act, the executor
+ * repoints `currentChapterId` at it, and this reports that as a no-op rather than a real failure. */
+const val CHAPTER_ALREADY_SET_MESSAGE = "Chapter is already set at this act"
+
+/** Same shape one level further up, for [NarrativeAction.CreateAct]. */
+const val ACT_ALREADY_SET_MESSAGE = "Act is already set at this saga"
+
 sealed class NarrativeAction {
     data object CreateAct : NarrativeAction()
 
@@ -51,6 +60,24 @@ sealed class NarrativeAction {
         val saga: SagaContent,
     ) : NarrativeAction()
 }
+
+/**
+ * What an action acts on, independent of the content snapshot embedded in it — two actions with the
+ * same key are the same decision, even if one carries a staler copy of its chapter/act/timeline.
+ */
+fun NarrativeAction.targetKey(): String =
+    when (this) {
+        NarrativeAction.CreateAct -> "CreateAct"
+        is NarrativeAction.GenerateActIntro -> "GenerateActIntro:${act.data.id}"
+        is NarrativeAction.CreateChapter -> "CreateChapter:${act.data.id}"
+        is NarrativeAction.GenerateChapter -> "GenerateChapter:${chapter.data.id}"
+        is NarrativeAction.GenerateChapterIntro -> "GenerateChapterIntro:${chapter.data.id}"
+        is NarrativeAction.CreateTimeline -> "CreateTimeline:${chapter.data.id}"
+        is NarrativeAction.EvolveTimeline -> "EvolveTimeline:${timeline.data.id}"
+        is NarrativeAction.CloseTimeline -> "CloseTimeline:${chapter.data.id}"
+        is NarrativeAction.GenerateAct -> "GenerateAct:${act.data.id}"
+        is NarrativeAction.GenerateEnding -> "GenerateEnding:${saga.data.id}"
+    }
 
 enum class NarrativeExecutionMode {
     UserTriggered,

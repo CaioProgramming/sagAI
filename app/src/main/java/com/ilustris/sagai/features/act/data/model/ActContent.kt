@@ -38,10 +38,9 @@ data class ActContent(
         rules: NarrativeRules,
     ): Boolean = chapters.count { it.isComplete(rules) } >= chapterLimit
 
-    fun isComplete(rules: NarrativeRules): Boolean =
-        isFull(rules.actUpdateLimit, rules) &&
-            data.title.isNotEmpty() &&
-            data.content.isNotEmpty()
+    // Synthesized, not "has enough chapters" — see NarrativeCheck.narrativelyCompleteTimeline.
+    @Suppress("UNUSED_PARAMETER")
+    fun isComplete(rules: NarrativeRules): Boolean = data.title.isNotEmpty() && data.content.isNotEmpty()
 
     fun emotionalSummary() =
         buildMap {
@@ -91,4 +90,30 @@ data class ActContent(
                 .toSet()
         return allCharacters.filter { it.data.id in characterIds }
     }
+
+    /** Completed chapters in reading order, as the incremental book sees them. */
+    fun bookChapters(rules: NarrativeRules): List<ChapterContent> =
+        chapters.filter { it.isComplete(rules) }.sortedBy { it.data.id }
+
+    /** Written chapter pages in reading order, titled by the real chapter. */
+    fun volumeChapters(): List<BookChapter> =
+        chapters
+            .sortedBy { it.data.id }
+            .mapNotNull { chapter ->
+                chapter.bookPages?.let {
+                    BookChapter(title = chapter.data.title, pages = it.pages, chapterId = chapter.data.id)
+                }
+            }
+
+    fun missingBookChapters(rules: NarrativeRules): List<ChapterContent> = bookChapters(rules).filter { it.bookPages == null }
+
+    fun needsPrologue() = data.introduction.isNotBlank() && book?.prologue.isNullOrEmpty() && book?.isSealed() != true
+
+    fun hasReadableBook() = book?.isSealed() == true
+
+    fun isVolumeReady(rules: NarrativeRules): Boolean =
+        hasReadableBook() && (book?.isLegacy() == true || missingBookChapters(rules).isEmpty())
+
+    /** Whether the incremental writer already started this volume — used to scope silent healing. */
+    fun hasBookProgress() = book != null || chapters.any { it.bookPages != null }
 }

@@ -61,10 +61,9 @@ data class TimelineContent(
 ) {
     fun isFull(loreLimit: Int): Boolean = messages.size >= loreLimit
 
-    fun isComplete(narrativeRules: NarrativeRules): Boolean =
-        isFull(narrativeRules.loreUpdateLimit) &&
-            data.title.isNotEmpty() &&
-            data.content.isNotEmpty()
+    // Synthesized, not "has enough messages" — see NarrativeCheck.narrativelyCompleteTimeline.
+    @Suppress("UNUSED_PARAMETER")
+    fun isComplete(narrativeRules: NarrativeRules): Boolean = data.title.isNotEmpty() && data.content.isNotEmpty()
 
     fun numberOfRelationshipUpdates(): Int = updatedRelationshipDetails.size
 

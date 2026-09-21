@@ -150,6 +150,7 @@ class SagaRepositoryImpl
             val artwork =
                 artworkConceptService
                     .ensureArtwork(
+                        imageType = ImageType.COVER,
                         contentType = ImageType.COVER.name,
                         genre = saga.genre,
                         context = saga.description,

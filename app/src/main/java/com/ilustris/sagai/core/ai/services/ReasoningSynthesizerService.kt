@@ -1,9 +1,11 @@
 package com.ilustris.sagai.core.ai.services
 
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.AIClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusService
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.LoadingLines
@@ -20,6 +22,7 @@ import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -43,6 +46,7 @@ class ReasoningSynthesizerService
         apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
         modelFallbackNotifier: com.ilustris.sagai.core.ai.ModelFallbackNotifier,
         @PublishedApi internal val genreConfigService: GenreConfigService,
+        @PublishedApi internal val stringResourceHelper: com.ilustris.sagai.core.utils.StringResourceHelper,
     ) : AIClient(
             remoteConfigService,
             promptService,
@@ -121,6 +125,19 @@ class ReasoningSynthesizerService
          *
          * Seeded from Remote Config so there is something on screen at frame zero, then swaps to
          * the generated lines the moment they arrive rather than at the next tick.
+         *
+         * Also listens for [modelFallbackNotifier] the whole time: a 503 mid-request means the
+         * rotation the user has been watching just stopped meaning anything (the model behind it
+         * got swapped out), and letting it keep cycling unrelated flavor lines while the request
+         * quietly restarts elsewhere reads as the app not noticing its own hiccup. A fallback
+         * interrupts whatever line is currently showing — even mid-[ROTATION_MS] — and holds
+         * `R.string.generation_taking_longer` up for [TAKING_LONGER_MS] before the normal rotation
+         * resumes.
+         * Global rather than scoped to this one request's own model: [modelFallbackNotifier] fires
+         * for any generation in the app, so a concurrent, unrelated fallback can occasionally light
+         * this up too. Rare in practice (fallbacks are themselves rare) and harmless when it
+         * happens — the message is true of *a* generation, just not necessarily this exact one —
+         * so it isn't worth the extra plumbing a per-request tag would take.
          */
         @PublishedApi
         internal suspend fun <T> holdWithLoadingLines(
@@ -131,10 +148,30 @@ class ReasoningSynthesizerService
         ) {
             if (terminal.get() || scope.isClosedForSend) return
 
+            val takingLongerUntil = MutableStateFlow(0L)
+            val fallbackListener =
+                scope.launch {
+                    modelFallbackNotifier.fellBackToSubstitute.collect {
+                        takingLongerUntil.value = System.currentTimeMillis() + TAKING_LONGER_MS
+                    }
+                }
+
             try {
                 pool.value = configuredPool(genre)
                 var previous: String? = null
                 while (!terminal.get() && !scope.isClosedForSend) {
+                    val deadline = takingLongerUntil.value
+                    val now = System.currentTimeMillis()
+                    if (deadline > now) {
+                        scope.send(StreamingState.Reasoning(stringResourceHelper.getString(R.string.generation_taking_longer)))
+                        // Woken early by a fresh fallback pushing the deadline out further, same as
+                        // the normal-rotation wait below is woken early by the pool changing.
+                        withTimeoutOrNull(deadline - now) {
+                            takingLongerUntil.first { it > deadline }
+                        }
+                        previous = null
+                        continue
+                    }
                     val current = pool.value
                     if (current.isEmpty()) {
                         // No configured pool: nothing to show until the generated one lands.
@@ -145,12 +182,17 @@ class ReasoningSynthesizerService
                         current.filterNot { it == previous }.randomOrNull() ?: current.random()
                     previous = next
                     scope.send(StreamingState.Reasoning(next))
-                    withTimeoutOrNull(ROTATION_MS) { pool.first { it != current } }
+                    withTimeoutOrNull(ROTATION_MS) {
+                        combine(pool, takingLongerUntil) { p, until -> p to until }
+                            .first { (p, until) -> p != current || until > System.currentTimeMillis() }
+                    }
                 }
             } catch (_: CancellationException) {
                 // The request finished or the collector went away — nothing to clean up.
             } catch (e: Exception) {
                 Timber.e("Error rotating loading lines: ${e.message}")
+            } finally {
+                fallbackListener.cancel()
             }
         }
 
@@ -163,8 +205,9 @@ class ReasoningSynthesizerService
             pool: MutableStateFlow<List<String>>,
             terminal: AtomicBoolean,
         ) {
-            // A holding line is never worth someone's last request of the day.
-            if (quotaStatusService.activeDailyBlock() != null) return
+            // A holding line is never worth someone's last request of the day — judged against the
+            // MINIMAL tier these lines are written on, not the worst model anywhere on the key.
+            if (tierQuotaStatus(ModelRequirement.MINIMAL).first() is QuotaStatus.DailyExhausted) return
 
             try {
                 val aesthetic =
@@ -262,11 +305,16 @@ class ReasoningSynthesizerService
             /**
              * How long each holding line stays up before the next one replaces it.
              *
-             * Sized to the lines, which are two to five words: they are read in well under a
-             * second, and holding a read line on screen is what made the old single sentence feel
-             * frozen.
+             * 1.5s (long enough to read the two-to-five words, but not to register as a pause)
+             * turned out too fast in practice — lines were swapping out mid-read. 8s paces it to
+             * an actual reading cadence for a short phrase, not just the minimum time the eye needs
+             * to pass over the words.
              */
             @PublishedApi
-            internal val ROTATION_MS = 1500L
+            internal val ROTATION_MS = 8000L
+
+            /** How long a fallback's "taking longer" line holds the screen before normal rotation resumes. */
+            @PublishedApi
+            internal val TAKING_LONGER_MS = 15_000L
         }
     }

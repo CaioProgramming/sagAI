@@ -50,6 +50,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -283,11 +285,31 @@ fun OnboardingPagerContent(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             AnimatedContent(button) {
-                                Text(
-                                    text = it.text.uppercase(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                                )
+                                if (it.action is OnboardingAction.OpenUrl) {
+                                    // Styled as a link, not as the muted grey secondary action: users
+                                    // read the grey version as disabled and never tapped through to get
+                                    // a key, which is the one step onboarding can't finish without.
+                                    val linkColor =
+                                        if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
+                                            Color(0xFF6CB4FF)
+                                        } else {
+                                            Color(0xFF1A73E8)
+                                        }
+                                    Text(
+                                        text = it.text,
+                                        style =
+                                            MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.SemiBold,
+                                            ),
+                                        color = linkColor,
+                                    )
+                                } else {
+                                    Text(
+                                        text = it.text.uppercase(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                    )
+                                }
                             }
                         }
                     }

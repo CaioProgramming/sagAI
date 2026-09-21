@@ -9,11 +9,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.ui.LocalChatSearchTerm
+import com.ilustris.sagai.features.saga.chat.ui.withSearchHighlight
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.LevitatingText
 import com.ilustris.sagai.ui.animations.ThinkingText
@@ -155,7 +158,7 @@ private fun AnnotatedPlainText(
     val genreColor = MaterialTheme.colorScheme.primary
     val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
     val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
-    val annotatedText =
+    val baseAnnotation =
         remember(text, characters, wiki) {
             buildWikiAndCharactersAnnotation(
                 text = text,
@@ -169,9 +172,18 @@ private fun AnnotatedPlainText(
             )
         }
 
+    // Layered on top of the character/wiki annotation rather than baked into it: the search term
+    // is transient reader state, while those annotations belong to the message itself.
+    val searchTerm = LocalChatSearchTerm.current
+    val searchHighlight = SpanStyle(background = genreColor.copy(alpha = .35f))
+    val annotatedText =
+        remember(baseAnnotation, searchTerm, searchHighlight) {
+            baseAnnotation.withSearchHighlight(searchTerm, searchHighlight)
+        }
+
     if (characters.isEmpty() && wiki.isEmpty()) {
         Text(
-            text = text,
+            text = annotatedText,
             style = style,
             modifier = modifier,
         )

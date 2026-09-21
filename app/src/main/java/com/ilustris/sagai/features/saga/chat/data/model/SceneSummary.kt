@@ -2,9 +2,14 @@ package com.ilustris.sagai.features.saga.chat.data.model
 
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
+data class CharacterPresence(
+    val name: String,
+    val brief: String,
+)
+
 data class SceneSummary(
     val currentLocation: String,
-    val charactersPresent: List<String>,
+    val charactersPresent: List<CharacterPresence>,
     val immediateObjective: String?,
     val currentConflict: String?,
     val mood: String?,
@@ -19,17 +24,14 @@ data class SceneSummary(
     val quote: String? = null,
     /** Character-voiced teaser to send as a push notification if the player doesn't return; regenerated on every reply. */
     val notificationHook: String? = null,
-    /** Display name (same format as [charactersPresent]) of who "says" [notificationHook]; null means a narrator-voiced hook with no specific character. */
+    /** Display name (same format as a [CharacterPresence.name]) of who "says" [notificationHook]; null means a narrator-voiced hook with no specific character. */
     val notificationCharacterName: String? = null,
 )
 
 /** True when the summary can drive chat objectives and suggestions. */
-fun SceneSummary.isActive(): Boolean =
-    immediateObjective?.isNotBlank() == true || currentLocation.isNotBlank()
+fun SceneSummary.isActive(): Boolean = immediateObjective?.isNotBlank() == true || currentLocation.isNotBlank()
 
-fun Timeline.hasActiveSceneSummary(): Boolean =
-    !currentObjective.isNullOrBlank() || (sceneSummary?.isActive() == true)
+fun Timeline.hasActiveSceneSummary(): Boolean = !currentObjective.isNullOrBlank() || (sceneSummary?.isActive() == true)
 
 /** Open timeline that still needs an AI-generated scene summary. */
-fun Timeline.shouldEnsureSceneSummary(): Boolean =
-    id != 0 && !isEmpty() && !hasActiveSceneSummary()
+fun Timeline.shouldEnsureSceneSummary(): Boolean = id != 0 && !isEmpty() && !hasActiveSceneSummary()

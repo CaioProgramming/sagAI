@@ -8,7 +8,9 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.home.data.model.resolveOpeningCheckpointForChapter
 import com.ilustris.sagai.features.narrative.data.model.ContinuitySummary
+import com.ilustris.sagai.features.narrative.data.model.LocationCheckpoint
 import com.ilustris.sagai.features.narrative.data.model.distantCanonSlice
 import com.ilustris.sagai.features.narrative.data.model.limitDistantFacts
 import com.ilustris.sagai.features.narrative.data.model.mergeAll
@@ -26,6 +28,10 @@ data class ChatContinuityContext(
     val distantCanon: ContinuitySummary?,
     val actContinuity: ContinuitySummary?,
     val globalWorldState: String?,
+    /** Where/when the current chapter began — the geographic/temporal anchor for this scene. */
+    val openingCheckpoint: LocationCheckpoint?,
+    /** Set once the current chapter has wrapped up — signals "time has moved on" mid-generation. */
+    val closingCheckpoint: LocationCheckpoint?,
 ) {
     fun toContextMap(): Map<String, Any?> =
         buildMap {
@@ -46,8 +52,18 @@ data class ChatContinuityContext(
             distantCanon?.let { put("distantCanon", it.asMap()) }
             actContinuity?.let { put("actContinuity", it.asMap()) }
             globalWorldState?.takeIf { it.isNotBlank() }?.let { put("globalWorldState", it) }
+            openingCheckpoint?.let { put("openingCheckpoint", it.asMap()) }
+            closingCheckpoint?.let { put("closingCheckpoint", it.asMap()) }
         }
 }
+
+private fun LocationCheckpoint.asMap(): Map<String, Any?> =
+    buildMap {
+        locationName?.let { put("locationName", it) }
+        timeOfDay?.let { put("timeOfDay", it.name) }
+        elapsedNote?.let { put("elapsedNote", it) }
+        timeGap?.let { put("timeGap", it.name) }
+    }
 
 fun SagaContent.buildChatContinuityContext(rules: NarrativeRules): ChatContinuityContext {
     val currentAct = currentActInfo
@@ -108,6 +124,10 @@ fun SagaContent.buildChatContinuityContext(rules: NarrativeRules): ChatContinuit
         distantCanon = distantCanon,
         actContinuity = actContinuity,
         globalWorldState = data.worldState,
+        openingCheckpoint =
+            currentChapter?.data?.openingCheckpoint
+                ?: currentChapter?.let { resolveOpeningCheckpointForChapter(it) },
+        closingCheckpoint = currentChapter?.data?.closingCheckpoint,
     )
 }
 

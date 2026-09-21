@@ -87,6 +87,7 @@ class MediaPlayerManagerImpl
                     isLooping = looping
                     setOnPreparedListener {
                         Timber.i("MediaPlayer prepared for: ${file.name}")
+                        setVolume(pendingVolume, pendingVolume)
                         onPrepared?.invoke()
                     }
                     setOnErrorListener { _, what, extra ->
@@ -185,5 +186,12 @@ class MediaPlayerManagerImpl
 
         override fun resume() {
             play()
+        }
+
+        private var pendingVolume: Float = 1f
+
+        override fun setVolume(volume: Float) {
+            pendingVolume = volume.coerceIn(0f, 1f)
+            mediaPlayer?.setVolume(pendingVolume, pendingVolume)
         }
     }

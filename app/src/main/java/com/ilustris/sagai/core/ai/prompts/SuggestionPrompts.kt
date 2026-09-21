@@ -35,7 +35,7 @@ object SuggestionPrompts {
     ): SplitPrompt {
         val presentCharacters =
             sceneSummary.charactersPresent.mapNotNull {
-                saga.findCharacter(it)?.data
+                saga.findCharacter(it.name)?.data
             }
 
         val args =

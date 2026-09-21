@@ -152,8 +152,8 @@ class ChatStateManager {
         _uiState.update { it.copy(wikiGroups = wikiGroups) }
     }
 
-    fun updateTopCharacters(characters: List<Character>) {
-        _uiState.update { it.copy(topCharacters = characters) }
+    fun updateRecentSearches(terms: List<String>) {
+        _uiState.update { it.copy(recentSearches = terms) }
     }
 
     fun updateCharacters(characters: List<Character>) {

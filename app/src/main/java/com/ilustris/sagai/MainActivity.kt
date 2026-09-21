@@ -63,7 +63,6 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import com.google.android.gms.ads.MobileAds
 import com.google.firebase.installations.FirebaseInstallations
-import com.ilustris.sagai.core.ai.ModelFallbackNotifier
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.ai.key.ApiKeyState
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
@@ -89,6 +88,7 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
 import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
 import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyNamePrompt
+import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyRequiredScreen
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
 import com.ilustris.sagai.ui.components.ApiKeyTroubleSheet
@@ -200,9 +200,6 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var chatIslandService: ChatIslandService
 
-    @Inject
-    lateinit var modelFallbackNotifier: ModelFallbackNotifier
-
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -301,8 +298,6 @@ class MainActivity : ComponentActivity() {
             }
 
             SagAITheme(genre = themeGenre) {
-                Timber.d("MainActivity: SagAITheme block")
-
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
                 val globalShellState by globalShellService.uiState.collectAsState()
@@ -311,16 +306,6 @@ class MainActivity : ComponentActivity() {
                     sideEffectService.sideEffects.collect { effect ->
                         Timber.d("Received global side effect: $effect")
                         activeSideEffect = effect
-                    }
-                }
-
-                // A generation just fell over to a substitute model after Gemini's own answered
-                // 503 — not an error, so it does not go through activeSideEffect, just an ambient
-                // heads-up for why this particular reply is taking longer than usual.
-                val generationTakingLonger = stringResource(R.string.generation_taking_longer)
-                LaunchedEffect(Unit) {
-                    modelFallbackNotifier.fellBackToSubstitute.collect {
-                        sagaThemeManager.showSnackBar(generationTakingLonger)
                     }
                 }
 
@@ -698,12 +683,27 @@ class MainActivity : ComponentActivity() {
                                     } else if (gate == AppGate.Offline) {
                                         NoInternetScreen()
                                     } else if (gate == AppGate.NeedsApiKey) {
-                                        OnboardingHost(
-                                            type = OnboardingType.API_KEY_SETUP,
-                                            presentation = OnboardingPresentation.Sheet,
-                                            force = true,
-                                            dismissible = false,
+                                        // The sheet is meant to be undismissable while there is no
+                                        // key, but nothing here can fully guarantee that: an error
+                                        // surfacing inside OnboardingHost's own state machine force-
+                                        // dismisses regardless of `dismissible`, and a stray system
+                                        // back-gesture is never fully ruled out either. Keeping a
+                                        // real screen underneath — with its own way back in — means
+                                        // one of those closing the sheet strands the user on a blank
+                                        // screen instead of a recoverable one.
+                                        var showApiKeySheet by remember { mutableStateOf(true) }
+                                        ApiKeyRequiredScreen(
+                                            onConfigureClick = { showApiKeySheet = true },
                                         )
+                                        if (showApiKeySheet) {
+                                            OnboardingHost(
+                                                type = OnboardingType.API_KEY_SETUP,
+                                                presentation = OnboardingPresentation.Sheet,
+                                                force = true,
+                                                dismissible = false,
+                                                onDismiss = { showApiKeySheet = false },
+                                            )
+                                        }
                                         ApiKeyNamePrompt()
                                     }
                                 }

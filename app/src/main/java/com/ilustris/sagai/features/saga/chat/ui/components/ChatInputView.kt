@@ -363,7 +363,6 @@ fun ChatInputView(
                                     TextRange(it.text.length),
                                 ),
                             )
-                            onUpdateSender(it.type)
                         },
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
@@ -437,7 +436,8 @@ fun ChatInputView(
                         } else {
                             drawOutline(outline, inputBrush, style = Stroke(1.dp.toPx()))
                         }
-                    }.border(1.dp, inputBrush, inputShape)
+                    }
+                    .border(1.dp, inputBrush, inputShape)
                     .background(bubbleColorState.value, inputShape),
         ) {
             AnimatedVisibility(currentTagInside != null) {
@@ -480,7 +480,8 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
                         inputShape,
-                    ).fillMaxWidth()
+                    )
+                    .fillMaxWidth()
                     .padding(8.dp),
             ) {
                 BasicTextField(
@@ -630,11 +631,13 @@ fun ChatInputView(
                                         .background(
                                             MaterialTheme.colorScheme.background.copy(alpha = .2f),
                                             speechModeChipShape,
-                                        ).clickable {
+                                        )
+                                        .clickable {
                                             onUpdateInput(
                                                 escapeCursorFromTagAndClean(inputField),
                                             )
-                                        }.padding(8.dp),
+                                        }
+                                        .padding(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
@@ -764,20 +767,17 @@ fun ChatInputView(
                                                 1.dp,
                                                 resolvedColor.copy(alpha = .3f),
                                                 CircleShape,
-                                            )
-                                            .background(
+                                            ).background(
                                                 resolvedColor.copy(alpha = .1f),
                                                 CircleShape,
-                                            )
-                                            .clip(CircleShape)
+                                            ).clip(CircleShape)
                                             .clickable {
                                                 handleWikiSelection(
                                                     wiki,
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }
-                                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {

@@ -32,6 +32,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
@@ -68,6 +69,7 @@ class ChapterUseCaseImpl
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val actRepository: com.ilustris.sagai.features.act.data.repository.ActRepository,
         private val artworkConceptService: ArtworkConceptService,
+        private val worldLocationUseCase: WorldLocationUseCase,
     ) : ChapterUseCase {
         private suspend fun fetchContext(chapterId: Int): Pair<SagaContent, ChapterContent> {
             val chapterContent =
@@ -103,7 +105,7 @@ class ChapterUseCaseImpl
                             promptSplit =
                                 prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
-                                    artworkConceptService.artworkInstructions(),
+                                    artworkConceptService.artworkInstructions(ImageType.COVER),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -149,7 +151,7 @@ class ChapterUseCaseImpl
                             promptSplit =
                                 prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
-                                    artworkConceptService.artworkInstructions(),
+                                    artworkConceptService.artworkInstructions(ImageType.COVER),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -339,6 +341,7 @@ class ChapterUseCaseImpl
             val artwork =
                 artworkConceptService
                     .ensureArtwork(
+                        imageType = ImageType.COVER,
                         contentType = "Chapter",
                         genre = saga.genre,
                         context = chapterArtworkContext(chapter),
@@ -454,7 +457,7 @@ class ChapterUseCaseImpl
                 )!!
             val updated = chapterContent.copy(introduction = intro.data)
             val updatedChapter = chapterRepository.updateChapter(updated)
-            GeneratedContent(updatedChapter, intro.finalMessage)
+            GeneratedContent(updatedChapter, (intro.finalMessage as String?).orEmpty())
         }
 
         override suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>> =
@@ -492,7 +495,10 @@ class ChapterUseCaseImpl
                                         StreamingState.Success(
                                             GeneratedContent(
                                                 updatedChapter,
-                                                introContent.finalMessage,
+                                                // Gson leaves a field the model omitted as null despite the
+                                                // non-null type; passing that on NPEs *after* the intro
+                                                // was already saved, failing an action that succeeded.
+                                                (introContent.finalMessage as String?).orEmpty(),
                                             ),
                                         ),
                                     )
@@ -538,7 +544,7 @@ class ChapterUseCaseImpl
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                             actContext.renderInstructions(),
-                                            artworkConceptService.artworkInstructions(),
+                                            artworkConceptService.artworkInstructions(ImageType.COVER),
                                         ),
                                     requirement = ModelRequirement.HIGH,
                                 ),
@@ -551,14 +557,26 @@ class ChapterUseCaseImpl
 
                                     // 1. Update Chapter details & Narrative Guide
                                     val mergedChapter = synthesis.chapter.mergeInto(chapterContent.data)
+                                    val closingCheckpoint =
+                                        synthesis.closingCheckpoint?.let {
+                                            worldLocationUseCase.resolveCheckpoint(
+                                                sagaId = saga.data.id,
+                                                generated = it,
+                                                originChapterId = chapterContent.data.id,
+                                            )
+                                        }
                                     val updatedChapter =
                                         updateChapter(
                                             mergedChapter.copy(
                                                 continuitySummary =
                                                     synthesis.continuitySummary
                                                         ?: mergedChapter.continuitySummary,
+                                                closingCheckpoint = closingCheckpoint ?: mergedChapter.closingCheckpoint,
                                             ),
                                         )
+                                    closingCheckpoint?.locationId?.let {
+                                        worldLocationUseCase.recordVisit(it, chapterId = chapterContent.data.id)
+                                    }
 
                                     // 2. Save Landmark Wikis
                                     val persistedWikis = mutableListOf<Wiki>()

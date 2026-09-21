@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.narrative.data.model
 
+import com.ilustris.sagai.features.saga.chat.data.model.CharacterPresence
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -12,7 +13,7 @@ class ContinuitySummaryTest {
             listOf(
                 SceneSummary(
                     currentLocation = "Tavern",
-                    charactersPresent = listOf("Alice"),
+                    charactersPresent = listOf(CharacterPresence(name = "Alice", brief = "")),
                     immediateObjective = null,
                     currentConflict = null,
                     mood = null,
@@ -24,7 +25,11 @@ class ContinuitySummaryTest {
                 ),
                 SceneSummary(
                     currentLocation = "Forest",
-                    charactersPresent = listOf("Alice", "Bob"),
+                    charactersPresent =
+                        listOf(
+                            CharacterPresence(name = "Alice", brief = ""),
+                            CharacterPresence(name = "Bob", brief = ""),
+                        ),
                     immediateObjective = null,
                     currentConflict = null,
                     mood = null,

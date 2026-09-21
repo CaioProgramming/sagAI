@@ -40,7 +40,8 @@ data class ChatUiState(
     val sagaContent: SagaMetadata? = null,
     val messages: List<ActDisplayData> = emptyList(),
     val characters: List<Character> = emptyList(),
-    val topCharacters: List<Character> = emptyList(),
+    /** Most recent first, per saga, offered when the search field is open and empty. */
+    val recentSearches: List<String> = emptyList(),
     val mainCharacter: CharacterContent? = null,
     val wikis: List<Wiki> = emptyList(),
     val activeGenre: Genre? = null,

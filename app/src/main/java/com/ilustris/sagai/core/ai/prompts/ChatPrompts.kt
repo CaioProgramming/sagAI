@@ -15,7 +15,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.narrative.domain.buildChatContinuityContext
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -27,40 +26,6 @@ data class TypoFixArgs(
     val conversationDirective: String,
     val recentContext: String,
     val message: String,
-)
-
-data class ReactionArgs(
-    val sagaMainContext: String,
-    val sceneSummary: String,
-    val charactersPresent: String,
-    val messageToReact: String,
-    val relationshipsBlock: String,
-    val conversationDirective: String,
-    val genreName: String,
-)
-
-data class ReplyMessageArgs(
-    val sceneSummary: String,
-    val charactersInScene: String,
-    val relationshipsBlock: String,
-    val recentChanges: String,
-    val narrativeGuidance: String,
-    val conversationHistory: String,
-    val actDirective: String,
-    val sagaMainContext: String,
-    val externalCharactersContent: String,
-    val backgroundContinuityContent: String,
-    val conversationDirective: String,
-    val latestMessageContent: String,
-    val genreConversationSoul: String,
-    val reactionProtocol: String,
-)
-
-data class SceneSummaryArgs(
-    val sagaContext: String,
-    val recentActivity: String,
-    val conversationHistory: String,
-    val latestMessage: String,
 )
 
 object ChatPrompts {
@@ -100,9 +65,23 @@ object ChatPrompts {
      *   Also receives `maxMessageLimit`: the character ceiling for `message.text`, counted on prose
      *   only (expressive tags are markup and don't count). The blueprint must compose within it
      *   rather than write long and cut — a message ending mid-sentence or mid-tag is a failure.
+     *   THIS is the blueprint that keeps [com.ilustris.sagai.features.saga.chat.data.model.SceneSummary]
+     *   fresh in practice — it emits a new `sceneSummary` (via
+     *   [com.ilustris.sagai.features.saga.chat.data.model.AIReply]) on every single reply, so its
+     *   `sceneSummary.charactersPresent` must follow the same `{name, brief}` shape and brief-writing
+     *   rules described under [SCENE_SUMMARIZATION_BLUEPRINT] below.
      *
-     * - [SCENE_SUMMARIZATION_BLUEPRINT]: `sagaContext.narrativeContinuity` must inform scene facts
-     *   without overwriting long-range canon.
+     * - [SCENE_SUMMARIZATION_BLUEPRINT]: bootstrap-only fallback — only runs when a timeline has no
+     *   scene summary yet (see `shouldEnsureSceneSummary`/`getSceneContext`), not on every turn.
+     *   `sagaContext.narrativeContinuity` must inform scene facts without overwriting long-range
+     *   canon. `charactersPresent` is a list of `{name, brief}`, not plain names: `name` must match
+     *   a story character's display name, and `brief` is one or two self-contained sentences
+     *   (identity/origin, current role, and stake in this scene — threats, goals, who they're at
+     *   odds with) written so reply/reaction generation can place the character without re-deriving
+     *   it from raw profile, relationship and arc data. Keep it tight — this rides along on every
+     *   turn once it exists, so a bloated brief defeats the point. Since [REPLY_GENERATION_BLUEPRINT]
+     *   is what actually keeps this fresh turn to turn, prioritize refining that blueprint's
+     *   `sceneSummary` output first; this one only needs to get the *first* one right.
      *
      * - [CHAT_REACTION_BLUEPRINT]: same continuity block as reply generation for off-thread reactions.
      */
@@ -124,6 +103,7 @@ object ChatPrompts {
             // every message in the history.
             "viewed",
         )
+
     /**
      * Applied to the *output* schema only, never to the context we send in.
      *
@@ -184,12 +164,8 @@ object ChatPrompts {
     ): SplitPrompt {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
-                saga.findCharacter(it)
+                saga.findCharacter(it.name)
             } ?: emptyList()
-
-        val sceneCharacterIds = charactersInScene.map { it.data.id }.toSet()
-        val externalCharacters =
-            saga.getCharacters(true).filter { it.id !in sceneCharacterIds }
 
         val messageSender = saga.findCharacter(message.speakerName)
 
@@ -222,14 +198,15 @@ object ChatPrompts {
                 if (narrativeContinuity.isNotEmpty()) {
                     put("narrativeContinuity", narrativeContinuity)
                 }
-                // No globalWorldState here on purpose: buildChatContinuityContext already emits it,
-                // and sagaContext carries the same string as `worldState`. Putting it a third time
-                // just paid for the same paragraph twice more.
 
                 put(
                     "storyCharacters",
                     saga.characters.joinToString { "${it.data.fullName()} - ${it.data.profile.occupation}" },
                 )
+
+                sceneSummary?.charactersPresent?.takeIf { it.isNotEmpty() }?.let {
+                    put("charactersPresent", it.normalizetoAIItems())
+                }
 
                 messageSender?.let {
                     put(
@@ -257,9 +234,6 @@ object ChatPrompts {
                             put(
                                 "relationshipsWithPresentCharacters",
                                 charactersInScene
-                                    // The sender is in charactersPresent too, and findRelationship
-                                    // matches either side of a pair — so asking for the sender and
-                                    // then for the other party returned the same relation twice.
                                     .filter { inScene -> inScene.data.id != it.data.id }
                                     .mapNotNull { inScene ->
                                         messageSender
@@ -280,8 +254,6 @@ object ChatPrompts {
         val argsMap =
             mutableMapOf(
                 "worldContext" to worldContext,
-                // Excluding the turn we're answering: it's sent whole as `latestMessage`, and
-                // conversationHistory used to end with a byte-identical copy of it.
                 "conversationHistory" to
                     conversationHistory(updateLimit, saga, excludingMessageId = message.id),
                 "latestMessage" to message.toAINormalize(messageExclusions),
@@ -325,48 +297,31 @@ object ChatPrompts {
      *
      * Deliberately narrower than [replyMessagePrompt] — no continuity layers, no distant canon, no
      * conversation history beyond the two messages being reacted to. What it does carry is per
-     * character stake (occupation, backstory, relationship to the people involved), because without
-     * that the reactions come back interchangeable, which is the failure REACTION_NOT_TRANSFERABLE
-     * exists to catch.
+     * character stake, sourced from the scene summary's [CharacterPresence.brief] rather than raw
+     * profile fields, because without that the reactions come back interchangeable, which is the
+     * failure REACTION_NOT_TRANSFERABLE exists to catch. [playerCompass] rides along too, thin as it
+     * is: this is the only live path that voices *other* characters' reactions to a turn, and without
+     * it a bystander's reaction has no way to know the player is mid-vulnerability rather than mid-plot.
      */
     suspend fun replyFalloutPrompt(
         promptService: PromptService,
-        saga: SagaContent,
         userMessage: Message,
         replyMessage: Message,
         sceneSummary: SceneSummary?,
+        playerCompass: String? = null,
     ): SplitPrompt {
-        val present =
-            sceneSummary
-                ?.charactersPresent
-                ?.mapNotNull { saga.findCharacter(it) }
-                .orEmpty()
-
         val speakerNames =
             listOfNotNull(userMessage.speakerName, replyMessage.speakerName)
                 .map { it.trim().lowercase() }
                 .toSet()
 
         // Whoever just spoke doesn't react to themselves, so they don't need a stake block either.
-        val reactingCast =
-            present.filterNot { it.data.fullName().trim().lowercase() in speakerNames }
-
         val castWithStake =
-            reactingCast.joinToString("\n") { character ->
-                buildString {
-                    append("${character.data.fullName()} — ${character.data.profile.occupation}")
-                    character.data.profile.personality
-                        .takeIf { it.isNotBlank() }
-                        ?.let { append("\n  personality: $it") }
-                    reactingCast
-                        .filterNot { other -> other.data.id == character.data.id }
-                        .mapNotNull { other ->
-                            character.findRelationship(other.data.id)?.summarizeRelation(1)
-                        }.distinct()
-                        .takeIf { it.isNotEmpty() }
-                        ?.let { append("\n  relations: ${it.joinToString("; ")}") }
-                }
-            }
+            sceneSummary
+                ?.charactersPresent
+                ?.filterNot { it.name.trim().lowercase() in speakerNames }
+                ?.joinToString("\n") { "${it.name} — ${it.brief}" }
+                .orEmpty()
 
         return promptService.buildSplitBlueprint(
             REPLY_FALLOUT_BLUEPRINT,
@@ -375,6 +330,7 @@ object ChatPrompts {
                 "reactingCast" to castWithStake,
                 "playerMessage" to userMessage.toAINormalize(messageExclusions),
                 "characterReply" to replyMessage.toAINormalize(messageExclusions),
+                "playerCompass" to playerCompass.orEmpty(),
             ),
         )
     }
@@ -384,35 +340,12 @@ object ChatPrompts {
         summary: SceneSummary,
         saga: SagaContent,
         messageToReact: Message,
-        conversationDirective: String,
         narrativeRules: NarrativeRules,
     ): SplitPrompt {
-        val mainCharacter = saga.mainCharacter!!
-        val characters = summary.charactersPresent.mapNotNull { saga.findCharacter(it)?.data }
-        val relationshipsBlock =
-            buildString {
-                characters.forEach {
-                    mainCharacter.findRelationship(it.id)?.let { relation ->
-                        appendLine(relation.summarizeRelation(1))
-                    }
-                }
-            }
-
-        val reactionArgs =
-            ReactionArgs(
-                sagaMainContext = SagaPrompts.mainContext(saga),
-                sceneSummary = summary.toAINormalize(),
-                charactersPresent = summary.charactersPresent.joinToString(),
-                messageToReact = messageToReact.text,
-                relationshipsBlock = relationshipsBlock,
-                conversationDirective = conversationDirective,
-                genreName = saga.data.genre.name,
-            )
-
         val messageSender = saga.findCharacter(messageToReact.speakerName)
         val charactersInScene =
             summary.charactersPresent.mapNotNull {
-                saga.findCharacter(it)
+                saga.findCharacter(it.name)
             }
 
         val narrativeContinuity = saga.buildChatContinuityContext(narrativeRules).toContextMap()

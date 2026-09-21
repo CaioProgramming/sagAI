@@ -15,4 +15,12 @@ data class AIReply(
     val sceneSummary: SceneSummary? = null,
     val newCharacter: NewCharacterDiscovery? = null,
     val userTone: EmotionalTone? = null,
+    /**
+     * Evolved read of how the player prefers to engage (e.g. combat vs. relationship/introspection
+     * depth), persisted onto [com.ilustris.sagai.features.home.data.model.Saga.playerCompass] —
+     * saga-wide and turn-by-turn, unlike [sceneSummary] which resets per scene. The model rewrites
+     * it from its current value every turn rather than restating the immediate objective, so a
+     * sustained pattern outweighs a single message.
+     */
+    val playerCompass: String? = null,
 )

@@ -64,6 +64,53 @@ class QuotaStatusService
                 context.byokDataStore.data.first()[DAILY_LIMITS_KEY],
             )
 
+        /**
+         * Whether [model] specifically is blocked for the rest of the Pacific day — the per-model
+         * check a tier with more than one candidate model needs, as opposed to [activeDailyBlock]'s
+         * single worst-case-across-all-models aggregate (built for a single-model-per-tier world,
+         * where "some model is out" and "the model I'm about to use is out" were the same question).
+         */
+        suspend fun isModelDailyExhausted(model: String): Boolean = dailyExhaustionFor(model) != null
+
+        /** The timestamp [model]'s daily block clears at, or null if it isn't currently blocked. */
+        suspend fun dailyExhaustionFor(model: String): Long? {
+            val normalized = model.replace("models/", "")
+            val until =
+                decodeLimits(context.byokDataStore.data.first()[DAILY_LIMITS_KEY])[normalized]
+                    ?: return null
+            return until.takeIf { it > System.currentTimeMillis() }
+        }
+
+        /**
+         * [status] scoped to just [models] — a tier's own configured candidates, in practice.
+         *
+         * Reports [QuotaStatus.DailyExhausted] only once every one of [models] is currently
+         * blocked, unlike [status]'s aggregate (the worst single entry across the whole key, a
+         * design from before a tier could name more than one model — back then "some model is
+         * out" and "the model this call needs is out" were the same question). A tier with several
+         * candidates rotates quietly past one going out; only when none of them are left has that
+         * tier actually run out, and that is the point a caller should treat this as a hard block.
+         * The reported [QuotaStatus.DailyExhausted.until] is the earliest of their resets, since
+         * that is the moment this tier has a usable candidate again.
+         *
+         * [QuotaStatus.CoolingDown] still passes through unfiltered, same as [status] — it isn't
+         * tagged per-model there either, so there is nothing here to scope it against.
+         */
+        fun statusForModels(models: List<String>): Flow<QuotaStatus> =
+            combine(
+                context.byokDataStore.data.map { it[DAILY_LIMITS_KEY] },
+                transient,
+            ) { storedJson, transientStatus ->
+                val now = System.currentTimeMillis()
+                val limits = decodeLimits(storedJson)
+                val untils = models.map { limits[it]?.takeIf { until -> until > now } }
+                if (models.isNotEmpty() && untils.all { it != null }) {
+                    QuotaStatus.DailyExhausted(untils.filterNotNull().min(), models.first())
+                } else {
+                    transientStatus
+                }
+            }
+
         /** Per-minute or per-token throttle: publish the window, keep the request alive. */
         fun reportCoolingDown(
             model: String,

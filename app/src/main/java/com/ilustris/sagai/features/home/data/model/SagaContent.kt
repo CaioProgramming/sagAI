@@ -19,6 +19,7 @@ import com.ilustris.sagai.features.characters.data.model.findByDisplayName
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
+import com.ilustris.sagai.features.narrative.data.model.LocationCheckpoint
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -75,6 +76,8 @@ data class SagaContent(
     fun eventsSize() = acts.sumOf { it.chapters.sumOf { it.events.size } }
 
     fun messagesSize() = acts.sumOf { it.chapters.sumOf { it.events.sumOf { it.messages.size } } }
+
+    fun flatBookChapters() = acts.flatMap { it.volumeChapters() }
 
     fun completedChapters(narrativeRules: NarrativeRules) = flatChapters().count { it.isComplete(narrativeRules) }
 
@@ -207,6 +210,19 @@ fun SagaContent.inheritSceneSummaryForChapter(chapter: ChapterContent): SceneSum
             ?.let { return it }
     }
     return null
+}
+
+/**
+ * Where/when a new chapter should start: the previous chapter's closing checkpoint, or — for the
+ * first chapter of an act — the act's own opening checkpoint. Deterministic, no AI call.
+ */
+fun SagaContent.resolveOpeningCheckpointForChapter(chapter: ChapterContent): LocationCheckpoint? {
+    val chapters = flatChapters()
+    val chapterIndex = chapters.indexOfFirst { it.data.id == chapter.data.id }
+    if (chapterIndex > 0) {
+        chapters[chapterIndex - 1].data.closingCheckpoint?.let { return it }
+    }
+    return findChapterAct(chapter.data)?.data?.openingCheckpoint
 }
 
 fun SagaContent.getCurrentTimeLine() = currentActInfo?.currentChapterInfo?.currentEventInfo

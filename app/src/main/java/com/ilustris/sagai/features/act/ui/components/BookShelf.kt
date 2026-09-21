@@ -17,12 +17,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,7 +37,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -54,7 +64,10 @@ fun BookShelf(
     generatingActTitle: String? = null,
     visualConfig: GenreVisualConfig? = null,
     sharedTransitionScope: SharedTransitionScope,
+    /** Narrated milliseconds per book id; a volume listed here can be listened to. */
+    narrations: Map<Long, Long> = emptyMap(),
     onBookSelected: (ActContent) -> Unit,
+    onListenBook: (ActContent) -> Unit = {},
 ) {
     val generatingAct =
         generatingActTitle?.let { title -> acts.find { it.data.title == title } }
@@ -87,7 +100,9 @@ fun BookShelf(
                 visualConfig = config,
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = this@AnimatedContent,
+                narrations = narrations,
                 onBookSelected = onBookSelected,
+                onListenBook = onListenBook,
             )
         }
     }
@@ -158,6 +173,8 @@ private fun BookShelfPager(
     saga: SagaContent,
     acts: List<ActContent>,
     selectedBook: ActContent?,
+    narrations: Map<Long, Long> = emptyMap(),
+    onListenBook: (ActContent) -> Unit = {},
     visualConfig: GenreVisualConfig,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -225,13 +242,43 @@ private fun BookShelfPager(
                             .sharedBounds(
                                 rememberSharedContentState(key = "book-${act.data.id}"),
                                 animatedVisibilityScope,
-                            ).saturation(if (act.book == null) 0f else 1f)
+                            ).saturation(if (act.hasReadableBook()) 1f else 0f)
                             .width(280.dp)
                             .fillMaxHeight(.75f)
                             .padding(vertical = 16.dp)
                             .levitate(isSelected),
                     titleModifier = Modifier,
                 )
+
+                // The audiobook had no presence outside the reader's overflow menu; a volume that
+                // already has narration says so here, where the reader picks what to open.
+                val narratedMs = act.book?.id?.let { narrations[it] } ?: 0L
+                if (isSelected && narratedMs > 0) {
+                    Surface(
+                        onClick = { onListenBook(act) },
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        shadowElevation = 8.dp,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_headset),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Text(
+                                text = stringResource(R.string.audiobook_shelf_badge, narratedMs / 60_000),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
+                    }
+                }
             }
         }
     }

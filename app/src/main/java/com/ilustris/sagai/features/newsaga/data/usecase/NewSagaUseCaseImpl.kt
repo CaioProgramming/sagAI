@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.LibraryPitchesResponse
@@ -25,6 +26,7 @@ class NewSagaUseCaseImpl
         private val characterUseCase: CharacterUseCase,
         private val sagaIdeationService: SagaIdeationService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
+        private val worldLocationUseCase: WorldLocationUseCase,
     ) : NewSagaUseCase {
         override fun executePrompt(
             prompt: String,
@@ -70,6 +72,17 @@ class NewSagaUseCaseImpl
                                     val savedSaga =
                                         savedSagaResult.getSuccess()
                                             ?: throw Exception("Failed to save saga")
+
+                                    contract.openingLocation
+                                        ?.takeIf { it.name.isNotBlank() }
+                                        ?.let { seed ->
+                                            worldLocationUseCase.findOrCreate(
+                                                sagaId = savedSaga.id,
+                                                name = seed.name,
+                                                history = seed.history,
+                                                emojiTag = seed.emojiTag,
+                                            )
+                                        }
 
                                     val characterToSave =
                                         contract.character.copy(

@@ -50,10 +50,12 @@ fun ChronicleView(
     titleModifier: Modifier = Modifier,
     onClose: () -> Unit,
     onOpenBook: (BookReaderKey) -> Unit,
+    onListenBook: (actId: Int) -> Unit = {},
 ) {
     val viewModel: ChronicleViewModel = hiltViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val visualConfig by viewModel.visualConfig.collectAsStateWithLifecycle()
+    val narrations by viewModel.narrations.collectAsStateWithLifecycle()
     saga.data.genre
 
     LaunchedEffect(initialActId) {
@@ -128,7 +130,9 @@ fun ChronicleView(
                         acts = acts,
                         selectedBook = null,
                         sharedTransitionScope = this@SharedTransitionLayout,
+                        narrations = narrations,
                         onBookSelected = viewModel::selectBook,
+                        onListenBook = { onListenBook(it.data.id) },
                         isLoading = generating != null,
                         reasoning = generating?.message,
                         generatingActTitle = generating?.actTitle,

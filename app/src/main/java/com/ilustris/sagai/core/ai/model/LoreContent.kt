@@ -4,6 +4,7 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.timeline.data.model.NotableExchange
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 data class LoreContent(
@@ -24,6 +25,7 @@ data class GeneratedTimeline(
     val emotionalTone: EmotionalTone? = null,
     val sceneSummary: SceneSummary? = null,
     val currentObjective: String? = null,
+    val notableExchanges: List<NotableExchange> = emptyList(),
 ) {
     fun toLoreContent(): LoreContent =
         LoreContent(
@@ -43,6 +45,7 @@ data class GeneratedTimeline(
             emotionalTone = emotionalTone ?: existing.emotionalTone,
             sceneSummary = sceneSummary ?: existing.sceneSummary,
             currentObjective = currentObjective ?: existing.currentObjective,
+            notableExchanges = notableExchanges.takeIf { it.isNotEmpty() } ?: existing.notableExchanges,
         )
 }
 

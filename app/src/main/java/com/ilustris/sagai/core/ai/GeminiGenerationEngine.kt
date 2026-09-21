@@ -107,7 +107,11 @@ internal inline fun <reified T> parseGenerationJson(
 
 @PublishedApi
 internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWithRetry(params: GeminiSyncGenerationParams): T? {
-    val maxAttempts = GeminiGenerationPolicy.maxAttempts(params.requirement)
+    // A tier's own floor, raised to its candidate count so a rotation-worthy outage (several
+    // configured models 503ing in a row) gets to walk the whole array instead of running out of
+    // attempts partway through it. A tier still on a single `model` field keeps its old floor
+    // exactly, since candidateModelCount then returns 1.
+    val maxAttempts = maxOf(GeminiGenerationPolicy.maxAttempts(params.requirement), candidateModelCount(params.requirement))
     // Shadows the parameter on purpose: a 503 fallback swaps the model (and its thinking level)
     // between attempts, and every reference below reads this one rather than the original.
     var params = params
@@ -128,7 +132,7 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
 
                 ensurePromptWithinTokenLimit(
                     model = formattedModel,
-                    apiKey = apiConfig(),
+                    apiKey = apiConfig(formattedModel),
                     request = geminiRequest,
                     parts = lastRequestParts,
                     fullPromptText = fullPromptText,
@@ -148,7 +152,7 @@ internal suspend inline fun <reified T> GeminiAIClient.executeSyncGenerationWith
                 val response =
                     callGenerateContent(
                         formattedModel,
-                        apiConfig(),
+                        apiConfig(formattedModel),
                         geminiRequest,
                     )
                 inferenceMs = System.currentTimeMillis() - inferenceStart
@@ -283,7 +287,9 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
     val lastRequestParts = mutableListOf<GeminiPart>()
     val lastFullPromptText = StringBuilder()
     return flow {
-        val maxAttempts = GeminiGenerationPolicy.maxAttempts(params.requirement)
+        // See executeSyncGenerationWithRetry's identical line: raised to the tier's candidate
+        // count so a same-tier rotation gets to walk the whole configured array on a bad outage.
+        val maxAttempts = maxOf(GeminiGenerationPolicy.maxAttempts(params.requirement), candidateModelCount(params.requirement))
         val startTime = System.currentTimeMillis()
         // Shadows the parameter: a 503 fallback swaps the model (and its thinking level) between
         // attempts, and every reference from here on reads this one rather than the original.
@@ -317,7 +323,7 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
 
                     ensurePromptWithinTokenLimit(
                         model = formattedModel,
-                        apiKey = apiConfig(),
+                        apiKey = apiConfig(formattedModel),
                         request = geminiRequest,
                         parts = lastRequestParts,
                         fullPromptText = fullPromptText,
@@ -336,7 +342,7 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
                     val responseBody =
                         callStreamGenerateContent(
                             formattedModel,
-                            apiConfig(),
+                            apiConfig(formattedModel),
                             geminiRequest,
                         )
 
@@ -766,17 +772,42 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
     // immediately) keeps the two nearest cases in this function consistent with each other.
     if (throwable is GeminiHttpException && throwable.code == 503 && currentAttempt < maxAttempts) {
         val normalizedModel = model.replace("models/", "")
-        val fallback = fallbackModelName(requirement)?.takeIf { it != normalizedModel }
+        // A same-tier sibling (another entry in this tier's own `availableModels`) is tried before
+        // conceding to LOW's tier: same capability class, just a different model that happens to
+        // not be the one Google is currently throttling — a strictly smaller downgrade than
+        // dropping a whole tier for what is often a transient, model-specific outage.
+        val fallback =
+            siblingModelName(requirement, normalizedModel)
+                ?: fallbackModelName(requirement)?.takeIf { it != normalizedModel }
         if (fallback != null) {
-            if (logEnabled) {
-                Timber
-                    .tag(javaClass.simpleName)
-                    .w("$normalizedModel is overloaded (503) — falling over to $fallback.")
+            // A prompt sized for this tier's own (often much larger) context window can outright
+            // exceed what the fallback model actually fits — Gemma's free-tier ceiling is a
+            // fraction of Gemini's. Falling over to it anyway would just trade one guaranteed
+            // failure (503) for another (a token-limit rejection) on the very next attempt, wasting
+            // the fallback instead of giving it a real chance.
+            val fallbackLimit = modelCatalog.effectiveInputLimit(fallback, apiConfig(fallback))
+            if (lastPromptTokenCount > fallbackLimit) {
+                if (logEnabled) {
+                    Timber
+                        .tag(javaClass.simpleName)
+                        .w(
+                            "$normalizedModel is overloaded (503), but the prompt " +
+                                "($lastPromptTokenCount tokens) would not fit $fallback's own " +
+                                "limit ($fallbackLimit) either — skipping the fallback and " +
+                                "falling through to a normal retry instead.",
+                        )
+                }
+            } else {
+                if (logEnabled) {
+                    Timber
+                        .tag(javaClass.simpleName)
+                        .w("$normalizedModel is overloaded (503) — falling over to $fallback.")
+                }
+                // One-shot, not persisted: this is "something unusual just happened," not a state
+                // for the UI to keep reflecting once the fallback attempt is done one way or another.
+                modelFallbackNotifier.signalFallback()
+                return RetryOutcome.RetryWithModel(fallback, thinkingLevel(requirement, fallback))
             }
-            // One-shot, not persisted: this is "something unusual just happened," not a state
-            // for the UI to keep reflecting once the fallback attempt is done one way or another.
-            modelFallbackNotifier.signalFallback()
-            return RetryOutcome.RetryWithModel(fallback, thinkingLevel(requirement, fallback))
         }
     }
 
@@ -796,6 +827,28 @@ internal suspend fun GeminiAIClient.handleGenerationRetry(
 
         ApiKeyDiagnosis.QuotaDaily -> {
             if (reportsQuota) quotaStatusService.reportDailyExhausted(model)
+            // The exhausted model is spent for the rest of the Pacific day, not overloaded for a
+            // moment — but a same-tier sibling has its own, separate daily bucket, so this is
+            // exactly the case the tier's `availableModels` array exists for. Tried only when this
+            // call itself tracks quota: a decorative, non-essential generation (reportsQuota =
+            // false) marking a model exhausted but then still spending a sibling's budget on itself
+            // would undercut the same distinction reportsQuota exists to draw everywhere else.
+            val normalizedModel = model.replace("models/", "")
+            val sibling =
+                siblingModelName(requirement, normalizedModel)
+                    ?.takeIf { currentAttempt < maxAttempts && reportsQuota }
+            if (sibling != null) {
+                val siblingLimit = modelCatalog.effectiveInputLimit(sibling, apiConfig(sibling))
+                if (lastPromptTokenCount <= siblingLimit) {
+                    if (logEnabled) {
+                        Timber
+                            .tag(javaClass.simpleName)
+                            .w("$normalizedModel hit its daily quota — rotating to $sibling.")
+                    }
+                    modelFallbackNotifier.signalFallback()
+                    return RetryOutcome.RetryWithModel(sibling, thinkingLevel(requirement, sibling))
+                }
+            }
             return RetryOutcome.Stop
         }
 

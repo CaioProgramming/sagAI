@@ -477,6 +477,13 @@
     <string name="faq_ai_reply_button">Entendido!</string>
     <string name="faq_title">FAQ</string>
     <string name="faq_search_placeholder">Pesquisar dúvidas...</string>
+    <string name="chat_search_placeholder">Buscar nesta saga…</string>
+    <string name="chat_search_counter">%1$d/%2$d</string>
+    <string name="chat_search_no_results">Sem resultados</string>
+    <string name="chat_search_close">Fechar busca</string>
+    <string name="chat_search_older">Resultado anterior</string>
+    <string name="chat_search_newer">Resultado seguinte</string>
+    <string name="chat_search_open">Buscar mensagens</string>
     <string name="faq_empty_state_title">Não encontramos o que você procura...</string>
     <string name="faq_ask_ai_button">Perguntar ao Mestre da Saga</string>
     <string name="faq_ask_ai_footer">Ainda em dúvida? Pergunte ao Mestre da Saga</string>
@@ -737,6 +744,12 @@
     <string name="share_book_pdf_subject">Compartilhando %1$s do Sagas</string>
     <string name="regenerate_book_cd">Regenerar livro</string>
     <string name="share_pdf_cd">Compartilhar PDF</string>
+    <string name="book_writing_prologue">Escrevendo o prólogo…</string>
+    <string name="book_writing_chapter">Escrevendo capítulo %1$d de %2$d: %3$s…</string>
+    <string name="book_writing_closure">Escrevendo a nota do autor…</string>
+    <string name="book_volume_not_finished">Este volume fica completo quando o ato terminar.</string>
+    <string name="book_prologue_title">Prólogo</string>
+    <string name="book_epilogue_title">Epílogo</string>
     <string name="book_share_preparing">Preparando sua crônica para compartilhar…</string>
     <string name="book_share_error_uri">Falha ao obter URI do arquivo</string>
     <string name="book_share_error_pdf">Falha ao gerar PDF</string>
@@ -963,6 +976,11 @@
     <string name="api_key_setup_error_rejected">O Google recusou esta chave. Confira se você copiou ela inteira.</string>
     <string name="api_key_setup_error_network">Não deu para falar com o Google para conferir a chave. Verifique sua conexão e tente de novo.</string>
 
+    <!-- BYOK: a tela ficou sem chave configurada (sheet fechada, ou um erro em segundo plano a fechou) -->
+    <string name="api_key_required_title">Você precisa de uma chave de API para continuar</string>
+    <string name="api_key_required_message">O Sagas não consegue gerar nada sem a sua chave da API Gemini configurada.</string>
+    <string name="api_key_required_action">Configurar sua chave</string>
+
     <!-- BYOK: migração de instalações existentes -->
 
     <!-- BYOK: ajustes -->
@@ -1046,6 +1064,42 @@
     <string name="plan_term_lifetime">Pra sempre</string>
     <string name="billing_result_pending_title">Pagamento a caminho</string>
     <string name="billing_result_pending_message">Sua forma de pagamento demora um pouco mais para compensar. Os anúncios saem assim que ela for confirmada, e você não precisa fazer mais nada.</string>
+    <string name="audiobook_listen">Ouvir</string>
+    <string name="audiobook_narrate">Narrar este capítulo</string>
+    <string name="audiobook_continue_narration">Continuar narração (%1$d/%2$d)</string>
+    <string name="audiobook_preparing">Preparando a narração…</string>
+    <string name="audiobook_narrating">Narrando trecho %1$d de %2$d…</string>
+    <string name="audiobook_syncing">Sincronizando texto %1$d de %2$d…</string>
+    <string name="audiobook_failed">A narração parou: %1$s</string>
+    <string name="audiobook_retry">Tentar de novo</string>
+    <string name="audiobook_play_cd">Tocar narração</string>
+    <string name="audiobook_pause_cd">Pausar narração</string>
+    <string name="audiobook_stop_cd">Parar narração</string>
+    <string name="audiobook_export_video_cd">Exportar narração em vídeo</string>
+    <string name="audiobook_exporting">Preparando o vídeo…</string>
+    <string name="audiobook_exporting_percent">Renderizando vídeo %1$d%%</string>
+    <string name="audiobook_export_failed">Não deu pra exportar o vídeo: %1$s</string>
+    <string name="audiobook_share_video_chooser">Compartilhar vídeo da narração</string>
+    <string name="audiobook_open_player_cd">Abrir player do audiolivro</string>
+    <string name="audiobook_recenter_cd">Voltar para o trecho atual</string>
+    <string name="audiobook_queue_cd">Ver fila de capítulos</string>
+    <string name="audiobook_queue_title">Capítulos</string>
+    <string name="audiobook_generating_cd">Narrando…</string>
+    <string name="audiobook_progress_narrating">Gerando áudio</string>
+    <string name="audiobook_progress_transcribing">Transcrevendo</string>
+    <string name="audiobook_progress_format">%1$s (%2$d/%3$d)</string>
+    <string name="audiobook_generation_failed_cd">Narração falhou</string>
+    <string name="audiobook_generation_failed_message">Não foi possível narrar esse trecho.</string>
+    <string name="audiobook_dismiss_error_cd">Descartar erro</string>
+    <string name="audiobook_listen_next_chapter_cd">Ouvir próximo capítulo</string>
+    <string name="audiobook_previous_chapter_cd">Capítulo anterior</string>
+    <string name="audiobook_next_chapter_cd">Próximo capítulo</string>
+    <string name="book_options_cd">Mais opções</string>
+    <string name="audiobook_delete_narration">Apagar narração</string>
+    <string name="audiobook_delete_narration_title">Apagar esta narração?</string>
+    <string name="audiobook_delete_narration_message">Os áudios de \u0022%1$s\u0022 serão removidos. Narrar de novo gasta sua cota diária de voz.</string>
+    <string name="audiobook_open_player">Reproduzir livro</string>
+    <string name="audiobook_shelf_badge">Ouvir · %1$d min</string>
 </resources>
 
 

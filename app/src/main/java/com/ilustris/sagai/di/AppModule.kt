@@ -146,6 +146,10 @@ import com.ilustris.sagai.features.timeline.domain.TimelineMapper
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCaseImpl
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
+import com.ilustris.sagai.features.geography.data.repository.WorldLocationRepository
+import com.ilustris.sagai.features.geography.data.repository.WorldLocationRepositoryImpl
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCaseImpl
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepositoryImpl
 import com.ilustris.sagai.features.wiki.data.source.WikiDao
@@ -249,6 +253,11 @@ object AppModule {
     @Provides
     @Singleton
     fun provideBookDao(database: SagaDatabase): com.ilustris.sagai.features.act.data.source.BookDao = database.bookDao()
+
+    @Provides
+    @Singleton
+    fun provideBookAudioDao(database: SagaDatabase): com.ilustris.sagai.features.audiobook.data.source.BookAudioDao =
+        database.bookAudioDao()
 
     @Provides
     @Singleton
@@ -375,7 +384,10 @@ object AppModule {
         )
 
     @Provides
-    fun providesBookPageMapper(fileHelper: FileHelper) = BookPageMapper(fileHelper)
+    fun providesBookPageMapper(
+        fileHelper: FileHelper,
+        stringResourceHelper: StringResourceHelper,
+    ) = BookPageMapper(fileHelper, stringResourceHelper)
 
     @Provides
     fun providesTimelineMapper(
@@ -450,20 +462,20 @@ object AppModule {
     @Provides
     @Singleton
     fun provideImageGenerator(
-        remoteConfigService: RemoteConfigService,
         debugImageFallbackService: DebugImageFallbackService,
         geminiApiClient: GeminiApiClient,
         userApiKeyStore: UserApiKeyStore,
-        quotaStatusService: QuotaStatusService,
         sideEffectService: SideEffectService,
+        mediaModelResolver: com.ilustris.sagai.core.ai.MediaModelResolver,
+        apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
     ): ImageGenerator =
         ImageGeneratorImpl(
-            remoteConfigService,
             debugImageFallbackService,
             geminiApiClient,
             userApiKeyStore,
-            quotaStatusService,
             sideEffectService,
+            mediaModelResolver,
+            apiUsageTracker,
         )
 
     @Provides
@@ -494,18 +506,16 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAudioGenClient(
-        billingService: BillingService,
-        remoteConfigService: RemoteConfigService,
         geminiApiClient: GeminiApiClient,
         userApiKeyStore: UserApiKeyStore,
-        quotaStatusService: QuotaStatusService,
+        mediaModelResolver: com.ilustris.sagai.core.ai.MediaModelResolver,
+        apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
     ): AudioGenClient =
         AudioGenClientImpl(
-            billingService,
-            remoteConfigService,
             geminiApiClient,
             userApiKeyStore,
-            quotaStatusService,
+            mediaModelResolver,
+            apiUsageTracker,
         )
 
     @Provides
@@ -525,9 +535,7 @@ object AppModule {
     fun provideBillingService(
         @ApplicationContext context: Context,
         remoteConfigService: RemoteConfigService,
-        firebaseInstallationService: FirebaseInstallationService,
-        sideEffectService: SideEffectService,
-    ): BillingService = BillingService(context, remoteConfigService, firebaseInstallationService, sideEffectService)
+    ): BillingService = BillingService(context, remoteConfigService)
 
     @Provides
     @Singleton
@@ -634,6 +642,9 @@ abstract class UseCaseModule {
     abstract fun providesWikiUseCase(wikiUseCaseImpl: WikiUseCaseImpl): WikiUseCase
 
     @Binds
+    abstract fun providesWorldLocationUseCase(worldLocationUseCaseImpl: WorldLocationUseCaseImpl): WorldLocationUseCase
+
+    @Binds
     @Singleton
     abstract fun providesSagaContentManager(sagaContentManagerImpl: SagaContentManagerImpl): SagaContentManager
 
@@ -648,6 +659,11 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesBookUseCase(bookUseCaseImpl: BookUseCaseImpl): BookUseCase
+
+    @Binds
+    abstract fun providesBookAudioUseCase(
+        bookAudioUseCaseImpl: com.ilustris.sagai.features.audiobook.data.usecase.BookAudioUseCaseImpl,
+    ): com.ilustris.sagai.features.audiobook.data.usecase.BookAudioUseCase
 
     @Binds
     abstract fun providesGetInputSuggestionsUseCase(
@@ -709,6 +725,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsWikiRepository(wikiRepositoryImpl: WikiRepositoryImpl): WikiRepository
+
+    @Binds
+    abstract fun bindsWorldLocationRepository(worldLocationRepositoryImpl: WorldLocationRepositoryImpl): WorldLocationRepository
 
     @Binds
     abstract fun bindsTimelineRepository(timelineRepositoryImpl: TimelineRepositoryImpl): TimelineRepository

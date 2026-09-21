@@ -352,6 +352,135 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_33_34 =
+        object : Migration(33, 34) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Audiobook: each volume section is narrated in segments with word timings for the
+                // synced reader, and the narrator voice is fixed per volume.
+                db.execSQL("ALTER TABLE books ADD COLUMN `narrationVoice` TEXT")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `book_audio_segments` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`bookId` INTEGER NOT NULL, " +
+                        "`sectionKey` TEXT NOT NULL, " +
+                        "`segmentIndex` INTEGER NOT NULL, " +
+                        "`startPageIndex` INTEGER NOT NULL, " +
+                        "`startChar` INTEGER NOT NULL, " +
+                        "`endPageIndex` INTEGER NOT NULL, " +
+                        "`endChar` INTEGER NOT NULL, " +
+                        "`textHash` INTEGER NOT NULL, " +
+                        "`audioPath` TEXT NOT NULL, " +
+                        "`durationMs` INTEGER NOT NULL, " +
+                        "`voice` TEXT NOT NULL, " +
+                        "`alignmentStatus` TEXT NOT NULL, " +
+                        "`alignmentScore` REAL, " +
+                        "`timings` TEXT NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`bookId`) REFERENCES `books`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_book_audio_segments_bookId_sectionKey_segmentIndex` " +
+                        "ON `book_audio_segments` (`bookId`, `sectionKey`, `segmentIndex`)",
+                )
+            }
+        }
+
+    val MIGRATION_34_35 =
+        object : Migration(34, 35) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Verbatim dialogue pairs captured at event-synthesis time, when the raw chat is
+                // still on hand — see Timeline.notableExchanges.
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `notableExchanges` TEXT")
+            }
+        }
+
+    val MIGRATION_32_33 =
+        object : Migration(32, 33) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Books are now written incrementally: a volume header (prologue/epilogue) plus
+                // one pages row per chapter, written in the background as the saga is played.
+                db.execSQL("ALTER TABLE books ADD COLUMN `prologue` TEXT")
+                db.execSQL("ALTER TABLE books ADD COLUMN `prologueNotes` TEXT")
+                db.execSQL("ALTER TABLE books ADD COLUMN `epilogue` TEXT")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `book_chapter_pages` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`chapterId` INTEGER NOT NULL, " +
+                        "`pages` TEXT NOT NULL, " +
+                        "`writerNotes` TEXT NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`chapterId`) REFERENCES `Chapter`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_book_chapter_pages_chapterId` ON `book_chapter_pages` (`chapterId`)",
+                )
+            }
+        }
+
+    val MIGRATION_31_32 =
+        object : Migration(31, 32) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Persistent, saga-wide signal of how the player prefers to engage (combat vs.
+                // relationship/introspection depth), rewritten every turn — see Saga.playerCompass.
+                db.execSQL("ALTER TABLE sagas ADD COLUMN `playerCompass` TEXT DEFAULT ''")
+
+                // World-building: WorldLocation replaces WikiType.LOCATION as the geography
+                // source of truth (hierarchical, with a visit log) — see LocationCheckpoint.kt.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `world_locations` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`sagaId` INTEGER NOT NULL, " +
+                        "`name` TEXT NOT NULL, " +
+                        "`history` TEXT NOT NULL, " +
+                        "`parentLocationId` INTEGER, " +
+                        "`emojiTag` TEXT, " +
+                        "`createdAt` INTEGER NOT NULL, " +
+                        "`originChapterId` INTEGER, " +
+                        "FOREIGN KEY(`sagaId`) REFERENCES `sagas`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , " +
+                        "FOREIGN KEY(`parentLocationId`) REFERENCES `world_locations`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED)",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_world_locations_sagaId` ON `world_locations` (`sagaId`)")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_world_locations_parentLocationId` ON `world_locations` (`parentLocationId`)",
+                )
+
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `world_location_visits` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`locationId` INTEGER NOT NULL, " +
+                        "`chapterId` INTEGER, " +
+                        "`timelineId` INTEGER, " +
+                        "`visitedAt` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`locationId`) REFERENCES `world_locations`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , " +
+                        "FOREIGN KEY(`chapterId`) REFERENCES `Chapter`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED, " +
+                        "FOREIGN KEY(`timelineId`) REFERENCES `timelines`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED)",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_world_location_visits_locationId` ON `world_location_visits` (`locationId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_world_location_visits_chapterId` ON `world_location_visits` (`chapterId`)")
+
+                listOf("opening", "closing").forEach { prefix ->
+                    db.execSQL("ALTER TABLE Chapter ADD COLUMN `${prefix}_locationId` INTEGER")
+                    db.execSQL("ALTER TABLE Chapter ADD COLUMN `${prefix}_locationName` TEXT")
+                    db.execSQL("ALTER TABLE Chapter ADD COLUMN `${prefix}_timeOfDay` TEXT")
+                    db.execSQL("ALTER TABLE Chapter ADD COLUMN `${prefix}_elapsedNote` TEXT")
+                    db.execSQL("ALTER TABLE Chapter ADD COLUMN `${prefix}_timeGap` TEXT")
+                    db.execSQL("ALTER TABLE acts ADD COLUMN `${prefix}_locationId` INTEGER")
+                    db.execSQL("ALTER TABLE acts ADD COLUMN `${prefix}_locationName` TEXT")
+                    db.execSQL("ALTER TABLE acts ADD COLUMN `${prefix}_timeOfDay` TEXT")
+                    db.execSQL("ALTER TABLE acts ADD COLUMN `${prefix}_elapsedNote` TEXT")
+                    db.execSQL("ALTER TABLE acts ADD COLUMN `${prefix}_timeGap` TEXT")
+                }
+
+                // Carry over existing Wiki(LOCATION) entries as-is (title/content -> name/history);
+                // WikiType.LOCATION itself stays defined (see EnumConverters) but is no longer generated.
+                db.execSQL(
+                    "INSERT INTO world_locations (sagaId, name, history, emojiTag, originChapterId, createdAt) " +
+                        "SELECT sagaId, title, content, emojiTag, chapterId, createdAt FROM wikis WHERE type = 'LOCATION'",
+                )
+                db.execSQL("DELETE FROM wikis WHERE type = 'LOCATION'")
+            }
+        }
+
     val MIGRATION_30_31 =
         object : Migration(30, 31) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -490,5 +619,9 @@ object DatabaseMigrations {
             MIGRATION_28_29,
             MIGRATION_29_30,
             MIGRATION_30_31,
+            MIGRATION_31_32,
+            MIGRATION_32_33,
+            MIGRATION_33_34,
+            MIGRATION_34_35,
         )
 }

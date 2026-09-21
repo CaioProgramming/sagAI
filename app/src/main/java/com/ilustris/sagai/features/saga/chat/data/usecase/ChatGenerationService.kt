@@ -57,9 +57,16 @@ class ChatGenerationService
             sceneSummary: SceneSummary?,
         ) {
             val sagaId = saga.data.id
-            if (jobs[sagaId]?.isActive == true) return
+            // compute() runs its whole remapping atomically per key (ConcurrentHashMap's own
+            // per-bucket lock) — checking whether a job is active and, if not, launching and
+            // storing the replacement all happen as one step. A plain "check isActive, then
+            // scope.launch{}, then jobs[sagaId] = job" (the previous shape) left a real gap
+            // between the check and the store: two calls for the same saga landing in that gap —
+            // a double-tap, or two screens both mirroring this saga — would both read no active
+            // job and each launch its own generation, producing a duplicate reply.
+            jobs.compute(sagaId) { _, existing ->
+                if (existing?.isActive == true) return@compute existing
 
-            val job =
                 scope.launch {
                     _activeGenerations.update {
                         it +
@@ -135,7 +142,7 @@ class ChatGenerationService
                         }
                     }
                 }
-            jobs[sagaId] = job
+            }
         }
 
         fun cancel(sagaId: Int) {

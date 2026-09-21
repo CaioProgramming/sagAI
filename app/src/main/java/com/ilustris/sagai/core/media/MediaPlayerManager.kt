@@ -56,4 +56,7 @@ interface MediaPlayerManager {
     fun release()
 
     fun resume()
+
+    /** Sets both channels to the same [volume] (0f–1f). Safe to call before a source is prepared. */
+    fun setVolume(volume: Float)
 }

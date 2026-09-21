@@ -7,19 +7,26 @@ import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
+import com.ilustris.sagai.features.act.data.usecase.BookUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaEnding
 import com.ilustris.sagai.features.home.data.model.inheritSceneSummaryForChapter
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.narrative.data.model.LocationCheckpoint
 import com.ilustris.sagai.features.player.domain.PlayerProfileUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
+import com.ilustris.sagai.features.saga.chat.domain.manager.ACT_ALREADY_SET_MESSAGE
+import com.ilustris.sagai.features.saga.chat.domain.manager.CHAPTER_ALREADY_SET_MESSAGE
 import com.ilustris.sagai.features.saga.chat.domain.manager.TIMELINE_ALREADY_ACTIVE_MESSAGE
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationCoordinator
@@ -44,6 +51,9 @@ class NarrativeActionExecutorImpl
         private val messageDao: MessageDao,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val playerProfileUseCase: PlayerProfileUseCase,
+        private val worldLocationUseCase: WorldLocationUseCase,
+        private val bookUseCase: BookUseCase,
+        private val bookGenerationService: BookGenerationService,
     ) : NarrativeActionExecutor {
         override suspend fun execute(
             action: NarrativeAction,
@@ -97,7 +107,39 @@ class NarrativeActionExecutorImpl
                         )
                     }
                 }
+            if (result is RequestResult.Success) {
+                onBookMaterialProduced(action, environment)
+            }
             return result.toNarrativeExecutionResult()
+        }
+
+        /**
+         * The book is written silently behind the narrative: every step that produces book material
+         * (act intro → prologue, chapter synthesis → chapter pages, act synthesis → volume closure)
+         * nudges the background writer, which fills whatever is missing in reading order.
+         */
+        private suspend fun onBookMaterialProduced(
+            action: NarrativeAction,
+            environment: NarrativeExecutionEnvironment,
+        ) {
+            if (environment.isDebugMode()) return
+            val producesBookMaterial =
+                when (action) {
+                    NarrativeAction.CreateAct,
+                    is NarrativeAction.GenerateActIntro,
+                    is NarrativeAction.GenerateAct,
+                    -> true
+
+                    is NarrativeAction.GenerateChapter -> {
+                        // A re-synthesized chapter no longer matches its old pages.
+                        if (action.chapter.bookPages != null) bookUseCase.invalidateChapter(action.chapter.data.id)
+                        true
+                    }
+
+                    else -> false
+                }
+            if (!producesBookMaterial) return
+            environment.getSagaMetadata()?.data?.id?.let(bookGenerationService::writeInBackground)
         }
 
         private fun RequestResult<Any>.toNarrativeExecutionResult(): NarrativeExecutionResult =
@@ -128,12 +170,19 @@ class NarrativeActionExecutorImpl
                     sagaHistoryUseCase.updateSaga(
                         saga.data.copy(currentActId = lastAct.data.id),
                     )
-                    error("Act is already set at this saga")
+                    // The act itself exists but never got its own introduction — most likely an
+                    // earlier attempt at this same act was interrupted before that call finished.
+                    // Resume it instead of reporting a failure for an act that is otherwise fine.
+                    if (lastAct.data.introduction.isBlank()) {
+                        return@executeRequest generateActIntroductionContent(lastAct, environment)
+                    }
+                    throw IllegalArgumentException(ACT_ALREADY_SET_MESSAGE)
                 }
                 val newAct =
                     actUseCase.saveAct(
                         Act(
                             sagaId = saga.data.id,
+                            openingCheckpoint = resolveActOpeningCheckpoint(saga.data.id, fullSaga),
                         ),
                     )
                 sagaHistoryUseCase.updateSaga(
@@ -144,6 +193,17 @@ class NarrativeActionExecutorImpl
                     environment,
                 )
             }
+
+        /** Deterministic, no AI call: previous act's closing checkpoint, or the saga's anchor location for Act 1. */
+        private suspend fun resolveActOpeningCheckpoint(
+            sagaId: Int,
+            fullSaga: SagaContent,
+        ): LocationCheckpoint? {
+            fullSaga.acts.lastOrNull()?.data?.closingCheckpoint?.let { return it }
+            return worldLocationUseCase.getRootForSaga(sagaId)?.let {
+                LocationCheckpoint(locationId = it.id, locationName = it.name)
+            }
+        }
 
         private suspend fun generateActIntroduction(
             currentAct: ActContent,
@@ -197,9 +257,22 @@ class NarrativeActionExecutorImpl
             val lastChapter = latestAct.chapters.lastOrNull()
             if (lastChapter?.isComplete(rules)?.not() == true) {
                 actUseCase.updateAct(latestAct.data.copy(currentChapterId = lastChapter.data.id))
-                throw IllegalArgumentException("Chapter is already set at this act")
+                // The chapter itself exists but never got its own introduction — most likely an
+                // earlier attempt at this same chapter was interrupted before that call finished
+                // (a 503, a killed process, a race). Resume it instead of reporting a failure for
+                // a chapter that only needs its intro finished, which otherwise left the player
+                // stuck bouncing off this same error with nothing actually being retried.
+                if (lastChapter.data.introduction.isBlank()) {
+                    return@executeRequest generateChapterIntroductionContent(lastChapter, environment)
+                }
+                throw IllegalArgumentException(CHAPTER_ALREADY_SET_MESSAGE)
             }
-            val newChapter = chapterUseCase.saveChapter(Chapter(actId = latestAct.data.id))
+            val openingCheckpoint =
+                latestAct.chapters.lastOrNull()?.data?.closingCheckpoint ?: latestAct.data.openingCheckpoint
+            val newChapter =
+                chapterUseCase.saveChapter(
+                    Chapter(actId = latestAct.data.id, openingCheckpoint = openingCheckpoint),
+                )
             actUseCase.updateAct(latestAct.data.copy(currentChapterId = newChapter.id))
             generateChapterIntroductionContent(
                 ChapterContent(data = newChapter),

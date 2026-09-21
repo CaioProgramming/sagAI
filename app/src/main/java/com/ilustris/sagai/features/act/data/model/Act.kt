@@ -7,6 +7,7 @@ import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.narrative.data.model.ContinuitySummary
+import com.ilustris.sagai.features.narrative.data.model.LocationCheckpoint
 
 @Entity(
     tableName = "acts",
@@ -37,4 +38,10 @@ data class Act(
     val narrativeGuide: String? = null,
     @Embedded(prefix = "continuity_")
     val continuitySummary: ContinuitySummary? = null,
+    /** Where/when this act begins — the saga's anchor location for Act 1, or the previous act's [closingCheckpoint]. */
+    @Embedded(prefix = "opening_")
+    val openingCheckpoint: LocationCheckpoint? = null,
+    /** Where/when this act ends — populated by act synthesis, becomes the next act's [openingCheckpoint]. */
+    @Embedded(prefix = "closing_")
+    val closingCheckpoint: LocationCheckpoint? = null,
 )

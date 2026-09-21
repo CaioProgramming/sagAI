@@ -31,6 +31,7 @@ import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toRoman
+import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -74,8 +75,11 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionRe
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeProcessingGate
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
+import com.ilustris.sagai.features.saga.chat.domain.manager.ACT_ALREADY_SET_MESSAGE
+import com.ilustris.sagai.features.saga.chat.domain.manager.CHAPTER_ALREADY_SET_MESSAGE
 import com.ilustris.sagai.features.saga.chat.domain.manager.TIMELINE_ALREADY_ACTIVE_MESSAGE
 import com.ilustris.sagai.features.saga.chat.domain.manager.executionMode
+import com.ilustris.sagai.features.saga.chat.domain.manager.targetKey
 import com.ilustris.sagai.features.saga.chat.domain.manager.narrativelyCompleteTimeline
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -102,6 +106,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -137,6 +142,7 @@ class SagaContentManagerImpl
         private val narrativeProcessingGate: NarrativeProcessingGate,
         private val stringResourceHelper: StringResourceHelper,
         private val globalShellService: GlobalShellService,
+        private val bookGenerationService: BookGenerationService,
         private val chatIslandService: ChatIslandService,
         private val sagaNavigationTracker: SagaNavigationTracker,
         @ApplicationContext
@@ -176,11 +182,18 @@ class SagaContentManagerImpl
         private var milestoneReadinessObserverJob: kotlinx.coroutines.Job? = null
         private var reasoningObserverJob: kotlinx.coroutines.Job? = null
         private var islandObserverJob: kotlinx.coroutines.Job? = null
+        private var milestoneOverlayTimeoutJob: kotlinx.coroutines.Job? = null
 
         private var isDebugModeEnabled: Boolean = false
         private val isProcessing = AtomicBoolean(false)
 
         private val progressionMutex = Mutex()
+
+        /** Guards only the check-then-claim in [advanceNarrative] — not the generation itself,
+         * which stays outside so a slow LLM call never holds this up. See that function for why
+         * it needs its own lock rather than reusing [progressionMutex] or [isProcessingNarrative]
+         * alone. */
+        private val advanceClaimMutex = Mutex()
         private val managerJob = SupervisorJob()
         private val managerScope = CoroutineScope(managerJob + Dispatchers.IO)
 
@@ -206,13 +219,29 @@ class SagaContentManagerImpl
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
         override suspend fun advanceNarrative() {
-            if (isProcessingNarrative.get()) {
-                Timber.d("advanceNarrative: already in progress, ignoring duplicate request")
-                return
-            }
-            val action = narrativeCoordinator.uiState.value.pendingAction ?: return
+            // ChatViewModel's advance-trigger tap and MilestoneViewModel's own auto-advance
+            // effect (both react to the same NarrativePhase.AwaitingAdvance, from two different
+            // screens/viewModelScopes) can call this within microseconds of each other.
+            // isProcessingNarrative only flips true once execution actually reaches
+            // executeNarrativeAction — dispatched via managerScope.launch below, a real gap after
+            // this check — and onUserAdvanceRequested (which is what actually clears
+            // pendingAction) doesn't run until after it. A second caller landing in that gap read
+            // both as if nothing had claimed the action yet and launched its own
+            // executeNarrativeAction for the identical action — the double generation this was
+            // reported as. Claiming the action is now atomic under its own short-lived mutex,
+            // released before the generation itself starts so a slow LLM call never holds it.
+            val action =
+                advanceClaimMutex.withLock {
+                    if (isProcessingNarrative.get()) {
+                        Timber.d("advanceNarrative: already in progress, ignoring duplicate request")
+                        return@withLock null
+                    }
+                    val pending = narrativeCoordinator.uiState.value.pendingAction ?: return@withLock null
+                    narrativeCoordinator.onUserAdvanceRequested(pending)
+                    pending
+                } ?: return
+
             Timber.d("Manually advancing narrative: ${action.javaClass.simpleName}")
-            narrativeCoordinator.onUserAdvanceRequested(action)
             // Detached onto managerScope (then joined) rather than run straight on the caller's
             // coroutine — MilestoneViewModel's auto-advance effect calls this from its own
             // viewModelScope, and if that scope dies mid-generation (screen torn down,
@@ -251,7 +280,7 @@ class SagaContentManagerImpl
         }
 
         private suspend fun executeNarrativeAction(
-            action: NarrativeAction,
+            requestedAction: NarrativeAction,
             isRetry: Boolean,
             // False only when called from inside requestNarrativeProgression()'s own automatic-
             // action loop (progressionMutex already held on this coroutine) — Mutex.withLock
@@ -261,6 +290,31 @@ class SagaContentManagerImpl
             chainNext: Boolean = true,
         ) {
             val sagaMetadata = content.value ?: return
+            // A user-triggered action is decided, parked as pending, and only executed later (a
+            // milestone tap, an auto-advance, a snackbar retry) — by which point a sibling trigger
+            // may already have executed it, and the chapter/act/timeline snapshot embedded in it is
+            // stale. Executing it anyway is how a timeline got its lore generated twice, a chapter got
+            // a sixth event, and an act got a fourth chapter past its limit. Re-decide from a fresh
+            // read and run that instead; if the fresh decision is something else, this one is spent.
+            // The automatic loop (chainNext = false) already hands in a freshly decided action.
+            val action =
+                if (chainNext) {
+                    val fresh = freshNarrativeAction()
+                    if (fresh == null || fresh.targetKey() != requestedAction.targetKey()) {
+                        Timber.w(
+                            "Dropping stale ${requestedAction.targetKey()} — fresh decision is ${fresh?.targetKey()}.",
+                        )
+                        narrativeCoordinator.onActionCompleted(
+                            requestedAction,
+                            NarrativeExecutionResult.Success(value = null, shouldEmitMilestone = false),
+                        )
+                        requestNarrativeProgression(isRetry = false)
+                        return
+                    }
+                    fresh
+                } else {
+                    requestedAction
+                }
             setNarrativeProcessingStatus(true)
             narrativeCoordinator.markProcessing(true)
             try {
@@ -270,18 +324,32 @@ class SagaContentManagerImpl
                         buildExecutionEnvironment(),
                     )
 
-                // CreateTimeline is automatic — several reactive triggers (milestone dismissal,
-                // loading state, the explicit continue call) can each independently resolve it
-                // before this manager's cached saga snapshot catches up with the first one's
-                // write. The executor throws when it finds a timeline already active as a
-                // self-healing signal, not a real failure: the desired end state (chapter has a
-                // current timeline) is already true, so surfacing an error + retry snackbar here
-                // would be actively wrong. Treat it as a silent no-op instead.
-                if (result is NarrativeExecutionResult.Failure &&
-                    action is NarrativeAction.CreateTimeline &&
-                    result.message == TIMELINE_ALREADY_ACTIVE_MESSAGE
-                ) {
-                    Timber.i("CreateTimeline raced another trigger and found a timeline already active — ignoring.")
+                // CreateTimeline/CreateChapter/CreateAct can all get (re)proposed while their
+                // target already exists and is already active — CreateTimeline genuinely from a
+                // race (several reactive triggers resolving the same automatic action before this
+                // manager's cached saga snapshot catches up with the first one's write), the other
+                // two more often because NarrativeCheck's cached view of the saga is briefly stale.
+                // Each executor already resumes the one case that still needs real work (the
+                // target exists but never got its own introduction generated) instead of throwing,
+                // so reaching this point at all means the desired end state is already fully true.
+                // Surfacing an error + retry snackbar here would be actively wrong — treat it as a
+                // silent no-op instead.
+                val alreadyActiveLogMessage =
+                    if (result is NarrativeExecutionResult.Failure) {
+                        when {
+                            action is NarrativeAction.CreateTimeline && result.message == TIMELINE_ALREADY_ACTIVE_MESSAGE ->
+                                "CreateTimeline raced another trigger and found a timeline already active — ignoring."
+                            action is NarrativeAction.CreateChapter && result.message == CHAPTER_ALREADY_SET_MESSAGE ->
+                                "CreateChapter found a chapter already active and complete for this act — ignoring."
+                            action is NarrativeAction.CreateAct && result.message == ACT_ALREADY_SET_MESSAGE ->
+                                "CreateAct found an act already active and complete for this saga — ignoring."
+                            else -> null
+                        }
+                    } else {
+                        null
+                    }
+                if (alreadyActiveLogMessage != null) {
+                    Timber.i(alreadyActiveLogMessage)
                     narrativeCoordinator.onActionCompleted(
                         action,
                         NarrativeExecutionResult.Success(value = null, shouldEmitMilestone = false),
@@ -416,6 +484,7 @@ class SagaContentManagerImpl
             sagaJob =
                 managerScope.launch {
                     Timber.d("Loading saga: $sagaId")
+                    sagaId.toIntOrNull()?.let(bookGenerationService::healOnce)
                     try {
                         if (milestoneReadinessObserverJob == null || milestoneReadinessObserverJob?.isActive == false) {
                             milestoneReadinessObserverJob = observeMilestoneChainReadiness()
@@ -425,6 +494,9 @@ class SagaContentManagerImpl
                         }
                         if (islandObserverJob == null || islandObserverJob?.isActive == false) {
                             islandObserverJob = observeIslands()
+                        }
+                        if (milestoneOverlayTimeoutJob == null || milestoneOverlayTimeoutJob?.isActive == false) {
+                            milestoneOverlayTimeoutJob = observeMilestoneOverlayTimeout()
                         }
                         sagaHistoryUseCase
                             .getSagaMetadata(sagaId.toInt())
@@ -706,6 +778,45 @@ class SagaContentManagerImpl
                 }
             }
 
+        /**
+         * Safety net, not the primary path: an intrusive milestone is meant to clear itself —
+         * [continueMilestone] dismisses it once the Milestone screen's own Continue flow resolves,
+         * and [observeReasoning] clears a Loading one automatically. But [milestoneUpdate] staying
+         * non-null is also the one thing [NarrativeCoordinator.reevaluate]'s
+         * `hasActiveMilestoneOverlay` gate checks before it will ever surface another
+         * EvolveTimeline/CreateChapter/etc. again — and unlike its Processing/BackgroundProcessing
+         * gate, that branch never queues a retry of its own. If anything ever leaves
+         * [milestoneUpdate] set without going through that dismiss path (a screen skipped somehow,
+         * a future regression), every future narrative check silently dies at that same gate
+         * forever — matching a real report of chat sailing well past the message limit with no
+         * lore update, fixed only by restarting the app or leaving the saga and back (both of
+         * which reset this state some other way). Force-clearing after a generous wait — long
+         * past any legitimate read-and-tap-Continue duration — means a leak like that heals itself
+         * within one session instead of needing a restart.
+         *
+         * Deliberately NOT done by having `reevaluate()`'s own gate queue a retry the way the
+         * Processing/BackgroundProcessing one does: that gate is evaluated from inside
+         * requestNarrativeProgression's own tight while(true) loop, which immediately re-checks
+         * and continues on a queued retry — if the blocking condition hasn't actually changed
+         * (which is exactly the leaked case), that would spin the loop forever inside
+         * progressionMutex instead of just leaving the trigger silently missed. A time-based
+         * external clear has no such risk.
+         */
+        private fun observeMilestoneOverlayTimeout() =
+            managerScope.launch {
+                milestoneUpdate.collectLatest { milestone ->
+                    if (milestone == null || !milestone.isIntrusive) return@collectLatest
+                    delay(MILESTONE_OVERLAY_TIMEOUT_MS)
+                    Timber.w(
+                        "Milestone ${milestone.javaClass.simpleName} stayed set for " +
+                            "${MILESTONE_OVERLAY_TIMEOUT_MS}ms with nothing clearing it — " +
+                            "force-dismissing so narrative progression can be checked again.",
+                    )
+                    dismissMilestone()
+                    checkNarrativeProgression(content.value)
+                }
+            }
+
         override fun setAdvanceTriggerSuppressed(suppressed: Boolean) {
             _advanceTriggerSuppressed.value = suppressed
         }
@@ -819,20 +930,82 @@ class SagaContentManagerImpl
         }
 
         override suspend fun pruneOrphanTimelines() {
-            val chapter = content.value?.currentChapterInfo ?: return
+            val saga = content.value ?: return
+            val chapter = saga.currentChapterInfo ?: return
             val rules = fetchNarrativeRules()
             val currentId = chapter.data.currentEventId
-            val orphans =
+            val candidates =
                 chapter.events.filter { event ->
                     event.data.id != currentId && !event.narrativelyCompleteTimeline(rules)
                 }
+            if (candidates.isEmpty()) return
+
+            // A genuine CreateTimeline-race duplicate is always empty: a second row created before
+            // the first one's write was visible, never written to again. A candidate that already
+            // holds messages is real conversation — orphaned some other way (e.g. an advance that
+            // moved the chapter's currentEventId before EvolveTimeline/CloseTimeline actually
+            // finished writing this row's title/content, leaving it stuck short of
+            // narrativelyCompleteTimeline forever). Deleting that is data loss, not cleanup.
+            val (orphans, suspicious) = candidates.partition { it.messages.isEmpty() }
+            if (suspicious.isNotEmpty()) {
+                Timber.e(
+                    "pruneOrphanTimelines: chapter ${chapter.data.id} has ${suspicious.size} " +
+                        "timeline(s) neither current nor narratively complete but already holding " +
+                        "messages (${suspicious.map { it.data.id to it.messages.size }}) — " +
+                        "backfilling their lore in isolation instead of deleting real conversation " +
+                        "content.",
+                )
+                suspicious.forEach { backfillOrphanedTimelineLore(saga, it) }
+            }
             if (orphans.isEmpty()) return
             Timber.w(
                 "pruneOrphanTimelines: chapter ${chapter.data.id} has ${orphans.size} orphaned " +
-                    "timeline(s) (neither current nor closed) — deleting, likely a leftover from a " +
-                    "past CreateTimeline race.",
+                    "timeline(s) (neither current nor closed, and empty) — deleting, likely a " +
+                    "leftover from a past CreateTimeline race.",
             )
             orphans.forEach { timelineUseCase.deleteTimeline(it.data) }
+        }
+
+        /**
+         * Repairs a timeline that has real messages (so the check above won't delete it) but never
+         * got its title/content/summary written — the exact shape a stuck-forever narrative phase
+         * used to leave behind (see the reevaluate()/automaticStepGuard fixes). Generates and
+         * persists lore for this one row via the same use case the debug "regenerate lore" action
+         * uses ([regenerateTimeline]) — deliberately NOT routed through
+         * requestNarrativeProgression/narrativeCoordinator: this timeline isn't the current one and
+         * nothing here should touch which one is, pause chat, or surface a milestone reveal for a
+         * chapter the player may not even be looking at anymore. Generate that one id, move on.
+         */
+        private suspend fun backfillOrphanedTimelineLore(
+            saga: SagaMetadata,
+            orphan: TimelineMetadata,
+        ) {
+            timelineUseCase.generateFullLoreUpdateStream(saga, orphan.data).collect { state ->
+                when (state) {
+                    is StreamingState.Success -> {
+                        Timber.i(
+                            "pruneOrphanTimelines: backfilled lore for orphaned timeline ${orphan.data.id}.",
+                        )
+                    }
+
+                    is StreamingState.Error -> {
+                        Timber.e(
+                            "pruneOrphanTimelines: failed to backfill orphaned timeline " +
+                                "${orphan.data.id}: ${state.message}",
+                        )
+                    }
+
+                    is StreamingState.Reasoning -> Unit
+                }
+            }
+        }
+
+        private suspend fun freshNarrativeAction(): NarrativeAction? {
+            val sagaContent = getSagaContent() ?: return null
+            val intent =
+                NarrativeCheck.validateProgressionMetadata(sagaContent.toNarrativeMetadata(), fetchNarrativeRules())
+                    ?: return null
+            return NarrativeActionMaterializer.materialize(intent, sagaContent)
         }
 
         private suspend fun requestNarrativeProgression(
@@ -912,7 +1085,20 @@ class SagaContentManagerImpl
                                     "(likely stuck re-materializing the same action) — bailing to avoid " +
                                     "hanging progressionMutex forever.",
                             )
-                            narrativeCoordinator.schedulePendingReevaluation()
+                            // schedulePendingReevaluation() alone used to leave phase stuck at
+                            // whatever the last reevaluate() call set it to — Processing(hydrated,
+                            // isAutomatic = true) for CreateTimeline, the one case with no AI call
+                            // and therefore no reasoning stream, which the Milestone screen renders
+                            // as milestone_adjusting_lore. Nothing ever completed that action, so
+                            // nothing ever called onActionCompleted to move phase off Processing —
+                            // every later reevaluate() early-returns on a Processing phase forever,
+                            // which is a permanent "stuck loading" indistinguishable on screen from
+                            // real work still happening. Treating the bail as a real failure — same
+                            // path a thrown exception takes — surfaces the existing retry-capable
+                            // error screen instead, and requeuing a reevaluation is no longer needed
+                            // since AwaitingAdvance-with-lastError doesn't get auto-re-driven (see
+                            // MilestoneUiState.Error's own doc comment for why that's deliberate).
+                            handleNarrativeActionFailure(hydrated, canRetry = true)
                             return@withLock
                         }
                         executeNarrativeAction(hydrated, isRetry = false, chainNext = false)
@@ -1672,5 +1858,10 @@ class SagaContentManagerImpl
 
         private companion object {
             val TITLE_SPLASH_DURATION = 2.5.seconds
+
+            /** Generous on purpose — well past any legitimate time to read a milestone reveal and
+             * tap Continue (the Introduction island's own now-unused auto-dismiss was 15s). This
+             * is a leak safety net, not a UX timer. */
+            const val MILESTONE_OVERLAY_TIMEOUT_MS = 45_000L
         }
     }

@@ -53,6 +53,9 @@ data class Saga(
     val variationId: String? = null,
     @ColumnInfo(defaultValue = "")
     val worldState: String? = null,
+    /** Demonstrated player engagement style (e.g. combat vs. relationship depth), rewritten every turn by [com.ilustris.sagai.features.saga.chat.data.model.AIReply.playerCompass] so NPCs adapt to it instead of overriding it with the scene's objective. */
+    @ColumnInfo(defaultValue = "")
+    val playerCompass: String? = null,
     @ColumnInfo(defaultValue = "")
     val artwork: String? = null,
 )

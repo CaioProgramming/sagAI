@@ -7,6 +7,15 @@ data class UnifiedLoreUpdate(
     val event: GeneratedTimeline,
     val charactersUpdates: List<CharacterUpdates> = emptyList(),
     val wikiUpdates: List<GeneratedWikiUpdate> = emptyList(),
+    val locationUpdates: List<GeneratedLocationUpdate> = emptyList(),
+)
+
+/** Places visited/mentioned in this stretch of story — catalogued into WorldLocation, not Wiki. */
+data class GeneratedLocationUpdate(
+    val name: String = "",
+    val history: String = "",
+    val parentLocationTitle: String? = null,
+    val emojiTag: String? = null,
 )
 
 data class CharacterUpdates(

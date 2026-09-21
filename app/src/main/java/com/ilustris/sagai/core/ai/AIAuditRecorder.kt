@@ -1,7 +1,12 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.model.GeminiUsageMetadata
 import com.ilustris.sagai.core.database.model.AIAuditLog
+import com.ilustris.sagai.core.database.source.AIAuditLogDao
+import timber.log.Timber
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Snapshot of a completed or failed AI call, persisted via [AIClient.recordAudit].
@@ -96,3 +101,31 @@ data class AIAuditSnapshot(
             )
     }
 }
+
+/**
+ * The same debug-only audit trail [AIClient.recordAudit] writes for text generation, exposed to
+ * callers that aren't an [AIClient] — [MediaModelResolver], so image/audio/transcription failures
+ * land in the same log instead of being visible only in Logcat.
+ */
+@Singleton
+class AIAuditLogger
+    @Inject
+    constructor(
+        private val aiAuditLogDao: AIAuditLogDao,
+    ) {
+        suspend fun record(
+            snapshot: AIAuditSnapshot,
+            logEnabled: Boolean = true,
+        ) {
+            if (!BuildConfig.DEBUG || !logEnabled) return
+            try {
+                aiAuditLogDao.insertLog(snapshot.toEntity())
+            } catch (e: Exception) {
+                Timber.tag(TAG).e("Error saving audit log: ${e.message}")
+            }
+        }
+
+        private companion object {
+            const val TAG = "AIAuditLogger"
+        }
+    }

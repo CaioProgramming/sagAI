@@ -463,24 +463,19 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
         val endIndex = findMatchingClosingIndex(potentialSubstring, 0)
         if (endIndex != -1) {
             val extracted = potentialSubstring.substring(0, endIndex + 1)
-            val hasPlaceholder =
-                extracted.contains(": \"PLACEHOLDER_") || extracted.contains(": 999")
-
-            if (bestJson == null) {
+            // Longest complete match wins, full stop. The outermost object always contains every
+            // nested one, so it is always the longest valid candidate — no need to special-case
+            // it. This used to also weigh whether a candidate contained a literal ": 999" or
+            // ": \"PLACEHOLDER_" as a sign the model echoed an unfilled schema example instead of
+            // generating a real value, and would keep an earlier, non-placeholder-looking nested
+            // fragment (say, just the "message" object) over the true, complete top-level response
+            // purely because that fragment didn't happen to contain the substring "999" — even
+            // when the full response's "999" was a real, deliberately extreme field value (e.g.
+            // sceneSummary.tensionLevel, whose default is 5, not 999) rather than an unfilled
+            // placeholder. That silently truncated the response down to one sub-object, which then
+            // failed to parse as the wrapping AIGeneration shape entirely.
+            if (bestJson == null || extracted.length > bestJson!!.length) {
                 bestJson = extracted
-            } else {
-                val currentBestHasPlaceholder =
-                    bestJson!!.contains(": \"PLACEHOLDER_") || bestJson!!.contains(": 999")
-
-                if (currentBestHasPlaceholder && !hasPlaceholder) {
-                    bestJson = extracted
-                } else if (!currentBestHasPlaceholder && !hasPlaceholder) {
-                    bestJson = extracted
-                } else if (currentBestHasPlaceholder && hasPlaceholder) {
-                    if (extracted.length > bestJson!!.length) {
-                        bestJson = extracted
-                    }
-                }
             }
         }
     }

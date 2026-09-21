@@ -4,6 +4,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.ilustris.sagai.core.database.converters.BookConverters
+import com.ilustris.sagai.core.database.converters.CharacterPresenceListConverter
+import com.ilustris.sagai.core.database.converters.TimelineConverters
 import com.ilustris.sagai.core.database.converters.EnumConverters
 import com.ilustris.sagai.core.database.converters.FarewellListConverter
 import com.ilustris.sagai.core.database.converters.IntListConverter
@@ -14,8 +16,11 @@ import com.ilustris.sagai.core.database.source.ApiUsageDao
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.Book
+import com.ilustris.sagai.features.act.data.model.BookChapterPages
 import com.ilustris.sagai.features.act.data.source.ActDao
 import com.ilustris.sagai.features.act.data.source.BookDao
+import com.ilustris.sagai.features.audiobook.data.model.BookAudioSegment
+import com.ilustris.sagai.features.audiobook.data.source.BookAudioDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -28,6 +33,9 @@ import com.ilustris.sagai.features.characters.relations.data.model.CharacterRela
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipUpdateEvent
 import com.ilustris.sagai.features.characters.relations.data.source.CharacterRelationDao
 import com.ilustris.sagai.features.characters.relations.data.source.RelationshipUpdateEventDao
+import com.ilustris.sagai.features.geography.data.model.WorldLocation
+import com.ilustris.sagai.features.geography.data.model.WorldLocationVisit
+import com.ilustris.sagai.features.geography.data.source.WorldLocationDao
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.Reaction
@@ -50,14 +58,18 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Timeline::class,
         Act::class,
         Book::class,
+        BookChapterPages::class,
+        BookAudioSegment::class,
         CharacterEvent::class,
         CharacterRelation::class,
         RelationshipUpdateEvent::class,
         Reaction::class,
         AIAuditLog::class,
         CharacterArc::class,
+        WorldLocation::class,
+        WorldLocationVisit::class,
     ],
-    version = 31,
+    version = 35,
     exportSchema = true,
 )
 @TypeConverters(
@@ -66,6 +78,8 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
     StringListConverter::class,
     BookConverters::class,
     FarewellListConverter::class,
+    CharacterPresenceListConverter::class,
+    TimelineConverters::class,
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
@@ -86,6 +100,8 @@ abstract class SagaDatabase : RoomDatabase() {
 
     abstract fun bookDao(): BookDao
 
+    abstract fun bookAudioDao(): BookAudioDao
+
     abstract fun characterEventDao(): CharacterEventDao
 
     abstract fun characterRelationDao(): CharacterRelationDao
@@ -97,6 +113,8 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun aiAuditLogDao(): AIAuditLogDao
 
     abstract fun characterArcDao(): CharacterArcDao
+
+    abstract fun worldLocationDao(): WorldLocationDao
 
     companion object {
         const val NAME = "SagaDatabase"
