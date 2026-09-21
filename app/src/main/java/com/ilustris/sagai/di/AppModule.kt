@@ -509,11 +509,13 @@ object AppModule {
         geminiApiClient: GeminiApiClient,
         userApiKeyStore: UserApiKeyStore,
         mediaModelResolver: com.ilustris.sagai.core.ai.MediaModelResolver,
+        apiUsageTracker: com.ilustris.sagai.core.ai.key.ApiUsageTracker,
     ): AudioGenClient =
         AudioGenClientImpl(
             geminiApiClient,
             userApiKeyStore,
             mediaModelResolver,
+            apiUsageTracker,
         )
 
     @Provides

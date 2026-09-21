@@ -4,6 +4,7 @@ import android.util.Base64
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.ilustris.sagai.core.ai.key.ApiUsageTracker
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.network.GeminiHttpException
 import com.ilustris.sagai.features.audiobook.data.usecase.SpokenWord
@@ -40,6 +41,7 @@ class TranscribeClient
         okHttpClient: OkHttpClient,
         private val userApiKeyStore: UserApiKeyStore,
         private val mediaModelResolver: MediaModelResolver,
+        private val apiUsageTracker: ApiUsageTracker,
     ) {
         /** Inline audio makes bodies several MB: no debug body logging, and room for long clips. */
         private val client =
@@ -79,6 +81,9 @@ class TranscribeClient
                     client.newCall(request).execute().use { response ->
                         val raw = response.body?.string().orEmpty()
                         if (!response.isSuccessful) throw GeminiHttpException(response.code, raw)
+                        // The Interactions API doesn't return usageMetadata the way generateContent
+                        // does — recorded with no token counts, just the request itself against RPD.
+                        apiUsageTracker.record(model, null)
                         decodeResponse(raw)
                     }
                 }

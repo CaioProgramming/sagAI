@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai
 
 import android.util.Base64
+import com.ilustris.sagai.core.ai.key.ApiUsageTracker
 import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.createAudioGenerationRequest
@@ -29,6 +30,7 @@ class AudioGenClientImpl
         private val geminiApiClient: GeminiApiClient,
         private val userApiKeyStore: UserApiKeyStore,
         private val mediaModelResolver: MediaModelResolver,
+        private val apiUsageTracker: ApiUsageTracker,
     ) : AudioGenClient {
         companion object {
             private const val TAG = "🎙️ Audio Generation"
@@ -60,7 +62,9 @@ class AudioGenClientImpl
             val response =
                 mediaModelResolver.withRotation(MediaRequirement.AUDIO) { model ->
                     Timber.tag(TAG).d("Generating audio with ➡ $model, voice: ${audioConfig.voice.id}")
-                    geminiApiClient.generateContent(model, apiKey, request, readTimeoutSeconds = AUDIO_READ_TIMEOUT_SECONDS)
+                    geminiApiClient
+                        .generateContent(model, apiKey, request, readTimeoutSeconds = AUDIO_READ_TIMEOUT_SECONDS)
+                        .also { apiUsageTracker.record(model, it.usageMetadata) }
                 }
 
             // Check for API error
