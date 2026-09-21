@@ -1095,6 +1095,11 @@
     <string name="audiobook_previous_chapter_cd">Capítulo anterior</string>
     <string name="audiobook_next_chapter_cd">Próximo capítulo</string>
     <string name="book_options_cd">Mais opções</string>
+    <string name="audiobook_delete_narration">Apagar narração</string>
+    <string name="audiobook_delete_narration_title">Apagar esta narração?</string>
+    <string name="audiobook_delete_narration_message">Os áudios de \u0022%1$s\u0022 serão removidos. Narrar de novo gasta sua cota diária de voz.</string>
+    <string name="audiobook_open_player">Reproduzir livro</string>
+    <string name="audiobook_shelf_badge">Ouvir · %1$d min</string>
 </resources>
 
 

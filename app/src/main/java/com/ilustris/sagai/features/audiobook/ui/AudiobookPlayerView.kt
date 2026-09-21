@@ -38,6 +38,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -567,6 +568,7 @@ fun AudiobookPlayerView(
                     showQueue = false
                     onAction(AudiobookAction.Listen(sectionKey, 0))
                 },
+                onDelete = { onAction(AudiobookAction.DeleteNarration(it)) },
                 onDismiss = { showQueue = false },
             )
         }
@@ -632,7 +634,8 @@ private fun AudiobookBackdrop(
     Box(modifier.background(brush))
 }
 
-private fun Long.asClock(): String {
+/** mm:ss for the player's clocks; also used by [AudiobookMiniPlayer]. */
+internal fun Long.asClock(): String {
     val totalSeconds = (this / 1000).coerceAtLeast(0)
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
@@ -645,8 +648,10 @@ private fun QueueBottomSheet(
     sections: List<AudiobookSectionUi>,
     playingSectionKey: String?,
     onSelect: (String) -> Unit,
+    onDelete: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var pendingDeletion by remember { mutableStateOf<AudiobookSectionUi?>(null) }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(),
@@ -667,9 +672,29 @@ private fun QueueBottomSheet(
                     section = section,
                     isPlaying = section.key == playingSectionKey,
                     onClick = { onSelect(section.key) },
+                    onDelete = { pendingDeletion = section },
                 )
             }
         }
+    }
+
+    pendingDeletion?.let { section ->
+        AlertDialog(
+            onDismissRequest = { pendingDeletion = null },
+            title = { Text(stringResource(R.string.audiobook_delete_narration_title)) },
+            text = { Text(stringResource(R.string.audiobook_delete_narration_message, section.title)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDeletion = null
+                    onDelete(section.key)
+                }) {
+                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeletion = null }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
     }
 }
 
@@ -678,6 +703,7 @@ private fun QueueSectionRow(
     section: AudiobookSectionUi,
     isPlaying: Boolean,
     onClick: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     val tint = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
     Row(
@@ -722,6 +748,16 @@ private fun QueueSectionRow(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
             )
+        }
+        if (section.narrated > 0) {
+            IconButton(onClick = onDelete) {
+                Icon(
+                    painterResource(R.drawable.ic_delete),
+                    contentDescription = stringResource(R.string.audiobook_delete_narration),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
+                    modifier = Modifier.size(18.dp),
+                )
+            }
         }
     }
 }

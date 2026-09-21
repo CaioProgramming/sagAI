@@ -25,21 +25,20 @@ import com.ilustris.sagai.features.audiobook.data.usecase.WaveformExtractor
 import com.ilustris.sagai.features.audiobook.player.BookAudioPlayer
 import com.ilustris.sagai.features.audiobook.player.PlaybackState
 import com.ilustris.sagai.features.audiobook.player.PlaybackTrack
-import com.ilustris.sagai.features.audiobook.video.BookVideoExporter
+import com.ilustris.sagai.features.audiobook.BookVideoService
+import com.ilustris.sagai.features.audiobook.VideoExportJob
+import com.ilustris.sagai.features.audiobook.VideoExportRequest
 import com.ilustris.sagai.features.audiobook.video.VideoExportProgress
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.share.domain.SharePlayUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -50,6 +49,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -114,7 +114,7 @@ data class AudiobookUiState(
 
 private data class ExtraState(
     val syncSource: SyncSource,
-    val videoExport: VideoExportUi?,
+    val videoExport: VideoExportJob?,
     val quotaStatus: QuotaStatus,
     val reasoningText: String?,
 )
@@ -136,19 +136,21 @@ class AudiobookViewModel
         private val bookAudioUseCase: BookAudioUseCase,
         private val bookAudioService: BookAudioService,
         private val player: BookAudioPlayer,
-        private val videoExporter: BookVideoExporter,
+        private val bookVideoService: BookVideoService,
         private val sharePlayUseCase: SharePlayUseCase,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         @ApplicationContext private val context: Context,
     ) : ViewModel() {
         private val bound = MutableStateFlow<BoundBook?>(null)
-        private val videoExport = MutableStateFlow<VideoExportUi?>(null)
-        private var exportJob: Job? = null
-
-        private val _videoReady = MutableSharedFlow<Uri>(extraBufferCapacity = 1)
-
-        /** One-shot: a finished export ready to hand to the share sheet. */
-        val videoReady = _videoReady.asSharedFlow()
+        /**
+         * One-shot: a finished export ready to hand to the share sheet. The render itself lives in
+         * [BookVideoService], so it survives leaving this screen; this only turns the file into a
+         * shareable uri for whoever is on screen when it lands.
+         */
+        val videoReady: Flow<Uri> =
+            bookVideoService.ready.mapNotNull { file ->
+                (sharePlayUseCase.loadWithFileProvider(file) as? RequestResult.Success)?.value
+            }
         private val syncSource = MutableStateFlow(SyncSource.TRANSCRIBED)
         private var segments: List<BookAudioSegment> = emptyList()
         private val estimatedCache = mutableMapOf<Long, List<WordTiming>>()
@@ -228,7 +230,7 @@ class AudiobookViewModel
                 segmentsFlow,
                 bookAudioService.job,
                 player.state,
-                combine(syncSource, videoExport, ttsQuotaStatus, narratingReasoningText, ::ExtraState),
+                combine(syncSource, bookVideoService.job, ttsQuotaStatus, narratingReasoningText, ::ExtraState),
             ) {
                 book,
                 bookSegments,
@@ -257,7 +259,7 @@ class AudiobookViewModel
                     highlight = playing?.let { highlight(book, playback, extra.syncSource, bookSegments) },
                     syncSource = extra.syncSource,
                     showDebug = BuildConfig.DEBUG,
-                    videoExport = extra.videoExport,
+                    videoExport = extra.videoExport?.let { VideoExportUi(it.sectionKey, it.percent, it.error) },
                     positionMs = if (playing != null) elapsedBeforeCurrent + playback.positionMs else 0L,
                     durationMs = sectionTracks.sumOf { it.durationMs },
                     error = failure?.message,
@@ -318,9 +320,10 @@ class AudiobookViewModel
                 AudiobookAction.ToggleSyncSource -> toggleSyncSource()
                 is AudiobookAction.Realign -> realign(action.sectionKey)
                 is AudiobookAction.ExportVideo -> exportVideo(action.sectionKey)
+                is AudiobookAction.DeleteNarration -> deleteNarration(action.sectionKey)
                 AudiobookAction.DismissFailure -> {
                     bookAudioService.dismissFailure()
-                    if (videoExport.value?.error != null) videoExport.value = null
+                    bookVideoService.dismissFailure()
                 }
             }
         }
@@ -386,7 +389,6 @@ class AudiobookViewModel
 
         private fun exportVideo(sectionKey: String) {
             val book = bound.value ?: return
-            if (exportJob?.isActive == true) return
             val section = book.sections.find { it.key == sectionKey } ?: return
             val sectionSegments = segments.filter { it.sectionKey == sectionKey }
             val background =
@@ -396,30 +398,29 @@ class AudiobookViewModel
                     ?.takeIf { it.isNotBlank() }
                     ?: book.saga.data.icon.takeIf { it.isNotBlank() }
 
-            exportJob =
-                viewModelScope.launch {
-                    videoExport.value = VideoExportUi(sectionKey, null)
-                    videoExporter
-                        .export(
-                            section = section,
-                            segments = sectionSegments,
-                            timingsFor = { timingsFor(book, it, syncSource.value) },
-                            backgroundPath = background,
-                            genre = book.saga.data.genre,
-                            sagaTitle = book.saga.data.title,
-                        ).catch { error ->
-                            videoExport.value = VideoExportUi(sectionKey, null, error.message.orEmpty())
-                        }.collect { progress ->
-                            when (progress) {
-                                is VideoExportProgress.Running -> videoExport.value = VideoExportUi(sectionKey, progress.percent)
-                                is VideoExportProgress.Done -> {
-                                    videoExport.value = null
-                                    val uri = sharePlayUseCase.loadWithFileProvider(progress.file)
-                                    if (uri is RequestResult.Success) _videoReady.tryEmit(uri.value)
-                                }
-                            }
-                        }
-                }
+            bookVideoService.export(
+                VideoExportRequest(
+                    section = section,
+                    segments = sectionSegments,
+                    // Resolved here, while the book is bound: the render outlives this ViewModel.
+                    timings = sectionSegments.associate { it.id to timingsFor(book, it, syncSource.value) },
+                    backgroundPath = background,
+                    genre = book.saga.data.genre,
+                    sagaTitle = book.saga.data.title,
+                ),
+            )
+        }
+
+        /**
+         * Drops a section's narration and its audio files. Narrating again costs the user's daily
+         * TTS quota, so the UI confirms before this runs.
+         */
+        private fun deleteNarration(sectionKey: String) {
+            val book = bound.value ?: return
+            viewModelScope.launch {
+                if (state.value?.playingSectionKey == sectionKey) player.stop()
+                bookAudioUseCase.deleteSection(book.bookId, sectionKey)
+            }
         }
 
         private fun play(

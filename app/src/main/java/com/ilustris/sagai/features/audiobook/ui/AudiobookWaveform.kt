@@ -24,6 +24,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -66,6 +68,7 @@ private const val PROGRESS_EASE_MS = 150
 private const val MIN_LEVEL = 0.06f
 private const val LEVEL_CURVE = 0.6f
 private val BAR_HEIGHT = 44.dp
+private const val MAX_BARS = 96
 private val THUMB_SIZE = 16.dp
 
 /**
@@ -186,6 +189,67 @@ fun WaveformSeekBar(
                     .size(THUMB_SIZE),
         )
     }
+}
+
+private val BAR_WIDTH = 2.5.dp
+private val BAR_GAP = 2.dp
+private const val BAR_MIN_HEIGHT = 0.12f
+
+/**
+ * The same loudness envelope drawn as voice-note bars: one bar per slice of the section, filling in
+ * as it plays. Used by the mini player, where the chapter has to read as a recording at a glance
+ * and there is no room for the full [WaveformSeekBar] line.
+ *
+ * Like the seek bar, the position only ever reaches the draw phase — the bar heights are computed
+ * once per (levels, width) and each playback tick just re-colours them.
+ */
+@Composable
+fun WaveformBars(
+    levels: FloatArray?,
+    fraction: Float,
+    playedColor: Color,
+    remainingColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val density = LocalDensity.current
+    var widthPx by remember { mutableIntStateOf(0) }
+    val barPx = remember(density) { with(density) { BAR_WIDTH.toPx() } }
+    val gapPx = remember(density) { with(density) { BAR_GAP.toPx() } }
+
+    val bars =
+        remember(levels, widthPx, barPx, gapPx) {
+            if (widthPx <= 0) return@remember FloatArray(0)
+            envelopeLevels(levels, ((widthPx + gapPx) / (barPx + gapPx)).toInt().coerceIn(2, MAX_BARS))
+        }
+    val progress =
+        animateFloatAsState(
+            targetValue = fraction.coerceIn(0f, 1f),
+            animationSpec = tween(PROGRESS_EASE_MS, easing = LinearEasing),
+            label = "waveformBarsProgress",
+        )
+
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .onSizeChanged { widthPx = it.width }
+                .drawBehind {
+                    if (bars.isEmpty()) return@drawBehind
+                    val step = (size.width - barPx) / (bars.size - 1).coerceAtLeast(1)
+                    bars.forEachIndexed { index, level ->
+                        val x = barPx / 2f + index * step
+                        val height = size.height * level.coerceAtLeast(BAR_MIN_HEIGHT)
+                        val played = index.toFloat() / (bars.size - 1).coerceAtLeast(1) <= progress.value
+                        drawLine(
+                            color = if (played) playedColor else remainingColor,
+                            start = Offset(x, (size.height - height) / 2f),
+                            end = Offset(x, (size.height + height) / 2f),
+                            strokeWidth = barPx,
+                            cap = StrokeCap.Round,
+                        )
+                    }
+                },
+    )
 }
 
 /** The line's shape: a sine swinging by the loudness at each x, smoothly interpolated between samples. */

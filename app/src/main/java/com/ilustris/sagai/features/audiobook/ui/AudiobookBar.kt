@@ -53,6 +53,11 @@ sealed interface AudiobookAction {
         val sectionKey: String,
     ) : AudiobookAction
 
+    /** Drops a section's narration and its audio files; re-narrating costs the user's TTS quota. */
+    data class DeleteNarration(
+        val sectionKey: String,
+    ) : AudiobookAction
+
     data object DismissFailure : AudiobookAction
 }
 

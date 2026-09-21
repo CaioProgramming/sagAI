@@ -1108,4 +1108,9 @@
     <string name="audiobook_previous_chapter_cd">Previous chapter</string>
     <string name="audiobook_next_chapter_cd">Next chapter</string>
     <string name="book_options_cd">More options</string>
+    <string name="audiobook_delete_narration">Delete narration</string>
+    <string name="audiobook_delete_narration_title">Delete this narration?</string>
+    <string name="audiobook_delete_narration_message">The audio files for \u0022%1$s\u0022 are removed. Narrating it again spends your daily voice quota.</string>
+    <string name="audiobook_open_player">Play book</string>
+    <string name="audiobook_shelf_badge">Listen · %1$d min</string>
 </resources>

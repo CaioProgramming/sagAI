@@ -51,7 +51,6 @@ import com.ilustris.sagai.features.audiobook.ui.AudiobookAction
 import com.ilustris.sagai.features.audiobook.ui.AudiobookMiniPlayer
 import com.ilustris.sagai.features.audiobook.ui.AudiobookViewModel
 import com.ilustris.sagai.ui.components.IosStyleMenu
-import com.ilustris.sagai.ui.components.IosStyleMenuDivider
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 
@@ -77,6 +76,7 @@ fun BookReaderView(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val audiobook by audiobookViewModel.state.collectAsStateWithLifecycle()
+    val audiobookWaveform by audiobookViewModel.waveform.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var showBookMenu by remember { mutableStateOf(false) }
@@ -223,6 +223,18 @@ fun BookReaderView(
                 actionContent = {
                     if (state is BookReaderState.Ready) {
                         val isGenerating = audiobook?.narration != null
+                        // The audiobook is the least discoverable thing in the app if it lives
+                        // inside the overflow menu — it gets its own control next to it.
+                        IconButton(
+                            onClick = { onOpenAudiobookPlayer((state as BookReaderState.Ready).currentAct.data.id) },
+                            modifier = Modifier.clip(CircleShape),
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_headset),
+                                contentDescription = stringResource(R.string.audiobook_open_player),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
                         Box(contentAlignment = Alignment.Center) {
                             IconButton(
                                 onClick = { showBookMenu = true },
@@ -241,15 +253,6 @@ fun BookReaderView(
                                 )
                             }
                             IosStyleMenu(expanded = showBookMenu, onDismissRequest = { showBookMenu = false }) {
-                                IosStyleMenuItem(
-                                    text = stringResource(R.string.audiobook_open_player_cd),
-                                    icon = painterResource(R.drawable.ic_headset),
-                                    onClick = {
-                                        showBookMenu = false
-                                        onOpenAudiobookPlayer((state as BookReaderState.Ready).currentAct.data.id)
-                                    },
-                                )
-                                IosStyleMenuDivider()
                                 IosStyleMenuItem(
                                     text = stringResource(R.string.share_pdf_cd),
                                     icon = painterResource(R.drawable.ic_share),
@@ -277,6 +280,7 @@ fun BookReaderView(
             if (readyState != null && activeAudiobook != null) {
                 AudiobookMiniPlayer(
                     audiobook = activeAudiobook,
+                    waveform = audiobookWaveform,
                     onClick = { onOpenAudiobookPlayer(readyState.currentAct.data.id) },
                     onTogglePlayback = { audiobookViewModel.onAction(AudiobookAction.TogglePlayback) },
                     modifier =
