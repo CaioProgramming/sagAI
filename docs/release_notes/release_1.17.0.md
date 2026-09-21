@@ -2,16 +2,16 @@
 
 🇺🇸 English
 
-Your current objective was quietly going stale — three plot twists deep, still telling you to do something you resolved an hour ago. Fixed. It actually pays attention now.
+Your saga now talks back. Every chapter of your book can be narrated out loud, with the words lighting up as they're spoken — pick a chapter, hit play, and let the story read itself to you. Yes, we gave the karaoke treatment to your own plot.
 
-Also: art generation stopped playing it safe. Covers and portraits commit harder to your saga's theme instead of defaulting to whatever renders easiest.
+Books are also written chapter by chapter now, so they don't come out sounding like a rushed summary. The chat got a chapter rail and search, because scrolling through hundreds of messages was never a personality.
 
-You are welcome. Update.
+And the stuff you'll only notice when it stops breaking: fewer failed generations, saga themes that stop flashing to default, and stories that no longer skip an act because the rules changed mid-plot.
 
 🇧🇷 Português
 
-Seu objetivo atual estava ficando velho escondido — três reviravoltas depois, ainda mandando fazer algo que você já resolveu faz uma hora. Corrigido. Agora ele presta atenção de verdade.
+Sua saga agora fala. Cada capítulo do seu livro pode ser narrado em voz alta, com as palavras acendendo conforme são ditas — escolhe um capítulo, dá play e deixa a história se ler sozinha. Sim, botamos karaokê no seu próprio enredo.
 
-Também: a geração de arte parou de jogar no seguro. Capas e retratos da sua saga se comprometem mais com o tema, em vez de ir pelo caminho mais fácil de renderizar.
+Os livros também passaram a ser escritos capítulo por capítulo, então não saem com cara de resumo apressado. O chat ganhou trilho de capítulos e busca, porque rolar centenas de mensagens nunca foi traço de personalidade.
 
-De nada. Atualiza.
+E o que você só percebe quando para de quebrar: menos geração falhando, temas de saga que não piscam pro padrão e histórias que não pulam um ato só porque as regras mudaram no meio do enredo.
