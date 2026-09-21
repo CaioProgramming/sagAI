@@ -557,9 +557,18 @@ fun ChatContent(
                     }
                 }
 
+                // The very first composition of a saga's history is the same "screenful of
+                // bubbles" cost as a chapter jump, just uninvited: the whole message list, plus
+                // ChatList's own scroll-to-bottom effect, land in the same frame the
+                // Loading→Success crossfade is revealing the screen, so mid-layout bubbles are
+                // visible through the fade instead of arriving ready. Reusing the jump's
+                // hide-then-fade covers this the same way, keyed per saga so revisiting a
+                // different chat re-hides while its own history settles.
+                var hasCompletedInitialScroll by remember(content.data.id) { mutableStateOf(false) }
+
                 val chatListAlpha by animateFloatAsState(
-                    targetValue = if (isListHidden) 0f else 1f,
-                    animationSpec = tween(if (isListHidden) 0 else 280),
+                    targetValue = if (isListHidden || !hasCompletedInitialScroll) 0f else 1f,
+                    animationSpec = tween(if (isListHidden || !hasCompletedInitialScroll) 0 else 280),
                     label = "chatListAlpha",
                 )
 
@@ -686,6 +695,7 @@ fun ChatContent(
                     ChatList(
                         saga = content,
                         plan = chatPlan,
+                    onInitialScrollSettled = { hasCompletedInitialScroll = true },
                     mainCharacter = uiState.mainCharacter,
                     characters = uiState.characters,
                     wikis = uiState.wikis,
@@ -1390,6 +1400,7 @@ fun ChatList(
     listState: LazyListState,
     onMessageAction: (MessageAction) -> Unit = {},
     onAction: (ChatUiAction) -> Unit = {},
+    onInitialScrollSettled: () -> Unit = {},
     messageEffectsEnabled: Boolean = true,
     isSelectionMode: Boolean = false,
     selectedMessageIds: Set<Int> = emptySet(),
@@ -1411,6 +1422,9 @@ fun ChatList(
             ?.id,
     ) {
         listState.scrollToItem(0)
+        // Idempotent past the first run — subsequent messages just keep confirming the list is
+        // settled, which the caller's already-true state absorbs as a no-op.
+        onInitialScrollSettled()
     }
 
     LazyColumn(
