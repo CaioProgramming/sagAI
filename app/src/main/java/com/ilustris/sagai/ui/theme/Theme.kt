@@ -9,6 +9,7 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
@@ -46,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -286,6 +288,7 @@ private data class SagaThemeAnimationKey(
     val genre: Genre?,
     val darkTheme: Boolean,
     val targets: SagaThemeTargets,
+    val fonts: ResolvedGenreFonts?,
 )
 
 private fun baseColorScheme(darkTheme: Boolean) = if (darkTheme) DarkColorScheme else LightColorScheme
@@ -345,7 +348,17 @@ fun SagAITheme(
     // Null in Compose Preview (see rememberGenreThemeServices) — every lookup below already
     // treats "not loaded yet" as a valid state, so a null service just means we stay there.
     val themeServices = rememberGenreThemeServices()
-    val activeGenre = genre
+    // Falls back to whatever an enclosing SagAITheme already resolved, rather than collapsing to
+    // the neutral default, whenever this call site doesn't have its own genre *yet*. Several
+    // screens (SagaWikiView, EmotionalProfileView, BookReaderView, ...) fetch their saga locally
+    // and re-wrap in their own SagAITheme(genre = sagaContent?.genre) — while that fetch is still
+    // in flight, genre is null, and without this fallback that null used to override an ambient
+    // theme that was already correct (set by whichever screen navigated here), popping the whole
+    // screen back to default colors/fonts for a frame or two before its own fetch caught up. Once
+    // the caller's own genre resolves it still wins outright — this only covers the gap before it
+    // does, and lets a caller that legitimately wants no theme pass Genre-typed null explicitly
+    // downstream of a provider that has none (LocalSagaGenre itself defaults to null).
+    val activeGenre = genre ?: LocalSagaGenre.current
 
     var activeVisualConfig by remember(activeGenre) {
         mutableStateOf(activeGenre?.let { themeServices?.visualConfigService?.peekVisualConfig(it) })
@@ -376,8 +389,32 @@ fun SagAITheme(
             genre = activeGenre,
             darkTheme = darkTheme,
             targets = targets,
+            // Colors resolve the instant a cached visual config is available (synchronous), but
+            // fonts need a network fetch that routinely lands later — without this in the key, the
+            // color crossfade finishes and the dip below has already settled by the time the font
+            // family actually swaps, so the font would still hard-pop on its own. Including it here
+            // re-triggers the same dip specifically for that later swap. Doesn't restart the color
+            // animation itself: their targets haven't moved, so those tweens just no-op.
+            fonts = resolvedFonts,
         )
     val transition = updateTransition(animationKey, label = "SagAITheme")
+
+    // A brief dip rather than a real two-tree crossfade — Compose typography can't interpolate
+    // between font families, so nothing here makes the swap itself gradual. Dipping the whole
+    // content's opacity down and back up whenever colors or fonts change hides that swap inside
+    // the dip instead of showing it as a mid-transition pop, and reads as one soft transition
+    // instead of a color fade plus a separate font jump.
+    val contentAlpha by transition.animateFloat(
+        transitionSpec = {
+            keyframes {
+                durationMillis = SAGA_THEME_TRANSITION_MS
+                1f at 0
+                0.35f at SAGA_THEME_TRANSITION_MS / 3
+                1f at SAGA_THEME_TRANSITION_MS
+            }
+        },
+        label = "themeContentAlpha",
+    ) { 1f }
 
     val animatedPrimary by transition.animateColor(
         transitionSpec = { themeColorAnimationSpec },
@@ -489,8 +526,11 @@ fun SagAITheme(
             colorScheme = colorScheme,
             typography = dynamicTypography,
             shapes = dynamicShapes ?: MaterialTheme.shapes,
-            content = content,
-        )
+        ) {
+            Box(modifier = Modifier.alpha(contentAlpha)) {
+                content()
+            }
+        }
     }
 }
 
