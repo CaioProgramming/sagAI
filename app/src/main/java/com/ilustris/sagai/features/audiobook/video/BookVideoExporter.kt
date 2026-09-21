@@ -22,6 +22,7 @@ import androidx.media3.effect.CanvasOverlay
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.Presentation
 import androidx.media3.transformer.Composition
+import androidx.media3.transformer.DefaultEncoderFactory
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.Effects
@@ -29,6 +30,7 @@ import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
+import androidx.media3.transformer.VideoEncoderSettings
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.theme.GenreFontService
 import com.ilustris.sagai.features.audiobook.data.model.AudioSection
@@ -102,8 +104,11 @@ class BookVideoExporter
                 val visualConfig = genreVisualConfigService.getVisualConfig(genre)
                 val (headerTypeface, bodyTypeface) = genreFontService.getTypefaces(genre, visualConfig)
                 val background = backgroundUri(backgroundPath, genre)
-                val output =
-                    File(context.cacheDir, "audiobook").apply { mkdirs() }.resolve("${section.key}_${System.currentTimeMillis()}.mp4")
+                // One export at a time is all the share sheet ever needs, and each file is tens of
+                // MB — keeping older ones around silently ate 160 MB of the user's cache.
+                val exportDir = File(context.cacheDir, "audiobook").apply { mkdirs() }
+                exportDir.listFiles()?.forEach { it.delete() }
+                val output = exportDir.resolve("${section.key}_${System.currentTimeMillis()}.mp4")
 
                 val overlay =
                     LyricsOverlay(
@@ -159,6 +164,13 @@ class BookVideoExporter
                                     .Builder(context)
                                     .setVideoMimeType(MimeTypes.VIDEO_H264)
                                     .setAudioMimeType(MimeTypes.AUDIO_AAC)
+                                    .setEncoderFactory(
+                                        DefaultEncoderFactory
+                                            .Builder(context)
+                                            .setRequestedVideoEncoderSettings(
+                                                VideoEncoderSettings.Builder().setBitrate(VIDEO_BITRATE).build(),
+                                            ).build(),
+                                    )
                                     .addListener(
                                         object : Transformer.Listener {
                                             override fun onCompleted(
@@ -218,7 +230,14 @@ class BookVideoExporter
         companion object {
             const val WIDTH = 1080
             const val HEIGHT = 1920
-            private const val FRAME_RATE = 30
+            /**
+             * The frame is a still background with text changing at word granularity, so the
+             * defaults were spending a phone-video budget on something closer to a slideshow:
+             * a 3-minute prologue came out at 160 MB, past what most apps will even accept for
+             * sharing. 24 fps and a fixed 2 Mbps keep the text crisp at roughly a fifth of that.
+             */
+            private const val FRAME_RATE = 24
+            private const val VIDEO_BITRATE = 2_000_000
             private const val PROGRESS_POLL_MS = 250L
         }
     }
