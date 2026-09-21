@@ -97,6 +97,8 @@ class BookAudioUseCaseImpl
 
         override fun observeSegments(bookId: Long) = bookAudioDao.observeSegments(bookId)
 
+        override fun observeSagaNarrations(sagaId: Int) = bookAudioDao.observeSagaNarrations(sagaId)
+
         override fun narrateSection(
             sagaId: Int,
             actId: Int,

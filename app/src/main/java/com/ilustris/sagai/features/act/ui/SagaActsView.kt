@@ -28,6 +28,7 @@ fun SagaActsView(
     sagaId: String,
     onBack: () -> Unit,
     onOpenBookReader: (BookReaderKey) -> Unit,
+    onOpenAudiobookPlayer: (actId: Int) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
     viewModel: ChronicleViewModel = hiltViewModel(),
@@ -73,6 +74,7 @@ fun SagaActsView(
                             )
                         },
                     onOpenBook = onOpenBookReader,
+                    onListenBook = onOpenAudiobookPlayer,
                 )
             }
         }

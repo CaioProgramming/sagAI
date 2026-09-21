@@ -214,6 +214,7 @@ fun createSagaEntryProvider(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
             onOpenBookReader = { bookReaderKey -> navigator.navigate(bookReaderKey) },
+            onOpenAudiobookPlayer = { actId -> navigator.navigate(AudiobookPlayerKey(key.sagaId.toInt(), actId)) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )

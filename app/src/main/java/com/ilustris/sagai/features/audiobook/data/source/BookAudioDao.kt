@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.ilustris.sagai.features.audiobook.data.model.BookAudioSegment
+import com.ilustris.sagai.features.audiobook.data.model.BookNarrationSummary
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -20,6 +21,14 @@ interface BookAudioDao {
         bookId: Long,
         sectionKey: String,
     ): List<BookAudioSegment>
+
+    /** Narrated duration per volume of a saga — the shelf shows it without loading every segment. */
+    @Query(
+        "SELECT s.bookId AS bookId, SUM(s.durationMs) AS durationMs FROM book_audio_segments s " +
+            "JOIN books b ON b.id = s.bookId JOIN acts a ON a.id = b.actId " +
+            "WHERE a.sagaId = :sagaId GROUP BY s.bookId",
+    )
+    fun observeSagaNarrations(sagaId: Int): Flow<List<BookNarrationSummary>>
 
     @Query("DELETE FROM book_audio_segments WHERE bookId = :bookId AND sectionKey = :sectionKey")
     suspend fun deleteSection(

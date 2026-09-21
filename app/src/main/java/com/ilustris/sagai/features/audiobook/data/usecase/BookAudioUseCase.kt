@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.audiobook.data.model.AudioSection
 import com.ilustris.sagai.features.audiobook.data.model.BookAudioConfig
 import com.ilustris.sagai.features.audiobook.data.model.BookAudioSegment
+import com.ilustris.sagai.features.audiobook.data.model.BookNarrationSummary
 import kotlinx.coroutines.flow.Flow
 
 sealed interface NarrationProgress {
@@ -38,6 +39,9 @@ interface BookAudioUseCase {
     fun sections(act: ActContent): List<AudioSection>
 
     fun observeSegments(bookId: Long): Flow<List<BookAudioSegment>>
+
+    /** Narrated duration per volume of a saga, for surfacing the audiobook outside the reader. */
+    fun observeSagaNarrations(sagaId: Int): Flow<List<BookNarrationSummary>>
 
     /**
      * Narrates whatever the section is missing, segment by segment. Every segment is persisted on

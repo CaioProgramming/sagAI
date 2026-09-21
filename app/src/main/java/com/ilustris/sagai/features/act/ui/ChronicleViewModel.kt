@@ -12,8 +12,16 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.ui.navigation.BookReaderKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import com.ilustris.sagai.features.audiobook.data.usecase.BookAudioUseCase
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -42,6 +50,7 @@ sealed class ChronicleState {
  * When a book is ready to read it emits a [BookReaderKey] via [navigationEvent];
  * the hosting screen handles the actual navigation push.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ChronicleViewModel
     @Inject
@@ -49,12 +58,21 @@ class ChronicleViewModel
         private val bookGenerationService: BookGenerationService,
         private val visualConfigService: GenreVisualConfigService,
         private val sagaRepository: SagaRepository,
+        private val bookAudioUseCase: BookAudioUseCase,
     ) : ViewModel() {
         private val _state = MutableStateFlow<ChronicleState>(ChronicleState.Idle)
         val state = _state.asStateFlow()
 
         private val _saga = MutableStateFlow<SagaContent?>(null)
         val saga = _saga.asStateFlow()
+
+        /** Narrated milliseconds per volume, so the shelf can show which books can be listened to. */
+        val narrations: StateFlow<Map<Long, Long>> =
+            _saga
+                .flatMapLatest { saga ->
+                    saga?.let { bookAudioUseCase.observeSagaNarrations(it.data.id) } ?: flowOf(emptyList())
+                }.map { summaries -> summaries.associate { it.bookId to it.durationMs } }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
         /** Emitted once when a book is ready and the reader should be opened. */
         private val _navigationEvent = MutableSharedFlow<BookReaderKey>(extraBufferCapacity = 1)

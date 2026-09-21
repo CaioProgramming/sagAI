@@ -89,6 +89,12 @@ data class BookAudioSegment(
     val createdAt: Long = System.currentTimeMillis(),
 )
 
+/** How much of a volume is already narrated, for the shelf's audiobook badge. */
+data class BookNarrationSummary(
+    val bookId: Long,
+    val durationMs: Long,
+)
+
 /** Remote-only config (`book_audio_config`). No config means the audiobook feature stays hidden. */
 data class BookAudioConfig(
     val transcribeModel: String = "",
