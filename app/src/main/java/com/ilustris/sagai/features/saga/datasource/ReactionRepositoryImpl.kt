@@ -15,4 +15,9 @@ class ReactionRepositoryImpl
         }
 
         override suspend fun saveReaction(reaction: Reaction) = reaction.copy(id = reactionDao.addReaction(reaction).toInt())
+
+        override fun observeReactions(
+            messageIds: List<Int>,
+            since: Long,
+        ) = reactionDao.observeReactions(messageIds, since)
     }

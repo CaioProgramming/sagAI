@@ -4,7 +4,6 @@ import android.content.Context
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.audio.AudioPermissionManager
 import com.ilustris.sagai.core.audio.AudioService
-import com.ilustris.sagai.core.audio.AudioTranscriptionService
 import com.ilustris.sagai.core.permissions.PermissionService
 import dagger.Module
 import dagger.Provides
@@ -28,8 +27,4 @@ object AudioModule {
     @Singleton
     @Provides
     fun provideAudioPermissionManager(permissionManager: AudioPermissionManager): AudioPermissionManager = permissionManager
-
-    @Singleton
-    @Provides
-    fun provideAudioTranscriptionService(gemmaClient: GemmaClient): AudioTranscriptionService = AudioTranscriptionService(gemmaClient)
 }
