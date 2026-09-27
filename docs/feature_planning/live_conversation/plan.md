@@ -402,6 +402,30 @@ Choosing a voice is a per-character decision, not a per-message one, so it leave
   seeded by character id (stable across retries), with no `voiceDirection`; casting retries in the
   background next time.
 
+#### Voices move to Remote Config
+
+The 30 voices (id, gender, description) are hardcoded today in the `Voice` enum
+(`core/ai/model/Voice.kt`), so a new Gemini voice or a better description needs an app release.
+They move to a Remote Config key, `tts_voices` (draft exported from the current enum in
+[`tts_voices.json`](tts_voices.json)):
+
+```json
+{ "voices": [ { "id": "zephyr", "gender": "FEMALE", "description": "Energetic, bright…" } ] }
+```
+
+- `Voice` stops being an enum and becomes a data class `Voice(id, gender, description)`, served
+  by a small `VoiceCatalog` that reads `tts_voices` and falls back to the bundled list (today's
+  enum values) if the key is missing or malformed.
+- Callers to migrate (7 files): `Voice.findByName` → `voiceCatalog.find(id)`,
+  `Voice.getVoiceSelectionGuide()` → `voiceCatalog.selectionGuide()`, `AudioConfig.voice`,
+  `createAudioGenerationRequest`, `AudioPrompts`, `MessageUseCaseImpl.generateAudio`,
+  `BookAudioUseCaseImpl.narratorVoice` (its `book_audio_config.voices` list keeps working, now
+  validated against the catalog).
+- Stored values don't change: `Character.voice`, `saga.narratorVoice` and the audiobook's
+  `narrationVoice` already persist the lowercase id, so no migration.
+- Casting only offers voices from the catalog, and any id the model returns is validated against
+  it (unknown → deterministic fallback).
+
 #### 2. Performance script — per message, `LOW`/`MINIMAL` pre-request
 
 A message is **text to read**; the audio is a **performance** of it. They won't match 1:1, and
@@ -566,7 +590,8 @@ the bubble think it should have audio. Worth fixing while we're here.
 ## Phases
 
 1. **Foundations** — `VoiceRecorder` + audio gate, audio parts in `GeminiRequestBuilder`,
-   `ModelCatalog.supportsAudioInput`, `voiceThinkingLevel` on the `HIGH` tier,
+   `ModelCatalog.supportsAudioInput`, `voiceThinkingLevel` on the `HIGH` tier, `VoiceCatalog`
+   (`tts_voices` on Remote Config, replacing the `Voice` enum),
    `LiveTranscriber` fallback (remove `AudioTranscriptionService`),
    `AIReply.playerInput` (`PlayerInputFeedback`) + `inputMode` / `originalText` columns + `player_input_blueprint` (this
    also ships the typo fix for the typed chat), `LiveVoiceUseCase` (casting + performance script + multi-speaker TTS), feature flag,
