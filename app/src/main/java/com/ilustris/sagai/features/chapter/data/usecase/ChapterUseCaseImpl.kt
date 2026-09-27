@@ -10,6 +10,7 @@ import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
+import com.ilustris.sagai.core.ai.prompts.PlayerSpectrumPrompts
 import com.ilustris.sagai.core.ai.services.ArtworkConceptService
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -24,6 +25,7 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
 import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.ArcSourceType
@@ -267,8 +269,7 @@ class ChapterUseCaseImpl
                                 bitmap,
                                 path = "${saga.data.id}/chapters/",
                             ) ?: error("Failed to save chapter cover")
-                        val newChapter = chapterWithArtwork.copy(coverImage = coverFile.path)
-                        chapterRepository.updateChapter(newChapter)
+                        persistCover(chapterWithArtwork, coverFile.path)
                     }.getOrThrow()
             }
 
@@ -306,8 +307,7 @@ class ChapterUseCaseImpl
                                     bitmap,
                                     path = "${saga.data.id}/chapters/",
                                 ) ?: error("Failed to save chapter cover")
-                            val newChapter = chapterWithArtwork.copy(coverImage = coverFile.path)
-                            chapterRepository.updateChapter(newChapter)
+                            persistCover(chapterWithArtwork, coverFile.path)
                         }.fold(
                             onSuccess = { updated ->
                                 emit(
@@ -332,6 +332,21 @@ class ChapterUseCaseImpl
                     emit(StreamingState.Error(e.message ?: "Error generating chapter cover stream"))
                 }
             }
+
+        /**
+         * Cover generation runs for a long while off a snapshot of the chapter, so writing that
+         * snapshot back would erase whatever changed meanwhile (e.g. the player's spectrum answers).
+         * Only the cover is layered onto the freshest row.
+         */
+        private suspend fun persistCover(
+            snapshot: Chapter,
+            coverPath: String,
+        ): Chapter {
+            val latest = chapterRepository.getChapterById(snapshot.id) ?: snapshot
+            return chapterRepository.updateChapter(
+                latest.copy(coverImage = coverPath, artwork = latest.artwork ?: snapshot.artwork),
+            )
+        }
 
         private suspend fun ensureChapterArtwork(
             chapter: Chapter,
@@ -472,17 +487,39 @@ class ChapterUseCaseImpl
                             remoteConfigService.getNarrativeRules(),
                         )
 
-                    reasoningSynthesizerService
-                        .synthesizeReasoning(
-                            gemmaClient
-                                .generateStreaming<GeneratedContent<String>>(
+                    // Deliberately the sync call, not generateStreaming — see MessageUseCaseImpl's
+                    // own generateMessage for why: the reply is one JSON object, so streaming
+                    // never rendered partial text, and reasoningSynthesizerService.synthesizeReasoning
+                    // already ignores the source flow's real Reasoning states in favor of its own
+                    // loading-line rotation (the whole reason this used to stream — summarising
+                    // the model's live thought stream — stopped applying once that moved to a
+                    // synthesized pool instead). Wrapped in a single-emission flow purely so the
+                    // synthesizer keeps working the same way for every other caller.
+                    val generateFlow =
+                        flow {
+                            val intro =
+                                gemmaClient.generate<GeneratedContent<String>>(
                                     promptSplit =
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                         ),
                                     requireTranslation = true,
                                     requirement = ModelRequirement.HIGH,
-                                ),
+                                )
+                            if (intro == null) {
+                                emit(
+                                    StreamingState.Error(
+                                        message = "Chapter introduction generation returned no result",
+                                        throwable = IllegalStateException("Chapter introduction generation failed"),
+                                    ),
+                                )
+                            } else {
+                                emit(StreamingState.Success(intro))
+                            }
+                        }
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            generateFlow,
                             "Generating chapter introduction...",
                             genre = saga.data.genre,
                         ).collect { state ->
@@ -518,6 +555,47 @@ class ChapterUseCaseImpl
                 }
             }
 
+        override suspend fun recordPlayerChoiceAnswers(
+            chapterId: Int,
+            answers: List<String>,
+        ): RequestResult<Chapter> =
+            executeRequest {
+                val (saga, chapterContent) = fetchContext(chapterId)
+                val chapter = chapterContent.data
+                val cards = chapter.playerChoiceCards.orEmpty()
+                require(cards.isNotEmpty() && answers.size == cards.size) {
+                    "Expected ${cards.size} answers for chapter $chapterId, got ${answers.size}"
+                }
+
+                // Re-answering a chapter reassesses its own read; otherwise it inherits the last one.
+                val previousSpectrum =
+                    chapter.playerSpectrum?.takeIf { it.isNotBlank() }
+                        ?: PlayerSpectrumPrompts.previousSpectrum(saga, chapterId)
+
+                val prompt =
+                    ChapterPrompts.playerSpectrumRewritePrompt(
+                        promptService = promptService,
+                        chapter = chapter,
+                        previousSpectrum = previousSpectrum,
+                        cards = cards,
+                        answers = answers,
+                    )
+                val rewritten =
+                    gemmaClient.generate<GeneratedContent<String>>(
+                        promptSplit = prompt,
+                        requireTranslation = false,
+                        requirement = ModelRequirement.LOW,
+                    )!!
+
+                val spectrum =
+                    (rewritten.data as String?)?.takeIf { it.isNotBlank() }
+                        ?: error("Empty player spectrum rewrite")
+
+                chapterRepository.updateChapter(
+                    chapter.copy(playerSpectrum = spectrum, playerChoiceAnswers = answers),
+                )
+            }
+
         override fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContentWithLore<Chapter>?>> =
             flow {
                 try {
@@ -536,18 +614,37 @@ class ChapterUseCaseImpl
                             emptyMap(),
                         )
 
-                    reasoningSynthesizerService
-                        .synthesizeReasoning(
-                            gemmaClient
-                                .generateStreaming<GeneratedContent<UnifiedChapterUpdate>>(
+                    // See generateChapterIntroductionStream's own comment on the same swap: sync
+                    // call, single-emission flow, reasoningSynthesizerService unaffected.
+                    val generateFlow =
+                        flow {
+                            val synthesized =
+                                gemmaClient.generate<GeneratedContent<UnifiedChapterUpdate>>(
                                     promptSplit =
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                             actContext.renderInstructions(),
                                             artworkConceptService.artworkInstructions(ImageType.COVER),
+                                            PlayerSpectrumPrompts.lensInstructions(
+                                                PlayerSpectrumPrompts.previousSpectrum(saga, chapterId),
+                                            ),
                                         ),
                                     requirement = ModelRequirement.HIGH,
-                                ),
+                                )
+                            if (synthesized == null) {
+                                emit(
+                                    StreamingState.Error(
+                                        message = "Chapter synthesis returned no result",
+                                        throwable = IllegalStateException("Chapter synthesis generation failed"),
+                                    ),
+                                )
+                            } else {
+                                emit(StreamingState.Success(synthesized))
+                            }
+                        }
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            generateFlow,
                             "Generating new chapter...",
                             genre = saga.data.genre,
                         ).collect { state ->
@@ -565,6 +662,22 @@ class ChapterUseCaseImpl
                                                 originChapterId = chapterContent.data.id,
                                             )
                                         }
+                                    // Gson skips Kotlin defaults here (UnifiedChapterUpdate has a required
+                                    // field), so an omitted list arrives as null despite the type.
+                                    // A partial set (some pairs dropped by isAnswerable()) is
+                                    // worse than none: the step is mandatory, and 3 forced
+                                    // choices reads as a deliberate beat while 1 or 2 reads as a
+                                    // bug. So this only ever activates with exactly the full set.
+                                    val validCards =
+                                        (synthesis.playerChoiceCards as List<GeneratedChoiceCard>?)
+                                            .orEmpty()
+                                            .filter { it.isAnswerable() }
+                                    val choiceCards =
+                                        if (validCards.size >= PLAYER_CHOICE_CARD_COUNT) {
+                                            validCards.take(PLAYER_CHOICE_CARD_COUNT)
+                                        } else {
+                                            emptyList()
+                                        }
                                     val updatedChapter =
                                         updateChapter(
                                             mergedChapter.copy(
@@ -572,6 +685,10 @@ class ChapterUseCaseImpl
                                                     synthesis.continuitySummary
                                                         ?: mergedChapter.continuitySummary,
                                                 closingCheckpoint = closingCheckpoint ?: mergedChapter.closingCheckpoint,
+                                                // New cards start unanswered; no cards keeps what was there.
+                                                playerChoiceCards = choiceCards.ifEmpty { mergedChapter.playerChoiceCards },
+                                                playerChoiceAnswers =
+                                                    if (choiceCards.isEmpty()) mergedChapter.playerChoiceAnswers else null,
                                             ),
                                         )
                                     closingCheckpoint?.locationId?.let {
@@ -655,3 +772,8 @@ class ChapterUseCaseImpl
                 }
             }
     }
+
+private const val PLAYER_CHOICE_CARD_COUNT = 3
+
+private fun GeneratedChoiceCard.isAnswerable() =
+    listOf(choiceTitle, optionAText, optionBText, optionATag, optionBTag).all { !(it as String?).isNullOrBlank() }

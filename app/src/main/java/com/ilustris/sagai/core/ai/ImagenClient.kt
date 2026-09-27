@@ -93,11 +93,13 @@ class ImagenClientImpl
                             promptSplit = prompt,
                             requirement = ModelRequirement.HIGH,
                             requireTranslation = false,
-                            // HIGH's current Gemini model plays it safe on theme-specific art
-                            // direction — LOW's model (a Gemma generation) commits harder to a
-                            // strong style. Forced by reference to LOW's tier, not a hardcoded
-                            // model name, so a future model swap on that tier follows here too.
-                            forceModel = ModelRequirement.LOW,
+                            // LOW's model (a Gemma generation) used to be forced here for a
+                            // stronger style commitment, but its small context window risks
+                            // truncating this unified icon prompt as the per-genre rendering
+                            // blueprints keep growing — a Gemini model has far more headroom.
+                            // Forced by reference to MEDIUM's tier, not a hardcoded model name,
+                            // so a future model swap on that tier follows here too.
+                            forceModel = ModelRequirement.MEDIUM,
                         )
 
                     reasoningSynthesizerService

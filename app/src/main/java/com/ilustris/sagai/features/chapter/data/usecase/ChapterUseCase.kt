@@ -37,5 +37,14 @@ interface ChapterUseCase {
 
     suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>>
 
+    /**
+     * Stores the player's picks (hidden tags, in card order) and rewrites the chapter's
+     * playerSpectrum from them, seeded by the previous chapter's read.
+     */
+    suspend fun recordPlayerChoiceAnswers(
+        chapterId: Int,
+        answers: List<String>,
+    ): RequestResult<Chapter>
+
     fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContentWithLore<Chapter>?>>
 }

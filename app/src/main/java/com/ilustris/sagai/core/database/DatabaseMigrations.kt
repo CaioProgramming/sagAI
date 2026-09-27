@@ -394,6 +394,17 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_35_36 =
+        object : Migration(35, 36) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Chapter-closure choice cards: the dilemmas, the (hidden) tags the player picked,
+                // and the per-chapter spectrum they rewrite. NULL means "not answered yet".
+                db.execSQL("ALTER TABLE Chapter ADD COLUMN `playerSpectrum` TEXT")
+                db.execSQL("ALTER TABLE Chapter ADD COLUMN `playerChoiceCards` TEXT")
+                db.execSQL("ALTER TABLE Chapter ADD COLUMN `playerChoiceAnswers` TEXT")
+            }
+        }
+
     val MIGRATION_32_33 =
         object : Migration(32, 33) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -623,5 +634,6 @@ object DatabaseMigrations {
             MIGRATION_32_33,
             MIGRATION_33_34,
             MIGRATION_34_35,
+            MIGRATION_35_36,
         )
 }

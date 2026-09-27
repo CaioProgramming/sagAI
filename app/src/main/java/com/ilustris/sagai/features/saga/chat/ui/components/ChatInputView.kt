@@ -13,10 +13,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -68,18 +64,22 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
@@ -100,6 +100,8 @@ import com.ilustris.sagai.features.saga.chat.data.model.title
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
+import com.ilustris.sagai.ui.components.IosStyleMenu
+import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.morphingGradient
@@ -109,6 +111,45 @@ import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themePainter
 
 private val ChatInputTextMaxHeight = 160.dp
+private val ThinkBorderDash = floatArrayOf(8f, 6f)
+
+private fun DrawScope.drawThinkTagBorders(
+    layoutResult: TextLayoutResult,
+    ranges: List<IntRange>,
+    color: Color,
+) {
+    val textLength = layoutResult.layoutInput.text.length
+    val stroke = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(ThinkBorderDash, 0f))
+    ranges.forEach { range ->
+        val start = range.first.coerceIn(0, textLength)
+        val end = (range.last + 1).coerceIn(start, textLength)
+        if (start >= end) return@forEach
+        val startLine = layoutResult.getLineForOffset(start)
+        val endLine = layoutResult.getLineForOffset(end - 1)
+        if (startLine == endLine) {
+            val startBox = layoutResult.getBoundingBox(start)
+            val endBox = layoutResult.getBoundingBox(end - 1)
+            val pad = 3.dp.toPx()
+            drawRoundRect(
+                color = color,
+                topLeft =
+                    Offset(
+                        minOf(startBox.left, endBox.left) - pad,
+                        minOf(startBox.top, endBox.top) - pad,
+                    ),
+                size =
+                    Size(
+                        maxOf(startBox.right, endBox.right) - minOf(startBox.left, endBox.left) + pad * 2,
+                        maxOf(startBox.bottom, endBox.bottom) - minOf(startBox.top, endBox.top) + pad * 2,
+                    ),
+                cornerRadius = CornerRadius(10.dp.toPx(), 10.dp.toPx()),
+                style = stroke,
+            )
+        } else {
+            drawPath(layoutResult.getPathForRange(start, end), color = color, style = stroke)
+        }
+    }
+}
 
 @Composable
 private fun generatingBorderRotation(isGenerating: Boolean): Float {
@@ -247,8 +288,17 @@ fun ChatInputView(
     onStopGeneration: () -> Unit = {},
 ) {
     var characterMenu by remember { mutableStateOf(false) }
-    var speechModeSheet by remember { mutableStateOf(false) }
+    var speechModeMenu by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    val speechModeOptions =
+        remember {
+            listOf(
+                SenderType.CHARACTER to null,
+                SenderType.NARRATOR to ExpressiveTag.NARRATOR,
+                SenderType.ACTION to ExpressiveTag.ACTION,
+                SenderType.THOUGHT to ExpressiveTag.THINK,
+            )
+        }
 
     LaunchedEffect(inputField.text.length) {
         scrollState.scrollTo(scrollState.maxValue)
@@ -257,7 +307,6 @@ fun ChatInputView(
     val actualCharacter = selectedCharacter ?: content.mainCharacter
     val genre = content.data.genre
     val resolvedColor = MaterialTheme.colorScheme.primary
-    val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
     val inputBrush =
         Brush.horizontalGradient(
             if (isGenerating) morphingGradient() else themeBrushColors(),
@@ -315,6 +364,36 @@ fun ChatInputView(
                 )
             }
         }
+    val thinkRanges =
+        remember(inputField.text, tagBg, textColor, tagMarkerLabels, thinkTagSurface) {
+            transformTextWithContent(
+                mainCharacter = null,
+                characters = emptyList(),
+                wiki = emptyList(),
+                text = inputField.text,
+                genreColor = resolvedColor,
+                tagBackgroundColor = tagBg,
+                textColor = textColor,
+                headerFont = null,
+                bodyFont = null,
+                tagMarkerLabels = tagMarkerLabels,
+                thinkTagSurfaceColor = thinkTagSurface,
+                annotateMentions = false,
+            ).text.spanStyles
+                .filter { it.item.background == thinkTagSurface }
+                .map { it.start until it.end }
+                .sortedBy { it.first }
+                .fold(mutableListOf<IntRange>()) { acc, range ->
+                    val last = acc.lastOrNull()
+                    if (last != null && range.first <= last.last + 1) {
+                        acc[acc.lastIndex] = last.first..maxOf(last.last, range.last)
+                    } else {
+                        acc.add(range)
+                    }
+                    acc
+                }
+        }
+    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -440,39 +519,6 @@ fun ChatInputView(
                     .border(1.dp, inputBrush, inputShape)
                     .background(bubbleColorState.value, inputShape),
         ) {
-            AnimatedVisibility(currentTagInside != null) {
-                currentTagInside?.let { tag ->
-                    SenderType.senderForTag(tag)?.let { senderType ->
-                        Row(
-                            Modifier
-                                .alpha(.7f)
-                                .padding(8.dp)
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            senderType.icon()?.let {
-                                Icon(
-                                    painterResource(it),
-                                    null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = resolvedIconColor,
-                                )
-                            }
-                            Text(
-                                stringResource(R.string.tag_inside_hint, senderType.title()),
-                                style =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = resolvedIconColor,
-                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    ),
-                            )
-                        }
-                    }
-                }
-            }
-
             Column(
                 Modifier
                     .padding(4.dp)
@@ -496,12 +542,24 @@ fun ChatInputView(
                     textStyle = textStyle,
                     visualTransformation = visualTransformation,
                     cursorBrush = resolvedColor.solidGradient(),
+                    onTextLayout = { textLayoutResult = it },
                     decorationBox = { inner ->
                         Box(
                             Modifier.padding(8.dp),
                             contentAlignment = Alignment.CenterStart,
                         ) {
-                            Box {
+                            Box(
+                                Modifier.drawWithContent {
+                                    drawContent()
+                                    textLayoutResult?.let { layoutResult ->
+                                        drawThinkTagBorders(
+                                            layoutResult,
+                                            thinkRanges,
+                                            resolvedColor.copy(alpha = .6f),
+                                        )
+                                    }
+                                },
+                            ) {
                                 inner()
                                 if (inputField.text.isEmpty()) {
                                     Text(
@@ -575,23 +633,19 @@ fun ChatInputView(
 
                     val speechModeChipShape = MaterialTheme.shapes.extraLarge
                     val isInsideTag = currentTagInside != null
-                    Row(
-                        modifier =
-                            Modifier
-                                .clip(speechModeChipShape)
-                                .background(
-                                    if (isInsideTag) {
-                                        resolvedColor.copy(alpha = .2f)
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceContainer
-                                    },
-                                ),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+                    Box {
                         Row(
                             modifier =
                                 Modifier
-                                    .clickable { speechModeSheet = true }
+                                    .clip(speechModeChipShape)
+                                    .background(
+                                        if (isInsideTag) {
+                                            resolvedColor.copy(alpha = .2f)
+                                        } else {
+                                            MaterialTheme.colorScheme.surfaceContainer
+                                        },
+                                    )
+                                    .clickable { speechModeMenu = true }
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -610,41 +664,32 @@ fun ChatInputView(
                                     MaterialTheme.typography.labelSmall,
                             )
                         }
-                        AnimatedVisibility(
-                            visible = isInsideTag,
-                            enter =
-                                expandHorizontally(expandFrom = Alignment.Start) +
-                                    fadeIn(
-                                        tween(
-                                            200,
-                                        ),
-                                    ),
-                            exit =
-                                shrinkHorizontally(shrinkTowards = Alignment.Start) +
-                                    fadeOut(
-                                        tween(150),
-                                    ),
+                        IosStyleMenu(
+                            expanded = speechModeMenu,
+                            onDismissRequest = { speechModeMenu = false },
+                            anchor = Alignment.BottomStart,
                         ) {
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .background(
-                                            MaterialTheme.colorScheme.background.copy(alpha = .2f),
-                                            speechModeChipShape,
-                                        )
-                                        .clickable {
-                                            onUpdateInput(
-                                                escapeCursorFromTagAndClean(inputField),
-                                            )
-                                        }
-                                        .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    stringResource(R.string.next),
-                                    style =
-                                        MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                )
+                            speechModeOptions.forEach { (senderType, expressiveTag) ->
+                                val enabled = expressiveTag == null || !isInsideTag
+                                senderType.icon()?.let { iconRes ->
+                                    IosStyleMenuItem(
+                                        text = senderType.title(),
+                                        icon = painterResource(iconRes),
+                                        enabled = enabled,
+                                        onClick = {
+                                            speechModeMenu = false
+                                            if (expressiveTag != null) {
+                                                onUpdateInput(
+                                                    insertExpressiveTag(inputField, expressiveTag),
+                                                )
+                                            } else if (isInsideTag) {
+                                                onUpdateInput(
+                                                    escapeCursorFromTagAndClean(inputField),
+                                                )
+                                            }
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
@@ -869,23 +914,6 @@ fun ChatInputView(
                     }
                 }
             }
-        }
-
-        if (speechModeSheet) {
-            SpeechModeSheet(
-                activeTag = currentTagInside,
-                accentColor = resolvedColor,
-                canInsertTag = currentTagInside == null,
-                onSelectSpeak = {
-                    if (currentTagInside != null) {
-                        onUpdateInput(escapeCursorFromTagAndClean(inputField))
-                    }
-                },
-                onSelectTag = { tag ->
-                    onUpdateInput(insertExpressiveTag(inputField, tag))
-                },
-                onDismiss = { speechModeSheet = false },
-            )
         }
 
         val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)

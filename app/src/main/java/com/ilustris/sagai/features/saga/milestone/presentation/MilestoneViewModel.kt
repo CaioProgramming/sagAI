@@ -9,6 +9,7 @@ import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
+import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.getChapterCovers
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -32,7 +33,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
+
+private const val STUCK_WATCHDOG_DELAY_MS = 30_000L
 
 private data class NarrativeSnapshot(
     val phase: NarrativePhase,
@@ -50,6 +54,7 @@ class MilestoneViewModel
         private val bookGenerationService: BookGenerationService,
         private val settingsUseCase: SettingsUseCase,
         private val adsService: AdsService,
+        private val chapterUseCase: ChapterUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<MilestoneUiState>(MilestoneUiState.Loading())
         val uiState: StateFlow<MilestoneUiState> = _uiState.asStateFlow()
@@ -101,6 +106,7 @@ class MilestoneViewModel
         private var currentSagaId: Int? = null
         private var driveJob: Job? = null
         private var finishCheckJob: Job? = null
+        private var stuckWatchdogJob: Job? = null
         private var chainStepTotal = 0
         private var chainStepIndex = 0
 
@@ -109,16 +115,45 @@ class MilestoneViewModel
         // also deemed terminal (chainStepTotal is a projection, not a guarantee).
         private var adShownThisChain = false
 
+        // milestone.chapter is a snapshot from when the milestone was emitted, so whether its
+        // cards were already answered has to be tracked here, not read off that chapter.
+        private val answeredChoiceChapterIds = mutableSetOf<Int>()
+        private var choiceSelections: List<Int?> = emptyList()
+        private var submittingChoices = false
+
         fun start(sagaId: Int) {
             if (currentSagaId == sagaId) return
             currentSagaId = sagaId
             driveJob?.cancel()
             finishCheckJob?.cancel()
+            stuckWatchdogJob?.cancel()
             chainStepTotal = 0
             chainStepIndex = 0
             adShownThisChain = false
+            answeredChoiceChapterIds.clear()
+            choiceSelections = emptyList()
             _uiState.value = MilestoneUiState.Loading()
             _showOnboarding.value = false
+
+            // A second, silent barrier ahead of StuckEscapeButton: resets on every real UI
+            // change (including a reasoning chunk ticking in, which is its own proof of life),
+            // so it only ever fires after 30s spent sitting still on Loading — the same
+            // reevaluate-and-maybe-leave call the button makes, just without waiting for the
+            // player to notice and tap it first.
+            viewModelScope.launch {
+                _uiState.collect { state ->
+                    stuckWatchdogJob?.cancel()
+                    stuckWatchdogJob =
+                        if (state is MilestoneUiState.Loading) {
+                            viewModelScope.launch {
+                                delay(STUCK_WATCHDOG_DELAY_MS)
+                                requestStuckExit()
+                            }
+                        } else {
+                            null
+                        }
+                }
+            }
 
             driveJob =
                 viewModelScope.launch {
@@ -155,40 +190,43 @@ class MilestoneViewModel
                         NarrativeSnapshot(narrativeState.phase, narrativeState.lastError, milestone, reasoning)
                     }.collect { (phase, lastError, milestone, reasoning) ->
                         when {
+                            // The answers are being saved; showClosure() takes over once they are.
+                            submittingChoices -> {
+                                Unit
+                            }
+
                             milestone is SagaMilestone.Introduction -> {
                                 hasEngaged = true
                                 _uiState.value = MilestoneUiState.IntroductionStep(milestone)
+                            }
+
+                            milestone is SagaMilestone.ChapterFinished && milestone.needsChoiceCards() -> {
+                                hasEngaged = true
+                                // narrativeUiState/contentReasoning are saga-wide flows, not
+                                // scoped to this milestone — a tick from either (a reasoning
+                                // chunk, an unrelated phase blip) re-enters this branch on every
+                                // combine emission. Re-deriving ChoiceCardsStep from scratch each
+                                // time raced selectChoice()'s own writes: whichever wrote _uiState
+                                // last won, so a well-timed tick could revert an in-progress pick
+                                // or hand the pager a fresh instance mid-selection. Once the step
+                                // is up for this chapter, selectChoice()/submitChoiceAnswers() own
+                                // it exclusively — this branch only ever establishes it once.
+                                val current = _uiState.value
+                                val alreadyShowing =
+                                    current is MilestoneUiState.ChoiceCardsStep &&
+                                        current.milestone.chapter.id == milestone.chapter.id
+                                if (!alreadyShowing) {
+                                    val cards = milestone.chapter.playerChoiceCards.orEmpty()
+                                    choiceSelections = List(cards.size) { null }
+                                    _uiState.value = MilestoneUiState.ChoiceCardsStep(milestone, cards, choiceSelections)
+                                }
                             }
 
                             milestone is SagaMilestone.NewEvent ||
                                 milestone is SagaMilestone.ChapterFinished ||
                                 milestone is SagaMilestone.ActFinished -> {
                                 hasEngaged = true
-                                chainStepIndex++
-                                val stepTotal = maxOf(chainStepTotal, chainStepIndex)
-                                val closureState =
-                                    MilestoneUiState.ClosureStep(
-                                        milestone = milestone,
-                                        stepIndex = chainStepIndex,
-                                        stepTotal = stepTotal,
-                                    )
-                                // Event -> chapter -> act closures can only ever emit in that
-                                // order within one chain (verified against SagaContentManagerImpl's
-                                // drive loop), so the terminal step's own milestone type is always
-                                // the highest-severity one that closed — an event mid-chain (a
-                                // chapter or act still coming) never shows an ad, only the chain's
-                                // last step does, tiered by what actually closed.
-                                val isTerminalStep = chainStepIndex >= stepTotal
-                                if (!adShownThisChain && isTerminalStep) {
-                                    adShownThisChain = true
-                                    val tier =
-                                        if (milestone is SagaMilestone.NewEvent) AdTier.EVENT else AdTier.CHAPTER_OR_ACT
-                                    viewModelScope.launch {
-                                        adsService.showIfReady(tier) { _uiState.value = closureState }
-                                    }
-                                } else {
-                                    _uiState.value = closureState
-                                }
+                                showClosure(milestone)
                             }
 
                             // A step that already failed once sits back in AwaitingAdvance
@@ -261,6 +299,88 @@ class MilestoneViewModel
                         }
                     }
                 }
+        }
+
+        private fun showClosure(milestone: SagaMilestone) {
+            chainStepIndex++
+            val stepTotal = maxOf(chainStepTotal, chainStepIndex)
+            val closureState =
+                MilestoneUiState.ClosureStep(
+                    milestone = milestone,
+                    stepIndex = chainStepIndex,
+                    stepTotal = stepTotal,
+                )
+            // Event -> chapter -> act closures can only ever emit in that
+            // order within one chain (verified against SagaContentManagerImpl's
+            // drive loop), so the terminal step's own milestone type is always
+            // the highest-severity one that closed — an event mid-chain (a
+            // chapter or act still coming) never shows an ad, only the chain's
+            // last step does, tiered by what actually closed.
+            val isTerminalStep = chainStepIndex >= stepTotal
+            if (!adShownThisChain && isTerminalStep) {
+                adShownThisChain = true
+                val tier =
+                    if (milestone is SagaMilestone.NewEvent) AdTier.EVENT else AdTier.CHAPTER_OR_ACT
+                viewModelScope.launch {
+                    adsService.showIfReady(tier) { _uiState.value = closureState }
+                }
+            } else {
+                _uiState.value = closureState
+            }
+        }
+
+        private fun SagaMilestone.ChapterFinished.needsChoiceCards() =
+            !chapter.playerChoiceCards.isNullOrEmpty() &&
+                chapter.playerChoiceAnswers == null &&
+                chapter.id !in answeredChoiceChapterIds
+
+        fun selectChoice(
+            cardIndex: Int,
+            optionIndex: Int,
+        ) {
+            val state = _uiState.value as? MilestoneUiState.ChoiceCardsStep ?: return
+            if (cardIndex !in state.cards.indices || optionIndex !in 0..1) return
+            choiceSelections = state.selections.toMutableList().also { it[cardIndex] = optionIndex }
+            _uiState.value = state.copy(selections = choiceSelections)
+        }
+
+        /** Resolves the picks to their hidden tags here, so the UI never has to hold them. */
+        fun submitChoiceAnswers() {
+            val state = _uiState.value as? MilestoneUiState.ChoiceCardsStep ?: return
+            if (state.selections.any { it == null }) return
+            val tags =
+                state.cards.zip(state.selections).map { (card, pick) ->
+                    if (pick == 0) card.optionATag else card.optionBTag
+                }
+
+            answeredChoiceChapterIds += state.milestone.chapter.id
+            choiceSelections = emptyList()
+            submittingChoices = true
+            _uiState.value = MilestoneUiState.Loading()
+            viewModelScope.launch {
+                // The read is a nicety layered on the story, so a failed rewrite never traps the
+                // player on this screen — the chapter just keeps its previous spectrum.
+                chapterUseCase
+                    .recordPlayerChoiceAnswers(state.milestone.chapter.id, tags)
+                    .onFailure { Timber.e(it, "Failed to record player choice answers") }
+                submittingChoices = false
+                showClosure(state.milestone)
+            }
+        }
+
+        /**
+         * The screen's own emergency exit — never a way to skip a step that's genuinely pending
+         * (an unanswered choice card, a closure waiting on Continue). It only asks the manager to
+         * reevaluate progression from scratch; the existing "chain finished" check above (the
+         * `phase is Playing && hasEngaged` branch) is what actually decides to leave, the same
+         * path a real, successful completion already uses. If the reevaluation finds something
+         * genuinely still pending, this is a no-op and the screen stays exactly as it was — the
+         * button exists for the case this screen can't fix itself (a stale flag, a desync),
+         * not as a shortcut past mandatory input.
+         */
+        fun requestStuckExit() {
+            val saga = sagaContentManager.content.value ?: return
+            sagaContentManager.checkNarrativeProgression(saga)
         }
 
         fun onContinue() {

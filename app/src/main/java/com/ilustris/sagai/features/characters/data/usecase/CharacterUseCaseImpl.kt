@@ -284,6 +284,7 @@ class CharacterUseCaseImpl
                                 "firstSceneId",
                             ),
                         requirement = ModelRequirement.HIGH,
+                        temperatureRandomness = 1f,
                     )!!
 
                 if (sagaContent.hasConflictingCharacterIdentity(newCharacter)) {
@@ -348,6 +349,7 @@ class CharacterUseCaseImpl
                                         "firstSceneId",
                                     ),
                                 requirement = ModelRequirement.HIGH,
+                                temperatureRandomness = 1f,
                             )
 
                     reasoningSynthesizerService

@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.milestone.presentation
 
+import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 
 /** What the Milestone screen shows right now. Closures are stepped ("2 de 3"); introductions
@@ -21,6 +22,15 @@ sealed class MilestoneUiState {
         val milestone: SagaMilestone,
         val stepIndex: Int,
         val stepTotal: Int,
+    ) : MilestoneUiState()
+
+    /** Mandatory forced-choice dilemmas shown before a chapter's closure. [selections] holds the
+     * picked option per card (0 = A, 1 = B, null = unanswered); the hidden tags stay in the
+     * ViewModel and are never part of what the UI can bind to. */
+    data class ChoiceCardsStep(
+        val milestone: SagaMilestone.ChapterFinished,
+        val cards: List<GeneratedChoiceCard>,
+        val selections: List<Int?>,
     ) : MilestoneUiState()
 
     data class IntroductionStep(

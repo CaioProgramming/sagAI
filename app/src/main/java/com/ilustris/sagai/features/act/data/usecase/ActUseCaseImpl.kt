@@ -234,10 +234,14 @@ class ActUseCaseImpl
                 val actContext =
                     promptService.buildSplitBlueprint(saga.getDirectiveKey(), emptyMap())
 
-                reasoningSynthesizerService
-                    .synthesizeReasoning(
-                        gemmaClient
-                            .generateStreaming<GeneratedContent<String>>(
+                // Sync call, not generateStreaming — see ChapterUseCaseImpl's own
+                // generateChapterIntroductionStream comment for why: one JSON object, no partial
+                // text to render, and reasoningSynthesizerService already synthesizes its own
+                // loading lines rather than reading the source flow's real Reasoning states.
+                val generateFlow =
+                    flow {
+                        val intro =
+                            gemmaClient.generate<GeneratedContent<String>>(
                                 promptSplit =
                                     prompt.mergeInstructions(
                                         genreConfigService.conversationInstructions(saga.data.genre),
@@ -245,7 +249,21 @@ class ActUseCaseImpl
                                     ),
                                 requireTranslation = true,
                                 requirement = ModelRequirement.MEDIUM,
-                            ),
+                            )
+                        if (intro == null) {
+                            emit(
+                                StreamingState.Error(
+                                    message = "Act introduction generation returned no result",
+                                    throwable = IllegalStateException("Act introduction generation failed"),
+                                ),
+                            )
+                        } else {
+                            emit(StreamingState.Success(intro))
+                        }
+                    }
+                reasoningSynthesizerService
+                    .synthesizeReasoning(
+                        generateFlow,
                         "Starting a new act...",
                         genre = saga.data.genre,
                     ).collect { state ->
@@ -295,16 +313,31 @@ class ActUseCaseImpl
                             conversationDirective = emptyString(),
                         )
 
-                    reasoningSynthesizerService
-                        .synthesizeReasoning(
-                            gemmaClient
-                                .generateStreaming<GeneratedContent<UnifiedActUpdate>>(
+                    // See generateActIntroductionStream's own comment on the same swap.
+                    val generateFlow =
+                        flow {
+                            val synthesized =
+                                gemmaClient.generate<GeneratedContent<UnifiedActUpdate>>(
                                     promptSplit =
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                         ),
                                     requirement = ModelRequirement.HIGH,
-                                ),
+                                )
+                            if (synthesized == null) {
+                                emit(
+                                    StreamingState.Error(
+                                        message = "Act synthesis returned no result",
+                                        throwable = IllegalStateException("Act synthesis generation failed"),
+                                    ),
+                                )
+                            } else {
+                                emit(StreamingState.Success(synthesized))
+                            }
+                        }
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            generateFlow,
                             "Finishing story act",
                             genre = saga.data.genre,
                         ).collect { state ->

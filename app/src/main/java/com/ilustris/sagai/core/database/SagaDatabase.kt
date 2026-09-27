@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.ilustris.sagai.core.database.converters.BookConverters
 import com.ilustris.sagai.core.database.converters.CharacterPresenceListConverter
+import com.ilustris.sagai.core.database.converters.ChoiceCardListConverter
 import com.ilustris.sagai.core.database.converters.TimelineConverters
 import com.ilustris.sagai.core.database.converters.EnumConverters
 import com.ilustris.sagai.core.database.converters.FarewellListConverter
@@ -69,7 +70,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         WorldLocation::class,
         WorldLocationVisit::class,
     ],
-    version = 35,
+    version = 36,
     exportSchema = true,
 )
 @TypeConverters(
@@ -80,6 +81,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
     FarewellListConverter::class,
     CharacterPresenceListConverter::class,
     TimelineConverters::class,
+    ChoiceCardListConverter::class,
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao

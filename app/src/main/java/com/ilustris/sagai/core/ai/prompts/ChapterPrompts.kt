@@ -12,6 +12,7 @@ import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
 import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.buildContextualHistory
@@ -43,10 +44,17 @@ data class ChapterSynthesisArgs(
     val narrativeStyle: String,
 )
 
+data class PlayerSpectrumRewriteArgs(
+    val previousSpectrum: String,
+    val chapterSummary: String,
+    val answeredChoices: String,
+)
+
 object ChapterPrompts {
     const val CHAPTER_GENERATION_BLUEPRINT = "chapter_generation_blueprint"
     const val CHAPTER_INTRODUCTION_BLUEPRINT = "chapter_introduction_blueprint"
     const val CHAPTER_SYNTHESIS_BLUEPRINT = "chapter_synthesis_blueprint"
+    const val PLAYER_SPECTRUM_REWRITE_BLUEPRINT = "player_spectrum_rewrite_blueprint"
 
     /**
      * [CHAPTER_SYNTHESIS_BLUEPRINT] must return `continuitySummary` in [UnifiedChapterUpdate]:
@@ -66,6 +74,10 @@ object ChapterPrompts {
             "createdAt",
             "actId",
             "featuredCharacters",
+            // Reach future prompts only through PlayerSpectrumPrompts.lensInstructions (text, never tags).
+            "playerChoiceCards",
+            "playerSpectrum",
+            "playerChoiceAnswers",
         ) +
             LorePrompts.LORE_OUTPUT_ONLY_FIELDS
 
@@ -182,5 +194,35 @@ object ChapterPrompts {
             )
 
         return promptService.buildSplitBlueprint(CHAPTER_SYNTHESIS_BLUEPRINT, args.asMap())
+    }
+
+    /**
+     * Small non-streaming rewrite of the player spectrum. The model must reassess
+     * [previousSpectrum] against the latest picks (reinforced, complicated or contradicted) and
+     * return a fresh read, never a concatenation. Each pick is paired with its dilemma so the
+     * hidden tag is read in context; the tags never reach the player.
+     */
+    suspend fun playerSpectrumRewritePrompt(
+        promptService: PromptService,
+        chapter: Chapter,
+        previousSpectrum: String?,
+        cards: List<GeneratedChoiceCard>,
+        answers: List<String>,
+    ): SplitPrompt {
+        val answeredChoices =
+            cards
+                .zip(answers)
+                .joinToString("\n") { (card, tag) ->
+                    "- ${card.choiceTitle} => picked \"$tag\""
+                }
+
+        val args =
+            PlayerSpectrumRewriteArgs(
+                previousSpectrum = previousSpectrum?.takeIf { it.isNotBlank() } ?: "None yet. This is the first read.",
+                chapterSummary = chapter.content.ifBlank { chapter.title },
+                answeredChoices = answeredChoices,
+            )
+
+        return promptService.buildSplitBlueprint(PLAYER_SPECTRUM_REWRITE_BLUEPRINT, args)
     }
 }
