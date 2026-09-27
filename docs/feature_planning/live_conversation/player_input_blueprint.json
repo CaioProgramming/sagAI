@@ -1,6 +1,6 @@
 {
   "title": "player_input_correction",
-  "_comment": "Not a standalone prompt. MessageUseCase merges 'PLAYER INPUT' plus exactly one of 'PLAYER INPUT (TYPED)' / 'PLAYER INPUT (VOICE)' into reply_generation via mergeInstructions, by the message's inputMode.",
+  "_comment": "Not a standalone prompt. MessageUseCase merges 'PLAYER INPUT' plus exactly one of 'PLAYER INPUT (TYPED)' / 'PLAYER INPUT (VOICE)' into reply_generation via mergeInstructions, by the message's inputMode. On VOICE turns the player's audio is attached to the request as inline audio/wav.",
   "instructions": {
     "PLAYER INPUT": {
       "PURPOSE": "Besides writing the reply, return the player's latestMessage cleaned up in 'playerInput.correctedText' — the exact message the player meant to send. Read the player's message as they sent it to write your reply; the correction is a separate output and never changes what you reply to.",
@@ -12,7 +12,7 @@
       "NAMES_FROM_CAST": "When a word sounds like a name in KNOWN CAST, CHARACTERS PRESENT or mentionedWikis, use that spelling. A name that matches nothing stays as sent — it may be a character the player is introducing, and ESTABLISHED_FACTS_ARE_CANON applies.",
       "STRUCTURE": "Keep the player's order. Tags are flat and closed; only <action>, <think>, <narrator>. Write in the player's language, never translate. Add the punctuation a typed message would have without rewriting sentence structure.",
       "LENGTH_TRACKS_THE_INPUT": "playerInput.correctedText should be about as long as latestMessage minus removed filler and framing. If it is noticeably longer, you added content — remove it.",
-      "NOTHING_TO_FIX": "If latestMessage needs no change, set playerInput.correctedText to null.",
+      "NOTHING_TO_FIX": "TYPED: if latestMessage needs no change, set playerInput.correctedText to null. VOICE: correctedText is always required — it is the only text version of what the player said.",
       "OUTPUT_SHAPE": "playerInput groups everything about this player input: {\"correctedText\": \"<corrected message>\" or null, \"understood\": true|false, \"emotionalTone\": <the USER_TONE result>}.",
       "EXAMPLE_WRONG_INVENTED_THINK": "latestMessage (VOICE, speaker Selena): 'eu digo que tá tudo bem, que eu confio nele'. WRONG: '<think>No fundo, eu não confio.</think> Tá tudo bem. Eu confio nele.' — the think was invented. CORRECT: 'Tá tudo bem. Eu confio nele.'"
     },
@@ -21,7 +21,9 @@
       "EXAMPLE_TYPED": "latestMessage (TYPED, speaker Rick): 'nao vou deixar vc sozinha <action>seguro a mao dela</action>' → 'Não vou deixar você sozinha. <action>Seguro a mão dela.</action>' — typos fixed, existing tag kept, nothing added."
     },
     "PLAYER INPUT (VOICE)": {
-      "SCOPE": "The player spoke this message; latestMessage is a raw speech transcript with no tags. Apply the full formatting: sort it into dialogue, <action>, <think> and <narrator>, and clean the speech as below.",
+      "SCOPE": "The player spoke this turn: their message arrives as an attached audio clip, not text. Listen to it and write, in playerInput.correctedText, the message the player would have typed — sorted into dialogue, <action>, <think> and <narrator>, and cleaned as below. This field is REQUIRED on voice turns: it is the only text of the player's turn that will ever exist. Reply to what the player said in the audio.",
+      "HOW_THEY_SAID_IT": "You hear the delivery, not only the words. Use tone of voice — whisper, shout, sarcasm, hesitation, a shaking voice — for playerInput.emotionalTone and for how characters react. Never write the delivery into correctedText as a description ('disse gritando'); it lives in the tone and in the reply.",
+      "TRANSCRIPTS_IN_EXAMPLES": "In the examples below, the quoted latestMessage stands for what is heard in the audio.",
       "KEEP_THE_PLAYER_VOICE": "Keep the player's wording, slang, dialect, profanity and register exactly as spoken — same spirit as DIALECT_NO_SMOOTHING. Remove filler words ('é…', 'tipo', 'hmm', 'um', 'uh'), false starts, stutters and accidental repeats.",
       "DROP_THE_FRAMING": "remove storytelling scaffolding ('eu digo', 'falo pra ela', 'aí eu respondo') and keep the content. If it names who the line is addressed to and that isn't obvious from the line, keep the name as a vocative ('Kael, ninguém passa daqui.') or as an action ('<action>Me viro para Kael.</action>').",
       "DROP_META_TALK": "remove anything aimed at the app instead of the story ('espera', 'apaga isso', 'testando'). When the player restarts a sentence, keep only the final version.",

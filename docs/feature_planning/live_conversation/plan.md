@@ -6,8 +6,10 @@ A full-screen, voice-first way to play a saga, in the spirit of Gemini Live / Ch
 with one twist: the player doesn't talk to "the assistant", they talk to the **story**. Every turn:
 
 1. The player holds a button and speaks as their character.
-2. The speech is transcribed, saved as a normal `USER` message **with its audio**.
-3. The saga generates its reply exactly as it does in the chat (same pipeline, saved in background).
+2. The recording is saved as a normal `USER` message **with its audio**.
+3. The saga generates its reply exactly as it does in the chat (same pipeline, saved in background),
+   except the reply request **hears the player's audio directly** and also returns the player's
+   line as formatted text.
 4. The reply is voiced **in the voice of whoever spoke it** (character voice, or the narrator's),
    saved as the message's audio, and played while that character's portrait lives inside a
    cosmic, Siri-like blob.
@@ -22,7 +24,8 @@ has every line, playable through the existing `AudioMessagePlayer` bubbles.
 |---|---|---|
 | Reply generation, saved in background | `ChatGenerationService.generate()` + `outcomes` | Singleton scope, survives leaving the screen. Live mode subscribes to `ChatGenerationOutcome.Success` to know when to voice the reply. |
 | TTS per speaker | `MessageUseCase.generateAudio()` → `AudioGenClient` | Already picks `saga.narratorVoice` / `character.voice`, persists the chosen voice, saves `sagas/{id}/audios/message_{id}_audio.wav`, sets `audible` + `audioPath`. Currently **never called** (`generateExtraContent` has no callers) — this is the hidden feature. |
-| Speech-to-text | `TranscribeClient.transcribeWords()` (audiobook) | Word-level timestamps, quota rotation via `MediaModelResolver`. Needs WAV input. |
+| Audio into a text request | `GeminiRequestBuilder.buildGeminiContentParts` | Already sends `inline_data` parts (images as `image/jpeg`). An `audio/wav` part is the same mechanism. |
+| Speech-to-text (fallback only) | `TranscribeClient.transcribeWords()` (audiobook) | Used only when the reply can't take audio (see [Sending the player's voice](#sending-the-players-voice)). |
 | Audio columns on messages | `Message.audible`, `Message.audioPath` | No migration needed for the MVP. |
 | Audio in chat history | `ChatBubble` → `AudioMessagePlayer` | Already renders for any message with a valid `audioPath`, user messages included. |
 | TTS quota state | `AudioGenClient.quotaStatus()` (`MediaRequirement.AUDIO`) | Same flow the audiobook uses for `ttsQuotaResetAt`. |
@@ -45,23 +48,24 @@ has every line, playable through the existing `AudioMessagePlayer` bubbles.
 A pure, unit-testable reducer (`LiveTurnState`) owned by `LiveConversationViewModel`:
 
 ```
-Idle ──hold──▶ Listening ──release──▶ Transcribing ──▶ Thinking ──reply saved──▶ Voicing ──▶ Speaking ──done──▶ Idle
-  ▲               │ drag-out / <600ms            │ empty / fail    │ error / guardrail      │ TTS fail/quota      │
-  └───────────────┴──────────── Idle + hint ─────┴─── Recovering ──┴──── Recovering ───────┴─ SpeakingSilently ─┘
+Idle ──hold──▶ Listening ──release + gate ok──▶ Thinking ──reply saved──▶ Voicing ──▶ Speaking ──done──▶ Idle
+  ▲               │ drag-out / <600ms / silence          │ error / guardrail      │ TTS fail/quota      │
+  └───────────────┴──────────── Idle + hint ─────────────┴──── Recovering ───────┴─ SpeakingSilently ─┘
 
 Any state ──leave screen / ON_STOP──▶ Closed        Any state ──milestone ready──▶ (finish turn) ──▶ MilestoneKey
 ```
 
 - **Listening** — `VoiceRecorder` captures PCM, emits RMS for the blob.
-- **Transcribing** — WAV → `TranscribeClient`, plus a cheap local gate (see below). The raw
-  transcript is **sent straight away, no confirm/edit step** — an edit box kills the rhythm.
-- **Thinking** — user `Message` saved raw (status `LOADING`, `audible = true`, `audioPath` = player
-  WAV, `inputMode = VOICE`), then `ChatGenerationService.generate()`. The reply request also
-  returns the corrected player message (see
-  [Player message correction](#player-message-correction-inside-the-reply)). The player's subtitle
-  shows the raw transcript faintly and "settles" into the corrected, tagged version when the reply
-  lands. `activeGenerations[sagaId].reasoning` can be shown
-  faintly under the blob, like an assistant "thinking".
+- **Release** — a local audio-level gate (duration, RMS / voice activity) drops silence and
+  accidental taps. Anything that passes is **sent straight away, no confirm/edit step** — an edit
+  box kills the rhythm.
+- **Thinking** — user `Message` saved with the audio and no text yet (status `LOADING`,
+  `audible = true`, `audioPath` = player WAV, `inputMode = VOICE`), then
+  `ChatGenerationService.generate()` with the audio attached. The reply returns the player's line
+  as formatted text (see [Player message correction](#player-message-correction-inside-the-reply)),
+  which fills the message and appears as the player's subtitle when the reply lands.
+  `activeGenerations[sagaId].reasoning` can be shown faintly under the blob, like an assistant
+  "thinking".
 - **Voicing** — on `ChatGenerationOutcome.Success`, call the live variant of `generateAudio()`
   for `reply.message`. The blob starts morphing toward the speaker's portrait here, so the wait
   already feels like "they're about to speak".
@@ -80,7 +84,7 @@ Any state ──leave screen / ON_STOP──▶ Closed        Any state ──mi
 features/live/
   data/
     VoiceRecorder.kt            // AudioRecord → 16-bit PCM → WAV (AudioUtils.wrapPcmInWav), RMS flow
-    LiveTranscriber.kt          // TranscribeClient first, fallbacks below
+    LiveTranscriber.kt          // fallback only: TranscribeClient when the reply can't take audio
     LiveVoiceUseCase.kt         // fast TTS path for a saved reply
   presentation/
     LiveConversationViewModel.kt
@@ -148,12 +152,51 @@ On the live route that check is false today, so the limit would silently pass. P
 - Minimum length 600 ms; max 60 s (auto-release with haptic) to stay far below the 20 MB inline cap.
 - Later (optional): encode to AAC/Opus to cut storage ~10×.
 
-### Transcription fallbacks
+### Sending the player's voice
 
-1. `TranscribeClient` (TRANSCRIBE tier, rotates models on 503/quota).
-2. Gemma multimodal with the audio inlined (fixing `AudioTranscriptionService` to actually send it).
-3. Give up gracefully: show "não consegui te ouvir" with **Try again** and **Type instead** (a
-   small text field inside the live screen). The recording is discarded only if the player cancels.
+**Decision: the audio goes straight into the reply request.** The reply runs on the `HIGH` tier,
+which is a Gemini model, and Gemini accepts audio input. The earlier Gemma concern only applied to
+a separate `LOW`/`MINIMAL` transcription request, which this design doesn't need.
+
+- **How:** `GeminiRequestBuilder` gets an audio variant of `references` and adds an
+  `inline_data` part with `mime_type: audio/wav`, next to the text prompt. The conversation history
+  stays text; only the latest player turn is audio.
+- **Cost:** Gemini counts audio at roughly 32 tokens per second, so a 10 s line is ~320 input
+  tokens — less than the text history already in the prompt. At 16 kHz mono 16-bit, 60 s is about
+  2 MB of WAV (≈2.7 MB as base64), far below the 20 MB inline cap.
+- **Why it's better than transcribe-then-send:**
+  - One request instead of two: saves the transcription round-trip (~1–2 s) and a TRANSCRIBE
+    quota request per turn.
+  - The model hears *how* the player spoke — whisper, shouting, sarcasm, hesitation — which
+    feeds `playerInput.emotionalTone` and the reply itself. A transcript loses all of that.
+  - Names get fixed with the full cast and canon in context, in the same step.
+- **What changes because there's no text before the reply:**
+  - `playerInput.correctedText` is the **only** text of the player's turn, so it's **required**
+    for VOICE turns (still optional for TYPED).
+  - The user message is saved with an empty `text` and `LOADING` status; the chat bubble shows
+    the audio player with a "transcrevendo…" shimmer until the reply fills it in.
+  - The noise gate has to be audio-level (duration + RMS / simple voice activity), since there's
+    no transcript to check.
+
+**Fallback to transcription**, when the reply can't take audio:
+
+1. **The resolved `HIGH` model doesn't accept audio.** `model_configs` decides which models the
+   tier rotates through; if a candidate that doesn't take audio (a Gemma model, for example) is
+   picked by rotation, the request can't carry the audio part. `ModelCatalog` gets a
+   `supportsAudioInput(model)` check. For such a model: transcribe once with `TranscribeClient`,
+   cache the result for this turn, send it as text, and the turn continues as a normal VOICE turn
+   (the correction bucket formats the transcript).
+2. **The reply came back without `correctedText`** (or it fails the guard): transcribe the saved
+   WAV with `TranscribeClient` after the fact and save that as the text, unformatted. The message
+   never stays without text.
+3. **Transcription also fails:** keep the message as an audio-only bubble with a
+   "não consegui transcrever" marker and a retry action in the chat. The reply already happened,
+   so the story isn't blocked.
+4. **The reply itself fails:** the user message keeps its audio (status `ERROR`); retry resends
+   the same WAV.
+
+`AudioTranscriptionService` (the Gemma path that never attached the audio) is not needed anymore
+and can be removed.
 
 ### Player message correction (inside the reply)
 
@@ -232,15 +275,18 @@ one place.
   - Stored on `Message` as a new nullable `inputMode` column (Room migration) so the prompt, the
     UI and analytics can tell voice turns apart. Default `TYPED`.
 - **Code-side guard** before applying (the model can still overreach): non-blank, every tag
-  closed and no unknown tags, and length of the prose (tags stripped) ≤ ~1.3× the original. Fail →
-  keep the original text. TYPED also requires the original's tags to still be there.
+  closed and no unknown tags.
+  - TYPED: prose length (tags stripped) ≤ ~1.3× the original, and the original's tags still there.
+    Fail → keep the original text.
+  - VOICE: there's no original text to compare with, so only the structural checks apply; a
+    sanity bound on length vs. recording duration (e.g. ≤ ~4 words per second) catches invented
+    content. Fail → fallback 2 in [Sending the player's voice](#sending-the-players-voice).
 - **Unintelligible voice:** the reply is already paid for by the time we know, so the bucket tells
   the model to answer **in scene** ("o quê?", a character leaning closer) and set
-  `understood = false` instead of advancing the plot. A cheap **local gate** before sending avoids
-  most of those turns: recording < 600 ms, empty transcript, or only filler / `[inaudible]` after
-  a local filler-word strip → Idle + hint, nothing sent.
-- **Failure:** if the reply fails, the raw message stays (with `ERROR` status and retry). Retry
-  resends the raw text; the correction comes with the successful reply.
+  `understood = false` instead of advancing the plot. The local audio gate (recording < 600 ms, or
+  RMS never above a speech threshold) drops most of those turns first → Idle + hint, nothing sent.
+- **Failure:** if the reply fails, the message stays (with `ERROR` status and retry). A TYPED
+  retry resends the text; a VOICE retry resends the WAV.
 - **Typed chat UX:** the bubble swapping text after the reply could surprise the player. The swap
   animates like the typewriter, and a small "corrigido" marker on the bubble can show the original
   on long-press. Needs keeping the original: nullable `originalText` column, set only when the
@@ -252,25 +298,25 @@ one place.
 - **One place:** one prompt, one parse, one update, for both input modes.
 - **Better context:** the reply model sees the whole cast, scene and canon. That fixes names
   better than a small LOW model with a glossary.
-- **Lower live latency:** the extra output is just the length of the player's line, far cheaper
-  than a separate round-trip (~1 s).
+- **Lower live latency:** the extra output is just the length of the player's line, and with the
+  audio going straight in there's no separate transcription or formatting round-trip at all.
 
 **Costs:**
 - **Corrected text arrives late:** it only shows up when the reply ends.
 - **Bigger reply prompt:** the correction adds instructions to an already large prompt, and they
   compete with the narration directives. Limited by merging only the mode's bucket; watch reply
   quality after publishing.
-- **No early noise filter:** a noise turn costs a full reply, unless the local gate catches it.
-
-**Later optimization:** one multimodal call that takes the audio directly. Not viable with Gemma
-today (no audio input in the Gemini API for Gemma, to confirm); revisit if the reply moves to a
-Gemini model that accepts audio.
+- **No early noise filter:** a noise turn costs a full reply, unless the local audio gate catches
+  it.
+- **No text until the reply lands:** the player's own line only appears as text when the reply
+  arrives; until then the live screen shows only the blob, and the chat shows an audio bubble.
 
 ### Why one reply blueprint, not an audio copy
 
-- **The reply model never receives audio.** The flow is recording → `TranscribeClient` →
-  **text** → reply. The reply always evaluates text, same as the chat; in live mode that text is
-  just a raw transcript with no tags, which the `PLAYER INPUT (VOICE)` bucket covers.
+- **Audio is just a different input, not a different story.** The narration directives don't
+  change because the player's turn arrives as audio instead of text. The only extra work (hearing
+  the audio, writing the player's line as tagged text) lives in the `PLAYER INPUT (VOICE)` bucket,
+  merged only for voice turns.
 - **Live and chat share one story.** Both write to the same `messages` history, often in the same
   saga minutes apart. Two narration blueprints would drift (every tweak to a directive done twice,
   or forgotten once), and characters would start sounding different depending on how the player
@@ -279,11 +325,10 @@ Gemini model that accepts audio.
   `inputMode`) and, if needed, a lower `maxMessageLimit` for voice turns — shorter replies are
   faster to synthesize and easier to follow by ear. It's already a template variable
   (`ChatPrompts`, `MessageUseCaseImpl.kt:263`), no blueprint change needed.
-- **If the reply ever gets the audio directly** (multimodal, not possible with Gemma today),
-  there would be no text for the post-reply update to evaluate: the model would hear the audio
-  first, and `playerInput.correctedText` would be the **only** text version of the player's turn.
-  It would become required, not optional, and the local noise gate would have to move to an
-  audio-level check (duration/RMS). The rest of this design holds.
+- **Because the reply hears the audio first**, there is no text for the post-reply update to
+  compare against: `playerInput.correctedText` is the only text version of the player's turn, so
+  it's required for VOICE turns and the noise gate is audio-level (see
+  [Sending the player's voice](#sending-the-players-voice)).
 
 ### Voicing replies fast (`LiveVoiceUseCase`)
 
@@ -368,12 +413,13 @@ the current session and shows each **new** one as it lands:
 | TTS daily quota already spent **before** entering | Entry still allowed, but a banner says voices rest until `HH:mm` (from `QuotaStatus.DailyExhausted.until`); session runs in *SpeakingSilently*. |
 | TTS quota hits **mid-session** (`QuotaExhaustedException`) | Message is already saved as text. Switch the session to *SpeakingSilently* for the rest of the session, show the reset time once. Message stays `audible = false` (not `true` — see note below), so it can be voiced later with the existing *Regenerate audio*. |
 | TTS other failure / timeout | Same silent fallback for that turn only; keep trying next turn. |
-| Transcribe quota / failure | Fallback chain above; never lose the recording silently. |
+| Reply model can't take audio (rotation picked a non-audio model) | Transcribe with `TranscribeClient` first, send as text. |
+| Reply missing `correctedText` / fails the guard | Transcribe the saved WAV after the fact; if that fails too, audio-only bubble with retry. |
 | Text generation error | `ChatGenerationOutcome.Error` → blob error state + **Try again** (`retryAiResponse`). |
 | Guardrail block | User message is deleted by the service; show a gentle notice, return to Idle. |
 | Missing API key | `ApiKeyTroubleSheet`. |
 | No `RECORD_AUDIO` permission | `PermissionComponent`, then back to Idle. |
-| Too short / silence / empty transcript / only filler (local gate) | Idle + hint, nothing sent. |
+| Too short / silence (local audio gate) | Idle + hint, nothing sent. |
 | Noise got past the gate (`playerInput.understood = false`) | The reply already reacts in scene ("o quê?"); nothing else to do. |
 | Correction missing or fails the code-side guard | Keep the raw text. |
 | Phone call / audio focus loss | Stop recording (discard) or stop playback; generation keeps going. |
@@ -385,12 +431,13 @@ the bubble think it should have audio. Worth fixing while we're here.
 
 ## Phases
 
-1. **Foundations** — `VoiceRecorder`, `LiveTranscriber` (+ fix `AudioTranscriptionService`),
-   `AIReply.playerInput` (`PlayerInputFeedback`) + `inputMode` / `originalText` columns + the reply blueprint bucket (this
+1. **Foundations** — `VoiceRecorder` + audio gate, audio parts in `GeminiRequestBuilder`,
+   `ModelCatalog.supportsAudioInput`, `LiveTranscriber` fallback (remove `AudioTranscriptionService`),
+   `AIReply.playerInput` (`PlayerInputFeedback`) + `inputMode` / `originalText` columns + `player_input_blueprint` (this
    also ships the typo fix for the typed chat), `LiveVoiceUseCase` (fast path), feature flag,
    `LiveConversationKey` + `isInConversation()` in the navigation tracker / milestone collector.
    Unit tests for the reducer and the correction guard.
-2. **MVP loop** — hold → transcribe → local gate → save user msg with audio → generate → voice →
+2. **MVP loop** — hold → audio gate → save user msg with audio → generate (audio in) → voice →
    play, with a simple blob (Canvas fallback), the silent fallback, full stop on leaving, and the
    milestone link. Behind the flag.
 3. **Magic pass** — AGSL blob, portrait morph, speaker selector carousel, live reactions overlay,
@@ -400,12 +447,13 @@ the bubble think it should have audio. Worth fixing while we're here.
 
 ## Risks
 
-- **Latency is the real risk.** Rough budget per turn: transcribe 1–2 s + reply 3–10 s (slightly
-  longer output with the correction) + TTS 2–6 s ≈ 6–18 s. The Thinking/Voicing animations and the live reactions have to
-  carry that wait; the fast voice path, and chunked TTS are what
-  make it feel "live".
-- **Quota:** each turn now costs 1 transcribe + 1–2 text + 1 TTS request against the
-  user's key (plus the existing fallout call).
+- **Latency is the real risk.** Rough budget per turn: reply with audio in 3–10 s + TTS 2–6 s
+  ≈ 5–16 s. The Thinking/Voicing animations and the live reactions have to carry that wait; the
+  fast voice path and chunked TTS are what make it feel "live".
+- **Quota:** each turn costs 1–2 text + 1 TTS request against the user's key (plus the existing
+  fallout call); a transcribe request only on fallback.
+- **Model rotation:** if `model_configs` puts a non-audio model in the `HIGH` rotation, those turns
+  pay for an extra transcription. Worth keeping `HIGH` on audio-capable Gemini models.
 - **Correction mistakes:** with no edit step, a wrong tag split goes straight into the story. The
   bucket leans on "dialogue when unsure", and the code-side guard falls back to the raw text.
 - **Reply prompt weight:** the correction buckets compete with the narration directives; only the
@@ -419,7 +467,10 @@ the bubble think it should have audio. Worth fixing while we're here.
    reply request itself (`AIReply.playerInput`), which also replaces `checkMessageTypo` for the
    typed chat. No separate pre-request.
 2. Barge-in stops playback only; the full audio stays on the message, playable from the chat.
-3. No confirm/edit step: the raw transcript is sent straight away and corrected by the reply.
+3. No confirm/edit step: the recording is sent straight away; the reply hears it and returns the
+   player's line as formatted text.
 4. Reactions show in real time on the live screen, TikTok-live style.
 5. Leaving live mode ends it completely; no audio ever plays outside the live screen.
 6. Hitting the message limit opens the same Milestone screen as the chat, after the turn finishes.
+7. The audio goes straight into the reply request (`HIGH` is Gemini, which accepts audio);
+   `TranscribeClient` is only a fallback.
