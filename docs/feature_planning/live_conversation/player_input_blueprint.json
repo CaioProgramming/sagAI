@@ -1,30 +1,37 @@
 {
+  "title": "player_input_correction",
+  "_comment": "Not a standalone prompt. MessageUseCase merges 'PLAYER INPUT' plus exactly one of 'PLAYER INPUT (TYPED)' / 'PLAYER INPUT (VOICE)' into reply_generation via mergeInstructions, by the message's inputMode.",
   "instructions": {
-    "PLAYER MESSAGE CORRECTION": {
+    "PLAYER INPUT": {
       "PURPOSE": "Besides writing the reply, return the player's latestMessage cleaned up in 'playerInput.correctedText' — the exact message the player meant to send. Read the player's message as they sent it to write your reply; the correction is a separate output and never changes what you reply to.",
-      "INPUT_MODE": "latestMessage.inputMode tells you how the player sent it. TYPED: fix only spelling, typos and names mangled against the cast/glossary; keep every tag the player already wrote and never add new ones. VOICE: the text is a raw speech transcript with no tags — apply the full formatting below.",
       "FORMAT_NOT_WRITE": "CRITICAL: classify and clean, never write. Never add content, never embellish, never raise the emotional intensity, never improve the prose, never finish a thought the player left open. If a word or idea is not in latestMessage, it is not in playerInput.correctedText. Unlike the reply, where you write dialogue, action and think, here you only sort what the player already said into those channels.",
       "DIALOGUE_IS_PLAIN_TEXT": "What the character says out loud is plain text with no tag. Dialogue is the default: when a stretch of speech could be dialogue or something else, it is dialogue.",
       "ACTION_TAG": "Same meaning as ACTION_AS_PHYSICAL_CHANNEL: what the player's character physically does, in first person and present tense ('<action>Puxo a espada.</action>'). Spoken signals: 'eu puxo…', 'eu me aproximo…', 'pego…', the character's name followed by a physical verb. Never an inline stage direction like '*cruza os braços*'.",
       "THINK_TAG": "<think> only when the player clearly marks the speech as internal: 'penso que…', 'por dentro…', 'sem falar nada, eu…', 'na minha cabeça…'. First person, the player's own words. None of the THINK_* craft rules apply here — never invent, sharpen or add a think the player didn't voice, and never promote dialogue to think because it sounds emotional.",
       "NARRATOR_TAG": "Same meaning as NARRATOR_PURPOSE: only a passage of time, a change of place or an environmental change the player describes ('horas depois…', 'chegamos na cidade'). Never feelings. Most player messages have none.",
-      "KEEP_THE_PLAYER_VOICE": "Keep the player's wording, slang, dialect, profanity and register exactly as spoken — same spirit as DIALECT_NO_SMOOTHING. VOICE only: remove filler words ('é…', 'tipo', 'hmm', 'um', 'uh'), false starts, stutters and accidental repeats.",
-      "DROP_THE_FRAMING": "VOICE only: remove storytelling scaffolding ('eu digo', 'falo pra ela', 'aí eu respondo') and keep the content. If it names who the line is addressed to and that isn't obvious from the line, keep the name as a vocative ('Kael, ninguém passa daqui.') or as an action ('<action>Me viro para Kael.</action>').",
-      "DROP_META_TALK": "VOICE only: remove anything aimed at the app instead of the story ('espera', 'apaga isso', 'testando'). When the player restarts a sentence, keep only the final version.",
-      "FIRST_PERSON_CHARACTER": "A player narrating their own character in third person ('o Rick pega a arma') becomes first person ('<action>Pego a arma.</action>').",
       "NAMES_FROM_CAST": "When a word sounds like a name in KNOWN CAST, CHARACTERS PRESENT or mentionedWikis, use that spelling. A name that matches nothing stays as sent — it may be a character the player is introducing, and ESTABLISHED_FACTS_ARE_CANON applies.",
       "STRUCTURE": "Keep the player's order. Tags are flat and closed; only <action>, <think>, <narrator>. Write in the player's language, never translate. Add the punctuation a typed message would have without rewriting sentence structure.",
       "LENGTH_TRACKS_THE_INPUT": "playerInput.correctedText should be about as long as latestMessage minus removed filler and framing. If it is noticeably longer, you added content — remove it.",
       "NOTHING_TO_FIX": "If latestMessage needs no change, set playerInput.correctedText to null.",
-      "UNINTELLIGIBLE_VOICE": "VOICE only: if the transcript is noise, only filler or unintelligible, set playerInput.understood to false and leave playerInput.correctedText null. Your reply must then stay in the scene and react to not having understood — a character asking 'o quê?', frowning, leaning closer — never advance the plot on a line nobody could make out.",
       "OUTPUT_SHAPE": "playerInput groups everything about this player input: {\"correctedText\": \"<corrected message>\" or null, \"understood\": true|false, \"emotionalTone\": <the USER_TONE result>}.",
+      "EXAMPLE_WRONG_INVENTED_THINK": "latestMessage (VOICE, speaker Selena): 'eu digo que tá tudo bem, que eu confio nele'. WRONG: '<think>No fundo, eu não confio.</think> Tá tudo bem. Eu confio nele.' — the think was invented. CORRECT: 'Tá tudo bem. Eu confio nele.'"
+    },
+    "PLAYER INPUT (TYPED)": {
+      "SCOPE": "The player typed this message. Fix only spelling, typos and names mangled against the cast. Keep every tag the player already wrote, add no new tags, keep their wording and register.",
+      "EXAMPLE_TYPED": "latestMessage (TYPED, speaker Rick): 'nao vou deixar vc sozinha <action>seguro a mao dela</action>' → 'Não vou deixar você sozinha. <action>Seguro a mão dela.</action>' — typos fixed, existing tag kept, nothing added."
+    },
+    "PLAYER INPUT (VOICE)": {
+      "SCOPE": "The player spoke this message; latestMessage is a raw speech transcript with no tags. Apply the full formatting: sort it into dialogue, <action>, <think> and <narrator>, and clean the speech as below.",
+      "KEEP_THE_PLAYER_VOICE": "Keep the player's wording, slang, dialect, profanity and register exactly as spoken — same spirit as DIALECT_NO_SMOOTHING. Remove filler words ('é…', 'tipo', 'hmm', 'um', 'uh'), false starts, stutters and accidental repeats.",
+      "DROP_THE_FRAMING": "remove storytelling scaffolding ('eu digo', 'falo pra ela', 'aí eu respondo') and keep the content. If it names who the line is addressed to and that isn't obvious from the line, keep the name as a vocative ('Kael, ninguém passa daqui.') or as an action ('<action>Me viro para Kael.</action>').",
+      "DROP_META_TALK": "remove anything aimed at the app instead of the story ('espera', 'apaga isso', 'testando'). When the player restarts a sentence, keep only the final version.",
+      "FIRST_PERSON_CHARACTER": "A player narrating their own character in third person ('o Rick pega a arma') becomes first person ('<action>Pego a arma.</action>').",
+      "UNINTELLIGIBLE_VOICE": "if the transcript is noise, only filler or unintelligible, set playerInput.understood to false and leave playerInput.correctedText null. Your reply must then stay in the scene and react to not having understood — a character asking 'o quê?', frowning, leaning closer — never advance the plot on a line nobody could make out.",
       "EXAMPLE_VOICE_MIXED": "latestMessage (VOICE, speaker Rick): 'é… eu puxo a espada e digo tipo ninguém passa daqui. mas por dentro eu tô morrendo de medo' → playerInput.correctedText: '<action>Puxo a espada.</action> Ninguém passa daqui. <think>Por dentro, eu tô morrendo de medo.</think>'",
       "EXAMPLE_VOICE_NAME_AND_FRAMING": "latestMessage (VOICE, speaker Hana, cast includes Irin): 'falo pra irim: você mentiu pra mim, você sabia o tempo todo' → 'Irin, você mentiu pra mim. Você sabia o tempo todo.'",
       "EXAMPLE_VOICE_TRANSITION": "latestMessage (VOICE, speaker Dante): 'horas depois a gente chega no porto. eu desço do cavalo e pergunto pro guarda cadê o navio do capitão' → '<narrator>Horas depois, chegamos ao porto.</narrator> <action>Desço do cavalo.</action> Cadê o navio do capitão?'",
       "EXAMPLE_VOICE_META": "latestMessage (VOICE, speaker Maya): 'eu olho pra ela e… não, espera, apaga. eu só balanço a cabeça' → '<action>Só balanço a cabeça.</action>'",
-      "EXAMPLE_VOICE_DIALECT": "latestMessage (VOICE, speaker Zé): 'ô véi, cê tá doido? num vô entrá nesse trem não, sô' → 'Ô véi, cê tá doido? Num vô entrá nesse trem não, sô.' — dialect untouched.",
-      "EXAMPLE_TYPED": "latestMessage (TYPED, speaker Rick): 'nao vou deixar vc sozinha <action>seguro a mao dela</action>' → 'Não vou deixar você sozinha. <action>Seguro a mão dela.</action>' — typos fixed, existing tag kept, nothing added.",
-      "EXAMPLE_WRONG_INVENTED_THINK": "latestMessage (VOICE, speaker Selena): 'eu digo que tá tudo bem, que eu confio nele'. WRONG: '<think>No fundo, eu não confio.</think> Tá tudo bem. Eu confio nele.' — the think was invented. CORRECT: 'Tá tudo bem. Eu confio nele.'"
+      "EXAMPLE_VOICE_DIALECT": "latestMessage (VOICE, speaker Zé): 'ô véi, cê tá doido? num vô entrá nesse trem não, sô' → 'Ô véi, cê tá doido? Num vô entrá nesse trem não, sô.' — dialect untouched."
     }
   }
 }

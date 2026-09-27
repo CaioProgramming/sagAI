@@ -211,12 +211,20 @@ one place.
   'userTone' field". Update it to `playerInput.emotionalTone` and publish it **with** the app
   version that ships the new class. Old app versions still ask for `userTone` through their
   schema; the stale wording only costs them the tone (nullable), nothing breaks.
-- **Prompt:** a new `PLAYER MESSAGE CORRECTION` bucket in `reply_generation_blueprint`'s
-  `instructions` field (`PromptBlueprint.instructions` renders extra buckets). Draft in
-  [`reply_blueprint_player_message_bucket.json`](reply_blueprint_player_message_bucket.json).
+- **Prompt:** one reply blueprint for both modes, **not** a duplicated "audio" copy. The
+  correction rules live in their own Remote Config key, `player_input_blueprint` (draft in
+  [`player_input_blueprint.json`](player_input_blueprint.json)), merged into the reply prompt with
+  `mergeInstructions` — the same way `genreConfigService.conversationInstructions` is merged today.
+  It has three buckets, and the use case merges the shared one plus **only** the one for the
+  message's `inputMode`:
+  - `PLAYER INPUT` (always): tag meanings, "classify, never write", names, output shape.
+  - `PLAYER INPUT (TYPED)`: typo/name fixes only — short, so a typed turn barely grows.
+  - `PLAYER INPUT (VOICE)`: filler, framing, meta talk, third → first person, unintelligible
+    speech, and the voice examples.
   Tag meanings reference the existing directives (`ACTION_AS_PHYSICAL_CHANNEL`,
   `NARRATOR_PURPOSE`, `DIALECT_NO_SMOOTHING`) so player and NPC messages mean the same thing; the
   difference is the reply *writes* those channels, the correction only *sorts* what the player said.
+  The `USER_TONE` directive stays in the reply blueprint (renamed to `playerInput.emotionalTone`).
 - **`inputMode` in the context:** `latestMessage.inputMode = TYPED | VOICE`.
   - TYPED: fix spelling, typos and mangled names only; keep the player's tags, add none.
   - VOICE: full formatting — split into tags, drop filler, framing ("eu digo…") and meta talk
@@ -249,13 +257,33 @@ one place.
 
 **Costs:**
 - **Corrected text arrives late:** it only shows up when the reply ends.
-- **Bigger reply prompt:** the correction bucket adds instructions to an already large prompt,
-  and they compete with the narration directives. Watch reply quality after publishing.
+- **Bigger reply prompt:** the correction adds instructions to an already large prompt, and they
+  compete with the narration directives. Limited by merging only the mode's bucket; watch reply
+  quality after publishing.
 - **No early noise filter:** a noise turn costs a full reply, unless the local gate catches it.
 
 **Later optimization:** one multimodal call that takes the audio directly. Not viable with Gemma
 today (no audio input in the Gemini API for Gemma, to confirm); revisit if the reply moves to a
 Gemini model that accepts audio.
+
+### Why one reply blueprint, not an audio copy
+
+- **The reply model never receives audio.** The flow is recording → `TranscribeClient` →
+  **text** → reply. The reply always evaluates text, same as the chat; in live mode that text is
+  just a raw transcript with no tags, which the `PLAYER INPUT (VOICE)` bucket covers.
+- **Live and chat share one story.** Both write to the same `messages` history, often in the same
+  saga minutes apart. Two narration blueprints would drift (every tweak to a directive done twice,
+  or forgotten once), and characters would start sounding different depending on how the player
+  sent the message.
+- **What actually differs is small and already parameterized:** the correction bucket (by
+  `inputMode`) and, if needed, a lower `maxMessageLimit` for voice turns — shorter replies are
+  faster to synthesize and easier to follow by ear. It's already a template variable
+  (`ChatPrompts`, `MessageUseCaseImpl.kt:263`), no blueprint change needed.
+- **If the reply ever gets the audio directly** (multimodal, not possible with Gemma today),
+  there would be no text for the post-reply update to evaluate: the model would hear the audio
+  first, and `playerInput.correctedText` would be the **only** text version of the player's turn.
+  It would become required, not optional, and the local noise gate would have to move to an
+  audio-level check (duration/RMS). The rest of this design holds.
 
 ### Voicing replies fast (`LiveVoiceUseCase`)
 
@@ -380,8 +408,9 @@ the bubble think it should have audio. Worth fixing while we're here.
   user's key (plus the existing fallout call).
 - **Correction mistakes:** with no edit step, a wrong tag split goes straight into the story. The
   bucket leans on "dialogue when unsure", and the code-side guard falls back to the raw text.
-- **Reply prompt weight:** the correction bucket competes with the narration directives; watch
-  reply quality after publishing it.
+- **Reply prompt weight:** the correction buckets compete with the narration directives; only the
+  bucket for the current `inputMode` is merged, and reply quality should be watched after
+  publishing.
 - **Storage:** every turn stores two WAVs.
 
 ## Decisions
