@@ -156,36 +156,27 @@
   .player-line .tag { font-style: italic; }
   .player-line.pending { opacity: .6; }
 
-  /* ---------- reactions ---------- */
-  .reactions { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
-  .float {
-    position: absolute; bottom: 206px; right: 26px;
-    display: flex; align-items: center; gap: 4px;
-    animation: rise 3.4s cubic-bezier(.2,.7,.3,1) forwards;
+  /* ---------- reactions (orbit the focused portrait) ---------- */
+  .reactions { position: absolute; left: 50%; top: 36%; width: 0; height: 0; z-index: 4; pointer-events: none; }
+  .orbit { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+  .orbit .bead {
+    position: absolute; transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px;
   }
-  .float img { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #fff3; }
-  .float .e { font-size: 26px; filter: drop-shadow(0 4px 10px #0008); }
-  @keyframes rise {
-    0% { transform: translate(0, 0) scale(.4) rotate(0); opacity: 0; }
-    12% { transform: translate(var(--dx1), -30px) scale(1.15) rotate(var(--r)); opacity: 1; }
-    100% { transform: translate(var(--dx2), -330px) scale(.9) rotate(calc(var(--r) * -1)); opacity: 0; }
+  .orbit .bead .e { font-size: 24px; filter: drop-shadow(0 4px 10px #0009); }
+  .orbit .bead img {
+    position: absolute; right: -4px; bottom: -2px; width: 18px; height: 18px; border-radius: 50%;
+    border: 1.5px solid var(--void);
   }
-  .chip {
-    position: absolute; left: 18px; bottom: 206px; max-width: 64%;
-    display: flex; gap: 8px; align-items: flex-start;
-    padding: 8px 12px 8px 8px; border-radius: 16px;
-    background: #16122acc; border: 1px solid var(--line); backdrop-filter: blur(10px);
-    font-size: 12px; line-height: 1.4; color: var(--ink);
-    animation: chip 5s ease forwards;
+  .orbit .thought {
+    position: absolute; top: 22px; width: 150px; box-sizing: border-box;
+    padding: 7px 10px; border-radius: 12px;
+    background: #16122ad9; border: 1px solid var(--line); backdrop-filter: blur(10px);
+    font-size: 11.5px; line-height: 1.4; color: var(--ink);
   }
-  .chip img { width: 26px; height: 26px; border-radius: 50%; flex: none; }
-  .chip b { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); font-weight: 600; }
-  .chip span { font-style: italic; }
-  @keyframes chip {
-    0% { transform: translateY(14px); opacity: 0; }
-    10%, 78% { transform: none; opacity: 1; }
-    100% { transform: translateY(-40px); opacity: 0; }
-  }
+  .orbit .thought b { display: block; font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); font-weight: 600; }
+  .orbit .thought span { font-style: italic; }
 
   /* ---------- controls ---------- */
   .dock {
@@ -372,8 +363,8 @@
       <ul class="legend">
         <li><code>Idle</code> respira devagar, cores do gênero</li>
         <li><code>Listening</code> cresce e reage ao volume da voz</li>
-        <li><code>Thinking</code> contrai, gira o gradiente, mostra o raciocínio</li>
-        <li><code>Speaking</code> vira o retrato de quem fala e pulsa com o áudio</li>
+        <li><code>Thinking</code> quem mandou a mensagem fica em destaque, com o anel girando e o raciocínio embaixo</li>
+        <li><code>Speaking</code> troca para quem responde e pulsa com o áudio; as reações orbitam o retrato</li>
       </ul>
       <p>Imagens externas são bloqueadas neste tipo de página, então os retratos são ilustrações geradas no canvas; o narrador usa o dragão do app.</p>
     </div>
@@ -493,7 +484,7 @@
     bg.clearRect(0, 0, w, h);
     bg.globalCompositeOperation = "lighter";
     const speed = reduced ? .15 : 1;
-    const base = mode === "think" ? 62 : mode === "speak" ? 96 : mode === "listen" ? 92 : 80;
+    const base = mode === "think" ? 84 : mode === "speak" ? 96 : mode === "listen" ? 92 : 80;
     blobColors.forEach((col, i) => {
       const a = t * .0005 * speed * (mode === "think" ? 3.2 : 1) + i * 1.9;
       const orbit = (mode === "think" ? 22 : 30) + level * 26;
@@ -514,6 +505,7 @@
     halo.style.transform = holding ? `scale(${1 + level * .22})` : "scale(1)";
     const p = document.getElementById("portrait");
     if (p.classList.contains("on")) p.style.transform = `translate(-50%,-50%) scale(${1 + (mode === "speak" && !silent ? level * .09 : 0)})`;
+    stepOrbiters(t);
     requestAnimationFrame(draw);
   }
 
@@ -655,21 +647,22 @@
     busy = true; clearAll();
     ui.rec.setAttribute("aria-disabled", "true");
     const k = playable[speakerIdx];
-    mode = "think"; blobColors = palettes.think; targetLevel = .35; setState("Thinking");
+    mode = "think"; targetLevel = .35; setState("Thinking");
+    showSpeaker(k); // the sender stays in focus while the reply is on its way
     ui.ring.classList.add("on");
-    ui.hint.textContent = "Irin está pensando…";
-    ui.who.innerHTML = "";
+    ui.hint.textContent = "Esperando a resposta…";
     ui.status.textContent = "";
     ui.playerLine.hidden = false; ui.playerLine.classList.add("pending");
-    ui.playerLine.innerHTML = `<b>${cast[k].name}</b> · transcrevendo…`;
+    ui.playerLine.innerHTML = `transcrevendo…`;
     ui.thinking.hidden = false;
     const thoughts = ["Irin pesa a ameaça…", "lembra da ponte que caiu no capítulo II…", "decide testar a coragem dele"];
     thoughts.forEach((tx, i) => later(() => { ui.thinking.textContent = tx; }, 300 + i * 1100));
     later(() => {
       if (forceError) {
         ui.thinking.hidden = true;
-        ui.playerLine.innerHTML = `<b>${cast[k].name}</b> · ${lines[k].fixed}`;
+        ui.playerLine.innerHTML = lines[k].fixed;
         ui.playerLine.classList.remove("pending");
+        ui.portrait.classList.remove("on");
         ui.status.textContent = "Não consegui ouvir a resposta. Tente de novo.";
         mode = "idle"; blobColors = ["#5a4b6e", "#3b3350", "#6d6690"]; targetLevel = .08;
         ui.ring.classList.remove("on");
@@ -680,7 +673,7 @@
       // reply lands: player line settles, blob morphs
       ui.thinking.hidden = true;
       ui.playerLine.classList.remove("pending");
-      ui.playerLine.innerHTML = `<b>${cast[k].name}</b> · ${lines[k].fixed}`;
+      ui.playerLine.innerHTML = lines[k].fixed;
       setState("Voicing");
       ui.ring.classList.remove("on");
       ui.status.textContent = "";
@@ -692,9 +685,12 @@
 
   function showSpeaker(key) {
     const c = cast[key];
-    ui.portrait.src = c.img; ui.portrait.classList.add("on");
+    if (ui.portrait.classList.contains("on") && ui.portrait.getAttribute("src") !== c.img) {
+      ui.portrait.classList.remove("on");
+      setTimeout(() => { ui.portrait.src = c.img; ui.portrait.classList.add("on"); }, 320);
+    } else { ui.portrait.src = c.img; ui.portrait.classList.add("on"); }
     blobColors = key === "narrator" ? ["#6a1b9a", "#8b2635", "#ce93d8", "#0d47a1"] : [c.color, "#6a1b9a", c.color, "#ff4081"];
-    ui.who.innerHTML = key === "narrator" ? "<i>Narrador</i>" : `<i>${c.name}</i> · ${c.role}`;
+    ui.who.innerHTML = key === "narrator" ? "<i>Narrador</i>" : `<i>${c.name}</i>${c.role ? " · " + c.role : ""}`;
   }
 
   let speakTimers = [];
@@ -736,35 +732,47 @@
   function stopSpeaking() {
     speakTimers.forEach(clearTimeout); speakTimers = []; pulse(0); clearAll();
     ui.portrait.classList.remove("on");
-    ui.reactions.innerHTML = "";
+    ui.reactions.innerHTML = ""; orbiters.length = 0;
   }
 
-  /* ---------- reactions ---------- */
+  /* ---------- reactions: orbit whoever is in focus ---------- */
   const reacts = [
-    { who: "dorn", e: "😬" }, { who: "irin", e: "🔥" }, { who: "dorn", e: "⚔️" },
-    { who: "hana", e: "👀" }, { who: "dorn", e: "😮" }, { who: "irin", e: "✨" },
+    { who: "dorn", e: "😬" }, { who: "irin", e: "🔥" }, { who: "dorn", e: "⚔️", thought: "Se ela manda guardar, eu guardaria. Rápido." },
+    { who: "hana", e: "👀" }, { who: "dorn", e: "😮" }, { who: "hana", e: "✨", thought: "Ele tá tremendo. Ninguém mais viu?" },
   ];
+  // Upper arc and sides only (degrees, 0 = right, -90 = top), so nothing drifts over the captions.
+  const slots = [-150, -30, -175, -5, -115, -65];
+  const orbiters = [];
+  const ORBIT_R = 162, LIFE = 4600;
   function reactionsBurst() {
-    reacts.forEach((r, i) => later(() => floatReaction(r), 700 + i * 420 + Math.random() * 200));
-    later(() => chip("dorn", "Se ela manda guardar, eu guardaria. Rápido."), 1500);
-    later(() => chip("hana", "Ele tá tremendo. Ninguém mais viu?"), 5200);
+    reacts.forEach((r, i) => later(() => addOrbiter(r, slots[i % slots.length]), 600 + i * 480));
   }
-  function floatReaction(r) {
+  function addOrbiter(r, deg) {
     const el = document.createElement("div");
-    el.className = "float";
-    el.style.setProperty("--dx1", (Math.random() * 30 - 15) + "px");
-    el.style.setProperty("--dx2", (Math.random() * 80 - 60) + "px");
-    el.style.setProperty("--r", (Math.random() * 24 - 12) + "deg");
-    el.innerHTML = `<img alt="" src="${cast[r.who].img}"><span class="e">${r.e}</span>`;
+    el.className = "orbit";
+    el.innerHTML = `<div class="bead"><span class="e">${r.e}</span><img alt="" src="${cast[r.who].img}"></div>` +
+      (r.thought ? `<div class="thought"><b>${cast[r.who].name}</b><span>${r.thought}</span></div>` : "");
     ui.reactions.appendChild(el);
-    setTimeout(() => el.remove(), 3500);
+    orbiters.push({ el, a: deg * Math.PI / 180, dir: deg < -90 ? -1 : 1, born: performance.now(), life: r.thought ? LIFE + 1400 : LIFE });
   }
-  function chip(who, text) {
-    const el = document.createElement("div");
-    el.className = "chip";
-    el.innerHTML = `<img alt="" src="${cast[who].img}"><div><b>${cast[who].name}</b><span>${text}</span></div>`;
-    ui.reactions.appendChild(el);
-    setTimeout(() => el.remove(), 5100);
+  function stepOrbiters(t) {
+    for (let i = orbiters.length - 1; i >= 0; i--) {
+      const o = orbiters[i], age = t - o.born, k = age / o.life;
+      if (k >= 1) { o.el.remove(); orbiters.splice(i, 1); continue; }
+      const a = o.a + o.dir * (reduced ? .05 : .22) * (age / 1000) * -1; // drift upward along the arc
+      const r = ORBIT_R + Math.sin(age / 700) * 4;
+      const x = Math.cos(a) * r, y = Math.sin(a) * r * .94;
+      const pop = k < .08 ? k / .08 : 1;
+      const scale = k < .08 ? .4 + .75 * pop : 1 + Math.sin(age / 400) * .04;
+      const alpha = k < .08 ? pop : k > .8 ? (1 - k) / .2 : 1;
+      o.el.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+      o.el.style.opacity = alpha;
+      const th = o.el.querySelector(".thought");
+      if (th) { // keep the bubble inside the phone
+        const left = Math.min(Math.max(-75, -195 + 12 - x), 195 - 12 - 150 - x);
+        th.style.left = left + "px";
+      }
+    }
   }
 
   /* ---------- side controls ---------- */

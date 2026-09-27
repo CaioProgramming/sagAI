@@ -61,7 +61,11 @@ Any state ──leave screen / ON_STOP──▶ Closed        Any state ──mi
 - **Release** — a local audio-level gate (duration, RMS / voice activity) drops silence and
   accidental taps. Anything that passes is **sent straight away, no confirm/edit step** — an edit
   box kills the rhythm.
-- **Thinking** — user `Message` saved with the audio and no text yet (status `LOADING`,
+- **Thinking** — **the sender stays in focus:** the player's own portrait sits in the blob with a
+  rotating gradient ring around it (the "assistant is working" loader) while the reply is on its
+  way, so the natural wait reads as "your line was heard", not as an empty loading screen. When
+  the reply lands, the portrait crossfades to whoever answered and the speaking animation starts.
+  User `Message` saved with the audio and no text yet (status `LOADING`,
   `audible = true`, `audioPath` = player WAV, `inputMode = VOICE`), then
   `ChatGenerationService.generate()` with the audio attached. The reply returns the player's line
   as formatted text (see [Player message correction](#player-message-correction-inside-the-reply)),
@@ -545,8 +549,9 @@ turns the tagged message into a TTS script:
 - Driven by two inputs: `level` (0..1) and `mode`.
   - **Idle:** slow breathing, low glow.
   - **Listening:** expands, reacts to mic RMS, colors lean toward the player's character color.
-  - **Thinking:** contracts, gradient rotates (like `rotatingGradientBorder`), shimmer — the
-    "personal assistant" loader.
+  - **Thinking:** the **sender's portrait** in the blob with a rotating gradient ring (like
+    `rotatingGradientBorder`) and the reasoning shimmering below — the "personal assistant"
+    loader, but showing who just spoke.
   - **Speaking:** the blob becomes a soft mask around the speaker's portrait (crossfade + scale),
     glow in the speaker's color, pulsing with the waveform curve.
   - **Error:** brief dim + desaturate, then back to Idle.
@@ -564,19 +569,21 @@ turns the tagged message into a TTS script:
 - Disabled (dimmed, no haptic) while a milestone is intrusive.
 - Phase 2+: slide-up "lock" for long speeches.
 
-### Live reactions (TikTok-live style)
+### Live reactions (orbiting the portrait)
 
 Reactions already arrive a beat after each reply: `ChatGenerationService` launches
 `resolveReplyFallout()`, which saves `Reaction(messageId, characterId, emoji, thought)` rows for
 both the reply and the player's message. The live screen observes reactions for the messages of
-the current session and shows each **new** one as it lands:
+the current session and shows each **new** one as it lands, **orbiting whoever is in focus** in
+the blob instead of floating over the screen, so they never cover the captions:
 
-- The emoji floats up from the bottom-right edge with a small avatar of the reacting character,
-  drifts and fades (random x-jitter, slight rotation, scale pop), like hearts on a live stream.
-- Every so often (not every reaction, so it doesn't turn into a wall of text), a short
-  `thought` pops as a small comment chip from that character in the lower-left corner, TikTok
-  comment style, fading after a few seconds.
-- Staggered queue (~300–500 ms apart) so a burst doesn't pile up; capped on screen.
+- Each reaction is a bead on a ring around the portrait: the emoji with a small avatar of the
+  reacting character. It pops in, drifts slowly along the ring and fades after a few seconds.
+- Beads only use the **upper arc and the sides** of the ring. The lower arc is kept clear because
+  the speaker label and captions sit right below the blob.
+- Now and then (not every reaction), the bead carries the reaction's `thought` as a small bubble
+  attached to it, kept inside the screen bounds, TikTok-comment style.
+- Staggered (~400–500 ms apart), capped on screen, and slot angles spread so beads don't stack.
 - Only reactions created during this session animate — entering live mode doesn't replay old ones.
 - A reaction to the player's own line can make the blob flicker briefly in the reacting
   character's color.
@@ -694,7 +701,8 @@ the bubble think it should have audio. Worth fixing while we're here.
 2. Barge-in stops playback only; the full audio stays on the message, playable from the chat.
 3. No confirm/edit step: the recording is sent straight away; the reply hears it and returns the
    player's line as formatted text.
-4. Reactions show in real time on the live screen, TikTok-live style.
+4. Reactions show in real time on the live screen, orbiting the portrait in focus (upper arc and
+   sides only) so they never cover the captions.
 5. Leaving live mode ends it completely; no audio ever plays outside the live screen.
 6. Hitting the message limit opens the same Milestone screen as the chat, after the turn finishes.
 7. The audio goes straight into the reply request (`HIGH` is Gemini, which accepts audio);
@@ -705,3 +713,5 @@ the bubble think it should have audio. Worth fixing while we're here.
    actions become sounds or silence, thinks are never spoken, narration uses the narrator voice.
 9. Live mode is its own screen (`LiveConversationKey` in `SagaEntryProvider`), never a sheet, with
    shared transitions from the chat input and spring-driven motion throughout.
+10. While waiting for the reply, the player's portrait stays in focus in the blob; when the reply
+    lands it crossfades to whoever answered.
