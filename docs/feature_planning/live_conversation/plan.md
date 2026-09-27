@@ -198,6 +198,40 @@ a separate `LOW`/`MINIMAL` transcription request, which this design doesn't need
 `AudioTranscriptionService` (the Gemma path that never attached the audio) is not needed anymore
 and can be removed.
 
+### Model config (`model_configs`, as of today)
+
+| Tier | Primary | Rotation | Role in live mode |
+|---|---|---|---|
+| `HIGH` | `gemini-3.5-flash-lite`, thinking `high` | `gemini-3.5-flash-lite`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.8-flash` | The reply, **with the player's audio attached**. |
+| `MEDIUM` | `gemini-3.5-flash-lite`, thinking `high` | + `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite` | `AudioConfig` for speakers without a voice yet (once per speaker). |
+| `LOW` / `MINIMAL` | Gemma 4 | Gemma 4 | Reply fallout (reactions), text only. Nothing audio goes here. |
+| `AUDIO` | `gemini-2.5-flash-preview-tts` | only itself | Character/narrator voices. |
+| `TRANSCRIBE` | `gemini-3.5-transcribe` | only itself | Fallback only. |
+
+What this means:
+
+- **Audio input is safe on `HIGH` today:** every model in the rotation is a Gemini flash /
+  flash-lite, and none is Gemma. Fallback 1 (a non-audio model picked by rotation) can't happen
+  with this config; `supportsAudioInput` stays as a guard in case the config changes. Before
+  shipping, a debug action should send a short WAV to each `HIGH` candidate once to confirm, since
+  the list is remote and can change without an app release.
+- **Thinking `high` on every voice turn is the biggest latency cost we control.** The reply
+  currently thinks at `high`. For voice turns, add an optional `voiceThinkingLevel` on the `HIGH`
+  entry (e.g. `"medium"` or `"low"`), read only when the turn's `inputMode` is `VOICE`, so it's
+  tunable from Firebase without touching the typed chat. Today `AIClient.thinkingLevel(requirement,
+  model)` only reads the tier config, so this needs a small parameter through `GemmaClient.generate`
+  → `GeminiGenerationEngine` (including the fallback path at `RetryWithModel`, which re-resolves the
+  level per model). Absent field → same as today.
+- **TTS has no rotation.** `AUDIO` has a single preview model, so when its quota runs out the
+  session goes straight to *SpeakingSilently*. That's already the planned behavior; if another TTS
+  model is available to the key, adding it to `availableModels` gives rotation for free
+  (`AudioGenClient` already uses `withRotation`). Of all the tiers, this quota is the one live mode
+  spends fastest — one TTS call per reply, each several seconds of audio.
+- **`TRANSCRIBE` also has a single model.** Fine now that it's fallback-only; if it's spent, the
+  voice message stays audio-only with a retry, and the story isn't blocked.
+- **`MEDIUM` rarely runs:** with the fast voice path, `AudioConfig` only runs for a speaker
+  without a stored voice.
+
 ### Player message correction (inside the reply)
 
 The selector only picks **who** the player speaks as; it has no Narrator / Action / Thought
@@ -432,7 +466,8 @@ the bubble think it should have audio. Worth fixing while we're here.
 ## Phases
 
 1. **Foundations** — `VoiceRecorder` + audio gate, audio parts in `GeminiRequestBuilder`,
-   `ModelCatalog.supportsAudioInput`, `LiveTranscriber` fallback (remove `AudioTranscriptionService`),
+   `ModelCatalog.supportsAudioInput`, `voiceThinkingLevel` on the `HIGH` tier,
+   `LiveTranscriber` fallback (remove `AudioTranscriptionService`),
    `AIReply.playerInput` (`PlayerInputFeedback`) + `inputMode` / `originalText` columns + `player_input_blueprint` (this
    also ships the typo fix for the typed chat), `LiveVoiceUseCase` (fast path), feature flag,
    `LiveConversationKey` + `isInConversation()` in the navigation tracker / milestone collector.
@@ -452,8 +487,10 @@ the bubble think it should have audio. Worth fixing while we're here.
   fast voice path and chunked TTS are what make it feel "live".
 - **Quota:** each turn costs 1–2 text + 1 TTS request against the user's key (plus the existing
   fallout call); a transcribe request only on fallback.
-- **Model rotation:** if `model_configs` puts a non-audio model in the `HIGH` rotation, those turns
-  pay for an extra transcription. Worth keeping `HIGH` on audio-capable Gemini models.
+- **Model rotation:** today's `HIGH` rotation is all Gemini (audio-capable). If a non-audio model is
+  ever added there, those turns pay for an extra transcription.
+- **TTS quota:** `AUDIO` has one preview model and no rotation; it's the quota live mode burns
+  fastest. The silent mode covers it, but a second TTS candidate would stretch sessions.
 - **Correction mistakes:** with no edit step, a wrong tag split goes straight into the story. The
   bucket leans on "dialogue when unsure", and the code-side guard falls back to the raw text.
 - **Reply prompt weight:** the correction buckets compete with the narration directives; only the
