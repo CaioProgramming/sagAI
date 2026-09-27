@@ -45,13 +45,19 @@ has every line, playable through the existing `AudioMessagePlayer` bubbles.
 A pure, unit-testable reducer (`LiveTurnState`) owned by `LiveConversationViewModel`:
 
 ```
-Idle ──hold──▶ Listening ──release──▶ Transcribing ──▶ Thinking ──reply saved──▶ Voicing ──▶ Speaking ──done──▶ Idle
-  ▲               │ drag-out / <600ms            │ empty / fail        │ error / guardrail      │ TTS fail/quota      │
-  └───────────────┴──────────── Idle + hint ─────┴──── Recovering ─────┴──── Recovering ───────┴─ SpeakingSilently ─┘
+Idle ──hold──▶ Listening ──release──▶ Transcribing ──▶ Formatting ──▶ Thinking ──reply saved──▶ Voicing ──▶ Speaking ──done──▶ Idle
+  ▲               │ drag-out / <600ms            │ empty / fail                   │ error / guardrail      │ TTS fail/quota      │
+  └───────────────┴──────────── Idle + hint ─────┴──────── Recovering ────────────┴──── Recovering ───────┴─ SpeakingSilently ─┘
+
+Any state ──leave screen / ON_STOP──▶ Closed        Any state ──milestone ready──▶ (finish turn) ──▶ MilestoneKey
 ```
 
 - **Listening** — `VoiceRecorder` captures PCM, emits RMS for the blob.
-- **Transcribing** — WAV → `TranscribeClient`. Result shown briefly as the player's subtitle.
+- **Transcribing** — WAV → `TranscribeClient`. Raw text is not shown yet.
+- **Formatting** — the pre-request that turns speech into a chat message (see
+  [Speech → message formatting](#speech--message-formatting)). The formatted line then appears as
+  the player's subtitle. **Sent straight away, no confirm/edit step** — giving the player an edit
+  box kills the rhythm; the formatter is what keeps quality up.
 - **Thinking** — user `Message` saved (status `LOADING`, `audible = true`, `audioPath` = player
   WAV), then `ChatGenerationService.generate()`. `activeGenerations[sagaId].reasoning` can be shown
   faintly under the blob, like an assistant "thinking".
@@ -63,7 +69,9 @@ Idle ──hold──▶ Listening ──release──▶ Transcribing ──▶
 - **SpeakingSilently** — degraded mode when voice isn't available (see Errors): same portrait,
   subtitle typewriter, no audio, no pulse.
 - **Barge-in** — holding the button during `Speaking` stops playback immediately and goes to
-  `Listening`. The interrupted message keeps its audio file.
+  `Listening`. Nothing is cancelled or deleted: the reply keeps its full audio file, and the
+  player can hear the rest from the chat bubble. The live screen never resumes an interrupted line.
+- **Closed** — see [Leaving live mode](#leaving-live-mode).
 
 ## Architecture
 
@@ -72,6 +80,7 @@ features/live/
   data/
     VoiceRecorder.kt            // AudioRecord → 16-bit PCM → WAV (AudioUtils.wrapPcmInWav), RMS flow
     LiveTranscriber.kt          // TranscribeClient first, fallbacks below
+    LiveInputFormatter.kt       // pre-request: transcript → chat message with expressive tags
     LiveVoiceUseCase.kt         // fast TTS path for a saved reply
   presentation/
     LiveConversationViewModel.kt
@@ -82,6 +91,7 @@ features/live/
     HoldToTalkButton.kt
     SpeakerSelector.kt          // Instagram-filter carousel around the button
     LiveSubtitle.kt
+    LiveReactionsOverlay.kt     // TikTok-live style floating reactions
 ```
 
 - **Navigation:** new `NavKeys.LiveConversation(sagaId)` entry; opened from the chat input (the
@@ -89,9 +99,45 @@ features/live/
 - **Feature flag:** remote-config boolean (`live_conversation_enabled`) + debug override, so it
   ships dark like the audio generation did.
 - **Background guarantees:** text generation already lives in `ChatGenerationService`'s singleton
-  scope. The voicing step for a reply must live there too (or a sibling singleton), **not** in
-  `viewModelScope` — otherwise leaving the screen mid-turn leaves a message without audio. Leaving
-  the screen stops *playback* only.
+  scope, so the conversation is always saved. The voicing step for an in-flight reply also runs
+  in a singleton scope (so the chat bubble still gets its audio), but **playback is owned only by
+  the live screen** — see [Leaving live mode](#leaving-live-mode).
+
+### Leaving live mode
+
+Going back to the chat (back gesture, close button, or the app going to `ON_STOP`) **ends the
+live session completely**:
+
+- Recording is stopped and discarded; playback is stopped and released.
+- The `LiveSession` object (the thing that listens to `ChatGenerationService.outcomes` and turns
+  a reply into playback) is cancelled with the screen. Nothing outside the live route ever plays
+  audio automatically — if a reply lands after the player left, it just shows up in the chat as a
+  normal bubble (with audio if the voicing finished), and nobody talks.
+- Text generation and voicing already started keep going silently so no message is lost or left
+  half-made. Voicing that hasn't *started* when the player leaves is not started (saves TTS quota);
+  that message can be voiced later from the chat's *Regenerate audio*.
+- Re-entering live mode never replays old lines; it starts at Idle.
+
+### Milestones (message limit)
+
+The chat opens the Milestone screen from one place: `MainActivity` collects
+`sagaContentManager.milestoneChainReady` and navigates to `MilestoneKey(sagaId)` **only if
+`sagaNavigationTracker.isOnChatForSaga(sagaId)`**, after waiting for the saga's in-flight reply.
+On the live route that check is false today, so the limit would silently pass. Plan:
+
+- Add a `LiveConversationKey(sagaId)` and a `SagaNavigationTracker.isInConversation(sagaId)` that
+  is true for `ChatKey` **or** `LiveConversationKey`. Use it in the milestone collector, in
+  `observeMilestoneChainReadiness`, and in the chat-generation island check (so the "generating"
+  island doesn't show on top of the live screen either).
+- On the live route the collector also waits for the **turn to finish** (voicing + playback of the
+  reply that hit the limit), not just the text, so the milestone doesn't cut a character
+  mid-sentence. The live VM exposes a `turnInFlight` flow the collector can wait on (with a
+  timeout so a stuck TTS can't hold the milestone forever).
+- While a milestone is intrusive (`Loading`, `NewEvent`, `ChapterFinished`, `ActFinished` — the
+  same set as `milestoneBlocksInput` in `ChatView`), the hold-to-talk button is disabled and the
+  blob shows the "thinking" state.
+- The back stack becomes Chat → Live → Milestone; closing the milestone returns to the live
+  screen, same as it returns to the chat today.
 
 ### Recording the player
 
@@ -109,8 +155,38 @@ features/live/
 3. Give up gracefully: show "não consegui te ouvir" with **Try again** and **Type instead** (a
    small text field inside the live screen). The recording is discarded only if the player cancels.
 
-Skip the typo check (`checkMessageTypo`) in live mode — it's another round-trip and the
-transcript is already model-cleaned.
+### Speech → message formatting
+
+The selector only picks **who** the player speaks as; it has no Narrator / Action / Thought
+modes. The model has to work out from the speech itself which parts are dialogue, which are
+actions and which are narration or thoughts. Example:
+
+> *"eu puxo a espada e digo: ninguém passa daqui. mas por dentro eu tô morrendo de medo"*
+>
+> → `<action>Puxo a espada.</action> Ninguém passa daqui. <think>Por dentro, estou morrendo de medo.</think>`
+
+`LiveInputFormatter` is a single pre-request between transcription and sending:
+
+- **Input:** the raw transcript, the speaking character (name, personality), the characters in
+  the scene and the saga's proper nouns (character/place names — transcription mangles fantasy
+  names), the last couple of messages for context, and the `ExpressiveTag` rules the chat already
+  uses (`<action>`, `<think>`, `<narrator>`).
+- **Output (JSON):** `{ "text": "<formatted message with tags>", "understood": true|false }`.
+- **Rules:** keep the player's intent and wording, no new content. Remove filler ("é…", "tipo",
+  false starts), fix names against the glossary, split into tags, write in the saga's language.
+  `understood = false` when the transcript is noise → handled like an empty transcript.
+- **Model:** Gemma `ModelRequirement.LOW` with a small, cached prompt — it's on the critical path,
+  so it has to be fast. The prompt lives in a new `LivePrompts` next to `AudioPrompts`.
+- **Replaces the typo check:** `checkMessageTypo` is skipped in live mode. The formatter already
+  does that job, and the message is **sent straight away with no confirm/edit step**.
+- **Fallback:** if the formatter fails or times out (~4 s), send the cleaned raw transcript as
+  plain dialogue. A formatting failure never blocks the turn.
+- **Later optimization:** one multimodal Gemini call that takes the audio and returns the
+  formatted message in one step (saves a round-trip). Needs checking whether `GemmaClient` /
+  the request model accept inline audio; keep the two-step path as fallback.
+
+The formatted text is what gets saved to `Message.text`, so the chat shows the same tagged bubbles
+as if the player had typed them with the tag inserter.
 
 ### Voicing replies fast (`LiveVoiceUseCase`)
 
@@ -119,7 +195,11 @@ transcript is already model-cleaned.
   Only speakers without a voice go through the existing config call once (which then persists it).
 - Phase 3: split long replies into sentences (the `BookAudioSegmenter` idea) and synthesize chunk
   1 while chunk 2 is generated — first sound much earlier. Chunks are concatenated into the single
-  message WAV once all finish.
+  message WAV once all finish. A barge-in stops **playback only**; the remaining chunks still
+  finish so the saved file is the complete line.
+- `AudioGenClient.stripExpressiveTags` drops `<action>`, `<think>`, `<narrator>` content from the
+  TTS text. In live mode those parts still show as italic subtitle lines around the spoken part,
+  so the player doesn't miss what the character *did*.
 - Reuse `generateAudio()`'s save/update path so the chat bubble sees the audio.
 
 ### Sender types
@@ -163,7 +243,26 @@ transcript is already model-cleaned.
 - **SpeakerSelector:** horizontal carousel of avatars around the button, exactly like Instagram
   Stories filters — the one in the center slot *is* the button. Swiping changes who the player
   speaks as (`UpdateCharacter`), with a haptic tick per snap. Swiping is disabled while holding.
+  **Characters only** — no Narrator/Action/Thought modes; those come from the formatter.
+- Disabled (dimmed, no haptic) while a milestone is intrusive.
 - Phase 2+: slide-up "lock" for long speeches.
+
+### Live reactions (TikTok-live style)
+
+Reactions already arrive a beat after each reply: `ChatGenerationService` launches
+`resolveReplyFallout()`, which saves `Reaction(messageId, characterId, emoji, thought)` rows for
+both the reply and the player's message. The live screen observes reactions for the messages of
+the current session and shows each **new** one as it lands:
+
+- The emoji floats up from the bottom-right edge with a small avatar of the reacting character,
+  drifts and fades (random x-jitter, slight rotation, scale pop), like hearts on a live stream.
+- Every so often (not every reaction, so it doesn't turn into a wall of text), a short
+  `thought` pops as a small comment chip from that character in the lower-left corner, TikTok
+  comment style, fading after a few seconds.
+- Staggered queue (~300–500 ms apart) so a burst doesn't pile up; capped on screen.
+- Only reactions created during this session animate — entering live mode doesn't replay old ones.
+- A reaction to the player's own line can make the blob flicker briefly in the reacting
+  character's color.
 
 ## Errors & limits
 
@@ -177,9 +276,11 @@ transcript is already model-cleaned.
 | Guardrail block | User message is deleted by the service; show a gentle notice, return to Idle. |
 | Missing API key | `ApiKeyTroubleSheet`. |
 | No `RECORD_AUDIO` permission | `PermissionComponent`, then back to Idle. |
-| Too short / silence / empty transcript | Idle + hint, nothing saved. |
-| Phone call / audio focus loss | Stop recording (discard) or pause playback; generation keeps going. |
-| Leaving the screen mid-turn | Text + audio finish in background; playback stops. |
+| Too short / silence / empty transcript / formatter says `understood = false` | Idle + hint, nothing saved. |
+| Formatter fails / times out | Send the cleaned raw transcript as plain dialogue. |
+| Phone call / audio focus loss | Stop recording (discard) or stop playback; generation keeps going. |
+| Leaving the screen mid-turn (back, close, `ON_STOP`) | Live session ends completely; nothing ever plays outside the live screen. Started work finishes silently, unstarted voicing is skipped. |
+| Message limit reached | Turn finishes (reply voiced and played), then the same Milestone screen as the chat opens. |
 
 Note: `regenerateAudio()`'s failure path currently sets `audible = true` on failure, which makes
 the bubble think it should have audio. Worth fixing while we're here.
@@ -187,29 +288,35 @@ the bubble think it should have audio. Worth fixing while we're here.
 ## Phases
 
 1. **Foundations** — `VoiceRecorder`, `LiveTranscriber` (+ fix `AudioTranscriptionService`),
-   `LiveVoiceUseCase` (fast path), feature flag, route. Unit tests for the reducer.
-2. **MVP loop** — hold → transcribe → save user msg with audio → generate → voice → play, with a
-   simple blob (Canvas fallback) and the silent fallback. Behind the flag.
-3. **Magic pass** — AGSL blob, portrait morph, speaker selector carousel, haptics, subtitles,
-   reasoning shimmer.
+   `LiveInputFormatter` + `LivePrompts`, `LiveVoiceUseCase` (fast path), feature flag,
+   `LiveConversationKey` + `isInConversation()` in the navigation tracker / milestone collector.
+   Unit tests for the reducer and the formatter's fallback.
+2. **MVP loop** — hold → transcribe → format → save user msg with audio → generate → voice →
+   play, with a simple blob (Canvas fallback), the silent fallback, full stop on leaving, and the
+   milestone link. Behind the flag.
+3. **Magic pass** — AGSL blob, portrait morph, speaker selector carousel, live reactions overlay,
+   haptics, subtitles, reasoning shimmer.
 4. **Latency pass** — chunked TTS, pre-warming, measuring per-stage timings in `AIAuditRecorder`.
 5. **Hardening** — full error matrix, audio focus, long sessions, storage (AAC).
 
 ## Risks
 
-- **Latency is the real risk.** Rough budget per turn: transcribe 1–2 s + reply 3–10 s + TTS
-  2–6 s ≈ 6–18 s. The Thinking/Voicing animations have to carry that wait; the fast path and
-  chunked TTS are what make it feel "live".
-- **Quota:** each turn now costs 1 transcribe + 1–2 text + 1 TTS request against the user's key.
+- **Latency is the real risk.** Rough budget per turn: transcribe 1–2 s + format ~1 s + reply
+  3–10 s + TTS 2–6 s ≈ 7–19 s. The Thinking/Voicing animations and the live reactions have to
+  carry that wait; the fast voice path, the single-call transcribe+format and chunked TTS are what
+  make it feel "live".
+- **Quota:** each turn now costs 1 transcribe + 1 format + 1–2 text + 1 TTS request against the
+  user's key (plus the existing fallout call).
+- **Formatter mistakes:** with no edit step, a wrong tag split goes straight into the story. The
+  prompt must lean on "keep it as dialogue when unsure".
 - **Storage:** every turn stores two WAVs.
 
-## Open questions
+## Decisions
 
-1. Should the selector include the non-speech modes (Narrator / Action / Thought from
-   `SpeechModeSheet`), or only characters?
-2. Barge-in: should interrupting a character also cancel that reply's remaining chunks, or just
-   stop playback?
-3. Show the player's transcript before sending (confirm/edit), or send straight away? Plan assumes
-   straight away with a short "undo" window.
-4. Should reactions / `resolveReplyFallout` hooks surface in the live screen (e.g. an emoji
-   floating up from the blob), or stay chat-only?
+1. Selector = characters only. Action / narration / thought are inferred from speech by the
+   formatter pre-request.
+2. Barge-in stops playback only; the full audio stays on the message, playable from the chat.
+3. No confirm/edit step: the formatted message is sent straight away.
+4. Reactions show in real time on the live screen, TikTok-live style.
+5. Leaving live mode ends it completely; no audio ever plays outside the live screen.
+6. Hitting the message limit opens the same Milestone screen as the chat, after the turn finishes.
