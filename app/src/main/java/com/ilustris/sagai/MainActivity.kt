@@ -83,6 +83,7 @@ import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
+import com.ilustris.sagai.features.live.data.LiveSessionTracker
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
@@ -133,6 +134,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -181,6 +183,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var chatGenerationService: ChatGenerationService
+
+    @Inject
+    lateinit var liveSessionTracker: LiveSessionTracker
 
     @Inject
     lateinit var debugImageFallbackService: DebugImageFallbackService
@@ -289,9 +294,15 @@ class MainActivity : ComponentActivity() {
             // can see both without one.
             LaunchedEffect(Unit) {
                 sagaContentManager.milestoneChainReady.collect { sagaId ->
-                    if (!sagaNavigationTracker.isOnChatForSaga(sagaId)) return@collect
+                    if (!sagaNavigationTracker.isInConversation(sagaId)) return@collect
                     chatGenerationService.activeGenerations.first { it[sagaId] == null }
-                    if (sagaNavigationTracker.isOnChatForSaga(sagaId)) {
+                    // In live mode the reply that hit the limit is usually still being voiced or
+                    // played: let the character finish the line first (bounded, so a stuck TTS
+                    // can't hold the milestone forever).
+                    withTimeoutOrNull(LIVE_TURN_MILESTONE_WAIT_MS) {
+                        liveSessionTracker.turnsInFlight.first { sagaId !in it }
+                    }
+                    if (sagaNavigationTracker.isInConversation(sagaId)) {
                         navigator.navigate(MilestoneKey(sagaId))
                     }
                 }
@@ -426,7 +437,7 @@ class MainActivity : ComponentActivity() {
                     (bookGenState as? BookGenerationUiState.Generating)
                         ?.takeUnless { sagaNavigationTracker.isOnChronicle(it.sagaId) }
                 val visibleChatGen =
-                    chatGenState.values.firstOrNull { !sagaNavigationTracker.isOnChatForSaga(it.sagaId) }
+                    chatGenState.values.firstOrNull { !sagaNavigationTracker.isInConversation(it.sagaId) }
                 // Real notifications only — the generation "work effects" arbitrate priority in
                 // GlobalShellService but render as their own islands (above), never here.
                 val notificationEffect =
@@ -864,3 +875,6 @@ class MainActivity : ComponentActivity() {
             }
     }
 }
+
+/** How long the milestone waits for a live turn's reply to finish playing before opening anyway. */
+private const val LIVE_TURN_MILESTONE_WAIT_MS = 60_000L

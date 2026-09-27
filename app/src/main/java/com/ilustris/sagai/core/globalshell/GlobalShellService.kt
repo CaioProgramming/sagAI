@@ -189,7 +189,8 @@ class GlobalShellService
          * (We build it on demand to always use the latest navigation/overlay state.)
          */
         private inner class VisibilityContext : GlobalShellVisibilityContext {
-            override fun isOnChatForSaga(sagaId: Int): Boolean = navigationTracker.isOnChatForSaga(sagaId)
+            // Live mode is the same conversation: its messages, chapters and generation are on screen there too.
+            override fun isOnChatForSaga(sagaId: Int): Boolean = navigationTracker.isInConversation(sagaId)
 
             override fun isOnSagaDetail(sagaId: Int): Boolean = navigationTracker.isOnSagaDetail(sagaId)
 

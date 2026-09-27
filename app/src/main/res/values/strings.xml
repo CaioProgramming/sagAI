@@ -1113,4 +1113,27 @@
     <string name="audiobook_delete_narration_message">The audio files for \u0022%1$s\u0022 are removed. Narrating it again spends your daily voice quota.</string>
     <string name="audiobook_open_player">Play book</string>
     <string name="audiobook_shelf_badge">Listen · %1$d min</string>
+    <!-- Live conversation -->
+    <string name="live_open">Talk live</string>
+    <string name="live_close">Back to chat</string>
+    <string name="live_hold_to_talk">Hold to talk as %1$s</string>
+    <string name="live_release_to_send">Release to send</string>
+    <string name="live_release_to_cancel">Release to cancel</string>
+    <string name="live_drag_to_cancel">drag up to cancel</string>
+    <string name="live_cancelled">Recording discarded</string>
+    <string name="live_too_short">Hold the button while you speak</string>
+    <string name="live_waiting_reply">Waiting for the reply…</string>
+    <string name="live_preparing_voice">Preparing %1$s\'s voice…</string>
+    <string name="live_interrupt">Hold to interrupt</string>
+    <string name="live_speaking_silently">No voices right now · hold to reply</string>
+    <string name="live_reply_failed">The reply didn\'t come through.</string>
+    <string name="live_retry">Try again</string>
+    <string name="live_guardrail">That line couldn\'t be used in the story. Try saying it another way.</string>
+    <string name="live_mic_unavailable">The microphone is busy or unavailable.</string>
+    <string name="live_permission_needed">Allow the microphone to talk live</string>
+    <string name="live_milestone">The story is turning a page…</string>
+    <string name="live_transcribing">transcribing…</string>
+    <string name="live_voices_resting">Voices rest until %1$s · continuing with captions</string>
+    <string name="live_narrator">Narrator</string>
+    <string name="live_you">you</string>
 </resources>

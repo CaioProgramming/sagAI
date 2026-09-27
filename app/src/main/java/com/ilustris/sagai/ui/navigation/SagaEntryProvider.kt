@@ -19,6 +19,7 @@ import com.ilustris.sagai.features.debug.ui.LoreDebugView
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileView
 import com.ilustris.sagai.features.faq.ui.FAQView
 import com.ilustris.sagai.features.home.ui.HomeView
+import com.ilustris.sagai.features.live.ui.LiveConversationView
 import com.ilustris.sagai.features.saga.milestone.ui.MilestoneScreen
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.player.ui.PlayerProfileView
@@ -133,6 +134,17 @@ fun createSagaEntryProvider(
                 navigator.navigate(SagaDetailKey(key.sagaId))
             },
             onNavigate = { navigator.navigate(it) },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    // A full screen of its own (never a sheet), pushed on top of the saga's chat so the input's
+    // avatar can fly into the hold-to-talk button and back.
+    entry<LiveConversationKey> { key ->
+        LiveConversationView(
+            sagaId = key.sagaId,
+            onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )

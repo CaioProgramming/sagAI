@@ -1,8 +1,5 @@
 package com.ilustris.sagai.core.ai
 
-import com.ilustris.sagai.core.ai.key.ApiUsageTracker
-import com.ilustris.sagai.core.ai.key.QuotaStatusService
-import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.local.LocalAiConfig
 import com.ilustris.sagai.core.ai.local.LocalAiConfigLoader
 import com.ilustris.sagai.core.ai.local.LocalAiEligibility
@@ -10,6 +7,9 @@ import com.ilustris.sagai.core.ai.local.LocalAiExecutor
 import com.ilustris.sagai.core.ai.local.LocalAiSidebackRouting
 import com.ilustris.sagai.core.ai.local.LocalAiSidebackStep
 import com.ilustris.sagai.core.ai.local.LocalAiTelemetry
+import com.ilustris.sagai.core.ai.key.ApiUsageTracker
+import com.ilustris.sagai.core.ai.key.QuotaStatusService
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.model.AudioAttachment
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SplitPrompt
@@ -22,8 +22,6 @@ import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.utils.toJsonFormat
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -32,6 +30,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class GemmaClient

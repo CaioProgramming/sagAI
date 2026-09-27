@@ -117,6 +117,15 @@ data class AudiobookPlayerKey(
 ) : NavKey
 
 /**
+ * Live conversation over a saga: a full screen of its own, pushed on top of that saga's chat.
+ * Counts as "in the conversation" for everything the chat gates on (milestones, notifications).
+ */
+@Serializable
+data class LiveConversationKey(
+    val sagaId: Int,
+) : NavKey
+
+/**
  * Not reachable via deep link on purpose — the only way in is the single collector on
  * [com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager.milestoneChainReady]
  * that pushes this while the user is already on that saga's chat. See MainActivity.

@@ -46,14 +46,14 @@ import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.ui.theme.utils.getRandomColorHex
-import java.util.Calendar
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.Calendar
+import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
 class CharacterUseCaseImpl

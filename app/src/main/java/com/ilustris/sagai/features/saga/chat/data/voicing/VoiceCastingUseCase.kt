@@ -11,9 +11,6 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-import kotlin.math.absoluteValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,6 +19,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlin.math.absoluteValue
 
 data class CastVoice(
     val voice: Voice,

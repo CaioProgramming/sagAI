@@ -128,6 +128,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.subtitleActAndChapterOrdinals
 import com.ilustris.sagai.features.home.data.model.toInfo
+import com.ilustris.sagai.features.live.ui.liveSpeakerKey
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -161,6 +162,7 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.components.island.islandPadding
+import com.ilustris.sagai.ui.navigation.LiveConversationKey
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -678,11 +680,13 @@ fun ChatContent(
                     }
 
                 val onRequestAudio: () -> Unit =
-                    remember(onAction) {
+                    remember(onAction, onNavigate, uiState.liveConversationEnabled, content.data.id) {
                         {
-                            onAction(
-                                ChatUiAction.RequestAudioTranscript(true),
-                            )
+                            if (uiState.liveConversationEnabled) {
+                                onNavigate(LiveConversationKey(content.data.id))
+                            } else {
+                                onAction(ChatUiAction.RequestAudioTranscript(true))
+                            }
                         }
                     }
 
@@ -920,6 +924,14 @@ fun ChatContent(
                                         suggestions = uiState.suggestions,
                                         onSelectCharacter = onSelectCharacter,
                                         onRequestAudio = onRequestAudio,
+                                        liveEnabled = uiState.liveConversationEnabled,
+                                        avatarModifier =
+                                            with(sharedTransitionScope) {
+                                                Modifier.sharedElement(
+                                                    rememberSharedContentState(liveSpeakerKey(content.data.id)),
+                                                    animatedVisibilityScope,
+                                                )
+                                            },
                                         isEditing = uiState.editingMessage != null,
                                         onCancelEdit = onCancelEdit,
                                         maxContentLength = uiState.maxContentLength,

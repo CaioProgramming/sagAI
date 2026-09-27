@@ -37,8 +37,6 @@ import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.io.File
-import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -60,6 +58,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.File
+import javax.inject.Inject
 
 /**
  * Runs a live conversation: hold → record → send the audio as a voice turn → the reply (text
@@ -287,11 +287,18 @@ class LiveConversationViewModel
             val reply = outcome.reply.message
             sessionMessageIds.update { it + reply.id }
 
+            val replyFocus =
+                LiveFocus(
+                    reply.characterId
+                        ?.takeIf { reply.senderType != SenderType.NARRATOR }
+                        ?.let { id -> saga.findCharacter(id) },
+                )
             // The reply text is here; its audio isn't yet. The player's corrected line takes the
             // stage meanwhile — the reply's own text stays hidden until it's heard.
             _state.update {
                 it.copy(
                     phase = LivePhase.Voicing,
+                    nextFocus = replyFocus,
                     playerLinePending = false,
                     reasoning = null,
                     caption = LiveCaption(MessageBlocks.split(outcome.userMessage.text), isPlayerLine = true),
@@ -299,12 +306,6 @@ class LiveConversationViewModel
                 )
             }
 
-            val replyFocus =
-                LiveFocus(
-                    reply.characterId
-                        ?.takeIf { reply.senderType != SenderType.NARRATOR }
-                        ?.let { id -> saga.findCharacter(id) },
-                )
             turnJob?.cancel()
             turnJob =
                 viewModelScope.launch {
@@ -365,6 +366,7 @@ class LiveConversationViewModel
                 it.copy(
                     phase = LivePhase.Speaking(silent = false),
                     focus = focus,
+                    nextFocus = null,
                     caption = LiveCaption(voiced.blocks),
                     hint = LiveHint.INTERRUPT,
                 )
@@ -395,6 +397,7 @@ class LiveConversationViewModel
                 it.copy(
                     phase = LivePhase.Speaking(silent = true),
                     focus = focus,
+                    nextFocus = null,
                     caption = LiveCaption(blocks),
                     hint = LiveHint.SPEAKING_SILENTLY,
                 )
@@ -579,6 +582,7 @@ class LiveConversationViewModel
                 it.copy(
                     phase = LivePhase.Idle,
                     focus = null,
+                    nextFocus = null,
                     playerLinePending = false,
                     reasoning = null,
                     hint = hint,

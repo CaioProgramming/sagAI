@@ -78,6 +78,8 @@ data class ChatUiState(
     val reasoningChunk: String? = null,
     val wikiGroups: List<WikiGroup> = emptyList(),
     val maxContentLength: Int = 2000,
+    /** Remote flag `live_conversation_enabled` (always on in debug builds): shows the live entry in the input. */
+    val liveConversationEnabled: Boolean = false,
     val relationships: List<RelationshipContent> = emptyList(),
     val currentMessageCount: Int = 0,
     val showTitle: Boolean = false,

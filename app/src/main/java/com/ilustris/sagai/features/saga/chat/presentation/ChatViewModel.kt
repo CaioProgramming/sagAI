@@ -12,8 +12,9 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.google.gson.Gson
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
+import com.google.gson.Gson
 import com.ilustris.sagai.core.ai.gsonTypeOfStringList
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.datastore.DataStorePreferences
@@ -57,8 +58,6 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,6 +68,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 private const val MAX_RECENT_SEARCHES = 5
 
@@ -494,7 +495,8 @@ class ChatViewModel
                 val limit =
                     remoteConfigService.getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)?.toInt()
                         ?: ChatPrompts.DEFAULT_CHAT_INPUT_LIMIT
-                stateManager.updateState { it.copy(maxContentLength = limit) }
+                val liveEnabled = BuildConfig.DEBUG || remoteConfigService.getBoolean(LIVE_CONVERSATION_FLAG) == true
+                stateManager.updateState { it.copy(maxContentLength = limit, liveConversationEnabled = liveEnabled) }
             }
 
             wikiObserverJob?.cancel()
@@ -1626,3 +1628,6 @@ class ChatViewModel
             }
         }
     }
+
+/** Remote Config flag that ships live conversation dark until it's turned on. */
+private const val LIVE_CONVERSATION_FLAG = "live_conversation_enabled"

@@ -48,8 +48,8 @@ import com.ilustris.sagai.features.saga.chat.data.model.InputMode
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.Reaction
-import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
 import com.ilustris.sagai.features.saga.chat.data.model.ReplyFallout
+import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
@@ -59,14 +59,14 @@ import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
-import java.io.File
-import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.File
+import javax.inject.Inject
 
 class MessageUseCaseImpl
     @Inject

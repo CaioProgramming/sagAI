@@ -1100,6 +1100,29 @@
     <string name="audiobook_delete_narration_message">Os áudios de \u0022%1$s\u0022 serão removidos. Narrar de novo gasta sua cota diária de voz.</string>
     <string name="audiobook_open_player">Reproduzir livro</string>
     <string name="audiobook_shelf_badge">Ouvir · %1$d min</string>
+    <!-- Live conversation -->
+    <string name="live_open">Conversar ao vivo</string>
+    <string name="live_close">Voltar para o chat</string>
+    <string name="live_hold_to_talk">Segure para falar como %1$s</string>
+    <string name="live_release_to_send">Solte para enviar</string>
+    <string name="live_release_to_cancel">Solte para cancelar</string>
+    <string name="live_drag_to_cancel">arraste pra cima pra cancelar</string>
+    <string name="live_cancelled">Gravação descartada</string>
+    <string name="live_too_short">Segure o botão enquanto fala</string>
+    <string name="live_waiting_reply">Esperando a resposta…</string>
+    <string name="live_preparing_voice">Preparando a voz de %1$s…</string>
+    <string name="live_interrupt">Segure para interromper</string>
+    <string name="live_speaking_silently">Sem voz no momento · segure para responder</string>
+    <string name="live_reply_failed">A resposta não chegou.</string>
+    <string name="live_retry">Tentar de novo</string>
+    <string name="live_guardrail">Essa fala não pôde entrar na história. Tente dizer de outro jeito.</string>
+    <string name="live_mic_unavailable">O microfone está ocupado ou indisponível.</string>
+    <string name="live_permission_needed">Permita o microfone para conversar ao vivo</string>
+    <string name="live_milestone">A história está virando a página…</string>
+    <string name="live_transcribing">transcrevendo…</string>
+    <string name="live_voices_resting">Vozes descansando até %1$s · seguindo com legendas</string>
+    <string name="live_narrator">Narrador</string>
+    <string name="live_you">você</string>
 </resources>
 
 

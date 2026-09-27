@@ -241,6 +241,10 @@ fun ChatInputView(
     onSendMessage: (Boolean) -> Unit,
     onSelectCharacter: (Character) -> Unit = {},
     onRequestAudio: () -> Unit = {},
+    /** When true, the send button turns into the live conversation entry while the input is empty. */
+    liveEnabled: Boolean = false,
+    /** Applied to the speaking character's avatar (the live screen's shared element lands on it). */
+    avatarModifier: Modifier = Modifier,
     isEditing: Boolean = false,
     onCancelEdit: () -> Unit = {},
     maxContentLength: Int = 2000,
@@ -552,7 +556,7 @@ fun ChatInputView(
                             actualCharacter?.let { it.id to it.image }
                                 ?: (content.mainCharacter?.id to content.mainCharacter?.image),
                         modifier =
-                            Modifier
+                            avatarModifier
                                 .size(32.dp)
                                 .clip(CircleShape)
                                 .clickable { characterMenu = true },
@@ -651,15 +655,17 @@ fun ChatInputView(
 
                     Spacer(Modifier.weight(1f))
 
-                    val canSend = inputField.text.isNotBlank() || isGenerating
+                    // Nothing typed and nothing generating: the button opens live mode instead.
+                    val showsLive = liveEnabled && inputField.text.isBlank() && !isLoading && !isEditing
+                    val canSend = inputField.text.isNotBlank() || isGenerating || showsLive
 
                     Box(contentAlignment = Alignment.Center) {
                         IconButton(
                             onClick = {
-                                if (isLoading) {
-                                    onStopGeneration()
-                                } else {
-                                    sendMessage()
+                                when {
+                                    isLoading -> onStopGeneration()
+                                    showsLive -> onRequestAudio()
+                                    else -> sendMessage()
                                 }
                             },
                             enabled = canSend,
@@ -677,12 +683,17 @@ fun ChatInputView(
                                     .padding(4.dp)
                                     .size(32.dp),
                         ) {
-                            AnimatedContent(isLoading) { loading ->
+                            AnimatedContent(isLoading to showsLive) { (loading, live) ->
                                 Icon(
                                     painterResource(
-                                        if (loading) R.drawable.ic_stop else R.drawable.ic_send,
+                                        when {
+                                            loading -> R.drawable.ic_stop
+                                            live -> R.drawable.ic_mic
+                                            else -> R.drawable.ic_send
+                                        },
                                     ),
-                                    contentDescription = stringResource(R.string.chat_input_send),
+                                    contentDescription =
+                                        stringResource(if (live) R.string.live_open else R.string.chat_input_send),
                                     modifier =
                                         Modifier
                                             .padding(8.dp)

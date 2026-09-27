@@ -76,6 +76,8 @@ data class LiveUiState(
     val selectedSpeakerId: Int? = null,
     val phase: LivePhase = LivePhase.Idle,
     val focus: LiveFocus? = null,
+    /** Who answers, known once the reply text lands (Voicing): the blob leans toward them. */
+    val nextFocus: LiveFocus? = null,
     val caption: LiveCaption? = null,
     /** The player's line before the reply corrected it: shown as "transcribing…". */
     val playerLinePending: Boolean = false,

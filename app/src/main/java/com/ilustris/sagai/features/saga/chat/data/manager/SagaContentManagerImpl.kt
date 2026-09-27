@@ -750,7 +750,7 @@ class SagaContentManagerImpl
 
                 combine(ready, content, sagaNavigationTracker.currentKey) { isReady, saga, _ ->
                     val sagaId = saga?.data?.id
-                    if (isReady && sagaId != null && sagaNavigationTracker.isOnChatForSaga(sagaId)) {
+                    if (isReady && sagaId != null && sagaNavigationTracker.isInConversation(sagaId)) {
                         sagaId
                     } else {
                         null
