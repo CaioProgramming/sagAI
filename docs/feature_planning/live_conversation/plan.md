@@ -1,5 +1,31 @@
 # Live Conversation Feature Plan
 
+## Implementation status
+
+Implemented on `claude/live-conversation-feature-1r0d61` (not compiled in the cloud session: the
+Android SDK host was blocked, so validate with `./gradlew installDebug`):
+
+- **Data:** `Message.inputMode` / `originalText`, `Character.voiceDirection` (migration 35 → 36);
+  `AIReply.playerInput` (`PlayerInputFeedback`) applied through `PlayerInputCorrection`'s guard;
+  `GeneratedReply` carries the updated user message to the fallout and to live mode.
+- **Reply:** voice turns attach the WAV inline; transcription only when the model can't hear or the
+  correction comes back missing; `player_input_blueprint` buckets merged by mode;
+  `voiceThinkingLevel` and `live_reply_limit` are optional remote knobs.
+- **Voices:** `VoiceCatalog` (`tts_voices`), `VoiceCastingUseCase`, `MessageVoicingUseCase`
+  (performance script + two-speaker TTS); chat's *Regenerate audio* uses the same path.
+- **Live:** `VoiceRecorder`, `LiveAudioPlayer`, `LiveConversationViewModel`, `LiveSessionTracker`,
+  the screen (`LiveConversationKey` in `SagaEntryProvider`), milestone/notification gating via
+  `isInConversation`, entry from the chat input behind `live_conversation_enabled` (on in debug).
+
+To publish in Remote Config: `tts_voices`, `player_input_blueprint`, `voice_casting_blueprint`,
+`audio_performance_blueprint` (drafts in this folder), `live_conversation_enabled`, and the
+`reply_generation_blueprint` `USER_TONE` wording (`playerInput.emotionalTone`). Everything has a
+fallback, so none of them blocks a build.
+
+Not done yet: line-by-line TTS streaming (phase 4), AGSL blob (the Canvas version ships first),
+shared bounds for the input bar/title (only the avatar is shared), the "corrigido" marker on typed
+bubbles, AAC storage.
+
 ## Overview
 
 A full-screen, voice-first way to play a saga, in the spirit of Gemini Live / ChatGPT Voice / Siri,

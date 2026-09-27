@@ -379,7 +379,19 @@ class LiveConversationViewModel
                     val line = timeline.lineAt(position) ?: return@play
                     _state.update { state ->
                         state.copy(
-                            caption = state.caption?.let { caption -> caption.copy(current = if (line.block >= 0) line.block else caption.current) },
+                            caption =
+                                state.caption?.let { caption ->
+                                    caption.copy(
+                                        current =
+                                            if (line.block >=
+                                                0
+                                            ) {
+                                                line.block
+                                            } else {
+                                                caption.current
+                                            },
+                                    )
+                                },
                             focus = if (line.isNarrator) LiveFocus(null) else focus,
                         )
                     }

@@ -125,7 +125,11 @@ fun LiveConversationView(
 
     val primary = MaterialTheme.colorScheme.primary
     val brush = themeBrushColors()
-    val focusColor = state.focus?.character?.hexColor?.hexToColor() ?: primary
+    val focusColor =
+        state.focus
+            ?.character
+            ?.hexColor
+            ?.hexToColor() ?: primary
     val speakerColor = state.selectedSpeaker?.hexColor?.hexToColor() ?: primary
     val nextColor = state.nextFocus?.let { it.character?.hexColor?.hexToColor() ?: primary }
     val phase = state.phase
@@ -208,7 +212,10 @@ fun LiveConversationView(
                         .animateEnterExit(
                             enter =
                                 fadeIn(tween(500, delayMillis = 150)) +
-                                    scaleIn(spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow), initialScale = 0.2f) +
+                                    scaleIn(
+                                        spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
+                                        initialScale = 0.2f,
+                                    ) +
                                     slideInVertically(spring(stiffness = Spring.StiffnessLow)) { it },
                             exit = fadeOut(tween(200)) + scaleOut(tween(250), targetScale = 0.4f),
                         ),
@@ -474,7 +481,9 @@ private fun HintLine(state: LiveUiState) {
             LiveHint.PERMISSION_NEEDED -> stringResource(R.string.live_permission_needed)
             LiveHint.MILESTONE -> stringResource(R.string.live_milestone)
         }
-    val warn = state.hint in setOf(LiveHint.RELEASE_TO_CANCEL, LiveHint.CANCELLED, LiveHint.TOO_SHORT, LiveHint.REPLY_FAILED, LiveHint.MIC_UNAVAILABLE)
+    val warn =
+        state.hint in
+            setOf(LiveHint.RELEASE_TO_CANCEL, LiveHint.CANCELLED, LiveHint.TOO_SHORT, LiveHint.REPLY_FAILED, LiveHint.MIC_UNAVAILABLE)
     AnimatedContent(text, transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(150)) }, label = "liveHint") {
         Text(
             it,

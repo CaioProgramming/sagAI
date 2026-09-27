@@ -63,10 +63,11 @@ object VoicePrompts {
                 sagaContext = "${saga.data.title} (${saga.data.genre.name}): ${saga.data.description}",
                 character = character.toAINormalize(characterExclusions),
                 characterGender = character.details.physicalTraits.gender,
-                characterAge = character.details.physicalTraits.age
-                    .takeIf { it > 0 }
-                    ?.toString()
-                    .orEmpty(),
+                characterAge =
+                    character.details.physicalTraits.age
+                        .takeIf { it > 0 }
+                        ?.toString()
+                        .orEmpty(),
                 voiceGuide = voiceGuide,
                 voicesInUse = voicesInUse.joinToString().ifBlank { "none" },
             ),

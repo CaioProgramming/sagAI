@@ -1,11 +1,11 @@
 package com.ilustris.sagai.features.live.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -183,7 +183,14 @@ fun CosmicBlob(
                 drawPath(path, focusColor.copy(alpha = 0.18f * alpha), style = Stroke(width = 6.dp.toPx()))
                 drawPath(
                     path,
-                    color = if (layer == 0) Color.White.copy(alpha = 0.85f * alpha) else focusColor.copy(alpha = (if (layer == 1) 0.7f else 0.35f) * alpha),
+                    color =
+                        if (layer ==
+                            0
+                        ) {
+                            Color.White.copy(alpha = 0.85f * alpha)
+                        } else {
+                            focusColor.copy(alpha = (if (layer == 1) 0.7f else 0.35f) * alpha)
+                        },
                     style = Stroke(width = if (layer == 0) 1.4.dp.toPx() else 2.dp.toPx()),
                 )
             }

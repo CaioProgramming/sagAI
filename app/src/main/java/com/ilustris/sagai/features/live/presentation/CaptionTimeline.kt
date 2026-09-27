@@ -20,7 +20,14 @@ class CaptionTimeline private constructor(
             script: PerformanceScript,
             durationMs: Long,
         ): CaptionTimeline {
-            val weights = script.lines.map { it.text.replace(CUE_REGEX, "").trim().length.coerceAtLeast(1) }
+            val weights =
+                script.lines.map {
+                    it.text
+                        .replace(CUE_REGEX, "")
+                        .trim()
+                        .length
+                        .coerceAtLeast(1)
+                }
             val total = weights.sum().coerceAtLeast(1)
             var elapsed = 0L
             val starts =
