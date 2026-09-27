@@ -101,8 +101,25 @@ features/live/
     LiveReactionsOverlay.kt     // TikTok-live style floating reactions
 ```
 
-- **Navigation:** new `NavKeys.LiveConversation(sagaId)` entry; opened from the chat input (the
-  hidden mic entry point becomes the "live" button).
+- **Navigation — a full screen, never a sheet.** New `LiveConversationKey(sagaId: Int) : NavKey` in
+  `NavKeys.kt`, registered in `SagaEntryProvider` like the other screens:
+
+  ```kotlin
+  entry<LiveConversationKey> { key ->
+      LiveConversationView(
+          sagaId = key.sagaId,
+          onBack = { navigator.goBack() },
+          onNavigate = { navigator.navigate(it) },
+          sharedTransitionScope = sharedTransitionScope,
+          animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+      )
+  }
+  ```
+
+  Opened from the chat input: the hidden mic entry point (today `RequestAudioTranscript` →
+  `AudioRecordingSheet`, a bottom sheet) becomes the "live" button that navigates to this key. The
+  sheet isn't reused for live mode. Back is the system back / the close button →
+  `navigator.goBack()`, which also ends the session (see [Leaving live mode](#leaving-live-mode)).
 - **Feature flag:** remote-config boolean (`live_conversation_enabled`) + debug override, so it
   ships dark like the audio generation did.
 - **Background guarantees:** text generation already lives in `ChatGenerationService`'s singleton
@@ -564,6 +581,51 @@ the current session and shows each **new** one as it lands:
 - A reaction to the player's own line can make the blob flicker briefly in the reacting
   character's color.
 
+### Transitions & motion
+
+The live screen has to feel like it grows out of the chat, not like a new page loading on top.
+
+**Shared transitions (chat ⇄ live)**, through the `sharedTransitionScope` +
+`LocalNavAnimatedContentScope` pair the other entries already receive:
+
+| Chat (`ChatView` / `ChatInputView`) | Live (`LiveConversationView`) | Modifier |
+|---|---|---|
+| Selected character's `CharacterAvatar` in the input | Face of the hold-to-talk button | `sharedElement` |
+| Input bar container | Bottom dock (selector + button) | `sharedBounds` |
+| `SagaTopBar` title + `Volume · Capítulo` subtitle | Live top bar title + subtitle | `sharedElement` (text) |
+
+- Use **dedicated keys** namespaced by saga, e.g. `live_${sagaId}_speaker`, `live_${sagaId}_dock`,
+  `live_${sagaId}_title`. Don't reuse `character_${id}_icon`: `ChatBubble` puts that key on every
+  bubble of the same character, so several elements share it on screen and the transition has no
+  single source.
+- The global `NavDisplay` transition is a fade (push) and a vertical slide (pop); shared elements
+  fly across it. On pop, the dock shrinks back into the input bar and the avatar lands back in the
+  input — the chat is already showing the messages the live session wrote.
+- **Entry choreography** (after the shared elements land): stars fade in first, then the blob is
+  born from the button — scaling up from the dock toward the center with a spring — then the top
+  bar and captions fade in. Exit runs the reverse, shorter.
+
+**Motion inside the screen:**
+
+- **Everything is state-driven, never jumpy:** the blob's `level`, size, orbit speed and palette
+  come from `animateFloatAsState` / `animateColorAsState` with springs (medium-low stiffness,
+  no bounce on colors), so switching Listening → Thinking → Speaking morphs instead of cutting.
+  Mic RMS and playback loudness feed a smoothed target, not the raw value.
+- **Portrait ⇄ blob:** an `updateTransition` on the speaker drives the portrait's alpha, scale and
+  mask radius together; changing speaker (narrator → character) crossfades through the blob.
+- **Captions:** `AnimatedContent` for the speaker label and the player's line settling into its
+  corrected version; the karaoke highlight animates color, and the caption window scrolls with an
+  animated offset.
+- **Hold-to-talk:** press scales the face down and the ring up (spring), haptic on press, release,
+  cancel-arm and each selector snap. The selector is a snapping `LazyRow` / pager with
+  `animateItem`.
+- **Reactions:** each floating emoji is its own `Animatable` (position, scale, rotation, alpha)
+  with a staggered start; comment chips enter and leave with `AnimatedVisibility`.
+- **Frame budget:** the stars and the blob draw in `Canvas` / `drawWithCache` (AGSL on API 33+),
+  and animated values are read in the draw phase (lambda modifiers like `graphicsLayer { }`), so a
+  pulse doesn't recompose the screen. Animations pause with `rememberLifecycleAnimationsActive()`
+  and slow down when the system's reduce-motion setting is on.
+
 ## Errors & limits
 
 | Situation | Behavior |
@@ -595,13 +657,14 @@ the bubble think it should have audio. Worth fixing while we're here.
    `LiveTranscriber` fallback (remove `AudioTranscriptionService`),
    `AIReply.playerInput` (`PlayerInputFeedback`) + `inputMode` / `originalText` columns + `player_input_blueprint` (this
    also ships the typo fix for the typed chat), `LiveVoiceUseCase` (casting + performance script + multi-speaker TTS), feature flag,
-   `LiveConversationKey` + `isInConversation()` in the navigation tracker / milestone collector.
+   `LiveConversationKey` entry in `SagaEntryProvider` + `isInConversation()` in the navigation
+   tracker / milestone collector.
    Unit tests for the reducer and the correction guard.
 2. **MVP loop** — hold → audio gate → save user msg with audio → generate (audio in) → voice →
    play, with a simple blob (Canvas fallback), the silent fallback, full stop on leaving, and the
    milestone link. Behind the flag.
-3. **Magic pass** — AGSL blob, portrait morph, speaker selector carousel, live reactions overlay,
-   haptics, subtitles, reasoning shimmer.
+3. **Magic pass** — shared transitions chat ⇄ live, entry choreography, AGSL blob, portrait morph,
+   speaker selector carousel, live reactions overlay, haptics, subtitles, reasoning shimmer.
 4. **Latency pass** — line-by-line TTS, pre-warming, measuring per-stage timings in `AIAuditRecorder`.
 5. **Hardening** — full error matrix, audio focus, long sessions, storage (AAC).
 
@@ -640,3 +703,5 @@ the bubble think it should have audio. Worth fixing while we're here.
    shared voices are fine because delivery is what tells characters apart. Each message gets a performance
    script (`LOW`/`MINIMAL`) before TTS. Audio is a performance of the text, not a reading of it:
    actions become sounds or silence, thinks are never spoken, narration uses the narrator voice.
+9. Live mode is its own screen (`LiveConversationKey` in `SagaEntryProvider`), never a sheet, with
+   shared transitions from the chat input and spring-driven motion throughout.
