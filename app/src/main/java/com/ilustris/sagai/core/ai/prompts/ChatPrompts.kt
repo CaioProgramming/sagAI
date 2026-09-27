@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.PromptBlueprint
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.CHAT_REACTION_BLUEPRINT
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.REPLY_GENERATION_BLUEPRINT
@@ -17,6 +18,7 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.narrative.domain.buildChatContinuityContext
+import com.ilustris.sagai.features.saga.chat.data.model.InputMode
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
@@ -40,6 +42,34 @@ object ChatPrompts {
      * than the one the reply spends from.
      */
     const val REPLY_FALLOUT_BLUEPRINT = "reply_fallout_blueprint"
+
+    /**
+     * Rules for returning the player's corrected message (`AIReply.playerInput`). Not a prompt of
+     * its own: its `instructions` hold a shared bucket plus one per [InputMode], merged into the
+     * reply prompt by [playerInputInstructions].
+     */
+    const val PLAYER_INPUT_BLUEPRINT = "player_input_blueprint"
+    private const val PLAYER_INPUT_SHARED_BUCKET = "PLAYER INPUT"
+
+    /** Optional ceiling for voice-turn replies: shorter lines are faster to voice and easier to follow by ear. */
+    const val LIVE_REPLY_LIMIT_KEY = "live_reply_limit"
+
+    /**
+     * The shared `PLAYER INPUT` bucket plus only the one for [mode], so a typed turn doesn't carry
+     * the voice formatting rules. Empty when the blueprint isn't published yet — the reply still
+     * works, it just won't correct the player's text.
+     */
+    fun playerInputInstructions(
+        blueprint: PromptBlueprint?,
+        mode: InputMode,
+    ): Map<String, Any> {
+        val buckets = blueprint?.instructions ?: return emptyMap()
+        return buildMap {
+            buckets[PLAYER_INPUT_SHARED_BUCKET]?.let { put(PLAYER_INPUT_SHARED_BUCKET, it) }
+            val modeKey = "$PLAYER_INPUT_SHARED_BUCKET (${mode.name})"
+            buckets[modeKey]?.let { put(modeKey, it) }
+        }
+    }
 
     /**
      * Character ceiling for a single chat message, shared by the composer and the AI reply so both
@@ -173,11 +203,15 @@ object ChatPrompts {
 
         val messageSender = saga.findCharacter(message.speakerName)
 
+        // A voice turn reaches here with no text (the model hears the audio), and "".contains
+        // matches every wiki — so no text, no mentions.
         val mentionedWikis =
-            saga.wikis.filter {
-                it.title.contains(message.text, ignoreCase = true) ||
-                    it.content.contains(message.text, ignoreCase = true)
-            }
+            message.text.takeIf { it.isNotBlank() }?.let { text ->
+                saga.wikis.filter {
+                    it.title.contains(text, ignoreCase = true) ||
+                        it.content.contains(text, ignoreCase = true)
+                }
+            }.orEmpty()
 
         val narrativeContinuity =
             saga.buildChatContinuityContext(narrativeRules).toAINormalize(
@@ -260,7 +294,12 @@ object ChatPrompts {
                 "worldContext" to worldContext,
                 "conversationHistory" to
                     conversationHistory(updateLimit, saga, excludingMessageId = message.id),
-                "latestMessage" to message.toAINormalize(messageExclusions),
+                // inputMode tells the model which PLAYER INPUT bucket applies (typed fixes vs. voice
+                // formatting); it's excluded from history but kept on the latest turn.
+                "latestMessage" to
+                    message
+                        .copy(inputMode = message.inputMode ?: InputMode.TYPED)
+                        .toAINormalize(messageExclusions - "inputMode"),
                 "maxMessageLimit" to maxMessageLimit,
             )
 

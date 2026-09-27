@@ -521,6 +521,9 @@ internal fun GeminiAIClient.buildGenerationAssembly(params: GeminiSyncGeneration
         task(params.taskPrompt)
         system(params.systemInstruction)
         references(params.references)
+        // A rotation can land on a model that can't hear; the caller already transcribed up front
+        // when the tier's first pick couldn't, so dropping it here only affects a mid-request fallback.
+        audio(params.audio?.takeIf { modelCatalog.supportsAudioInput(params.model) })
         generation(params.requirement, params.temperatureRandomness)
         thinking(effectiveThinkingLevel(params.model, params.thinkingLevel))
         if (!params.includeSystemInFullPrompt) {

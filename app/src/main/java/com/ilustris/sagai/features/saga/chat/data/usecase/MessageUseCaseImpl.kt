@@ -3,8 +3,12 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 import MessageStatus
 import androidx.room.withTransaction
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelCatalog
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.TranscribeClient
+import com.ilustris.sagai.core.ai.model.AudioAttachment
+import com.ilustris.sagai.core.ai.model.PromptBlueprint
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
@@ -40,6 +44,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.AIReaction
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.GeneratedReply
+import com.ilustris.sagai.features.saga.chat.data.model.InputMode
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.Reaction
@@ -73,6 +78,8 @@ class MessageUseCaseImpl
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
         private val messageVoicingUseCase: MessageVoicingUseCase,
+        private val transcribeClient: TranscribeClient,
+        private val modelCatalog: ModelCatalog,
         private val fileHelper: FileHelper,
         private val imageHelper: ImageHelper,
         private val genreConfigService: GenreConfigService,
@@ -250,21 +257,33 @@ class MessageUseCaseImpl
                         sagaContent.getCurrentTimeLine()?.data?.sceneSummary
                             ?: getSceneContext(saga).getSuccess()
                     val characterArcsById = loadCharacterArcsForScene(sagaContent, sceneSummary)
+                    val voiceTurn = prepareVoiceTurn(message.message)
+                    val inputMode = message.message.inputMode ?: InputMode.TYPED
                     val prompt =
                         ChatPrompts.replyMessagePrompt(
                             promptService = promptService,
                             saga = sagaContent,
-                            message = message.message,
+                            message = voiceTurn.promptMessage,
                             sceneSummary = sceneSummary,
                             updateLimit = narrativeRules.loreUpdateLimit,
                             narrativeRules = narrativeRules,
                             characterArcsById = characterArcsById,
                             maxMessageLimit =
-                                remoteConfigService
-                                    .getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)
+                                (if (inputMode == InputMode.VOICE) remoteConfigService.getLong(ChatPrompts.LIVE_REPLY_LIMIT_KEY) else null)
                                     ?.toInt()
                                     ?.takeIf { it > 0 }
+                                    ?: remoteConfigService
+                                        .getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)
+                                        ?.toInt()
+                                        ?.takeIf { it > 0 }
                                     ?: ChatPrompts.DEFAULT_CHAT_INPUT_LIMIT,
+                        )
+                    val playerInputInstructions =
+                        ChatPrompts.playerInputInstructions(
+                            runCatching {
+                                remoteConfigService.getJson<PromptBlueprint>(ChatPrompts.PLAYER_INPUT_BLUEPRINT)
+                            }.getOrNull(),
+                            inputMode,
                         )
                     val conversationInstructions =
                         genreConfigService
@@ -290,10 +309,18 @@ class MessageUseCaseImpl
                                         prompt.mergeInstructions(
                                             conversationInstructions,
                                             actContext.renderInstructions(),
+                                            playerInputInstructions,
                                         ),
                                     userInteraction = true,
                                     filterOutputFields = ChatPrompts.messageOutputExclusions,
                                     requirement = ModelRequirement.HIGH,
+                                    audio = voiceTurn.audio,
+                                    thinkingLevelOverride =
+                                        if (inputMode == InputMode.VOICE) {
+                                            gemmaClient.voiceThinkingLevel(ModelRequirement.HIGH)
+                                        } else {
+                                            null
+                                        },
                                 )
                             // gemmaClient.generate returns null rather than throwing on a final,
                             // non-retryable failure (spent daily quota, rejected key, exhausted
@@ -356,15 +383,23 @@ class MessageUseCaseImpl
                                 // Corrected text + tone from the reply, behind the guard in
                                 // PlayerInputCorrection. A voice turn's duration bounds how much
                                 // text its correction may plausibly contain.
-                                val correction =
+                                var correction =
                                     PlayerInputCorrection.apply(
-                                        original = message.message,
+                                        original = voiceTurn.promptMessage,
                                         feedback = reply.playerInput,
-                                        audioDurationMs =
-                                            message.message.audioPath
-                                                ?.takeIf { it.isNotBlank() }
-                                                ?.let { AudioUtils.wavDurationMs(File(it)) },
+                                        audioDurationMs = voiceTurn.durationMs,
                                     )
+                                // The reply heard the audio but came back without a usable line:
+                                // transcribe the recording so the message never stays without text.
+                                if (correction.needsTranscription && voiceTurn.wav != null) {
+                                    transcribe(voiceTurn.wav)?.let { text ->
+                                        correction =
+                                            correction.copy(
+                                                message = correction.message.copy(text = text),
+                                                needsTranscription = false,
+                                            )
+                                    }
+                                }
                                 val savedMessage =
                                     withContext(Dispatchers.IO) {
                                         database.withTransaction {
@@ -711,6 +746,38 @@ class MessageUseCaseImpl
                 generateAudio(saga, message, characterReference)
             }
         }
+
+        /**
+         * A voice turn's inputs for the reply: the recording attached inline when the reply model
+         * can hear it, or — when the tier's current model can't (e.g. a Gemma model in rotation) —
+         * a transcript in its place, so the reply still has the player's words.
+         */
+        private data class VoiceTurn(
+            val promptMessage: Message,
+            val audio: AudioAttachment? = null,
+            val wav: ByteArray? = null,
+            val durationMs: Long? = null,
+        )
+
+        private suspend fun prepareVoiceTurn(message: Message): VoiceTurn {
+            if (message.inputMode != InputMode.VOICE) return VoiceTurn(message)
+            val file = message.audioPath?.takeIf { it.isNotBlank() }?.let(::File)?.takeIf { it.exists() }
+            val wav = file?.readBytes() ?: return VoiceTurn(message)
+            val durationMs = AudioUtils.wavDurationMs(file)
+            val model = gemmaClient.modelName(ModelRequirement.HIGH)
+            if (modelCatalog.supportsAudioInput(model)) {
+                return VoiceTurn(message, AudioAttachment(wav), wav, durationMs)
+            }
+            Timber.w("Reply model $model can't take audio; transcribing the voice turn first")
+            val transcript = transcribe(wav) ?: error("Couldn't transcribe the voice turn for $model")
+            return VoiceTurn(message.copy(text = transcript), audio = null, wav = wav, durationMs = durationMs)
+        }
+
+        private suspend fun transcribe(wav: ByteArray): String? =
+            runCatching { transcribeClient.transcribeWords(wav, languageCode = null).text.trim() }
+                .onFailure { Timber.w(it, "Voice turn transcription failed") }
+                .getOrNull()
+                ?.takeIf { it.isNotBlank() }
 
         private suspend fun loadCharacterArcsForScene(
             saga: SagaContent,

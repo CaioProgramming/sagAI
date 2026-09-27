@@ -107,6 +107,12 @@ class ModelCatalog
          * requests `minimal` from it, so whether it tolerates `high` is untested territory the
          * first time it actually happens.
          */
+        /**
+         * Whether [model] accepts inline audio in a text-generation request. Gemini models do;
+         * Gemma models on the Gemini API are text + image only.
+         */
+        fun supportsAudioInput(model: String): Boolean = !model.replace("models/", "").startsWith("gemma", ignoreCase = true)
+
         fun supportsThinkingLevel(
             model: String,
             level: String,

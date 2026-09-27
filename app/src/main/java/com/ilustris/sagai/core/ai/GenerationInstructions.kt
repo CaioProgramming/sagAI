@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.core.ai.model.AudioAttachment
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.utils.toAINormalize
@@ -109,6 +110,7 @@ fun PreparedGenerationInstructions.toSyncParams(
     temperatureRandomness: Float,
     thinkingLevel: String?,
     onGuardrailBlock: (suspend (GuardrailsException) -> Unit)? = null,
+    audio: AudioAttachment? = null,
 ): GeminiSyncGenerationParams =
     GeminiSyncGenerationParams(
         model = model,
@@ -123,6 +125,7 @@ fun PreparedGenerationInstructions.toSyncParams(
         audit = toAuditContext(),
         promptForFailureLog = taskPrompt,
         onGuardrailBlock = onGuardrailBlock,
+        audio = audio,
     )
 
 fun PreparedGenerationInstructions.toStreamingParams(

@@ -300,6 +300,18 @@ abstract class AIClient(
      * is — same as before this existed, a single-candidate tier always returns that one candidate,
      * daily quota or not, and lets the normal 429 handling explain why.
      */
+    /**
+     * Optional `voiceThinkingLevel` on [requirement]'s `model_configs` entry: the thinking level to
+     * use on live-mode voice turns, where every second of latency shows. Null when unset or not a
+     * level the API accepts — the tier's normal level applies then.
+     */
+    suspend fun voiceThinkingLevel(requirement: ModelRequirement): String? =
+        ((remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap())[requirement.name] as? Map<*, *>)
+            ?.get("voiceThinkingLevel")
+            ?.let { it as? String }
+            ?.lowercase()
+            ?.takeIf { it in ACCEPTED_THINKING_LEVELS }
+
     suspend fun modelName(requirement: ModelRequirement): String {
         val candidates = candidateModelsFor(requirement)
         return candidates.firstOrNull { !quotaStatusService.isModelDailyExhausted(it) }

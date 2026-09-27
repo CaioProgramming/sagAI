@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
 import android.util.Base64
+import com.ilustris.sagai.core.ai.model.AudioAttachment
 import com.ilustris.sagai.core.ai.model.GeminiContent
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
 import com.ilustris.sagai.core.ai.model.GeminiInlineData
@@ -29,6 +30,7 @@ class GeminiRequestBuilder internal constructor() {
     private var taskPrompt: String = ""
     private var systemInstruction: String = ""
     private var references: List<ImageReference> = emptyList()
+    private var audio: AudioAttachment? = null
     private var requirement: ModelRequirement = ModelRequirement.MEDIUM
     private var temperatureRandomness: Float = 0.5f
     private var includeSystemInFullPrompt: Boolean = true
@@ -44,6 +46,11 @@ class GeminiRequestBuilder internal constructor() {
 
     fun references(values: List<ImageReference?>) {
         references = values.filterNotNull()
+    }
+
+    /** Inline audio after the task prompt; null (the default) sends none. */
+    fun audio(value: AudioAttachment?) {
+        audio = value
     }
 
     fun generation(
@@ -71,10 +78,10 @@ class GeminiRequestBuilder internal constructor() {
     fun build(): GeminiRequestAssembly {
         require(taskPrompt.isNotBlank()) { "Gemini request requires a task prompt" }
 
-        val contentParts = buildGeminiContentParts(taskPrompt, references)
+        val contentParts = buildGeminiContentParts(taskPrompt, references, audio)
         val fullPromptText =
             buildFullPromptText(
-                taskPrompt = taskPrompt,
+                taskPrompt = if (audio != null) "$taskPrompt\n\n[player audio attached]" else taskPrompt,
                 referenceDescriptions = references.map { it.description },
                 systemInstruction = systemInstruction.takeIf { includeSystemInFullPrompt },
             )
@@ -120,9 +127,14 @@ fun geminiRequest(block: GeminiRequestBuilder.() -> Unit): GeminiRequestAssembly
 fun buildGeminiContentParts(
     taskPrompt: String,
     references: List<ImageReference> = emptyList(),
+    audio: AudioAttachment? = null,
 ): List<GeminiPart> =
     buildList {
         add(GeminiPart(text = taskPrompt))
+        audio?.let {
+            add(GeminiPart(text = "PLAYER AUDIO: the player's latest turn, spoken. Listen to it as latestMessage."))
+            add(GeminiPart(inlineData = GeminiInlineData(mimeType = it.mimeType, data = it.toBase64())))
+        }
         references.forEach { reference ->
             add(
                 GeminiPart(

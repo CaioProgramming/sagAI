@@ -1,5 +1,8 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.core.ai.key.ApiUsageTracker
+import com.ilustris.sagai.core.ai.key.QuotaStatusService
+import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.ai.local.LocalAiConfig
 import com.ilustris.sagai.core.ai.local.LocalAiConfigLoader
 import com.ilustris.sagai.core.ai.local.LocalAiEligibility
@@ -7,9 +10,7 @@ import com.ilustris.sagai.core.ai.local.LocalAiExecutor
 import com.ilustris.sagai.core.ai.local.LocalAiSidebackRouting
 import com.ilustris.sagai.core.ai.local.LocalAiSidebackStep
 import com.ilustris.sagai.core.ai.local.LocalAiTelemetry
-import com.ilustris.sagai.core.ai.key.ApiUsageTracker
-import com.ilustris.sagai.core.ai.key.QuotaStatusService
-import com.ilustris.sagai.core.ai.key.UserApiKeyStore
+import com.ilustris.sagai.core.ai.model.AudioAttachment
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -21,6 +22,8 @@ import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.utils.toJsonFormat
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -29,8 +32,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
 @Singleton
 class GemmaClient
@@ -127,6 +128,12 @@ class GemmaClient
                 )
             }
 
+        /**
+         * @param audio Inline audio for the request (a live-mode voice turn). Only sent to models
+         * that accept audio input — check [ModelCatalog.supportsAudioInput] on [modelName] first.
+         * @param thinkingLevelOverride Replaces the tier's configured thinking level for this call
+         * (e.g. [voiceThinkingLevel] on voice turns, where latency matters more).
+         */
         suspend inline fun <reified T> generate(
             promptSplit: SplitPrompt,
             userInteraction: Boolean = false,
@@ -137,6 +144,8 @@ class GemmaClient
             filterOutputFields: List<String> = emptyList(),
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
             logEnabled: Boolean = true,
+            audio: AudioAttachment? = null,
+            thinkingLevelOverride: String? = null,
         ): T? =
             withContext(Dispatchers.IO) {
                 checkSafety(userInteraction, promptSplit.processedTemplate)
@@ -149,10 +158,11 @@ class GemmaClient
                         filterOutputFields = filterOutputFields,
                         userInteraction = userInteraction,
                     )
+                val model = modelName(requirement)
                 val params =
                     prepared.toSyncParams(
-                        model = modelName(requirement),
-                        thinkingLevel = thinkingLevel(requirement, modelName(requirement)),
+                        model = model,
+                        thinkingLevel = thinkingLevelOverride ?: thinkingLevel(requirement, model),
                         requirement = requirement,
                         logEnabled = logEnabled,
                         references = references,
@@ -160,6 +170,7 @@ class GemmaClient
                         onGuardrailBlock = {
                             sideEffectService.emit(SideEffect.GuardrailBlock(it.status))
                         },
+                        audio = audio,
                     )
                 executeSyncGenerationWithLocalFallback(
                     params = params,
