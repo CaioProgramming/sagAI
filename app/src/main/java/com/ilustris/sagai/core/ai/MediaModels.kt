@@ -62,6 +62,9 @@ enum class MediaRequirement(
 
     /** Its legacy model lived inside `book_audio_config`, so callers pass it in instead. */
     TRANSCRIBE(null),
+
+    /** RAG's embedding model — see [com.ilustris.sagai.core.ai.rag.EmbeddingClient]. No legacy flag. */
+    EMBEDDING(null),
 }
 
 @Singleton

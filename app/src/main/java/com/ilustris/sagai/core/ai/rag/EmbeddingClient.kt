@@ -3,11 +3,12 @@ package com.ilustris.sagai.core.ai.rag
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.ilustris.sagai.core.ai.MediaModelResolver
+import com.ilustris.sagai.core.ai.MediaRequirement
 import com.ilustris.sagai.core.ai.MissingApiKeyException
 import com.ilustris.sagai.core.ai.key.ApiUsageTracker
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
 import com.ilustris.sagai.core.network.GeminiHttpException
-import com.ilustris.sagai.core.services.RemoteConfigService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -34,7 +35,7 @@ class EmbeddingClient
     constructor(
         okHttpClient: OkHttpClient,
         private val userApiKeyStore: UserApiKeyStore,
-        private val remoteConfigService: RemoteConfigService,
+        private val mediaModelResolver: MediaModelResolver,
         private val apiUsageTracker: ApiUsageTracker,
     ) {
         private val client =
@@ -44,8 +45,9 @@ class EmbeddingClient
                 .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .build()
 
+        /** Whether EMBEDDING has any model configured — `model_configs.EMBEDDING` — and a BYOK key is set. */
         suspend fun isAvailable(): Boolean =
-            remoteConfigService.getBoolean(RAG_ENABLED_FLAG) == true &&
+            mediaModelResolver.candidates(MediaRequirement.EMBEDDING).isNotEmpty() &&
                 userApiKeyStore.getKeyNow()?.isNotBlank() == true
 
         /** Embeds one string. Returns null rather than throwing — a failed embed must never break chat. */
@@ -62,32 +64,32 @@ class EmbeddingClient
                 val apiKey =
                     userApiKeyStore.getKeyNow()?.takeIf { it.isNotBlank() }
                         ?: throw MissingApiKeyException()
-                val model = embeddingModel()
 
                 texts.chunked(BATCH_LIMIT).flatMap { chunk ->
-                    runCatching { requestBatch(model, apiKey, chunk) }
-                        .onFailure { Timber.tag(TAG).w(it, "Embedding batch of ${chunk.size} failed") }
+                    // Rotates across EMBEDDING's candidates on a 503 or a spent daily quota.
+                    runCatching {
+                        mediaModelResolver.withRotation(MediaRequirement.EMBEDDING) { model ->
+                            requestBatch(model, apiKey, chunk)
+                        }
+                    }.onFailure { Timber.tag(TAG).w(it, "Embedding batch of ${chunk.size} failed") }
                         .getOrDefault(chunk.map { null })
                 }
             }
-
-        private suspend fun embeddingModel(): String =
-            remoteConfigService.getString(EMBEDDING_MODEL_FLAG, logEnabled = false)
-                ?.takeIf { it.isNotBlank() }
-                ?.let { if (it.startsWith("models/")) it else "models/$it" }
-                ?: DEFAULT_MODEL
 
         private suspend fun requestBatch(
             model: String,
             apiKey: String,
             texts: List<String>,
         ): List<FloatArray?> {
+            // `model` is bare (e.g. "text-embedding-004"); the request body needs the full
+            // resource name, while the URL path below takes the bare form after BASE_URL's `/models`.
+            val modelResourceName = "models/$model"
             val requests =
                 JsonArray().apply {
                     texts.forEach { text ->
                         add(
                             JsonObject().apply {
-                                addProperty("model", model)
+                                addProperty("model", modelResourceName)
                                 add(
                                     "content",
                                     JsonObject().apply {
@@ -146,10 +148,5 @@ class EmbeddingClient
             private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
             private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
             private const val BATCH_LIMIT = 100
-
-            /** Remote Config flag gating the whole RAG feature — off means the old behavior stands. */
-            const val RAG_ENABLED_FLAG = "rag_enabled"
-            private const val EMBEDDING_MODEL_FLAG = "rag_embedding_model"
-            private const val DEFAULT_MODEL = "models/text-embedding-004"
         }
     }
