@@ -5,6 +5,8 @@ import com.ilustris.sagai.core.ai.prompts.ChatPrompts.CHAT_REACTION_BLUEPRINT
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.REPLY_GENERATION_BLUEPRINT
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.SCENE_SUMMARIZATION_BLUEPRINT
 import com.ilustris.sagai.core.ai.rag.EmbeddingSourceType
+import com.ilustris.sagai.core.ai.rag.RetrievalGroup
+import com.ilustris.sagai.core.ai.rag.SemanticMatch
 import com.ilustris.sagai.core.ai.rag.SemanticRetrievalService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
@@ -176,10 +178,25 @@ object ChatPrompts {
 
         val messageSender = saga.findCharacter(message.speakerName)
 
-        val semanticWikiMatches =
+        // One embedding call for message.text, shared by both groups below — mentionedWikis and
+        // relevantMemories used to each call search() independently and embed the same player
+        // message twice per chat turn. Retrieval, not indexing, is RAG's per-message cost surface,
+        // so that redundant call mattered.
+        val (semanticWikiMatches, relevantMemories) =
             semanticRetrievalService
-                ?.search(saga.data.id, message.text, listOf(EmbeddingSourceType.WIKI), topK = 3)
-                .orEmpty()
+                ?.searchGroups(
+                    sagaId = saga.data.id,
+                    query = message.text,
+                    groups =
+                        listOf(
+                            RetrievalGroup(listOf(EmbeddingSourceType.WIKI), topK = 3),
+                            RetrievalGroup(
+                                listOf(EmbeddingSourceType.CHARACTER_EVENT, EmbeddingSourceType.CONTINUITY_FACT),
+                                topK = 5,
+                            ),
+                        ),
+                )?.let { (wikis, memories) -> wikis to memories }
+                ?: (emptyList<SemanticMatch>() to emptyList<SemanticMatch>())
 
         // Wiki titles/content are rarely quoted verbatim by the player, so the old .contains()
         // filter mostly missed — it stays only as a fallback for when RAG has nothing indexed yet
@@ -195,23 +212,12 @@ object ChatPrompts {
                     }
                 }
 
-        /**
-         * Facts and character-history beats pulled by relevance to [message], not by recency.
-         *
-         * `LatestCharacterEvents` below and the continuity rollups baked into
-         * `narrativeContinuity` are both cut by "most recent N" — a callback to something
-         * established many chapters back falls out of both. This is the section that actually
-         * catches that case: it searches the *whole* saga's indexed events and continuity facts
-         * and surfaces whatever is semantically closest to what the player just said, however old.
-         */
-        val relevantMemories =
-            semanticRetrievalService
-                ?.search(
-                    sagaId = saga.data.id,
-                    query = message.text,
-                    types = listOf(EmbeddingSourceType.CHARACTER_EVENT, EmbeddingSourceType.CONTINUITY_FACT),
-                    topK = 5,
-                ).orEmpty()
+        // relevantMemories: facts and character-history beats pulled by relevance to [message],
+        // not by recency. `LatestCharacterEvents` below and the continuity rollups baked into
+        // `narrativeContinuity` are both cut by "most recent N" — a callback to something
+        // established many chapters back falls out of both. This is the section that actually
+        // catches that case: it searches the *whole* saga's indexed events and continuity facts
+        // and surfaces whatever is semantically closest to what the player just said, however old.
 
         val narrativeContinuity =
             saga.buildChatContinuityContext(narrativeRules).toAINormalize(

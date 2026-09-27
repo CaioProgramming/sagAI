@@ -11,6 +11,12 @@ data class SemanticMatch(
     val score: Float,
 )
 
+/** One named slice of a [SemanticRetrievalService.searchGroups] call: its own type filter and top-k. */
+data class RetrievalGroup(
+    val types: List<EmbeddingSourceType>,
+    val topK: Int,
+)
+
 /**
  * Ranks indexed facts against a query by cosine similarity — the search half of the saga's RAG
  * index. Everything here runs in memory: a saga's fact count stays in the hundreds, so scoring the
@@ -36,27 +42,54 @@ class SemanticRetrievalService
             types: List<EmbeddingSourceType>,
             topK: Int,
             minScore: Float = 0.5f,
-        ): List<SemanticMatch> {
-            if (query.isBlank() || topK <= 0) return emptyList()
-            return runCatching {
-                if (!embeddingClient.isAvailable()) return@runCatching emptyList()
-                val candidates = embeddingDao.findBySagaAndTypes(sagaId, types)
-                if (candidates.isEmpty()) return@runCatching emptyList()
-                val queryVector = embeddingClient.embed(query) ?: return@runCatching emptyList()
+        ): List<SemanticMatch> =
+            searchGroups(sagaId, query, listOf(RetrievalGroup(types, topK)), minScore).firstOrNull().orEmpty()
 
-                candidates
-                    .map { candidate ->
+        /**
+         * Runs several [RetrievalGroup]s against one embedding of [query] — one embed call and one
+         * DB fetch (the union of every group's types) shared across all of them, instead of each
+         * group paying for its own. [ChatPrompts.replyMessagePrompt] needs two groups
+         * (`mentionedWikis`, `relevantMemories`) for the *same* player message every chat turn;
+         * calling [search] twice would embed that identical text twice for no reason — the
+         * embedding call, not indexing, is the retrieval path's actual per-message cost.
+         *
+         * @return one list per input group, same order, each already filtered/ranked/capped as
+         *   that group asked.
+         */
+        suspend fun searchGroups(
+            sagaId: Int,
+            query: String,
+            groups: List<RetrievalGroup>,
+            minScore: Float = 0.5f,
+        ): List<List<SemanticMatch>> {
+            val empty = groups.map { emptyList<SemanticMatch>() }
+            if (query.isBlank() || groups.isEmpty()) return empty
+
+            return runCatching {
+                if (!embeddingClient.isAvailable()) return@runCatching empty
+                val allTypes = groups.flatMap { it.types }.distinct()
+                val candidates = embeddingDao.findBySagaAndTypes(sagaId, allTypes)
+                if (candidates.isEmpty()) return@runCatching empty
+                val queryVector = embeddingClient.embed(query) ?: return@runCatching empty
+
+                val scored =
+                    candidates.map { candidate ->
                         SemanticMatch(
                             sourceKey = candidate.sourceKey,
                             sourceType = candidate.sourceType,
                             text = candidate.text,
                             score = cosineSimilarity(queryVector, candidate.vector),
                         )
-                    }.filter { it.score >= minScore }
-                    .sortedByDescending { it.score }
-                    .take(topK)
+                    }
+
+                groups.map { group ->
+                    scored
+                        .filter { it.sourceType in group.types && it.score >= minScore }
+                        .sortedByDescending { it.score }
+                        .take(group.topK)
+                }
             }.onFailure { Timber.tag(TAG).w(it, "Semantic search failed for saga $sagaId") }
-                .getOrDefault(emptyList())
+                .getOrDefault(empty)
         }
 
         /** Both vectors are already L2-normalized on write, so this is a plain dot product. */
