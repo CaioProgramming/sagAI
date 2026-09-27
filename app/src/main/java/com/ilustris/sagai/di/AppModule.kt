@@ -310,6 +310,10 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideEmbeddingDao(database: SagaDatabase): com.ilustris.sagai.core.ai.rag.EmbeddingDao = database.embeddingDao()
+
+    @Provides
+    @Singleton
     fun provideDatabaseBackupService(
         @ApplicationContext context: Context,
         preferences: DataStorePreferences,

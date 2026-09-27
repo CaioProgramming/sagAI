@@ -4,6 +4,8 @@ import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.CHAT_REACTION_BLUEPRINT
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.REPLY_GENERATION_BLUEPRINT
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.SCENE_SUMMARIZATION_BLUEPRINT
+import com.ilustris.sagai.core.ai.rag.EmbeddingSourceType
+import com.ilustris.sagai.core.ai.rag.SemanticRetrievalService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.asMap
@@ -161,6 +163,11 @@ object ChatPrompts {
         narrativeRules: NarrativeRules,
         characterArcsById: Map<Int, List<CharacterArc>> = emptyMap(),
         maxMessageLimit: Int = DEFAULT_CHAT_INPUT_LIMIT,
+        /**
+         * Null when RAG isn't wired at a call site (tests, other callers) — every use below has a
+         * recency- or string-based fallback, so this stays fully optional.
+         */
+        semanticRetrievalService: SemanticRetrievalService? = null,
     ): SplitPrompt {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
@@ -169,11 +176,42 @@ object ChatPrompts {
 
         val messageSender = saga.findCharacter(message.speakerName)
 
+        val semanticWikiMatches =
+            semanticRetrievalService
+                ?.search(saga.data.id, message.text, listOf(EmbeddingSourceType.WIKI), topK = 3)
+                .orEmpty()
+
+        // Wiki titles/content are rarely quoted verbatim by the player, so the old .contains()
+        // filter mostly missed — it stays only as a fallback for when RAG has nothing indexed yet
+        // (a fresh saga, or the key/flag being unavailable) rather than the primary path.
         val mentionedWikis =
-            saga.wikis.filter {
-                it.title.contains(message.text, ignoreCase = true) ||
-                    it.content.contains(message.text, ignoreCase = true)
-            }
+            semanticWikiMatches
+                .mapNotNull { match -> match.sourceKey.removePrefix("wiki:").toIntOrNull() }
+                .mapNotNull { wikiId -> saga.wikis.find { it.id == wikiId } }
+                .ifEmpty {
+                    saga.wikis.filter {
+                        it.title.contains(message.text, ignoreCase = true) ||
+                            it.content.contains(message.text, ignoreCase = true)
+                    }
+                }
+
+        /**
+         * Facts and character-history beats pulled by relevance to [message], not by recency.
+         *
+         * `LatestCharacterEvents` below and the continuity rollups baked into
+         * `narrativeContinuity` are both cut by "most recent N" — a callback to something
+         * established many chapters back falls out of both. This is the section that actually
+         * catches that case: it searches the *whole* saga's indexed events and continuity facts
+         * and surfaces whatever is semantically closest to what the player just said, however old.
+         */
+        val relevantMemories =
+            semanticRetrievalService
+                ?.search(
+                    sagaId = saga.data.id,
+                    query = message.text,
+                    types = listOf(EmbeddingSourceType.CHARACTER_EVENT, EmbeddingSourceType.CONTINUITY_FACT),
+                    topK = 5,
+                ).orEmpty()
 
         val narrativeContinuity =
             saga.buildChatContinuityContext(narrativeRules).toAINormalize(
@@ -248,6 +286,10 @@ object ChatPrompts {
 
                 if (mentionedWikis.isNotEmpty()) {
                     put("mentionedWikis", mentionedWikis.normalizetoAIItems())
+                }
+
+                if (relevantMemories.isNotEmpty()) {
+                    put("relevantMemories", relevantMemories.map { it.text }.normalizetoAIItems())
                 }
             }
 

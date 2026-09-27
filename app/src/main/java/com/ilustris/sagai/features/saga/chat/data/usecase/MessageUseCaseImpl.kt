@@ -84,6 +84,7 @@ class MessageUseCaseImpl
         private val sagaContentManager: SagaContentManager,
         private val globalShellService: GlobalShellService,
         private val database: SagaDatabase,
+        private val semanticRetrievalService: com.ilustris.sagai.core.ai.rag.SemanticRetrievalService,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -260,6 +261,7 @@ class MessageUseCaseImpl
                             updateLimit = narrativeRules.loreUpdateLimit,
                             narrativeRules = narrativeRules,
                             characterArcsById = characterArcsById,
+                            semanticRetrievalService = semanticRetrievalService,
                             maxMessageLimit =
                                 remoteConfigService
                                     .getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)

@@ -72,6 +72,7 @@ class ChapterUseCaseImpl
         private val actRepository: com.ilustris.sagai.features.act.data.repository.ActRepository,
         private val artworkConceptService: ArtworkConceptService,
         private val worldLocationUseCase: WorldLocationUseCase,
+        private val semanticIndexService: com.ilustris.sagai.core.ai.rag.SemanticIndexService,
     ) : ChapterUseCase {
         private suspend fun fetchContext(chapterId: Int): Pair<SagaContent, ChapterContent> {
             val chapterContent =
@@ -85,7 +86,15 @@ class ChapterUseCaseImpl
 
         override suspend fun deleteChapter(chapter: Chapter) = chapterRepository.deleteChapter(chapter)
 
-        override suspend fun updateChapter(chapter: Chapter) = chapterRepository.updateChapter(chapter)
+        override suspend fun updateChapter(chapter: Chapter) =
+            chapterRepository.updateChapter(chapter).also { updated ->
+                updated.continuitySummary?.let { summary ->
+                    // Chapter carries no sagaId of its own — resolved through its act, same as
+                    // fetchContext() above.
+                    val sagaId = actRepository.getActById(updated.actId)?.sagaId ?: return@also
+                    semanticIndexService.indexContinuitySummary(sagaId, "chapter:${updated.id}:continuity", summary)
+                }
+            }
 
         override suspend fun deleteChapterById(chapterId: Int) = chapterRepository.deleteChapterById(chapterId)
 

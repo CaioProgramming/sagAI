@@ -53,12 +53,19 @@ class ActUseCaseImpl
         private val genreConfigService: GenreConfigService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val worldLocationUseCase: WorldLocationUseCase,
+        private val semanticIndexService: com.ilustris.sagai.core.ai.rag.SemanticIndexService,
     ) : ActUseCase {
         override fun getActsBySagaId(sagaId: Int): Flow<List<Act>> = actRepository.getActsBySagaId(sagaId)
 
         override suspend fun saveAct(act: Act): Act = actRepository.saveAct(act)
 
-        override suspend fun updateAct(act: Act): Act = actRepository.updateAct(act)
+        override suspend fun updateAct(act: Act): Act =
+            actRepository.updateAct(act).also { updated ->
+                val sagaId = updated.sagaId ?: return@also
+                updated.continuitySummary?.let {
+                    semanticIndexService.indexContinuitySummary(sagaId, "act:${updated.id}:continuity", it)
+                }
+            }
 
         override suspend fun deleteAct(act: Act) {
             actRepository.deleteAct(act)
