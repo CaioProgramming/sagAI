@@ -378,10 +378,18 @@ becoming a sound. Two separate problems, solved separately:
 
 Choosing a voice is a per-character decision, not a per-message one, so it leaves the turn:
 
-- New `voice_casting_blueprint`: character profile + gender + role + the `Voice` guide
-  (`Voice.getVoiceSelectionGuide()`) + the voices **already taken in this saga** (so two
-  characters in the same cast don't share a voice) → `{ voice }`. Persisted on `Character.voice`;
-  the narrator keeps `saga.narratorVoice`.
+- New `voice_casting_blueprint`: character profile + gender + role + the voice guide
+  (`Voice.getVoiceSelectionGuide()`: the 30 Gemini voices already have gender + a short
+  description in `Voice.kt`) → `{ voice, voiceDirection }`. The narrator keeps `saga.narratorVoice`.
+- **Shared voices are expected.** There are only 30 prebuilt voices, so characters in the same
+  saga will sometimes share one. What makes them sound like different people is the **delivery**:
+  pace, energy, pitch range, texture (breathy, rough, crisp), accent/register, emotional baseline
+  ("fala rápido e atropelado", "voz baixa e melancólica, pausas longas"). Casting prefers a voice
+  not yet used in the scene when two fit equally, but never picks a worse fit just to avoid a repeat.
+- **`voiceDirection` is persisted** on the character (new nullable column next to `voice`) and fed
+  to every performance script for that character, so the delivery stays consistent message after
+  message instead of being reinvented per line. It's written from the character's personality,
+  age and background — never a generic label.
 - **When it runs:**
   - in the background right after a character is created (`CharacterUseCaseImpl` currently
     saves `voice = null`);
@@ -391,7 +399,8 @@ Choosing a voice is a per-character decision, not a per-message one, so it leave
     them — the only time casting sits on the critical path.
 - Model: `MEDIUM` is fine — it runs once per character.
 - Deterministic fallback if casting fails: pick from the voices matching the character's gender,
-  excluding those already taken, seeded by character id (stable across retries).
+  seeded by character id (stable across retries), with no `voiceDirection`; casting retries in the
+  background next time.
 
 #### 2. Performance script — per message, `LOW`/`MINIMAL` pre-request
 
@@ -400,8 +409,8 @@ that's intended. `audio_performance_blueprint` (Gemma, `LOW` or `MINIMAL` — te
 turns the tagged message into a TTS script:
 
 - **Input:** the message already split into typed blocks (dialogue / action / think / narrator —
-  the same parsing `RichTextParser` does), speaker name, `emotionalTone`, the scene brief, and the
-  list of audio tags the TTS model supports.
+  the same parsing `RichTextParser` does), speaker name, the speaker's `voiceDirection`,
+  `emotionalTone` and the scene brief.
 - **Rules per block:**
   - **Dialogue** → spoken by the character, with delivery cues and audio tags where the text
     earns them (whispering, laughing, sighing, a pause).
@@ -430,9 +439,14 @@ turns the tagged message into a TTS script:
 - **TTS request:** Gemini TTS supports two speakers per request (`multiSpeakerVoiceConfig`), and
   one message has at most two: the character + the narrator. `createAudioGenerationRequest`
   gets a multi-speaker variant; a script with a single speaker keeps today's single-voice request.
-- **Audio tags live in the blueprint**, not in code: the list of supported tags and how to write
-  them goes in `audio_performance_blueprint` on Remote Config, so it can follow the TTS model
-  without an app release (the `AUDIO` tier model is itself remote).
+- **No fixed tag list.** Gemini TTS is steered by natural language: a style direction for the clip
+  plus short bracketed cues inline (whispering, laughing, a sigh, a pause). The blueprint teaches
+  the **principles** of writing an audio prompt — direction first, cues only where the text earns
+  them, never describe what can't be heard, never read a stage direction aloud — and a few
+  examples, and the model decides what to include. Nothing to maintain in Firebase per tag.
+  - Risk: a cue the TTS doesn't understand can be **read aloud** literally. The blueprint tells the
+    model to prefer the clip-level `style` for anything unusual and keep inline cues to the common
+    vocal ones. Worth a quick listening test on a handful of scripts before shipping.
 - **Deterministic fallback** (Gemma failure / quota / timeout ~3 s): build the script in code —
   dialogue by the character, narrator blocks by the narrator, actions and thinks dropped, no tags.
   Still better than today, because narration is no longer lost. A voice turn never waits on this
@@ -597,6 +611,7 @@ the bubble think it should have audio. Worth fixing while we're here.
 6. Hitting the message limit opens the same Milestone screen as the chat, after the turn finishes.
 7. The audio goes straight into the reply request (`HIGH` is Gemini, which accepts audio);
    `TranscribeClient` is only a fallback.
-8. Voice is cast once per character (background, `MEDIUM`); each message gets a performance
+8. Voice is cast once per character (background, `MEDIUM`) with a persisted `voiceDirection`;
+   shared voices are fine because delivery is what tells characters apart. Each message gets a performance
    script (`LOW`/`MINIMAL`) before TTS. Audio is a performance of the text, not a reading of it:
    actions become sounds or silence, thinks are never spoken, narration uses the narrator voice.
