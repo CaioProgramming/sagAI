@@ -40,8 +40,10 @@ has every line, playable through the existing `AudioMessagePlayer` bubbles.
   never gives us the audio file, so we can't save the player's voice. `AudioTranscriptionService`
   also references a `stopRecording()` that doesn't exist, and its Gemma call never attaches the
   audio (prompt only) — it can't transcribe anything as written.
-- **Latency.** `generateAudio()` runs a Gemma `MEDIUM` call to craft an `AudioConfig` before TTS
-  on every message. Acceptable for a background extra, too slow for a live turn.
+- **Voicing is per message and lossy.** `generateAudio()` runs a `MEDIUM` call (`audio_config_blueprint`)
+  to pick voice + style on every message, then `stripExpressiveTags` deletes every tagged block
+  and reads the rest with one voice: narration inside a character message is never heard and
+  vocal actions (a sigh) vanish. See [Voicing replies](#voicing-replies-casting--performance-script).
 
 ## Turn lifecycle (state machine)
 
@@ -85,7 +87,8 @@ features/live/
   data/
     VoiceRecorder.kt            // AudioRecord → 16-bit PCM → WAV (AudioUtils.wrapPcmInWav), RMS flow
     LiveTranscriber.kt          // fallback only: TranscribeClient when the reply can't take audio
-    LiveVoiceUseCase.kt         // fast TTS path for a saved reply
+    LiveVoiceUseCase.kt         // performance script → (multi-speaker) TTS for a saved reply
+    VoiceCastingUseCase.kt      // one voice per character, in the background
   presentation/
     LiveConversationViewModel.kt
     LiveTurnState.kt            // sealed states + pure reducer (unit tested)
@@ -203,8 +206,8 @@ and can be removed.
 | Tier | Primary | Rotation | Role in live mode |
 |---|---|---|---|
 | `HIGH` | `gemini-3.5-flash-lite`, thinking `high` | `gemini-3.5-flash-lite`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.8-flash` | The reply, **with the player's audio attached**. |
-| `MEDIUM` | `gemini-3.5-flash-lite`, thinking `high` | + `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite` | `AudioConfig` for speakers without a voice yet (once per speaker). |
-| `LOW` / `MINIMAL` | Gemma 4 | Gemma 4 | Reply fallout (reactions), text only. Nothing audio goes here. |
+| `MEDIUM` | `gemini-3.5-flash-lite`, thinking `high` | + `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite` | Voice casting, once per character. |
+| `LOW` / `MINIMAL` | Gemma 4 | Gemma 4 | Performance script (text → TTS script) and reply fallout (reactions). Text only. |
 | `AUDIO` | `gemini-2.5-flash-preview-tts` | only itself | Character/narrator voices. |
 | `TRANSCRIBE` | `gemini-3.5-transcribe` | only itself | Fallback only. |
 
@@ -229,8 +232,7 @@ What this means:
   spends fastest — one TTS call per reply, each several seconds of audio.
 - **`TRANSCRIBE` also has a single model.** Fine now that it's fallback-only; if it's spent, the
   voice message stays audio-only with a retry, and the story isn't blocked.
-- **`MEDIUM` rarely runs:** with the fast voice path, `AudioConfig` only runs for a speaker
-  without a stored voice.
+- **`MEDIUM` rarely runs:** only for voice casting, once per character, mostly in the background.
 
 ### Player message correction (inside the reply)
 
@@ -364,18 +366,102 @@ one place.
   it's required for VOICE turns and the noise gate is audio-level (see
   [Sending the player's voice](#sending-the-players-voice)).
 
-### Voicing replies fast (`LiveVoiceUseCase`)
+### Voicing replies: casting + performance script
 
-- If the speaker already has a voice (`character.voice` / `saga.narratorVoice`), **skip the Gemma
-  `AudioConfig` call**: build the TTS instruction locally from `emotionalTone` + sender type.
-  Only speakers without a voice go through the existing config call once (which then persists it).
-- Phase 3: split long replies into sentences (the `BookAudioSegmenter` idea) and synthesize chunk
-  1 while chunk 2 is generated — first sound much earlier. Chunks are concatenated into the single
-  message WAV once all finish. A barge-in stops **playback only**; the remaining chunks still
-  finish so the saved file is the complete line.
-- `AudioGenClient.stripExpressiveTags` drops `<action>`, `<think>`, `<narrator>` content from the
-  TTS text. In live mode those parts still show as italic subtitle lines around the spoken part,
-  so the player doesn't miss what the character *did*.
+Today `generateAudio()` asks `audio_config_blueprint` (MEDIUM) for `{voice, prompt, instruction}`
+on **every** message, then `AudioGenClient.stripExpressiveTags` **deletes** every `<action>`,
+`<think>` and `<narrator>` block and reads what's left with one voice. So narration inside a
+character's message is never heard, and an action like a sigh just disappears instead of
+becoming a sound. Two separate problems, solved separately:
+
+#### 1. Voice casting — once per speaker, off the critical path
+
+Choosing a voice is a per-character decision, not a per-message one, so it leaves the turn:
+
+- New `voice_casting_blueprint`: character profile + gender + role + the `Voice` guide
+  (`Voice.getVoiceSelectionGuide()`) + the voices **already taken in this saga** (so two
+  characters in the same cast don't share a voice) → `{ voice }`. Persisted on `Character.voice`;
+  the narrator keeps `saga.narratorVoice`.
+- **When it runs:**
+  - in the background right after a character is created (`CharacterUseCaseImpl` currently
+    saves `voice = null`);
+  - when the live screen opens: cast every character in the current scene that still has no
+    voice (covers old sagas), before the player's first turn;
+  - last resort, inside a turn, if a brand-new character speaks in the reply that introduces
+    them — the only time casting sits on the critical path.
+- Model: `MEDIUM` is fine — it runs once per character.
+- Deterministic fallback if casting fails: pick from the voices matching the character's gender,
+  excluding those already taken, seeded by character id (stable across retries).
+
+#### 2. Performance script — per message, `LOW`/`MINIMAL` pre-request
+
+A message is **text to read**; the audio is a **performance** of it. They won't match 1:1, and
+that's intended. `audio_performance_blueprint` (Gemma, `LOW` or `MINIMAL` — text in, text out)
+turns the tagged message into a TTS script:
+
+- **Input:** the message already split into typed blocks (dialogue / action / think / narrator —
+  the same parsing `RichTextParser` does), speaker name, `emotionalTone`, the scene brief, and the
+  list of audio tags the TTS model supports.
+- **Rules per block:**
+  - **Dialogue** → spoken by the character, with delivery cues and audio tags where the text
+    earns them (whispering, laughing, sighing, a pause).
+  - **Narrator** → spoken by the narrator voice.
+  - **Action** → never read as prose. Either it becomes a **vocal** sound the character's own
+    voice can make (sigh, gasp, laugh, clearing the throat, a sharp breath), or a **delivery cue**
+    for the next line ("leans in" → whispered), or it's **dropped** (walking, opening a door,
+    anything the voice can't perform).
+  - **Think** → never spoken. At most it colors the delivery of the spoken lines around it (a
+    shaky voice on a line whose think shows fear), without revealing its content.
+- **Output:**
+
+  ```json
+  {
+    "style": "short direction for the whole clip (pace, mood)",
+    "lines": [
+      { "speaker": "NARRATOR", "text": "A porta range atrás deles.", "block": 0 },
+      { "speaker": "Kael", "text": "[sighs] Ninguém passa daqui.", "block": 2 }
+    ]
+  }
+  ```
+
+  `block` points to the source block, so the live subtitle knows which part of the message is
+  being spoken. Blocks without a line (dropped actions, thinks) are shown as italic subtitle
+  lines between the spoken ones, never read.
+- **TTS request:** Gemini TTS supports two speakers per request (`multiSpeakerVoiceConfig`), and
+  one message has at most two: the character + the narrator. `createAudioGenerationRequest`
+  gets a multi-speaker variant; a script with a single speaker keeps today's single-voice request.
+- **Audio tags live in the blueprint**, not in code: the list of supported tags and how to write
+  them goes in `audio_performance_blueprint` on Remote Config, so it can follow the TTS model
+  without an app release (the `AUDIO` tier model is itself remote).
+- **Deterministic fallback** (Gemma failure / quota / timeout ~3 s): build the script in code —
+  dialogue by the character, narrator blocks by the narrator, actions and thinks dropped, no tags.
+  Still better than today, because narration is no longer lost. A voice turn never waits on this
+  request failing.
+- **Replaces** `audio_config_blueprint` for messages: voice now comes from casting and the style
+  from the script, so the `MEDIUM` call per message goes away. `stripExpressiveTags` stays only as
+  a safety net on the final TTS text (the script shouldn't contain our tags anymore).
+- **Same path for the chat:** *Regenerate audio* in the chat uses casting + script too, so a
+  message sounds the same whether it was voiced live or later.
+
+#### Text vs. audio mismatch
+
+- The audio is a performance, not a reading: some actions become sounds, others are silent, and
+  thinks are never heard. That's by design and applies to the chat bubble player too.
+- **Live subtitle:** shows the full message. The block being spoken is highlighted; silent blocks
+  (actions, thinks) appear as italic lines at their position. Timing is estimated per line from
+  its share of the clip's characters (the audiobook already has a character-estimate fallback);
+  no transcription call in live mode.
+- Optionally store the script on the message (nullable `audioScript` JSON column) so the chat
+  player can highlight the same way and regenerating is deterministic. Not needed for the MVP.
+
+#### Latency and chunking
+
+- Critical path per voiced reply: script (Gemma `MINIMAL`/`LOW`, ~1 s) → TTS. Casting is already
+  done by then in almost every turn.
+- Phase 4: synthesize the script line by line (or in small groups) and start playing the first
+  line while the next ones generate — first sound much earlier. The clips are concatenated into
+  the single message WAV once all finish. A barge-in stops **playback only**; the remaining lines
+  still finish so the saved file is the complete performance.
 - Reuse `generateAudio()`'s save/update path so the chat bubble sees the audio.
 
 ### Sender types
@@ -384,7 +470,7 @@ one place.
 |---|---|---|
 | `CHARACTER` | character portrait (`Character.image`), glow in `hexColor` | `character.voice` |
 | `NARRATOR` | saga icon / pure cosmic blob, genre gradient | `saga.narratorVoice` |
-| `ACTION` / `THOUGHT` | portrait dimmed / italic subtitle | narrator voice, softer instruction |
+| `ACTION` / `THOUGHT` | portrait dimmed / italic subtitle | per the performance script: vocal sounds or silence; thoughts never spoken |
 
 ## UI
 
@@ -469,7 +555,7 @@ the bubble think it should have audio. Worth fixing while we're here.
    `ModelCatalog.supportsAudioInput`, `voiceThinkingLevel` on the `HIGH` tier,
    `LiveTranscriber` fallback (remove `AudioTranscriptionService`),
    `AIReply.playerInput` (`PlayerInputFeedback`) + `inputMode` / `originalText` columns + `player_input_blueprint` (this
-   also ships the typo fix for the typed chat), `LiveVoiceUseCase` (fast path), feature flag,
+   also ships the typo fix for the typed chat), `LiveVoiceUseCase` (casting + performance script + multi-speaker TTS), feature flag,
    `LiveConversationKey` + `isInConversation()` in the navigation tracker / milestone collector.
    Unit tests for the reducer and the correction guard.
 2. **MVP loop** — hold → audio gate → save user msg with audio → generate (audio in) → voice →
@@ -477,14 +563,14 @@ the bubble think it should have audio. Worth fixing while we're here.
    milestone link. Behind the flag.
 3. **Magic pass** — AGSL blob, portrait morph, speaker selector carousel, live reactions overlay,
    haptics, subtitles, reasoning shimmer.
-4. **Latency pass** — chunked TTS, pre-warming, measuring per-stage timings in `AIAuditRecorder`.
+4. **Latency pass** — line-by-line TTS, pre-warming, measuring per-stage timings in `AIAuditRecorder`.
 5. **Hardening** — full error matrix, audio focus, long sessions, storage (AAC).
 
 ## Risks
 
-- **Latency is the real risk.** Rough budget per turn: reply with audio in 3–10 s + TTS 2–6 s
-  ≈ 5–16 s. The Thinking/Voicing animations and the live reactions have to carry that wait; the
-  fast voice path and chunked TTS are what make it feel "live".
+- **Latency is the real risk.** Rough budget per turn: reply with audio in 3–10 s + script ~1 s +
+  TTS 2–6 s ≈ 6–17 s. The Thinking/Voicing animations and the live reactions have to carry that wait; the
+  background casting and line-by-line TTS are what make it feel "live".
 - **Quota:** each turn costs 1–2 text + 1 TTS request against the user's key (plus the existing
   fallout call); a transcribe request only on fallback.
 - **Model rotation:** today's `HIGH` rotation is all Gemini (audio-capable). If a non-audio model is
@@ -511,3 +597,6 @@ the bubble think it should have audio. Worth fixing while we're here.
 6. Hitting the message limit opens the same Milestone screen as the chat, after the turn finishes.
 7. The audio goes straight into the reply request (`HIGH` is Gemini, which accepts audio);
    `TranscribeClient` is only a fallback.
+8. Voice is cast once per character (background, `MEDIUM`); each message gets a performance
+   script (`LOW`/`MINIMAL`) before TTS. Audio is a performance of the text, not a reading of it:
+   actions become sounds or silence, thinks are never spoken, narration uses the narrator voice.
