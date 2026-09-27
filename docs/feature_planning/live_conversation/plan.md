@@ -45,21 +45,22 @@ has every line, playable through the existing `AudioMessagePlayer` bubbles.
 A pure, unit-testable reducer (`LiveTurnState`) owned by `LiveConversationViewModel`:
 
 ```
-Idle ──hold──▶ Listening ──release──▶ Transcribing ──▶ Formatting ──▶ Thinking ──reply saved──▶ Voicing ──▶ Speaking ──done──▶ Idle
-  ▲               │ drag-out / <600ms            │ empty / fail                   │ error / guardrail      │ TTS fail/quota      │
-  └───────────────┴──────────── Idle + hint ─────┴──────── Recovering ────────────┴──── Recovering ───────┴─ SpeakingSilently ─┘
+Idle ──hold──▶ Listening ──release──▶ Transcribing ──▶ Thinking ──reply saved──▶ Voicing ──▶ Speaking ──done──▶ Idle
+  ▲               │ drag-out / <600ms            │ empty / fail    │ error / guardrail      │ TTS fail/quota      │
+  └───────────────┴──────────── Idle + hint ─────┴─── Recovering ──┴──── Recovering ───────┴─ SpeakingSilently ─┘
 
 Any state ──leave screen / ON_STOP──▶ Closed        Any state ──milestone ready──▶ (finish turn) ──▶ MilestoneKey
 ```
 
 - **Listening** — `VoiceRecorder` captures PCM, emits RMS for the blob.
-- **Transcribing** — WAV → `TranscribeClient`. Raw text is not shown yet.
-- **Formatting** — the pre-request that turns speech into a chat message (see
-  [Speech → message formatting](#speech--message-formatting)). The formatted line then appears as
-  the player's subtitle. **Sent straight away, no confirm/edit step** — giving the player an edit
-  box kills the rhythm; the formatter is what keeps quality up.
-- **Thinking** — user `Message` saved (status `LOADING`, `audible = true`, `audioPath` = player
-  WAV), then `ChatGenerationService.generate()`. `activeGenerations[sagaId].reasoning` can be shown
+- **Transcribing** — WAV → `TranscribeClient`, plus a cheap local gate (see below). The raw
+  transcript is **sent straight away, no confirm/edit step** — an edit box kills the rhythm.
+- **Thinking** — user `Message` saved raw (status `LOADING`, `audible = true`, `audioPath` = player
+  WAV, `inputMode = VOICE`), then `ChatGenerationService.generate()`. The reply request also
+  returns the corrected player message (see
+  [Player message correction](#player-message-correction-inside-the-reply)). The player's subtitle
+  shows the raw transcript faintly and "settles" into the corrected, tagged version when the reply
+  lands. `activeGenerations[sagaId].reasoning` can be shown
   faintly under the blob, like an assistant "thinking".
 - **Voicing** — on `ChatGenerationOutcome.Success`, call the live variant of `generateAudio()`
   for `reply.message`. The blob starts morphing toward the speaker's portrait here, so the wait
@@ -80,7 +81,6 @@ features/live/
   data/
     VoiceRecorder.kt            // AudioRecord → 16-bit PCM → WAV (AudioUtils.wrapPcmInWav), RMS flow
     LiveTranscriber.kt          // TranscribeClient first, fallbacks below
-    LiveInputFormatter.kt       // pre-request: transcript → chat message with expressive tags
     LiveVoiceUseCase.kt         // fast TTS path for a saved reply
   presentation/
     LiveConversationViewModel.kt
@@ -155,50 +155,71 @@ On the live route that check is false today, so the limit would silently pass. P
 3. Give up gracefully: show "não consegui te ouvir" with **Try again** and **Type instead** (a
    small text field inside the live screen). The recording is discarded only if the player cancels.
 
-### Speech → message formatting
+### Player message correction (inside the reply)
 
 The selector only picks **who** the player speaks as; it has no Narrator / Action / Thought
-modes. The model has to work out from the speech itself which parts are dialogue, which are
-actions and which are narration or thoughts. Example:
+modes. Something has to work out from the speech which parts are dialogue, actions, thoughts or
+narration. Example:
 
 > *"eu puxo a espada e digo: ninguém passa daqui. mas por dentro eu tô morrendo de medo"*
 >
 > → `<action>Puxo a espada.</action> Ninguém passa daqui. <think>Por dentro, estou morrendo de medo.</think>`
 
-`LiveInputFormatter` is a single pre-request between transcription and sending:
+**Decision: no separate pre-request.** The reply generation already reads the player's message,
+so it also returns the corrected version, the same way it already returns `userTone` (applied to
+the user message in `MessageUseCaseImpl.generateMessage`, around line 366). This replaces both the
+live formatter and `checkMessageTypo` (its blueprint was never published), for the typed chat
+**and** live mode, in one place.
 
-- **Input:** the raw transcript, the speaking character (name, personality), the characters in
-  the scene and the saga's proper nouns (character/place names — transcription mangles fantasy
-  names), the last couple of messages for context, and the `ExpressiveTag` rules the chat already
-  uses (`<action>`, `<think>`, `<narrator>`).
-- **Output (JSON):** `{ "text": "<formatted message with tags>", "understood": true|false }`.
-- **Rules:** keep the player's intent and wording, no new content. Remove filler ("é…", "tipo",
-  false starts), fix names against the glossary, split into tags, write in the saga's language.
-  `understood = false` when the transcript is noise → handled like an empty transcript.
-- **Model:** Gemma `ModelRequirement.LOW` with a small, cached prompt — it's on the critical path,
-  so it has to be fast. The prompt lives in a new `LivePrompts` next to `AudioPrompts`.
-- **Blueprint:** Remote Config key `live_input_formatter_blueprint`, draft in
-  [`live_input_formatter_blueprint.json`](live_input_formatter_blueprint.json). It follows the
-  `PromptBlueprint` shape (`role` / `directives` / `rules` / `examples` → static buckets via
-  `buildSplitBlueprint`), and the dynamic context goes in as variables: `speaker`, `transcript`,
-  `charactersPresent`, `glossary`, `recentMessages`.
-- **Tag semantics come from `reply_generation_blueprint`** so player and NPC messages mean the same
-  thing: dialogue is plain text and the default; `<action>` is first-person physical behavior
-  (never inline stage directions like `*cruza os braços*`); `<think>` is private first-person
-  interior; `<narrator>` is only scene infrastructure (time, place, environment), never feelings.
-  The difference is intent: the reply blueprint *writes* those channels, the formatter only
-  *classifies* what the player said. It must never invent a `<think>` or raise the emotion, and
-  it keeps the player's dialect as spoken (same spirit as `DIALECT_NO_SMOOTHING`).
-- **Replaces the typo check:** `checkMessageTypo` is skipped in live mode. The formatter already
-  does that job, and the message is **sent straight away with no confirm/edit step**.
-- **Fallback:** if the formatter fails or times out (~4 s), send the cleaned raw transcript as
-  plain dialogue. A formatting failure never blocks the turn.
-- **Later optimization:** one multimodal Gemini call that takes the audio and returns the
-  formatted message in one step (saves a round-trip). Needs checking whether `GemmaClient` /
-  the request model accept inline audio; keep the two-step path as fallback.
+- **Model change:** `AIReply.userMessage: PlayerMessageCorrection?` with `{ text, understood }`.
+- **Where it's applied:** right next to the `userTone` update — one
+  `updateMessage(message.copy(text = corrected, emotionalTone = tone))`, **before**
+  `resolveReplyFallout` runs, so reactions read the corrected text.
+- **Prompt:** a new `PLAYER MESSAGE CORRECTION` bucket in `reply_generation_blueprint`'s
+  `instructions` field (`PromptBlueprint.instructions` renders extra buckets). Draft in
+  [`reply_blueprint_player_message_bucket.json`](reply_blueprint_player_message_bucket.json).
+  Tag meanings reference the existing directives (`ACTION_AS_PHYSICAL_CHANNEL`,
+  `NARRATOR_PURPOSE`, `DIALECT_NO_SMOOTHING`) so player and NPC messages mean the same thing; the
+  difference is the reply *writes* those channels, the correction only *sorts* what the player said.
+- **`inputMode` in the context:** `latestMessage.inputMode = TYPED | VOICE`.
+  - TYPED: fix spelling, typos and mangled names only; keep the player's tags, add none.
+  - VOICE: full formatting — split into tags, drop filler, framing ("eu digo…") and meta talk
+    ("apaga isso"), third person → first person.
+  - Stored on `Message` as a new nullable `inputMode` column (Room migration) so the prompt, the
+    UI and analytics can tell voice turns apart. Default `TYPED`.
+- **Code-side guard** before applying (the model can still overreach): non-blank, every tag
+  closed and no unknown tags, and length of the prose (tags stripped) ≤ ~1.3× the original. Fail →
+  keep the original text. TYPED also requires the original's tags to still be there.
+- **Unintelligible voice:** the reply is already paid for by the time we know, so the bucket tells
+  the model to answer **in scene** ("o quê?", a character leaning closer) and set
+  `understood = false` instead of advancing the plot. A cheap **local gate** before sending avoids
+  most of those turns: recording < 600 ms, empty transcript, or only filler / `[inaudible]` after
+  a local filler-word strip → Idle + hint, nothing sent.
+- **Failure:** if the reply fails, the raw message stays (with `ERROR` status and retry). Retry
+  resends the raw text; the correction comes with the successful reply.
+- **Typed chat UX:** the bubble swapping text after the reply could surprise the player. The swap
+  animates like the typewriter, and a small "corrigido" marker on the bubble can show the original
+  on long-press. Needs keeping the original: nullable `originalText` column, set only when the
+  correction changed something. For live mode, the audio file already is the original.
+- **Cleanup:** remove `checkMessageTypo`, the `typoFixMessage` UI and the smart-suggestion branch
+  in `ChatViewModel.sendInput` once this ships.
 
-The formatted text is what gets saved to `Message.text`, so the chat shows the same tagged bubbles
-as if the player had typed them with the tag inserter.
+**Why it's worth it:**
+- **One place:** one prompt, one parse, one update, for both input modes.
+- **Better context:** the reply model sees the whole cast, scene and canon. That fixes names
+  better than a small LOW model with a glossary.
+- **Lower live latency:** the extra output is just the length of the player's line, far cheaper
+  than a separate round-trip (~1 s).
+
+**Costs:**
+- **Corrected text arrives late:** it only shows up when the reply ends.
+- **Bigger reply prompt:** the correction bucket adds instructions to an already large prompt,
+  and they compete with the narration directives. Watch reply quality after publishing.
+- **No early noise filter:** a noise turn costs a full reply, unless the local gate catches it.
+
+**Later optimization:** one multimodal call that takes the audio directly. Not viable with Gemma
+today (no audio input in the Gemini API for Gemma, to confirm); revisit if the reply moves to a
+Gemini model that accepts audio.
 
 ### Voicing replies fast (`LiveVoiceUseCase`)
 
@@ -255,7 +276,7 @@ as if the player had typed them with the tag inserter.
 - **SpeakerSelector:** horizontal carousel of avatars around the button, exactly like Instagram
   Stories filters — the one in the center slot *is* the button. Swiping changes who the player
   speaks as (`UpdateCharacter`), with a haptic tick per snap. Swiping is disabled while holding.
-  **Characters only** — no Narrator/Action/Thought modes; those come from the formatter.
+  **Characters only** — no Narrator/Action/Thought modes; those are inferred by the reply's player message correction.
 - Disabled (dimmed, no haptic) while a milestone is intrusive.
 - Phase 2+: slide-up "lock" for long speeches.
 
@@ -288,8 +309,9 @@ the current session and shows each **new** one as it lands:
 | Guardrail block | User message is deleted by the service; show a gentle notice, return to Idle. |
 | Missing API key | `ApiKeyTroubleSheet`. |
 | No `RECORD_AUDIO` permission | `PermissionComponent`, then back to Idle. |
-| Too short / silence / empty transcript / formatter says `understood = false` | Idle + hint, nothing saved. |
-| Formatter fails / times out | Send the cleaned raw transcript as plain dialogue. |
+| Too short / silence / empty transcript / only filler (local gate) | Idle + hint, nothing sent. |
+| Noise got past the gate (`userMessage.understood = false`) | The reply already reacts in scene ("o quê?"); nothing else to do. |
+| Correction missing or fails the code-side guard | Keep the raw text. |
 | Phone call / audio focus loss | Stop recording (discard) or stop playback; generation keeps going. |
 | Leaving the screen mid-turn (back, close, `ON_STOP`) | Live session ends completely; nothing ever plays outside the live screen. Started work finishes silently, unstarted voicing is skipped. |
 | Message limit reached | Turn finishes (reply voiced and played), then the same Milestone screen as the chat opens. |
@@ -300,10 +322,11 @@ the bubble think it should have audio. Worth fixing while we're here.
 ## Phases
 
 1. **Foundations** — `VoiceRecorder`, `LiveTranscriber` (+ fix `AudioTranscriptionService`),
-   `LiveInputFormatter` + `LivePrompts`, `LiveVoiceUseCase` (fast path), feature flag,
+   `AIReply.userMessage` + `inputMode` / `originalText` columns + the reply blueprint bucket (this
+   also ships the typo fix for the typed chat), `LiveVoiceUseCase` (fast path), feature flag,
    `LiveConversationKey` + `isInConversation()` in the navigation tracker / milestone collector.
-   Unit tests for the reducer and the formatter's fallback.
-2. **MVP loop** — hold → transcribe → format → save user msg with audio → generate → voice →
+   Unit tests for the reducer and the correction guard.
+2. **MVP loop** — hold → transcribe → local gate → save user msg with audio → generate → voice →
    play, with a simple blob (Canvas fallback), the silent fallback, full stop on leaving, and the
    milestone link. Behind the flag.
 3. **Magic pass** — AGSL blob, portrait morph, speaker selector carousel, live reactions overlay,
@@ -313,22 +336,25 @@ the bubble think it should have audio. Worth fixing while we're here.
 
 ## Risks
 
-- **Latency is the real risk.** Rough budget per turn: transcribe 1–2 s + format ~1 s + reply
-  3–10 s + TTS 2–6 s ≈ 7–19 s. The Thinking/Voicing animations and the live reactions have to
-  carry that wait; the fast voice path, the single-call transcribe+format and chunked TTS are what
+- **Latency is the real risk.** Rough budget per turn: transcribe 1–2 s + reply 3–10 s (slightly
+  longer output with the correction) + TTS 2–6 s ≈ 6–18 s. The Thinking/Voicing animations and the live reactions have to
+  carry that wait; the fast voice path, and chunked TTS are what
   make it feel "live".
-- **Quota:** each turn now costs 1 transcribe + 1 format + 1–2 text + 1 TTS request against the
+- **Quota:** each turn now costs 1 transcribe + 1–2 text + 1 TTS request against the
   user's key (plus the existing fallout call).
-- **Formatter mistakes:** with no edit step, a wrong tag split goes straight into the story. The
-  prompt must lean on "keep it as dialogue when unsure".
+- **Correction mistakes:** with no edit step, a wrong tag split goes straight into the story. The
+  bucket leans on "dialogue when unsure", and the code-side guard falls back to the raw text.
+- **Reply prompt weight:** the correction bucket competes with the narration directives; watch
+  reply quality after publishing it.
 - **Storage:** every turn stores two WAVs.
 
 ## Decisions
 
 1. Selector = characters only. Action / narration / thought are inferred from speech by the
-   formatter pre-request.
+   reply request itself (`AIReply.userMessage`), which also replaces `checkMessageTypo` for the
+   typed chat. No separate pre-request.
 2. Barge-in stops playback only; the full audio stays on the message, playable from the chat.
-3. No confirm/edit step: the formatted message is sent straight away.
+3. No confirm/edit step: the raw transcript is sent straight away and corrected by the reply.
 4. Reactions show in real time on the live screen, TikTok-live style.
 5. Leaving live mode ends it completely; no audio ever plays outside the live screen.
 6. Hitting the message limit opens the same Milestone screen as the chat, after the turn finishes.
