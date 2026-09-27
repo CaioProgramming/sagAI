@@ -4,6 +4,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.QuotaExhaustedException
 import com.ilustris.sagai.core.ai.TranscribeClient
+import com.ilustris.sagai.core.ai.VoiceCatalog
 import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.PromptBlueprint
@@ -23,14 +24,14 @@ import com.ilustris.sagai.features.audiobook.data.model.WordTiming
 import com.ilustris.sagai.features.audiobook.data.source.BookAudioDao
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import java.io.File
+import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import timber.log.Timber
-import java.io.File
-import javax.inject.Inject
 
 class BookAudioUseCaseImpl
     @Inject
@@ -42,6 +43,7 @@ class BookAudioUseCaseImpl
         private val remoteConfigService: RemoteConfigService,
         private val fileHelper: FileHelper,
         private val stringResourceHelper: StringResourceHelper,
+        private val voiceCatalog: VoiceCatalog,
     ) : BookAudioUseCase {
         override suspend fun config(): BookAudioConfig? {
             val settings = remoteConfigService.getJson<BookAudioConfig>(CONFIG_KEY)?.takeIf { it.isValid() } ?: return null
@@ -290,9 +292,9 @@ class BookAudioUseCaseImpl
             book: Book,
             config: BookAudioConfig,
         ): Voice {
-            Voice.findByName(book.narrationVoice)?.let { return it }
-            val knownVoices = config.voices.mapNotNull { Voice.findByName(it) }
-            Voice.findByName(saga.narratorVoice)?.takeIf { it in knownVoices }?.let { voice ->
+            voiceCatalog.find(book.narrationVoice)?.let { return it }
+            val knownVoices = config.voices.mapNotNull { voiceCatalog.find(it) }
+            voiceCatalog.find(saga.narratorVoice)?.takeIf { it in knownVoices }?.let { voice ->
                 bookAudioDao.setNarrationVoice(book.id, voice.id)
                 return voice
             }

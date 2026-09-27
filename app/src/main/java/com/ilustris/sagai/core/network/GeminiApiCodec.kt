@@ -18,6 +18,7 @@ import com.ilustris.sagai.core.ai.model.GeminiResponse
 import com.ilustris.sagai.core.ai.model.GeminiResponseContent
 import com.ilustris.sagai.core.ai.model.GeminiResponsePart
 import com.ilustris.sagai.core.ai.model.GeminiUsageMetadata
+import com.ilustris.sagai.core.ai.model.GeminiVoiceConfig
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -195,23 +196,40 @@ object GeminiApiCodec {
                 obj.add(
                     "speech_config",
                     JsonObject().also { speechObj ->
-                        speechObj.add(
-                            "voice_config",
-                            JsonObject().also { voiceObj ->
-                                voiceObj.add(
-                                    "prebuilt_voice_config",
-                                    JsonObject().also { prebuilt ->
-                                        prebuilt.addProperty(
-                                            "voice_name",
-                                            speech.voiceConfig.prebuiltVoiceConfig.voiceName,
-                                        )
-                                    },
-                                )
-                            },
-                        )
+                        speech.voiceConfig?.let { speechObj.add("voice_config", encodeVoiceConfig(it)) }
+                        speech.multiSpeakerVoiceConfig?.let { multi ->
+                            speechObj.add(
+                                "multi_speaker_voice_config",
+                                JsonObject().also { multiObj ->
+                                    multiObj.add(
+                                        "speaker_voice_configs",
+                                        JsonArray().also { array ->
+                                            multi.speakerVoiceConfigs.forEach { speaker ->
+                                                array.add(
+                                                    JsonObject().also { speakerObj ->
+                                                        speakerObj.addProperty("speaker", speaker.speaker)
+                                                        speakerObj.add("voice_config", encodeVoiceConfig(speaker.voiceConfig))
+                                                    },
+                                                )
+                                            }
+                                        },
+                                    )
+                                },
+                            )
+                        }
                     },
                 )
             }
+        }
+
+    private fun encodeVoiceConfig(voice: GeminiVoiceConfig): JsonObject =
+        JsonObject().also { voiceObj ->
+            voiceObj.add(
+                "prebuilt_voice_config",
+                JsonObject().also { prebuilt ->
+                    prebuilt.addProperty("voice_name", voice.prebuiltVoiceConfig.voiceName)
+                },
+            )
         }
 
     private fun decodeCandidates(array: JsonArray): List<GeminiCandidate> =

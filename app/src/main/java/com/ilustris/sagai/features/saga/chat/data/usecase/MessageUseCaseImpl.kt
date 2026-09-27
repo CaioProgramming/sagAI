@@ -2,14 +2,10 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import MessageStatus
 import androidx.room.withTransaction
-import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.core.ai.model.AudioConfig
-import com.ilustris.sagai.core.ai.model.Voice
 import com.ilustris.sagai.core.ai.model.mergeInstructions
-import com.ilustris.sagai.core.ai.prompts.AudioPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.ai.services.GenreConfigService
@@ -30,7 +26,6 @@ import com.ilustris.sagai.core.utils.AudioUtils
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
@@ -53,6 +48,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.ReplyFallout
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
+import com.ilustris.sagai.features.saga.chat.data.voicing.MessageVoicingUseCase
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
@@ -76,7 +72,7 @@ class MessageUseCaseImpl
         private val characterUseCase: CharacterUseCase,
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
-        private val audioGenClient: AudioGenClient,
+        private val messageVoicingUseCase: MessageVoicingUseCase,
         private val fileHelper: FileHelper,
         private val imageHelper: ImageHelper,
         private val genreConfigService: GenreConfigService,
@@ -675,75 +671,11 @@ class MessageUseCaseImpl
             characterReference: Character?,
         ): RequestResult<Unit> =
             executeRequest {
-                val sagaContent = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
-                val isNarrator = savedMessage.senderType == SenderType.NARRATOR
-                val speaker = characterReference?.let { "Character: ${it.name}" } ?: "Narrator"
-                Timber.i("🎙️ Starting audio generation for $speaker")
-
-                val voice =
-                    Voice.findByName(
-                        if (isNarrator) {
-                            saga.data.narratorVoice
-                        } else {
-                            characterReference?.voice
-                        },
-                    )
-
-                val audioConfig =
-                    gemmaClient.generate<AudioConfig>(
-                        promptSplit =
-                            AudioPrompts.audioConfigPrompt(
-                                promptService,
-                                sagaContent,
-                                message = savedMessage,
-                                character = characterReference?.let { CharacterContent(it) },
-                            ),
-                        requireTranslation = false,
-                        requirement = ModelRequirement.MEDIUM,
-                    )!!
-
-                val finalConfig =
-                    audioConfig.copy(
-                        voice = voice ?: audioConfig.voice,
-                    )
-                if (isNarrator) {
-                    sagaRepository.updateSaga(
-                        saga.data.copy(
-                            narratorVoice = finalConfig.voice.id,
-                        ),
-                    )
-                } else {
-                    if (characterReference != null) {
-                        characterRepository.updateCharacter(
-                            characterReference.copy(
-                                voice = finalConfig.voice.id,
-                            ),
-                        )
-                        Timber.i("✅ Character voice updated to: ${finalConfig.voice.name} for ${characterReference.name}")
-                    }
-                }
-
-                // Generate audio
-                val audioResult =
-                    audioGenClient
-                        .generateAudio(
-                            finalConfig,
-                        )!!
-
-                val audioFile =
-                    fileHelper.saveBinaryFile(
-                        audioResult,
-                        path = "sagas/${saga.data.id}/audios",
-                        fileName = "message_${savedMessage.id}_audio",
-                        extension = "wav",
-                    )!!
-
-                updateMessage(
-                    savedMessage.copy(
-                        audioPath = audioFile.absolutePath,
-                        audible = true,
-                    ),
-                )
+                // Casting, performance script and (multi-speaker) TTS live in MessageVoicingUseCase,
+                // shared with live mode so a message sounds the same wherever it was voiced.
+                messageVoicingUseCase.voice(saga, savedMessage)
+                    ?: error("Message ${savedMessage.id} has nothing a voice can perform")
+                Unit
             }
 
         override suspend fun updateMessage(message: Message): RequestResult<Message> =

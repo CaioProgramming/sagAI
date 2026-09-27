@@ -100,7 +100,7 @@ data class BookAudioConfig(
     val transcribeModel: String = "",
     /** Upper bound of characters narrated per TTS call. Paragraphs are never split unless one alone exceeds it. */
     val maxSegmentChars: Int = 0,
-    /** Voice ids ([com.ilustris.sagai.core.ai.model.Voice.id]) the narrator is drawn from. */
+    /** Voice ids ([com.ilustris.sagai.core.ai.model.Voice.id], validated against the VoiceCatalog) the narrator is drawn from. */
     val voices: List<String> = emptyList(),
     /** Pause between TTS calls, to stay under per-minute quotas. */
     val requestIntervalMs: Long = 0,

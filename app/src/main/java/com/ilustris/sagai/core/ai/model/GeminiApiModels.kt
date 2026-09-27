@@ -48,7 +48,22 @@ data class GeminiThinkingConfig(
     val thinkingLevel: String? = null,
 )
 
+/** Exactly one of [voiceConfig] (one voice) or [multiSpeakerVoiceConfig] (up to two named speakers). */
 data class GeminiSpeechConfig(
+    @SerializedName("voice_config")
+    val voiceConfig: GeminiVoiceConfig? = null,
+    @SerializedName("multi_speaker_voice_config")
+    val multiSpeakerVoiceConfig: GeminiMultiSpeakerVoiceConfig? = null,
+)
+
+data class GeminiMultiSpeakerVoiceConfig(
+    @SerializedName("speaker_voice_configs")
+    val speakerVoiceConfigs: List<GeminiSpeakerVoiceConfig>,
+)
+
+/** [speaker] must match the "Name:" prefix used for that speaker's lines in the prompt. */
+data class GeminiSpeakerVoiceConfig(
+    val speaker: String,
     @SerializedName("voice_config")
     val voiceConfig: GeminiVoiceConfig,
 )
@@ -185,6 +200,45 @@ fun createAudioGenerationRequest(
                                     PrebuiltVoiceConfig(
                                         voiceName = voice.id,
                                     ),
+                            ),
+                    ),
+            ),
+    )
+}
+
+/**
+ * Two-speaker TTS: [script] has one line per turn, each prefixed with its speaker's name and a
+ * colon ("Irin: …"), and [speakers] maps each of those names to a voice. Gemini TTS takes at most
+ * two speakers per request.
+ */
+fun createMultiSpeakerAudioRequest(
+    script: String,
+    speakers: Map<String, Voice>,
+    instruction: String? = null,
+): GeminiRequest {
+    require(speakers.size in 1..2) { "Multi-speaker TTS takes one or two speakers, got ${speakers.size}" }
+    val fullPrompt =
+        if (instruction != null) {
+            "Instruction: $instruction\n\nScript:\n$script"
+        } else {
+            script
+        }
+    return GeminiRequest(
+        contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = fullPrompt)))),
+        generationConfig =
+            GeminiGenerationConfig(
+                responseModalities = listOf("AUDIO"),
+                speechConfig =
+                    GeminiSpeechConfig(
+                        multiSpeakerVoiceConfig =
+                            GeminiMultiSpeakerVoiceConfig(
+                                speakerVoiceConfigs =
+                                    speakers.map { (name, voice) ->
+                                        GeminiSpeakerVoiceConfig(
+                                            speaker = name,
+                                            voiceConfig = GeminiVoiceConfig(PrebuiltVoiceConfig(voiceName = voice.id)),
+                                        )
+                                    },
                             ),
                     ),
             ),

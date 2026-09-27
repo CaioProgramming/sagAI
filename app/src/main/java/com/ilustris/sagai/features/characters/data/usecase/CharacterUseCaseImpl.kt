@@ -41,18 +41,19 @@ import com.ilustris.sagai.features.home.data.model.hasConflictingCharacterIdenti
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.saga.chat.data.voicing.VoiceCastingUseCase
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.ui.theme.utils.getRandomColorHex
+import java.util.Calendar
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.Calendar
-import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
 class CharacterUseCaseImpl
@@ -70,6 +71,7 @@ class CharacterUseCaseImpl
         private val promptService: PromptService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val artworkConceptService: ArtworkConceptService,
+        private val voiceCastingUseCase: VoiceCastingUseCase,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
 
@@ -81,7 +83,7 @@ class CharacterUseCaseImpl
                     image = emptyString(),
                     voice = null,
                 ),
-            )
+            ).also { voiceCastingUseCase.castInBackground(it) }
 
         override suspend fun updateCharacter(character: Character) = repository.updateCharacter(character)
 

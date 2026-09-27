@@ -3,14 +3,15 @@ package com.ilustris.sagai.core.ai
 import android.util.Base64
 import com.ilustris.sagai.core.ai.key.ApiUsageTracker
 import com.ilustris.sagai.core.ai.key.QuotaStatus
-import com.ilustris.sagai.core.ai.model.AudioConfig
-import com.ilustris.sagai.core.ai.model.createAudioGenerationRequest
-import kotlinx.coroutines.flow.Flow
-import timber.log.Timber
 import com.ilustris.sagai.core.ai.key.UserApiKeyStore
+import com.ilustris.sagai.core.ai.model.AudioConfig
+import com.ilustris.sagai.core.ai.model.GeminiRequest
+import com.ilustris.sagai.core.ai.model.createAudioGenerationRequest
 import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.utils.toJsonFormat
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import timber.log.Timber
 
 interface AudioGenClient {
     /**
@@ -19,6 +20,13 @@ interface AudioGenClient {
      * @return ByteArray of the generated audio or null if failed
      */
     suspend fun generateAudio(audioConfig: AudioConfig): ByteArray?
+
+    /**
+     * Synthesizes an already-built TTS request (e.g. a two-speaker performance from
+     * [com.ilustris.sagai.core.ai.model.createMultiSpeakerAudioRequest]). Same rotation, error
+     * handling and WAV wrapping as [generateAudio].
+     */
+    suspend fun generate(request: GeminiRequest): ByteArray
 
     /** Whether TTS generation is currently blocked by a spent daily quota, and when it clears. */
     suspend fun quotaStatus(): Flow<QuotaStatus>
@@ -49,7 +57,6 @@ class AudioGenClientImpl
         override suspend fun generateAudio(audioConfig: AudioConfig): ByteArray? {
             Timber.tag(TAG).i("Audio Config: ${audioConfig.toJsonFormat()}")
 
-            val apiKey = apiKey()
             val cleanPrompt = stripExpressiveTags(audioConfig.prompt)
             val request =
                 createAudioGenerationRequest(
@@ -57,11 +64,16 @@ class AudioGenClientImpl
                     voice = audioConfig.voice,
                     instruction = audioConfig.instruction,
                 )
+            return generate(request)
+        }
+
+        override suspend fun generate(request: GeminiRequest): ByteArray {
+            val apiKey = apiKey()
 
             // Rotates across AUDIO's candidates on a 503 or a spent daily quota.
             val response =
                 mediaModelResolver.withRotation(MediaRequirement.AUDIO) { model ->
-                    Timber.tag(TAG).d("Generating audio with ➡ $model, voice: ${audioConfig.voice.id}")
+                    Timber.tag(TAG).d("Generating audio with ➡ $model")
                     geminiApiClient
                         .generateContent(model, apiKey, request, readTimeoutSeconds = AUDIO_READ_TIMEOUT_SECONDS)
                         .also { apiUsageTracker.record(model, it.usageMetadata) }
