@@ -166,15 +166,24 @@ narration. Example:
 > → `<action>Puxo a espada.</action> Ninguém passa daqui. <think>Por dentro, estou morrendo de medo.</think>`
 
 **Decision: no separate pre-request.** The reply generation already reads the player's message,
-so it also returns the corrected version, the same way it already returns `userTone` (applied to
-the user message in `MessageUseCaseImpl.generateMessage`, around line 366). This replaces both the
-live formatter and `checkMessageTypo` (its blueprint was never published), for the typed chat
-**and** live mode, in one place.
+so it also returns the corrected version. This is **new behavior**: today nothing rewrites the
+player's text. The closest precedent is `userTone`, which only sets the user message's
+`emotionalTone` after the reply (`MessageUseCaseImpl.generateMessage`, around line 366); the
+correction reuses that same "reply returns data about the player's message → update the user
+message in the reply transaction" mechanism. This replaces both a separate live formatter and
+`checkMessageTypo` (its blueprint was never published), for the typed chat **and** live mode, in
+one place.
 
 - **Model change:** `AIReply.userMessage: PlayerMessageCorrection?` with `{ text, understood }`.
-- **Where it's applied:** right next to the `userTone` update — one
-  `updateMessage(message.copy(text = corrected, emotionalTone = tone))`, **before**
-  `resolveReplyFallout` runs, so reactions read the corrected text.
+- **Where it's applied:** in the same transaction as the `userTone` update — one
+  `updateMessage(message.message.copy(text = corrected, emotionalTone = tone))`.
+- **Propagate it to the fallout:** `ChatGenerationService` calls
+  `resolveReplyFallout(userMessage = message.message)` with the **in-memory** message it started
+  with, not a fresh read, so updating the DB alone isn't enough — reactions would still see the
+  raw text. `StreamingState.Success` must carry the updated user message (e.g. a
+  `userMessage: Message` on the success payload next to `reply.copy(message = savedMessage)`), and
+  the service passes that to the fallout. Same fix makes the fallout see the `emotionalTone`,
+  which it doesn't today.
 - **Prompt:** a new `PLAYER MESSAGE CORRECTION` bucket in `reply_generation_blueprint`'s
   `instructions` field (`PromptBlueprint.instructions` renders extra buckets). Draft in
   [`reply_blueprint_player_message_bucket.json`](reply_blueprint_player_message_bucket.json).
