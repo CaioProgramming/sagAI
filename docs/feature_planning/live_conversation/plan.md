@@ -72,9 +72,13 @@ Any state ──leave screen / ON_STOP──▶ Closed        Any state ──mi
   which fills the message and appears as the player's subtitle when the reply lands.
   `activeGenerations[sagaId].reasoning` can be shown faintly under the blob, like an assistant
   "thinking".
-- **Voicing** — on `ChatGenerationOutcome.Success`, call the live variant of `generateAudio()`
-  for `reply.message`. The blob starts morphing toward the speaker's portrait here, so the wait
-  already feels like "they're about to speak".
+- **Voicing** — on `ChatGenerationOutcome.Success`, start the performance script + TTS for
+  `reply.message` (~3–7 s). The reply's text is **not** shown yet (it would spoil the line before
+  it's heard), but the player's corrected line is already there, so it **takes the stage**: shown
+  as the main caption, in the display font, with its actions/thoughts in italic, while the sender
+  stays in focus in the blob. The blob starts leaning toward the next speaker's color as
+  anticipation. When the audio is ready, the portrait crossfades to whoever answered and Speaking
+  starts. In silent mode (no TTS) this beat is kept short (~1 s) so the rhythm doesn't change.
 - **Speaking** — play the WAV; blob pulses with the `WaveformExtractor` curve; subtitle shows the
   line.
 - **SpeakingSilently** — degraded mode when voice isn't available (see Errors): same portrait,
@@ -715,3 +719,5 @@ the bubble think it should have audio. Worth fixing while we're here.
    shared transitions from the chat input and spring-driven motion throughout.
 10. While waiting for the reply, the player's portrait stays in focus in the blob; when the reply
     lands it crossfades to whoever answered.
+11. The audio is made after the reply text, so during that gap the player's corrected line is the
+    main caption (the reply's text stays hidden until its audio plays).

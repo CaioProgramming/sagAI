@@ -152,6 +152,8 @@
   .blk.now { color: var(--ink); text-shadow: 0 0 18px #ff408166; }
   .blk.done { color: #c9c1e6; }
   .blk.silent.now { color: #bdb3e0; text-shadow: none; }
+  .blk.player .tag { font-style: italic; font-size: .86em; color: #bdb3e0; }
+  .blk.player { color: var(--ink); text-shadow: 0 0 18px #ff7a4555; }
   .player-line { font-size: 13px; color: var(--ink-dim); max-width: 34ch; line-height: 1.5; }
   .player-line .tag { font-style: italic; }
   .player-line.pending { opacity: .6; }
@@ -364,6 +366,7 @@
         <li><code>Idle</code> respira devagar, cores do gênero</li>
         <li><code>Listening</code> cresce e reage ao volume da voz</li>
         <li><code>Thinking</code> quem mandou a mensagem fica em destaque, com o anel girando e o raciocínio embaixo</li>
+        <li><code>Voicing</code> a resposta chegou: a fala corrigida do jogador ganha o palco enquanto o áudio é gerado</li>
         <li><code>Speaking</code> troca para quem responde e pulsa com o áudio; as reações orbitam o retrato</li>
       </ul>
       <p>Imagens externas são bloqueadas neste tipo de página, então os retratos são ilustrações geradas no canvas; o narrador usa o dragão do app.</p>
@@ -670,16 +673,22 @@
         later(() => toIdle(), 2600);
         return;
       }
-      // reply lands: player line settles, blob morphs
+      // Reply text landed (with the corrected player line). While the audio is being made,
+      // the player's line takes the stage; the sender stays in focus.
       ui.thinking.hidden = true;
-      ui.playerLine.classList.remove("pending");
-      ui.playerLine.innerHTML = lines[k].fixed;
+      ui.playerLine.hidden = true;
       setState("Voicing");
-      ui.ring.classList.remove("on");
-      ui.status.textContent = "";
-      showSpeaker("irin");
-      mode = "think"; targetLevel = .25;
-      later(speak, 900);
+      ui.subtitle.scrollTop = 0;
+      ui.subtitle.innerHTML = `<span class="blk now player">${lines[k].fixed}</span>`;
+      ui.hint.textContent = silent ? "Irin vai responder…" : "Preparando a voz de Irin…";
+      // anticipation: the blob starts leaning toward the next speaker's color
+      blobColors = [cast[k].color, cast.irin.color, "#6a1b9a", cast.irin.color];
+      targetLevel = .28;
+      later(() => {
+        ui.ring.classList.remove("on");
+        showSpeaker("irin");
+        later(speak, 450);
+      }, silent ? 900 : 2800);
     }, 3600);
   }
 
