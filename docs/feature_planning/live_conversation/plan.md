@@ -174,9 +174,31 @@ message in the reply transaction" mechanism. This replaces both a separate live 
 `checkMessageTypo` (its blueprint was never published), for the typed chat **and** live mode, in
 one place.
 
-- **Model change:** `AIReply.userMessage: PlayerMessageCorrection?` with `{ text, understood }`.
-- **Where it's applied:** in the same transaction as the `userTone` update — one
-  `updateMessage(message.message.copy(text = corrected, emotionalTone = tone))`.
+- **Model change:** group everything that is about *this* player input into one object, instead
+  of loose fields on `AIReply`:
+
+  ```kotlin
+  data class AIReply(
+      val message: Message,
+      val sceneSummary: SceneSummary? = null,
+      val newCharacter: NewCharacterDiscovery? = null,
+      val playerCompass: String? = null,        // stays top-level: saga-wide, built across turns
+      val playerInput: PlayerInputFeedback? = null,
+  )
+
+  data class PlayerInputFeedback(
+      val correctedText: String? = null,         // null or equal = nothing to fix
+      val understood: Boolean = true,
+      val emotionalTone: EmotionalTone? = null,  // was AIReply.userTone
+  )
+  ```
+
+  Anything else derived directly from the player's input later (e.g. who they addressed, a
+  detected intent) goes in `PlayerInputFeedback` too. `playerCompass` is not about one input,
+  so it stays where it is.
+- **Where it's applied:** one `updateMessage(message.message.copy(text = …, emotionalTone = …))`
+  in the reply transaction, replacing today's `reply.userTone?.let { … }`
+  (`MessageUseCaseImpl.kt:366`, its only reader).
 - **Propagate it to the fallout:** `ChatGenerationService` calls
   `resolveReplyFallout(userMessage = message.message)` with the **in-memory** message it started
   with, not a fresh read, so updating the DB alone isn't enough — reactions would still see the
@@ -184,6 +206,11 @@ one place.
   `userMessage: Message` on the success payload next to `reply.copy(message = savedMessage)`), and
   the service passes that to the fallout. Same fix makes the fallout see the `emotionalTone`,
   which it doesn't today.
+- **Blueprint sync:** the output shape comes from the class via reflection, but the
+  `reply_generation_blueprint` text names the field: `USER_TONE` says "Return the tone in the
+  'userTone' field". Update it to `playerInput.emotionalTone` and publish it **with** the app
+  version that ships the new class. Old app versions still ask for `userTone` through their
+  schema; the stale wording only costs them the tone (nullable), nothing breaks.
 - **Prompt:** a new `PLAYER MESSAGE CORRECTION` bucket in `reply_generation_blueprint`'s
   `instructions` field (`PromptBlueprint.instructions` renders extra buckets). Draft in
   [`reply_blueprint_player_message_bucket.json`](reply_blueprint_player_message_bucket.json).
@@ -319,7 +346,7 @@ the current session and shows each **new** one as it lands:
 | Missing API key | `ApiKeyTroubleSheet`. |
 | No `RECORD_AUDIO` permission | `PermissionComponent`, then back to Idle. |
 | Too short / silence / empty transcript / only filler (local gate) | Idle + hint, nothing sent. |
-| Noise got past the gate (`userMessage.understood = false`) | The reply already reacts in scene ("o quê?"); nothing else to do. |
+| Noise got past the gate (`playerInput.understood = false`) | The reply already reacts in scene ("o quê?"); nothing else to do. |
 | Correction missing or fails the code-side guard | Keep the raw text. |
 | Phone call / audio focus loss | Stop recording (discard) or stop playback; generation keeps going. |
 | Leaving the screen mid-turn (back, close, `ON_STOP`) | Live session ends completely; nothing ever plays outside the live screen. Started work finishes silently, unstarted voicing is skipped. |
@@ -331,7 +358,7 @@ the bubble think it should have audio. Worth fixing while we're here.
 ## Phases
 
 1. **Foundations** — `VoiceRecorder`, `LiveTranscriber` (+ fix `AudioTranscriptionService`),
-   `AIReply.userMessage` + `inputMode` / `originalText` columns + the reply blueprint bucket (this
+   `AIReply.playerInput` (`PlayerInputFeedback`) + `inputMode` / `originalText` columns + the reply blueprint bucket (this
    also ships the typo fix for the typed chat), `LiveVoiceUseCase` (fast path), feature flag,
    `LiveConversationKey` + `isInConversation()` in the navigation tracker / milestone collector.
    Unit tests for the reducer and the correction guard.
@@ -360,7 +387,7 @@ the bubble think it should have audio. Worth fixing while we're here.
 ## Decisions
 
 1. Selector = characters only. Action / narration / thought are inferred from speech by the
-   reply request itself (`AIReply.userMessage`), which also replaces `checkMessageTypo` for the
+   reply request itself (`AIReply.playerInput`), which also replaces `checkMessageTypo` for the
    typed chat. No separate pre-request.
 2. Barge-in stops playback only; the full audio stays on the message, playable from the chat.
 3. No confirm/edit step: the raw transcript is sent straight away and corrected by the reply.
