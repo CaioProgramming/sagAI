@@ -14,7 +14,6 @@ data class AIReply(
     val message: Message,
     val sceneSummary: SceneSummary? = null,
     val newCharacter: NewCharacterDiscovery? = null,
-    val userTone: EmotionalTone? = null,
     /**
      * Evolved read of how the player prefers to engage (e.g. combat vs. relationship/introspection
      * depth), persisted onto [com.ilustris.sagai.features.home.data.model.Saga.playerCompass] —
@@ -23,4 +22,38 @@ data class AIReply(
      * sustained pattern outweighs a single message.
      */
     val playerCompass: String? = null,
+    /** Everything the reply read off the player's latest message. See [PlayerInputFeedback]. */
+    val playerInput: PlayerInputFeedback? = null,
+)
+
+/**
+ * What the reply model derived from *this* player input, grouped so anything else about the
+ * player's turn has one place to go. [playerCompass][AIReply.playerCompass] stays outside: it's a
+ * saga-wide read built across turns, not about one message.
+ *
+ * @property correctedText The player's message as they meant to send it. Typed turns: typos and
+ * names fixed, or null when nothing needed fixing. Voice turns: the only text of what the player
+ * said (the reply hears the audio directly), sorted into dialogue and expressive tags.
+ * @property understood False when a voice turn was noise or unintelligible; the reply then reacts
+ * in scene instead of advancing the plot.
+ * @property emotionalTone The player's tone for this turn (was `AIReply.userTone`).
+ */
+data class PlayerInputFeedback(
+    val correctedText: String? = null,
+    val understood: Boolean = true,
+    val emotionalTone: EmotionalTone? = null,
+)
+
+/**
+ * A saved reply plus the player's message as it stands after the reply was applied to it
+ * (corrected text, tone). Consumers downstream of the reply — the fallout, live mode — need that
+ * updated message, not the one the generation started from.
+ *
+ * @property needsTranscription A voice turn came back without a usable [PlayerInputFeedback.correctedText],
+ * so [userMessage] still has no text and has to be transcribed from its audio.
+ */
+data class GeneratedReply(
+    val reply: AIReply,
+    val userMessage: Message,
+    val needsTranscription: Boolean = false,
 )

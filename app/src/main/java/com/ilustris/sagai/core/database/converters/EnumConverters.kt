@@ -5,6 +5,7 @@ import androidx.room.TypeConverter
 import com.ilustris.sagai.features.narrative.data.model.TimeGapMagnitude
 import com.ilustris.sagai.features.narrative.data.model.TimeOfDay
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+import com.ilustris.sagai.features.saga.chat.data.model.InputMode
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 
 /**
@@ -38,6 +39,14 @@ object EnumConverters {
         } else {
             runCatching { MessageStatus.valueOf(value) }.getOrDefault(MessageStatus.OK)
         }
+
+    @TypeConverter
+    @JvmStatic
+    fun inputModeToString(value: InputMode?): String? = value?.name
+
+    @TypeConverter
+    @JvmStatic
+    fun stringToInputMode(value: String?): InputMode? = InputMode.fromString(value)
 
     @TypeConverter
     @JvmStatic

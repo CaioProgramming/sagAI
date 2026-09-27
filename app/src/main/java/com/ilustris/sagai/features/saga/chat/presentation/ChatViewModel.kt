@@ -12,8 +12,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.ilustris.sagai.R
 import com.google.gson.Gson
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.gsonTypeOfStringList
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.datastore.DataStorePreferences
@@ -39,6 +39,7 @@ import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManage
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.mapper.SagaMetadataUIMapper
 import com.ilustris.sagai.features.saga.chat.data.model.ChatGenerationOutcome
+import com.ilustris.sagai.features.saga.chat.data.model.InputMode
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -56,6 +57,8 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,8 +69,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 private const val MAX_RECENT_SEARCHES = 5
 
@@ -1218,6 +1219,7 @@ class ChatViewModel
                     characterId = mainCharacter.id,
                     timelineId = currentTimeline.data.id,
                     status = MessageStatus.LOADING,
+                    inputMode = InputMode.TYPED,
                 )
 
             val isActuallyAudio = isAudio || uiState.value.isAudioInput

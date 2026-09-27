@@ -26,6 +26,7 @@ import com.ilustris.sagai.core.globalshell.NewMessageEffect
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.utils.AudioUtils
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
@@ -43,11 +44,12 @@ import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.model.AIReaction
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+import com.ilustris.sagai.features.saga.chat.data.model.GeneratedReply
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.Reaction
-import com.ilustris.sagai.features.saga.chat.data.model.ReplyFallout
 import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
+import com.ilustris.sagai.features.saga.chat.data.model.ReplyFallout
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
@@ -56,13 +58,14 @@ import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
+import java.io.File
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import javax.inject.Inject
 
 class MessageUseCaseImpl
     @Inject
@@ -223,7 +226,7 @@ class MessageUseCaseImpl
         override suspend fun generateMessage(
             saga: SagaMetadata,
             message: MessageContent,
-        ): Flow<StreamingState<AIReply?>> =
+        ): Flow<StreamingState<GeneratedReply?>> =
             flow {
                 try {
                     if (isDebugModeEnabled) {
@@ -238,7 +241,7 @@ class MessageUseCaseImpl
                                         timelineId = saga.getCurrentTimeLine()!!.data.id,
                                     ),
                             )
-                        emit(StreamingState.Success(fakeReply))
+                        emit(StreamingState.Success(GeneratedReply(fakeReply, message.message)))
                         return@flow
                     }
 
@@ -354,6 +357,18 @@ class MessageUseCaseImpl
                                 // resolveReplyCharacterLinks stays outside: it can hit the network to
                                 // generate a character, and holding a DB transaction across that is
                                 // how you get lock contention/ANRs.
+                                // Corrected text + tone from the reply, behind the guard in
+                                // PlayerInputCorrection. A voice turn's duration bounds how much
+                                // text its correction may plausibly contain.
+                                val correction =
+                                    PlayerInputCorrection.apply(
+                                        original = message.message,
+                                        feedback = reply.playerInput,
+                                        audioDurationMs =
+                                            message.message.audioPath
+                                                ?.takeIf { it.isNotBlank() }
+                                                ?.let { AudioUtils.wavDurationMs(File(it)) },
+                                    )
                                 val savedMessage =
                                     withContext(Dispatchers.IO) {
                                         database.withTransaction {
@@ -363,10 +378,8 @@ class MessageUseCaseImpl
                                                     reply,
                                                     character = existingCharacter,
                                                 )
-                                            reply.userTone?.let { tone ->
-                                                updateMessage(
-                                                    message.message.copy(emotionalTone = tone),
-                                                )
+                                            if (correction.message != message.message) {
+                                                updateMessage(correction.message)
                                             }
                                             reply.playerCompass
                                                 ?.takeIf { it.isNotBlank() && it != freshSaga.data.playerCompass }
@@ -390,9 +403,21 @@ class MessageUseCaseImpl
                                     savedMessage = savedMessage,
                                     sceneSummary = reply.sceneSummary ?: sceneSummary,
                                 )
-                                emit(StreamingState.Success(reply.copy(message = savedMessage)))
+                                emit(
+                                    StreamingState.Success(
+                                        GeneratedReply(
+                                            reply = reply.copy(message = savedMessage),
+                                            userMessage = correction.message,
+                                            needsTranscription = correction.needsTranscription,
+                                        ),
+                                    ),
+                                )
                             } else {
-                                emit(state)
+                                when (state) {
+                                    is StreamingState.Reasoning -> emit(state)
+                                    is StreamingState.Error -> emit(state)
+                                    else -> Unit
+                                }
                             }
                         }
                 } catch (e: Exception) {

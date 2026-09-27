@@ -56,6 +56,12 @@ data class Character(
     val emojified: Boolean = false,
     @ColumnInfo(defaultValue = "")
     val voice: String? = null,
+    /**
+     * How this character delivers their lines (pace, energy, texture, register), written once at
+     * voice casting. With only a few dozen prebuilt voices, characters often share one — this is
+     * what keeps them sounding like different people, so every performance script reuses it.
+     */
+    val voiceDirection: String? = null,
     @ColumnInfo(defaultValue = "")
     val artwork: String? = null,
 )

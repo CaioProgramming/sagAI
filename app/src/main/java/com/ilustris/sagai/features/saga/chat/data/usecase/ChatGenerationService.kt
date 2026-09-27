@@ -103,9 +103,17 @@ class ChatGenerationService
 
                             is StreamingState.Success -> {
                                 _activeGenerations.update { it - sagaId }
-                                val reply = state.data
-                                if (reply != null) {
-                                    _outcomes.tryEmit(ChatGenerationOutcome.Success(sagaId, reply))
+                                val generated = state.data
+                                if (generated != null) {
+                                    val reply = generated.reply
+                                    _outcomes.tryEmit(
+                                        ChatGenerationOutcome.Success(
+                                            sagaId = sagaId,
+                                            reply = reply,
+                                            userMessage = generated.userMessage,
+                                            needsTranscription = generated.needsTranscription,
+                                        ),
+                                    )
                                     // Deliberately a separate job, not part of jobs[sagaId]: the
                                     // guard at the top of generate() drops the player's next
                                     // message while that job is alive, so the fallout must not
@@ -113,9 +121,11 @@ class ChatGenerationService
                                     // the hook land a beat later, and the player can keep writing
                                     // through it.
                                     scope.launch {
+                                        // The updated user message, not message.message: the
+                                        // reply may have corrected its text and set its tone.
                                         messageUseCase.resolveReplyFallout(
                                             saga = saga,
-                                            userMessage = message.message,
+                                            userMessage = generated.userMessage,
                                             replyMessage = reply.message,
                                             sceneSummary = reply.sceneSummary ?: sceneSummary,
                                         )

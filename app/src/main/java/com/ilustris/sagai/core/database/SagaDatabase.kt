@@ -69,7 +69,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         WorldLocation::class,
         WorldLocationVisit::class,
     ],
-    version = 35,
+    version = 36,
     exportSchema = true,
 )
 @TypeConverters(

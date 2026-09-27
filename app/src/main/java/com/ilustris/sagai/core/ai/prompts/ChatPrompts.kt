@@ -102,6 +102,10 @@ object ChatPrompts {
             // Read-receipt state for the UI. The model has no use for it and it rode along on
             // every message in the history.
             "viewed",
+            // Live-mode bookkeeping. The latest player turn gets its inputMode explicitly in the
+            // reply prompt; history doesn't need either field.
+            "inputMode",
+            "originalText",
         )
 
     /**

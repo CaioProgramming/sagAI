@@ -1,5 +1,7 @@
 package com.ilustris.sagai.core.utils
 
+import java.io.File
+import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -46,4 +48,18 @@ object AudioUtils {
 
         return buffer.array()
     }
+
+    /** Duration of a PCM WAV written by [wrapPcmInWav] (44-byte header), read from its byte rate. Null if unreadable. */
+    fun wavDurationMs(file: File): Long? =
+        runCatching {
+            RandomAccessFile(file, "r").use { raf ->
+                if (raf.length() <= WAV_HEADER_BYTES) return@use null
+                val header = ByteArray(WAV_HEADER_BYTES)
+                raf.readFully(header)
+                val byteRate = ByteBuffer.wrap(header, 28, 4).order(ByteOrder.LITTLE_ENDIAN).int
+                if (byteRate <= 0) null else (raf.length() - WAV_HEADER_BYTES) * 1000 / byteRate
+            }
+        }.getOrNull()
+
+    private const val WAV_HEADER_BYTES = 44
 }

@@ -6,6 +6,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+import com.ilustris.sagai.features.saga.chat.data.model.GeneratedReply
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -32,7 +33,7 @@ interface MessageUseCase {
     suspend fun generateMessage(
         saga: SagaMetadata,
         message: MessageContent,
-    ): Flow<StreamingState<AIReply?>>
+    ): Flow<StreamingState<GeneratedReply?>>
 
     suspend fun saveGeneratedReply(
         saga: SagaMetadata,

@@ -587,6 +587,20 @@ object DatabaseMigrations {
             }
         }
 
+    /**
+     * Live conversation: how the player sent each message (typed/voice), the pre-correction text
+     * of a corrected typed message, and each character's persisted voice direction. All nullable
+     * with no default, so existing rows read as typed messages and uncast voices.
+     */
+    val MIGRATION_35_36 =
+        object : Migration(35, 36) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE messages ADD COLUMN `inputMode` TEXT")
+                db.execSQL("ALTER TABLE messages ADD COLUMN `originalText` TEXT")
+                db.execSQL("ALTER TABLE Characters ADD COLUMN `voiceDirection` TEXT")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -623,5 +637,6 @@ object DatabaseMigrations {
             MIGRATION_32_33,
             MIGRATION_33_34,
             MIGRATION_34_35,
+            MIGRATION_35_36,
         )
 }
