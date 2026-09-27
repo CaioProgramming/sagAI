@@ -99,6 +99,7 @@
     width: 300px; height: 300px; transform: translate(-50%, -50%);
     z-index: 2; pointer-events: none;
   }
+  #wave { position: absolute; inset: -60px; width: calc(100% + 120px); height: calc(100% + 120px); }
   #blob { position: absolute; inset: -60px; width: calc(100% + 120px); height: calc(100% + 120px); filter: blur(18px) saturate(1.2); }
   .portrait {
     position: absolute; left: 50%; top: 50%;
@@ -299,6 +300,7 @@
       <canvas id="blob"></canvas>
       <div class="ring" id="ring"></div>
       <img class="portrait" id="portrait" alt="">
+      <canvas id="wave"></canvas>
     </div>
 
     <div class="caption" aria-live="polite">
@@ -356,6 +358,10 @@
         <input type="checkbox" class="switch" id="quota">
       </label>
       <label class="toggle">
+        <span>Onda de áudio radial<small>Anel em volta do retrato que reage ao volume da fala</small></span>
+        <input type="checkbox" class="switch" id="waveToggle" checked>
+      </label>
+      <label class="toggle">
         <span>Limite de mensagens<small>Abre o milestone quando a fala acabar</small></span>
         <input type="checkbox" class="switch" id="limit">
       </label>
@@ -367,7 +373,7 @@
         <li><code>Listening</code> cresce e reage ao volume da voz</li>
         <li><code>Thinking</code> quem mandou a mensagem fica em destaque, com o anel girando e o raciocínio embaixo</li>
         <li><code>Voicing</code> a resposta chegou: a fala corrigida do jogador ganha o palco enquanto o áudio é gerado</li>
-        <li><code>Speaking</code> troca para quem responde e pulsa com o áudio; as reações orbitam o retrato</li>
+        <li><code>Speaking</code> troca para quem responde; a onda radial em volta do retrato reage ao volume e as reações orbitam</li>
       </ul>
       <p>Imagens externas são bloqueadas neste tipo de página, então os retratos são ilustrações geradas no canvas; o narrador usa o dragão do app.</p>
     </div>
@@ -466,6 +472,43 @@
     think: ["#ff4081", "#ffa726", "#ce93d8", "#0d47a1", "#6a1b9a"],
   };
   let blobColors = palettes.idle, level = 0, targetLevel = .15, mode = "idle";
+  const wave = document.getElementById("wave"), wg = wave.getContext("2d");
+  function sizeWave() {
+    const r = wave.getBoundingClientRect(), d = devicePixelRatio || 1;
+    wave.width = r.width * d; wave.height = r.height * d;
+    wg.setTransform(d, 0, 0, d, 0, 0);
+  }
+  function drawWave(t) {
+    const r = wave.getBoundingClientRect(), w = r.width, h = r.height, cx = w / 2, cy = h / 2;
+    wg.clearRect(0, 0, w, h);
+    const target = waveOn && speakingAudible && mode === "speak" ? level : 0;
+    waveEnergy += (target - waveEnergy) * .15;
+    if (waveEnergy < .01) return;
+    const base = 92, n = 96;
+    const col = currentColor || "#ff4081";
+    for (let layer = 0; layer < 3; layer++) {
+      wg.beginPath();
+      for (let i = 0; i <= n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        const noise =
+          Math.sin(a * 3 + t * .004 + layer) * .5 +
+          Math.sin(a * 5 - t * .006 + layer * 2) * .3 +
+          Math.sin(a * 9 + t * .009) * .2;
+        const rr = base + layer * 3 + waveEnergy * (14 + layer * 6) * (0.55 + 0.45 * noise);
+        const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+        i ? wg.lineTo(x, y) : wg.moveTo(x, y);
+      }
+      wg.closePath();
+      wg.strokeStyle = layer === 0 ? "#ffffffcc" : col + (layer === 1 ? "aa" : "55");
+      wg.lineWidth = layer === 0 ? 1.4 : 2;
+      wg.shadowColor = col; wg.shadowBlur = 14;
+      wg.globalAlpha = Math.min(1, waveEnergy * 2.2);
+      wg.stroke();
+    }
+    wg.globalAlpha = 1; wg.shadowBlur = 0;
+  }
+  let currentColor = null;
+
   function sizeBlob() {
     const r = blob.getBoundingClientRect(), d = devicePixelRatio || 1;
     blob.width = r.width * d; blob.height = r.height * d;
@@ -508,6 +551,7 @@
     halo.style.transform = holding ? `scale(${1 + level * .22})` : "scale(1)";
     const p = document.getElementById("portrait");
     if (p.classList.contains("on")) p.style.transform = `translate(-50%,-50%) scale(${1 + (mode === "speak" && !silent ? level * .09 : 0)})`;
+    drawWave(t);
     stepOrbiters(t);
     requestAnimationFrame(draw);
   }
@@ -521,6 +565,7 @@
     timer: $("timer"), cancelZone: $("cancelZone"), reactions: $("reactions"),
     banner: $("banner"), milestone: $("milestone"), stateLabel: $("stateLabel"),
   };
+  let waveOn = true, speakingAudible = false, waveEnergy = 0;
   let silent = false, limitOn = false, forceError = false, busy = false, holding = false;
   let timers = [];
   const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
@@ -694,6 +739,7 @@
 
   function showSpeaker(key) {
     const c = cast[key];
+    currentColor = key === "narrator" ? "#ce93d8" : c.color;
     if (ui.portrait.classList.contains("on") && ui.portrait.getAttribute("src") !== c.img) {
       ui.portrait.classList.remove("on");
       setTimeout(() => { ui.portrait.src = c.img; ui.portrait.classList.add("on"); }, 320);
@@ -735,6 +781,7 @@
   let pulseTimer = null;
   function pulse(on) {
     clearInterval(pulseTimer);
+    speakingAudible = !!on;
     if (!on) { targetLevel = .12; return; }
     pulseTimer = setInterval(() => { targetLevel = .2 + Math.abs(Math.sin(performance.now() / 130)) * .5 + Math.random() * .3; }, 80);
   }
@@ -799,11 +846,12 @@
   $("error").addEventListener("click", () => { forceError = true; $("runTurn").click(); later(() => { forceError = false; }, 6000); });
   $("quota").addEventListener("change", e => { silent = e.target.checked; ui.banner.hidden = !silent; });
   $("limit").addEventListener("change", e => { limitOn = e.target.checked; });
+  $("waveToggle").addEventListener("change", e => { waveOn = e.target.checked; });
   $("closeMilestone").addEventListener("click", () => { ui.milestone.classList.remove("on"); toIdle(); });
   $("closeBtn").addEventListener("click", () => { stopSpeaking(); resetCaption(); toIdle("Live encerrada · voltando ao chat"); });
 
   /* ---------- boot ---------- */
-  function sizeAll() { sizeStars(); sizeBlob(); }
+  function sizeAll() { sizeStars(); sizeBlob(); sizeWave(); }
   addEventListener("resize", sizeAll);
   sizeAll(); renderPicker(); setState("Idle");
   // first frame: a line already on screen so the page reads at rest

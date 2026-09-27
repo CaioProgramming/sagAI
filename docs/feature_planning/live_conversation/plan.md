@@ -558,6 +558,16 @@ turns the tagged message into a TTS script:
     loader, but showing who just spoke.
   - **Speaking:** the blob becomes a soft mask around the speaker's portrait (crossfade + scale),
     glow in the speaker's color, pulsing with the waveform curve.
+  - **Radial audio wave:** a thin glowing ring around the portrait (2–3 layered strokes, white
+    core + speaker's color) that deforms with the loudness of what's playing, Siri-style. It's
+    the one element that clearly reads as "reacting to the voice"; a classic bar waveform would
+    pull the screen toward an audio-player look, so there isn't one.
+    - Driven by the clip's loudness curve from `WaveformExtractor` (precomputed from the WAV,
+      like the audiobook's `AudiobookAurora`), sampled at the player's current position — no
+      `Visualizer`, no extra permission, and it stays in sync after seeking or a barge-in.
+    - Only while audio is actually playing: silent blocks (actions, thoughts), *SpeakingSilently*
+      and the Voicing wait keep the ring flat and hidden.
+    - Drawn in `Canvas` with the amplitude read in the draw phase, like the blob.
   - **Error:** brief dim + desaturate, then back to Idle.
 
 ### HoldToTalkButton (+ selector)
