@@ -394,8 +394,8 @@ object DatabaseMigrations {
             }
         }
 
-    val MIGRATION_36_37 =
-        object : Migration(36, 37) {
+    val MIGRATION_35_36 =
+        object : Migration(35, 36) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Chapter-closure choice cards: the dilemmas, the (hidden) tags the player picked,
                 // and the per-chapter spectrum they rewrite. NULL means "not answered yet".
@@ -598,8 +598,8 @@ object DatabaseMigrations {
             }
         }
 
-    val MIGRATION_35_36 =
-        object : Migration(35, 36) {
+    val MIGRATION_36_37 =
+        object : Migration(36, 37) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // RAG index: one row per atomic retrievable fact (wiki entry, character event,
                 // continuity fact, relationship), keyed by a stable sourceKey so re-indexing a
