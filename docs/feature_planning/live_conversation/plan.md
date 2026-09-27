@@ -177,6 +177,18 @@ actions and which are narration or thoughts. Example:
   `understood = false` when the transcript is noise → handled like an empty transcript.
 - **Model:** Gemma `ModelRequirement.LOW` with a small, cached prompt — it's on the critical path,
   so it has to be fast. The prompt lives in a new `LivePrompts` next to `AudioPrompts`.
+- **Blueprint:** Remote Config key `live_input_formatter_blueprint`, draft in
+  [`live_input_formatter_blueprint.json`](live_input_formatter_blueprint.json). It follows the
+  `PromptBlueprint` shape (`role` / `directives` / `rules` / `examples` → static buckets via
+  `buildSplitBlueprint`), and the dynamic context goes in as variables: `speaker`, `transcript`,
+  `charactersPresent`, `glossary`, `recentMessages`.
+- **Tag semantics come from `reply_generation_blueprint`** so player and NPC messages mean the same
+  thing: dialogue is plain text and the default; `<action>` is first-person physical behavior
+  (never inline stage directions like `*cruza os braços*`); `<think>` is private first-person
+  interior; `<narrator>` is only scene infrastructure (time, place, environment), never feelings.
+  The difference is intent: the reply blueprint *writes* those channels, the formatter only
+  *classifies* what the player said. It must never invent a `<think>` or raise the emotion, and
+  it keeps the player's dialect as spoken (same spirit as `DIALECT_NO_SMOOTHING`).
 - **Replaces the typo check:** `checkMessageTypo` is skipped in live mode. The formatter already
   does that job, and the message is **sent straight away with no confirm/edit step**.
 - **Fallback:** if the formatter fails or times out (~4 s), send the cleaned raw transcript as
