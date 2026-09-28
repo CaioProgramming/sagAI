@@ -34,6 +34,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.audiobook.ui.splitBeats
@@ -127,7 +129,7 @@ fun LiveKaraokeCaption(
     LazyColumn(
         state = listState,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(BEAT_SPACING),
         modifier = modifier.fadeTopEdge(listState.canScrollBackward),
     ) {
         itemsIndexed(beats) { _, beat ->
@@ -187,8 +189,11 @@ private fun CenteredWordWrap(
             lineWidth += placeable.width
         }
         val lineHeights = lines.map { line -> line.maxOfOrNull { placeables[it].height } ?: 0 }
+        val lineGap = WRAPPED_LINE_GAP.roundToPx()
         val width = if (constraints.hasBoundedWidth) maxWidth else placeables.sumOf { it.width }
-        val height = lineHeights.sum().coerceIn(constraints.minHeight, constraints.maxHeight)
+        val height =
+            (lineHeights.sum() + lineGap * (lines.size - 1).coerceAtLeast(0))
+                .coerceIn(constraints.minHeight, constraints.maxHeight)
         layout(width, height) {
             var y = 0
             lines.forEachIndexed { lineIndex, line ->
@@ -198,7 +203,7 @@ private fun CenteredWordWrap(
                     placeable.place(x, y + (lineHeights[lineIndex] - placeable.height) / 2)
                     x += placeable.width
                 }
-                y += lineHeights[lineIndex]
+                y += lineHeights[lineIndex] + lineGap
             }
         }
     }
@@ -251,7 +256,8 @@ private fun CaptionWordText(
             TextStyle(
                 fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 fontSize = if (quiet) 17.sp else 22.sp,
-                lineHeight = if (quiet) 24.sp else 30.sp,
+                lineHeight = if (quiet) 26.sp else 32.sp,
+                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
                 fontStyle = if (quiet) FontStyle.Italic else FontStyle.Normal,
                 color = lerp(dim, lit, brightness),
                 shadow = Shadow(glowColor.copy(alpha = glowAlpha), blurRadius = glowRadius),
@@ -259,11 +265,17 @@ private fun CaptionWordText(
         modifier =
             Modifier
                 .scale(1f + WORD_SCALE_BUMP * glow)
-                .let { if (wordBlur > 0f) it.blur(wordBlur.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded) else it },
+                .let { if (wordBlur > 0f) it.blur(wordBlur.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded) else it }
+                // Inside the blur's layer on purpose: the layer is only as big as the word, and the
+                // genre fonts' tall ascenders and descenders got cut at its edges.
+                .padding(vertical = GLYPH_ROOM),
     )
 }
 
 private const val MANUAL_SCROLL_HOLD_MS = 3_000L
+private val BEAT_SPACING = 12.dp
+private val WRAPPED_LINE_GAP = 2.dp
+private val GLYPH_ROOM = 4.dp
 private const val GLOW_RADIUS = 40f
 private const val SPOKEN_GLOW_RADIUS = 24f
 private const val SPOKEN_GLOW_ALPHA = 0.4f
