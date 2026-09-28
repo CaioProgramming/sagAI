@@ -21,8 +21,9 @@ Android SDK host was blocked, so validate with `./gradlew installDebug`):
 Published to Remote Config (v1084, 2026-09-28): `tts_voices`, `player_input_blueprint`,
 `voice_casting_blueprint`, `audio_performance_blueprint`, and the `reply_generation_blueprint`
 `USER_TONE` wording (`playerInput.emotionalTone`, falling back to `userTone` so released builds
-keep working). Still unpublished on purpose: `live_conversation_enabled` (on in debug; off in
-release until launch) and the optional `live_reply_limit` / `voiceThinkingLevel` knobs.
+keep working). `live_conversation_enabled` is on for everyone (v1086, 2026-09-28); the released app has no live
+code, so it takes effect with the first release that ships this branch. Still unpublished: the
+optional `live_reply_limit` / `voiceThinkingLevel` knobs.
 
 Not done yet: line-by-line TTS streaming (phase 4), AGSL blob (the Canvas version ships first),
 shared bounds for the input bar/title (only the avatar is shared), the "corrigido" marker on typed
