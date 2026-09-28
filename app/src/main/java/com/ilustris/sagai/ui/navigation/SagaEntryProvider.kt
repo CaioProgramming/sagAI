@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.navigation
 
+import com.ilustris.sagai.features.live.ui.EpilogueLiveView
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.navigation3.runtime.entryProvider
@@ -150,6 +151,16 @@ fun createSagaEntryProvider(
         )
     }
 
+    entry<EpilogueLiveKey> { key ->
+        EpilogueLiveView(
+            sagaId = key.sagaId,
+            characterId = key.characterId,
+            onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
     entry<MilestoneKey> { key ->
         MilestoneScreen(
             sagaId = key.sagaId,
@@ -252,6 +263,7 @@ fun createSagaEntryProvider(
             sagaId = key.sagaId,
             characterId = key.characterId,
             onBack = { navigator.goBack() },
+            onNavigate = { navigator.navigate(it) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )

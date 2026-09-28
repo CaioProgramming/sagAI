@@ -1654,5 +1654,5 @@ class ChatViewModel
         }
     }
 
-/** Remote Config flag that ships live conversation dark until it's turned on. */
-private const val LIVE_CONVERSATION_FLAG = "live_conversation_enabled"
+/** Remote Config flag that ships live conversation dark until it's turned on (saga and epilogue alike). */
+const val LIVE_CONVERSATION_FLAG = "live_conversation_enabled"

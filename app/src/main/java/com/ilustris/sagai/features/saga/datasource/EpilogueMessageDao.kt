@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.datasource
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
@@ -26,6 +27,9 @@ interface EpilogueMessageDao {
 
     @Update
     suspend fun update(message: EpilogueMessage)
+
+    @Delete
+    suspend fun delete(message: EpilogueMessage)
 
     @Query("DELETE FROM epilogue_messages WHERE characterId = :characterId")
     suspend fun deleteConversation(characterId: Int)

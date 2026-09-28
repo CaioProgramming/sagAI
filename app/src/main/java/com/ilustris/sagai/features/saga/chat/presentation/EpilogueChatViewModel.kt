@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
+import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.core.services.RemoteConfigService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
@@ -36,7 +38,12 @@ class EpilogueChatViewModel
         private val epilogueChatUseCase: EpilogueChatUseCase,
         private val characterUseCase: CharacterUseCase,
         private val sagaRepository: SagaRepository,
+        private val remoteConfigService: RemoteConfigService,
     ) : ViewModel() {
+        /** Same kill switch as the saga's live mode. */
+        private val _liveEnabled = MutableStateFlow(false)
+        val liveEnabled: StateFlow<Boolean> = _liveEnabled.asStateFlow()
+
         private val _messages = MutableStateFlow<List<EpilogueMessage>>(emptyList())
         val messages: StateFlow<List<EpilogueMessage>> = _messages.asStateFlow()
 
@@ -88,6 +95,7 @@ class EpilogueChatViewModel
 
             loadJob =
                 viewModelScope.launch {
+                    _liveEnabled.value = BuildConfig.DEBUG || remoteConfigService.getBoolean(LIVE_CONVERSATION_FLAG) == true
                     val loadedSaga = sagaRepository.getSagaById(sagaId).first() ?: return@launch
                     val loadedCharacter = characterUseCase.getCharacterContent(characterId).first() ?: return@launch
                     val loadedArcs = characterUseCase.getCharacterArcs(characterId).first()

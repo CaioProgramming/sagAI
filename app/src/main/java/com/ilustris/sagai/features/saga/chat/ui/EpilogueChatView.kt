@@ -2,6 +2,9 @@
 
 package com.ilustris.sagai.features.saga.chat.ui
 
+import androidx.navigation3.runtime.NavKey
+import com.ilustris.sagai.features.live.ui.epilogueLiveSpeakerKey
+import com.ilustris.sagai.ui.navigation.EpilogueLiveKey
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import MessageStatus
@@ -141,10 +144,12 @@ fun EpilogueChatView(
     sagaId: String,
     characterId: Int,
     onBack: () -> Unit = {},
+    onNavigate: (NavKey) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: EpilogueChatViewModel = hiltViewModel(),
 ) {
+    val liveEnabled by viewModel.liveEnabled.collectAsStateWithLifecycle()
     val character by viewModel.character.collectAsStateWithLifecycle()
     val protagonist by viewModel.protagonist.collectAsStateWithLifecycle()
     val genre by viewModel.genre.collectAsStateWithLifecycle()
@@ -286,11 +291,20 @@ fun EpilogueChatView(
                     }
                 }
 
+                val sagaIdInt = sagaId.toIntOrNull() ?: 0
                 EpilogueChatInput(
                     protagonist = protagonist?.data,
                     genre = resolvedGenre,
                     isReplying = isReplying,
                     onSend = { viewModel.sendMessage(it) },
+                    onOpenLive = { onNavigate(EpilogueLiveKey(sagaIdInt, characterId)) }.takeIf { liveEnabled },
+                    avatarModifier =
+                        with(sharedTransitionScope) {
+                            Modifier.sharedElement(
+                                rememberSharedContentState(epilogueLiveSpeakerKey(sagaIdInt, characterId)),
+                                animatedVisibilityScope,
+                            )
+                        },
                 )
             }
         }
@@ -367,6 +381,9 @@ private fun EpilogueChatInput(
     genre: Genre,
     isReplying: Boolean,
     onSend: (String) -> Unit,
+    /** Null when live mode is off: the button then only ever sends. */
+    onOpenLive: (() -> Unit)? = null,
+    avatarModifier: Modifier = Modifier,
 ) {
     var inputField by remember { mutableStateOf(TextFieldValue("")) }
     var speechModeSheet by remember { mutableStateOf(false) }
@@ -581,7 +598,7 @@ private fun EpilogueChatInput(
                         grainRadius = 0f,
                         pixelation = 0f,
                         useFallback = false,
-                        modifier = Modifier.size(32.dp).clip(CircleShape),
+                        modifier = avatarModifier.size(32.dp).clip(CircleShape),
                         borderSize = 1.dp,
                         innerPadding = 0.dp,
                     )
@@ -639,11 +656,13 @@ private fun EpilogueChatInput(
 
                 Spacer(Modifier.weight(1f))
 
+                // Nothing typed and nothing on its way: the button opens live mode instead.
+                val showsLive = onOpenLive != null && inputField.text.isBlank() && !isReplying
                 val canSend = inputField.text.isNotBlank() && !isReplying
                 Box(contentAlignment = Alignment.Center) {
                     IconButton(
-                        onClick = { sendMessage() },
-                        enabled = canSend,
+                        onClick = { if (showsLive) onOpenLive?.invoke() else sendMessage() },
+                        enabled = canSend || showsLive,
                         colors =
                             IconButtonDefaults.filledIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
@@ -657,8 +676,9 @@ private fun EpilogueChatInput(
                                 .size(32.dp),
                     ) {
                         Icon(
-                            painterResource(R.drawable.ic_send),
-                            contentDescription = stringResource(R.string.send_button_description),
+                            painterResource(if (showsLive) R.drawable.ic_mic else R.drawable.ic_send),
+                            contentDescription =
+                                stringResource(if (showsLive) R.string.live_open else R.string.send_button_description),
                             modifier =
                                 Modifier
                                     .padding(8.dp)

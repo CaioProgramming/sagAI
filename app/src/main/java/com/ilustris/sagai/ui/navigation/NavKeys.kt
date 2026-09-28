@@ -126,6 +126,16 @@ data class LiveConversationKey(
 ) : NavKey
 
 /**
+ * Live conversation with one character after their saga ended, pushed on top of that character's
+ * epilogue chat: the same persisted conversation, spoken.
+ */
+@Serializable
+data class EpilogueLiveKey(
+    val sagaId: Int,
+    val characterId: Int,
+) : NavKey
+
+/**
  * Not reachable via deep link on purpose — the only way in is the single collector on
  * [com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager.milestoneChainReady]
  * that pushes this while the user is already on that saga's chat. See MainActivity.

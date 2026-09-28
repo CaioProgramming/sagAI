@@ -1,6 +1,8 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.saga.chat.data.model.EpilogueVoiceTurn
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -24,6 +26,12 @@ interface EpilogueChatUseCase {
     fun observeConversation(characterId: Int): Flow<List<EpilogueMessage>>
 
     suspend fun saveMessage(message: EpilogueMessage): EpilogueMessage
+
+    suspend fun updateMessage(message: EpilogueMessage)
+
+    suspend fun deleteMessage(message: EpilogueMessage)
+
+    suspend fun conversation(characterId: Int): List<EpilogueMessage>
 
     /** Starts over with this character: the turns and their audio go, what they know of the player stays. */
     suspend fun clearConversation(
@@ -49,6 +57,18 @@ interface EpilogueChatUseCase {
         conversationSoFar: List<EpilogueMessage>,
         userMessage: String,
     ): Flow<StreamingState<EpilogueReply?>>
+
+    /**
+     * A spoken turn (live mode): the reply hears [wav] directly and also returns the player's line
+     * as text; when the model can't take audio, or the line comes back missing, it's transcribed.
+     */
+    suspend fun voiceTurn(
+        saga: SagaContent,
+        character: CharacterContent,
+        arcs: List<CharacterArc>,
+        conversationSoFar: List<EpilogueMessage>,
+        wav: ByteArray,
+    ): RequestResult<EpilogueVoiceTurn>
 
     /** Folds recent turns into the character's knowledge of the player, in the background. */
     fun compactKnowledge(

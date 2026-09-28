@@ -13,6 +13,14 @@ import com.ilustris.sagai.features.characters.data.model.Character
 data class EpilogueReply(
     val text: String = "",
     val emotionalTone: EmotionalTone? = null,
+    /** Only on voice turns: the player's line as text, from the audio the reply heard. */
+    val playerInput: PlayerInputFeedback? = null,
+)
+
+/** A spoken epilogue turn answered: the player's line as text (when it could be made out) and the reply. */
+data class EpilogueVoiceTurn(
+    val playerLine: String?,
+    val reply: EpilogueReply,
 )
 
 /**
