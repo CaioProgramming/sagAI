@@ -641,6 +641,9 @@
     <!-- Narrative Milestones (event = checkpoint, chapter = phase, act = volume) -->
     <string name="advance_evolve_timeline">Advance event</string>
     <string name="releasing_evolve_timeline">Recording this event...</string>
+    <string name="advance_choice_cards">Weigh your choices</string>
+    <string name="releasing_choice_cards">Laying out the choices...</string>
+    <string name="milestone_choice_cards_title">Your choices</string>
     <string name="advance_close_chapter">Complete phase</string>
     <string name="releasing_close_chapter">Wrapping up this phase...</string>
     <string name="advance_open_chapter">Continue journey</string>
@@ -671,6 +674,7 @@
     <string name="introduction_milestone">Introduction</string>
     <string name="milestone_loading_default">Shaping what happens next…</string>
     <string name="milestone_adjusting_lore">Adjusting a few things…</string>
+    <string name="milestone_choices_subtitle_fallback">Weigh what it costs you.</string>
     <string name="milestone_choices_eyebrow">Before the chapter closes</string>
     <string name="milestone_choices_progress">%1$d of %2$d</string>
     <string name="milestone_choices_hint">Turn a card over. Change your mind by turning the other.</string>
@@ -678,7 +682,8 @@
     <string name="milestone_choices_classified">CLASSIFIED</string>
     <string name="milestone_choices_next">Next</string>
     <string name="milestone_choices_submit">Seal the chapter</string>
-    <string name="milestone_stuck_exit">Something wrong? Tap to check</string>
+    <string name="milestone_close_description">Close</string>
+    <string name="milestone_close_still_generating">Still writing the next part of your story. Hang on a moment.</string>
     <string name="milestone_error_title">The story hit a snag</string>
     <string name="milestone_emotional_note_label">Emotional note</string>
     <string name="milestone_view_details">View details</string>

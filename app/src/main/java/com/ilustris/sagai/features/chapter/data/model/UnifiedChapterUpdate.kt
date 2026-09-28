@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.chapter.data.model
 import com.ilustris.sagai.core.ai.model.GeneratedChapter
 import com.ilustris.sagai.features.narrative.data.model.ContinuitySummary
 import com.ilustris.sagai.features.narrative.data.model.GeneratedLocationCheckpoint
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.timeline.data.model.GeneratedWikiUpdate
 
 data class UnifiedChapterUpdate(
@@ -13,21 +14,41 @@ data class UnifiedChapterUpdate(
     val continuitySummary: ContinuitySummary? = null,
     /** Where/when this chapter ends — becomes the next chapter's opening checkpoint. */
     val closingCheckpoint: GeneratedLocationCheckpoint? = null,
-    /** Three in-fiction dilemma pairs the player answers at chapter close. */
-    val playerChoiceCards: List<GeneratedChoiceCard> = emptyList(),
 )
 
 /**
- * One forced-choice dilemma. The tags are never shown to the player — they only describe what
- * picking each option reveals, and feed [Chapter.playerSpectrum].
+ * One forced-choice dilemma: a short question and the options the player turns over. Options are
+ * a list so a card can grow past two without a new schema; today every card is dealt exactly two
+ * (see PLAYER_CHOICE_OPTION_COUNT).
  */
 data class GeneratedChoiceCard(
     /** A short, direct question — not a rambling dilemma sentence. */
     val choiceTitle: String = "",
-    val optionAText: String = "",
-    val optionATag: String = "",
-    val optionBText: String = "",
-    val optionBTag: String = "",
+    val options: List<ChoiceOption> = emptyList(),
+)
+
+data class ChoiceOption(
+    /** What the player reads on the card face. */
+    val text: String = "",
+    /** What choosing this reveals about the player. Never shown — it feeds [Chapter.playerSpectrum]. */
+    val tag: String = "",
+    /** The emotional weight of taking this option, on the same scale the story's events use. */
+    val emotionalTone: EmotionalTone? = null,
+)
+
+/**
+ * The whole hand dealt for a chapter's closure: the screen's own framing (shown once, above
+ * whichever card is up) plus the three dilemmas. A wrapper of just `cards` collapsed under the
+ * model on at least one run — [GemmaClient]'s response already nests once under `data`, and a
+ * single-field passthrough object read as redundant and got flattened away. Three real fields
+ * reads as a real object instead, the same shape [UnifiedChapterUpdate]/[UnifiedActUpdate] use
+ * without that problem.
+ */
+data class GeneratedPlayerChoices(
+    /** A short framing line in the story's own voice — never a UI label, never meta. */
+    val screenTitle: String = "",
+    val screenSubtitle: String = "",
+    val cards: List<GeneratedChoiceCard> = emptyList(),
 )
 
 data class GeneratedCharacterArc(

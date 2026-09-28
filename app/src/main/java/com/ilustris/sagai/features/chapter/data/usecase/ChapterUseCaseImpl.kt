@@ -25,7 +25,9 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.ChoiceOption
 import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
+import com.ilustris.sagai.features.chapter.data.model.GeneratedPlayerChoices
 import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.ArcSourceType
@@ -511,6 +513,11 @@ class ChapterUseCaseImpl
                                     promptSplit =
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
+                                            // First thing written after the player answers the
+                                            // previous chapter's cards — carry that read in.
+                                            PlayerSpectrumPrompts.lensInstructions(
+                                                PlayerSpectrumPrompts.latestSpectrum(saga),
+                                            ),
                                         ),
                                     requireTranslation = true,
                                     requirement = ModelRequirement.HIGH,
@@ -576,33 +583,124 @@ class ChapterUseCaseImpl
                     "Expected ${cards.size} answers for chapter $chapterId, got ${answers.size}"
                 }
 
+                // The answers land first, on their own: they're what moves the chain on to the
+                // chapter synthesis (NarrativeCheck stops asking for cards once they exist), so a
+                // failed rewrite below must never leave the player re-answering the same cards.
+                val answered = chapterRepository.updateChapter(chapter.copy(playerChoiceAnswers = answers))
+
                 // Re-answering a chapter reassesses its own read; otherwise it inherits the last one.
                 val previousSpectrum =
                     chapter.playerSpectrum?.takeIf { it.isNotBlank() }
                         ?: PlayerSpectrumPrompts.previousSpectrum(saga, chapterId)
 
-                val prompt =
-                    ChapterPrompts.playerSpectrumRewritePrompt(
-                        promptService = promptService,
-                        chapter = chapter,
-                        previousSpectrum = previousSpectrum,
-                        cards = cards,
-                        answers = answers,
-                    )
-                val rewritten =
-                    gemmaClient.generate<GeneratedContent<String>>(
-                        promptSplit = prompt,
-                        requireTranslation = false,
-                        requirement = ModelRequirement.LOW,
-                    )!!
-
                 val spectrum =
-                    (rewritten.data as String?)?.takeIf { it.isNotBlank() }
-                        ?: error("Empty player spectrum rewrite")
+                    try {
+                        val prompt =
+                            ChapterPrompts.playerSpectrumRewritePrompt(
+                                promptService = promptService,
+                                chapter = chapterContent,
+                                previousSpectrum = previousSpectrum,
+                                cards = cards,
+                                answers = answers,
+                            )
+                        gemmaClient
+                            .generate<GeneratedContent<String>>(
+                                promptSplit = prompt,
+                                requireTranslation = false,
+                                requirement = ModelRequirement.LOW,
+                            )?.let { it.data as String? }
+                            ?.takeIf { it.isNotBlank() }
+                    } catch (e: Exception) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        Timber.e(e, "Player spectrum rewrite failed for chapter $chapterId")
+                        null
+                    } ?: return@executeRequest answered
 
-                chapterRepository.updateChapter(
-                    chapter.copy(playerSpectrum = spectrum, playerChoiceAnswers = answers),
-                )
+                chapterRepository.updateChapter(answered.copy(playerSpectrum = spectrum))
+            }
+
+        override fun generateChoiceCardsStream(chapterId: Int): Flow<StreamingState<ChoiceCardsReveal?>> =
+            flow {
+                try {
+                    val (saga, chapterContent) = fetchContext(chapterId)
+                    val chapter = chapterContent.data
+                    // Already attempted (a resume after the app closed with cards pending, or a
+                    // retry): hand back what's there instead of dealing a different hand. The
+                    // framing wasn't persisted, so the screen falls back to a static one.
+                    if (chapter.playerChoiceCards != null) {
+                        emit(StreamingState.Success(ChoiceCardsReveal(chapter, screenTitle = "", screenSubtitle = "")))
+                        return@flow
+                    }
+
+                    val prompt =
+                        ChapterPrompts.choiceCardsPrompt(
+                            promptService = promptService,
+                            saga = saga,
+                            chapter = chapterContent,
+                        )
+                    val generateFlow =
+                        flow {
+                            // Null means a final failure (quota, missing blueprint, exhausted
+                            // retries) — carried as an empty hand below rather than an error.
+                            emit(
+                                StreamingState.Success(
+                                    gemmaClient.generate<GeneratedContent<GeneratedPlayerChoices>>(
+                                        promptSplit =
+                                            prompt.mergeInstructions(
+                                                genreConfigService.conversationInstructions(saga.data.genre),
+                                            ),
+                                        requirement = ModelRequirement.MEDIUM,
+                                    ),
+                                ),
+                            )
+                        }
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            generateFlow,
+                            "Preparing the choices that close this chapter",
+                            genre = saga.data.genre,
+                        ).collect { state ->
+                            when (state) {
+                                is StreamingState.Success -> {
+                                    val dealt = state.data?.data
+                                    // Gson leaves an omitted list null despite the type. A partial
+                                    // hand (pairs dropped by isAnswerable()) is worse than none: the
+                                    // step is mandatory, and three forced choices read as a deliberate
+                                    // beat while one or two read as a bug. An empty list records "tried,
+                                    // nothing usable" so the chapter moves on instead of asking again.
+                                    val validCards =
+                                        (dealt?.cards as List<GeneratedChoiceCard>?)
+                                            .orEmpty()
+                                            .filter { it.isAnswerable() }
+                                    val hand =
+                                        if (validCards.size >= PLAYER_CHOICE_CARD_COUNT) {
+                                            validCards.take(PLAYER_CHOICE_CARD_COUNT)
+                                        } else {
+                                            emptyList()
+                                        }
+                                    // Layered onto the freshest row, not the pre-generation snapshot.
+                                    val latest = chapterRepository.getChapterById(chapterId) ?: chapter
+                                    val updated = updateChapter(latest.copy(playerChoiceCards = hand, playerChoiceAnswers = null))
+                                    emit(
+                                        StreamingState.Success(
+                                            ChoiceCardsReveal(
+                                                chapter = updated,
+                                                screenTitle = (dealt?.screenTitle as String?).orEmpty(),
+                                                screenSubtitle = (dealt?.screenSubtitle as String?).orEmpty(),
+                                            ),
+                                        ),
+                                    )
+                                }
+
+                                is StreamingState.Reasoning -> emit(state)
+
+                                is StreamingState.Error -> emit(state)
+                            }
+                        }
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    emit(StreamingState.Error(e.message ?: "Choice cards generation failed", e))
+                }
             }
 
         override fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContentWithLore<Chapter>?>> =
@@ -634,8 +732,13 @@ class ChapterUseCaseImpl
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                             actContext.renderInstructions(),
                                             artworkConceptService.artworkInstructions(ImageType.COVER),
+                                            // The cards are answered before this runs, so the
+                                            // chapter's own read is the latest one.
                                             PlayerSpectrumPrompts.lensInstructions(
-                                                PlayerSpectrumPrompts.previousSpectrum(saga, chapterId),
+                                                PlayerSpectrumPrompts.latestSpectrum(saga),
+                                            ),
+                                            PlayerSpectrumPrompts.choicesInstructions(
+                                                hasChoices = !chapterContent.data.playerChoiceAnswers.isNullOrEmpty(),
                                             ),
                                         ),
                                     requirement = ModelRequirement.HIGH,
@@ -671,22 +774,6 @@ class ChapterUseCaseImpl
                                                 originChapterId = chapterContent.data.id,
                                             )
                                         }
-                                    // Gson skips Kotlin defaults here (UnifiedChapterUpdate has a required
-                                    // field), so an omitted list arrives as null despite the type.
-                                    // A partial set (some pairs dropped by isAnswerable()) is
-                                    // worse than none: the step is mandatory, and 3 forced
-                                    // choices reads as a deliberate beat while 1 or 2 reads as a
-                                    // bug. So this only ever activates with exactly the full set.
-                                    val validCards =
-                                        (synthesis.playerChoiceCards as List<GeneratedChoiceCard>?)
-                                            .orEmpty()
-                                            .filter { it.isAnswerable() }
-                                    val choiceCards =
-                                        if (validCards.size >= PLAYER_CHOICE_CARD_COUNT) {
-                                            validCards.take(PLAYER_CHOICE_CARD_COUNT)
-                                        } else {
-                                            emptyList()
-                                        }
                                     val updatedChapter =
                                         updateChapter(
                                             mergedChapter.copy(
@@ -694,10 +781,6 @@ class ChapterUseCaseImpl
                                                     synthesis.continuitySummary
                                                         ?: mergedChapter.continuitySummary,
                                                 closingCheckpoint = closingCheckpoint ?: mergedChapter.closingCheckpoint,
-                                                // New cards start unanswered; no cards keeps what was there.
-                                                playerChoiceCards = choiceCards.ifEmpty { mergedChapter.playerChoiceCards },
-                                                playerChoiceAnswers =
-                                                    if (choiceCards.isEmpty()) mergedChapter.playerChoiceAnswers else null,
                                             ),
                                         )
                                     closingCheckpoint?.locationId?.let {
@@ -784,5 +867,14 @@ class ChapterUseCaseImpl
 
 private const val PLAYER_CHOICE_CARD_COUNT = 3
 
-private fun GeneratedChoiceCard.isAnswerable() =
-    listOf(choiceTitle, optionAText, optionBText, optionATag, optionBTag).all { !(it as String?).isNullOrBlank() }
+private const val PLAYER_CHOICE_OPTION_COUNT = 2
+
+/** Gson leaves omitted fields null despite the types, so every check here is null-safe. */
+private fun GeneratedChoiceCard.isAnswerable(): Boolean {
+    val dealtOptions = (options as List<ChoiceOption?>?).orEmpty()
+    return !(choiceTitle as String?).isNullOrBlank() &&
+        dealtOptions.size == PLAYER_CHOICE_OPTION_COUNT &&
+        dealtOptions.all { option ->
+            option != null && !(option.text as String?).isNullOrBlank() && !(option.tag as String?).isNullOrBlank()
+        }
+}

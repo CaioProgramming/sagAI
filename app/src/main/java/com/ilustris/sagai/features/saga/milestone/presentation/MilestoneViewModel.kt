@@ -2,10 +2,13 @@ package com.ilustris.sagai.features.saga.milestone.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.services.AdTier
 import com.ilustris.sagai.core.services.AdsService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.theme.SagaThemeManager
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
@@ -37,6 +40,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 private const val STUCK_WATCHDOG_DELAY_MS = 30_000L
+private const val CLOSE_SNACKBAR_DURATION_MS = 4_000L
 
 private data class NarrativeSnapshot(
     val phase: NarrativePhase,
@@ -55,6 +59,8 @@ class MilestoneViewModel
         private val settingsUseCase: SettingsUseCase,
         private val adsService: AdsService,
         private val chapterUseCase: ChapterUseCase,
+        private val sagaThemeManager: SagaThemeManager,
+        private val stringResourceHelper: StringResourceHelper,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<MilestoneUiState>(MilestoneUiState.Loading())
         val uiState: StateFlow<MilestoneUiState> = _uiState.asStateFlow()
@@ -115,9 +121,6 @@ class MilestoneViewModel
         // also deemed terminal (chainStepTotal is a projection, not a guarantee).
         private var adShownThisChain = false
 
-        // milestone.chapter is a snapshot from when the milestone was emitted, so whether its
-        // cards were already answered has to be tracked here, not read off that chapter.
-        private val answeredChoiceChapterIds = mutableSetOf<Int>()
         private var choiceSelections: List<Int?> = emptyList()
         private var submittingChoices = false
 
@@ -130,7 +133,6 @@ class MilestoneViewModel
             chainStepTotal = 0
             chainStepIndex = 0
             adShownThisChain = false
-            answeredChoiceChapterIds.clear()
             choiceSelections = emptyList()
             _uiState.value = MilestoneUiState.Loading()
             _showOnboarding.value = false
@@ -190,7 +192,8 @@ class MilestoneViewModel
                         NarrativeSnapshot(narrativeState.phase, narrativeState.lastError, milestone, reasoning)
                     }.collect { (phase, lastError, milestone, reasoning) ->
                         when {
-                            // The answers are being saved; showClosure() takes over once they are.
+                            // The answers are being saved; continueMilestone() hands the chain on
+                            // to the chapter synthesis once they are.
                             submittingChoices -> {
                                 Unit
                             }
@@ -200,7 +203,7 @@ class MilestoneViewModel
                                 _uiState.value = MilestoneUiState.IntroductionStep(milestone)
                             }
 
-                            milestone is SagaMilestone.ChapterFinished && milestone.needsChoiceCards() -> {
+                            milestone is SagaMilestone.ChoiceCards -> {
                                 hasEngaged = true
                                 // narrativeUiState/contentReasoning are saga-wide flows, not
                                 // scoped to this milestone — a tick from either (a reasoning
@@ -329,17 +332,13 @@ class MilestoneViewModel
             }
         }
 
-        private fun SagaMilestone.ChapterFinished.needsChoiceCards() =
-            !chapter.playerChoiceCards.isNullOrEmpty() &&
-                chapter.playerChoiceAnswers == null &&
-                chapter.id !in answeredChoiceChapterIds
-
         fun selectChoice(
             cardIndex: Int,
             optionIndex: Int,
         ) {
             val state = _uiState.value as? MilestoneUiState.ChoiceCardsStep ?: return
-            if (cardIndex !in state.cards.indices || optionIndex !in 0..1) return
+            val card = state.cards.getOrNull(cardIndex) ?: return
+            if (optionIndex !in card.options.indices) return
             choiceSelections = state.selections.toMutableList().also { it[cardIndex] = optionIndex }
             _uiState.value = state.copy(selections = choiceSelections)
         }
@@ -350,21 +349,31 @@ class MilestoneViewModel
             if (state.selections.any { it == null }) return
             val tags =
                 state.cards.zip(state.selections).map { (card, pick) ->
-                    if (pick == 0) card.optionATag else card.optionBTag
+                    card.options[pick!!].tag
                 }
 
-            answeredChoiceChapterIds += state.milestone.chapter.id
-            choiceSelections = emptyList()
             submittingChoices = true
             _uiState.value = MilestoneUiState.Loading()
             viewModelScope.launch {
-                // The read is a nicety layered on the story, so a failed rewrite never traps the
-                // player on this screen — the chapter just keeps its previous spectrum.
+                // Only the answers themselves can fail here — the spectrum rewrite is best-effort
+                // inside recordPlayerChoiceAnswers. Unsaved answers mean the synthesis can't read
+                // them, so the cards come back rather than the chain moving on without them.
                 chapterUseCase
                     .recordPlayerChoiceAnswers(state.milestone.chapter.id, tags)
-                    .onFailure { Timber.e(it, "Failed to record player choice answers") }
+                    .onSuccessAsync {
+                        choiceSelections = emptyList()
+                        // Submitting is this milestone's Continue: it releases the chain into
+                        // the chapter synthesis, which now reads these answers.
+                        sagaContentManager.continueMilestone()
+                    }.onFailure {
+                        Timber.e(it, "Failed to record player choice answers")
+                        _uiState.value = state
+                        sagaThemeManager.showSnackBar(
+                            stringResourceHelper.getString(R.string.unexpected_error),
+                            durationMs = CLOSE_SNACKBAR_DURATION_MS,
+                        )
+                    }
                 submittingChoices = false
-                showClosure(state.milestone)
             }
         }
 
@@ -381,6 +390,27 @@ class MilestoneViewModel
         fun requestStuckExit() {
             val saga = sagaContentManager.content.value ?: return
             sagaContentManager.checkNarrativeProgression(saga)
+        }
+
+        /**
+         * The close button's tap. A generation genuinely in flight isn't stuck, so it gets told
+         * that instead of a reevaluation that would just be queued behind it; anything else goes
+         * through [requestStuckExit], which leaves only if nothing is actually left pending.
+         */
+        fun onCloseRequested() {
+            val narrativeState = sagaContentManager.narrativeUiState.value
+            val isGenerating =
+                narrativeState.isProcessing ||
+                    narrativeState.phase is NarrativePhase.Processing ||
+                    narrativeState.phase is NarrativePhase.BackgroundProcessing
+            if (isGenerating) {
+                sagaThemeManager.showSnackBar(
+                    stringResourceHelper.getString(R.string.milestone_close_still_generating),
+                    durationMs = CLOSE_SNACKBAR_DURATION_MS,
+                )
+                return
+            }
+            requestStuckExit()
         }
 
         fun onContinue() {

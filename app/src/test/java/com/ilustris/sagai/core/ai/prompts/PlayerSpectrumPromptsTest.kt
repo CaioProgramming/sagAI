@@ -33,9 +33,9 @@ class PlayerSpectrumPromptsTest {
     @Test
     fun `lens carries the spectrum text`() {
         val lens = PlayerSpectrumPrompts.lensInstructions("Loyal to a fault.")
-        @Suppress("UNCHECKED_CAST")
-        val bucket = lens["playerSpectrumLens"] as Map<String, String>
-        assertEquals("Loyal to a fault.", bucket["SPECTRUM_READ"])
+        val bucket = lens[PlayerSpectrumPrompts.LENS_BUCKET] as String
+        assertTrue(bucket.lines().first() == "SPECTRUM_READ: Loyal to a fault.")
+        assertTrue(bucket.lines().all { it.matches(Regex("[A-Z_]+: .+")) })
     }
 
     @Test
@@ -61,6 +61,22 @@ class PlayerSpectrumPromptsTest {
         val saga = saga(1 to listOf(chapter(1, 1), chapter(2, 1, "own read"), chapter(3, 1, "later read")))
 
         assertNull(PlayerSpectrumPrompts.previousSpectrum(saga, chapterId = 2))
+    }
+
+    @Test
+    fun `latest spectrum is the most recent answered read anywhere in the saga`() {
+        val saga =
+            saga(
+                1 to listOf(chapter(1, 1, "act one read")),
+                2 to listOf(chapter(2, 2, "act two read"), chapter(3, 2)),
+            )
+
+        assertEquals("act two read", PlayerSpectrumPrompts.latestSpectrum(saga))
+    }
+
+    @Test
+    fun `latest spectrum is null before any chapter is answered`() {
+        assertNull(PlayerSpectrumPrompts.latestSpectrum(saga(1 to listOf(chapter(1, 1), chapter(2, 1, " ")))))
     }
 
     @Test

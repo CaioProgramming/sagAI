@@ -28,7 +28,7 @@ sealed class MilestoneUiState {
      * picked option per card (0 = A, 1 = B, null = unanswered); the hidden tags stay in the
      * ViewModel and are never part of what the UI can bind to. */
     data class ChoiceCardsStep(
-        val milestone: SagaMilestone.ChapterFinished,
+        val milestone: SagaMilestone.ChoiceCards,
         val cards: List<GeneratedChoiceCard>,
         val selections: List<Int?>,
     ) : MilestoneUiState()

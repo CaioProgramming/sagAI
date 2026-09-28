@@ -5,6 +5,8 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.ChoiceOption
+import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -117,6 +119,50 @@ class NarrativeCheckTest {
             NarrativeAction.CloseTimeline(chapter),
             NarrativeCheck.validateProgression(saga, rules),
         )
+    }
+
+    @Test
+    fun `closing chapter deals its choice cards before being synthesized`() {
+        val (saga, chapter) = closingSaga(cards = null, answers = null)
+        assertEquals(NarrativeAction.GenerateChoiceCards(chapter), NarrativeCheck.validateProgression(saga, rules))
+    }
+
+    @Test
+    fun `unanswered cards hold the chapter synthesis back`() {
+        val (saga, chapter) = closingSaga(cards = listOf(card(), card(), card()), answers = null)
+        assertEquals(NarrativeAction.GenerateChoiceCards(chapter), NarrativeCheck.validateProgression(saga, rules))
+    }
+
+    @Test
+    fun `answered cards release the chapter synthesis`() {
+        val (saga, chapter) =
+            closingSaga(cards = listOf(card(), card(), card()), answers = listOf("a", "b", "c"))
+        assertEquals(NarrativeAction.GenerateChapter(chapter), NarrativeCheck.validateProgression(saga, rules))
+    }
+
+    @Test
+    fun `an empty hand closes the chapter without cards`() {
+        val (saga, chapter) = closingSaga(cards = emptyList(), answers = null)
+        assertEquals(NarrativeAction.GenerateChapter(chapter), NarrativeCheck.validateProgression(saga, rules))
+    }
+
+    private fun card() = GeneratedChoiceCard("Q?", listOf(ChoiceOption("A", "tag a"), ChoiceOption("B", "tag b")))
+
+    private fun closingSaga(
+        cards: List<GeneratedChoiceCard>?,
+        answers: List<String>?,
+    ): Pair<SagaContent, ChapterContent> {
+        val events =
+            List(rules.chapterUpdateLimit) {
+                timelineWithMessages(id = 100 + it, messageCount = 1, title = "Scene $it", content = "Content $it")
+            }
+        val chapter =
+            incompleteChapter(id = 10, events = events, introduction = "Chapter intro").let {
+                it.copy(data = it.data.copy(playerChoiceCards = cards, playerChoiceAnswers = answers))
+            }
+        val act =
+            incompleteAct(id = 1, chapters = listOf(chapter), currentChapterId = 10, introduction = "Act intro")
+        return sagaWithActs(listOf(act), currentActId = 1) to chapter
     }
 
     private fun sagaWithActs(

@@ -36,6 +36,7 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.chapter.data.usecase.ChoiceCardsReveal
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
@@ -823,21 +824,47 @@ class SagaContentManagerImpl
          * (which is exactly the leaked case), that would spin the loop forever inside
          * progressionMutex instead of just leaving the trigger silently missed. A time-based
          * external clear has no such risk.
+         *
+         * "Leaked" only means one thing for the milestones the Milestone screen resolves through
+         * the player's own action ([isPlayerResolved]): pending while the player sits on this
+         * saga's chat and it still hasn't been presented. While the Milestone screen is open it
+         * owns that step and it's legitimately waiting on the player — a closure being read, the
+         * chapter-closure choice cards being weighed — so a wall-clock limit there isn't healing a
+         * leak, it's yanking the step out from under them: the cards got dismissed mid-pick and
+         * the chain marched into the next chapter with the answers never recorded. Away from the
+         * saga entirely it isn't leaked either — [observeMilestoneChainReadiness] reopens the
+         * Milestone screen for it the next time the chat is shown. Re-keyed on navigation, so
+         * arriving on the Milestone screen cancels a wait already in progress.
          */
         private fun observeMilestoneOverlayTimeout() =
             managerScope.launch {
-                milestoneUpdate.collectLatest { milestone ->
-                    if (milestone == null || !milestone.isIntrusive) return@collectLatest
-                    delay(MILESTONE_OVERLAY_TIMEOUT_MS)
-                    Timber.w(
-                        "Milestone ${milestone.javaClass.simpleName} stayed set for " +
-                            "${MILESTONE_OVERLAY_TIMEOUT_MS}ms with nothing clearing it — " +
-                            "force-dismissing so narrative progression can be checked again.",
-                    )
-                    dismissMilestone()
-                    checkNarrativeProgression(content.value)
-                }
+                combine(milestoneUpdate, sagaNavigationTracker.currentKey) { milestone, _ -> milestone }
+                    .collectLatest { milestone ->
+                        if (milestone == null || !milestone.isIntrusive) return@collectLatest
+                        val sagaId = content.value?.data?.id
+                        if (milestone.isPlayerResolved() &&
+                            (sagaId == null || !sagaNavigationTracker.isOnChatForSaga(sagaId))
+                        ) {
+                            return@collectLatest
+                        }
+                        delay(MILESTONE_OVERLAY_TIMEOUT_MS)
+                        Timber.w(
+                            "Milestone ${milestone.javaClass.simpleName} stayed set for " +
+                                "${MILESTONE_OVERLAY_TIMEOUT_MS}ms with nothing clearing it — " +
+                                "force-dismissing so narrative progression can be checked again.",
+                        )
+                        dismissMilestone()
+                        checkNarrativeProgression(content.value)
+                    }
             }
+
+        /** Milestones the Milestone screen resolves only through the player's own Continue/submit. */
+        private fun SagaMilestone.isPlayerResolved() =
+            this is SagaMilestone.Introduction ||
+                this is SagaMilestone.NewEvent ||
+                this is SagaMilestone.ChoiceCards ||
+                this is SagaMilestone.ChapterFinished ||
+                this is SagaMilestone.ActFinished
 
         override fun setAdvanceTriggerSuppressed(suppressed: Boolean) {
             _advanceTriggerSuppressed.value = suppressed
@@ -1250,6 +1277,13 @@ class SagaContentManagerImpl
                     }
                 }
 
+                // Nothing to do here on purpose: the executeNarrativeAction that dealt the cards is
+                // still suspended in awaitMilestoneDismissalIfNeeded, and chains into the chapter
+                // synthesis on its own the moment dismissMilestone() above clears it.
+                is SagaMilestone.ChoiceCards -> {
+                    doNothing()
+                }
+
                 is SagaMilestone.ChapterFinished -> {
                     handleChapterPostActions(milestone.chapter, saga)
                 }
@@ -1438,6 +1472,23 @@ class SagaContentManagerImpl
                             ),
                         )
                     } ?: dismissMilestone()
+                }
+
+                is NarrativeAction.GenerateChoiceCards -> {
+                    // An empty hand (nothing usable came back) shows nothing: the chain just moves
+                    // on to the synthesis. Otherwise this milestone blocks the chain — the
+                    // executeNarrativeAction that dealt it waits in awaitMilestoneDismissalIfNeeded
+                    // until the player submits, then chains straight into GenerateChapter.
+                    val reveal = resultValue as? ChoiceCardsReveal
+                    val chapter = reveal?.chapter
+                    if (chapter != null &&
+                        !chapter.playerChoiceCards.isNullOrEmpty() &&
+                        chapter.playerChoiceAnswers == null
+                    ) {
+                        emitMilestone(
+                            SagaMilestone.ChoiceCards(chapter, reveal.screenTitle, reveal.screenSubtitle),
+                        )
+                    }
                 }
 
                 is NarrativeAction.GenerateChapterIntro -> {

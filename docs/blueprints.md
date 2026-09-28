@@ -31,7 +31,8 @@ This document tracks all the AI prompt blueprints used in the Sagas application.
 | `acts_overview_blueprint` | Summary of all completed acts for context. | Act | 📝 |
 | `chapter_introduction_blueprint` | Brief hook to introduce a new chapter. | Chapter | ✅ |
 | `chapter_generation_blueprint` | The "Cinematic Narrator"—full chapter prose generation. | Chapter | ✅ |
-| `chapter_synthesis_blueprint` | Chapter-close synthesis (continuity, wikis, arcs). Also writes the 3 closure choice cards (`playerChoiceCards`): the output schema comes from `UnifiedChapterUpdate`, so only `CHOICE_*` rules were needed. Published as RC v1073 (2026-09-22). | Chapter | ✅ |
+| `chapter_synthesis_blueprint` | Chapter-close synthesis (continuity, wikis, arcs). Runs after the player answers the chapter's choice cards and reads that answer through `playerSpectrum`. The `CHOICE_*` rules moved to `chapter_choice_cards_blueprint` (RC v1082, 2026-09-27). | Chapter | ✅ |
+| `chapter_choice_cards_blueprint` | The chapter-closure hand: a one-time `screenTitle`/`screenSubtitle` framing plus 3 dilemma cards (`choiceTitle`, `options[].text`/`.tag`/`.emotionalTone`), generated in their own step before the chapter synthesis. Tags stay hidden from the player. Published as RC v1082, extended v1083 (2026-09-27). | Chapter | ✅ |
 | `player_spectrum_rewrite_blueprint` | Small rewrite of the per-chapter `playerSpectrum`. Receives `previousSpectrum`, `chapterSummary`, `answeredChoices`; must reassess whether the picks reinforce, complicate or contradict the previous read and return a fresh read, never a concatenation. Published as RC v1073 (2026-09-22). | Chapter | ✅ |
 | `lore_generation_blueprint` | The "Chronicler"—translates chat into permanent lore. | Lore | ✅ |
 | `saga_end_credits_blueprint` | Synthesis of the entire saga's emotional and narrative arc. | Saga | ✅ |

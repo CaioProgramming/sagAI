@@ -55,6 +55,7 @@ object ChapterPrompts {
     const val CHAPTER_INTRODUCTION_BLUEPRINT = "chapter_introduction_blueprint"
     const val CHAPTER_SYNTHESIS_BLUEPRINT = "chapter_synthesis_blueprint"
     const val PLAYER_SPECTRUM_REWRITE_BLUEPRINT = "player_spectrum_rewrite_blueprint"
+    const val CHAPTER_CHOICE_CARDS_BLUEPRINT = "chapter_choice_cards_blueprint"
 
     /**
      * [CHAPTER_SYNTHESIS_BLUEPRINT] must return `continuitySummary` in [UnifiedChapterUpdate]:
@@ -148,13 +149,15 @@ object ChapterPrompts {
         return promptService.buildSplitBlueprint(CHAPTER_GENERATION_BLUEPRINT, args)
     }
 
-    suspend fun chapterSynthesisPrompt(
-        promptService: PromptService,
+    /**
+     * What a closing chapter looks like to the model — shared by the choice cards (written first,
+     * from the same events) and the synthesis that follows once they're answered.
+     */
+    private fun chapterClosingContext(
         saga: SagaContent,
         chapter: ChapterContent,
-        narrativeRules: NarrativeRules,
-        conversationDirective: String,
-    ): SplitPrompt {
+        includePlayerChoices: Boolean = false,
+    ): ChapterConclusionContext {
         val chapterAct = saga.findChapterAct(chapter.data)
         val isFirstAct =
             saga.acts
@@ -170,21 +173,48 @@ object ChapterPrompts {
                 if (currentIndex > 0) saga.acts[currentIndex - 1] else null
             }
 
-        val synthesisContext =
-            ChapterConclusionContext(
-                sagaData = saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
-                mainCharacter = saga.mainCharacter?.data?.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
-                eventsOfThisChapter =
-                    chapter.events
-                        .map { it.data }
-                        .normalizetoAIItems(LorePrompts.TIMELINE_EXCLUDED_FIELDS),
-                previousChaptersInCurrentAct =
-                    (chapterAct?.chapters ?: emptyList())
-                        .filter { it.data.id != chapter.data.id }
-                        .map { it.data }
-                        .normalizetoAIItems(CHAPTER_EXCLUSIONS),
-                previousActData = previousAct?.data.toAINormalize(ActPrompts.ACT_EXCLUSIONS),
-            )
+        return ChapterConclusionContext(
+            sagaData = saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
+            mainCharacter = saga.mainCharacter?.data?.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
+            eventsOfThisChapter =
+                chapter.events
+                    .map { it.data }
+                    .normalizetoAIItems(LorePrompts.TIMELINE_EXCLUDED_FIELDS),
+            previousChaptersInCurrentAct =
+                (chapterAct?.chapters ?: emptyList())
+                    .filter { it.data.id != chapter.data.id }
+                    .map { it.data }
+                    .normalizetoAIItems(CHAPTER_EXCLUSIONS),
+            previousActData = previousAct?.data.toAINormalize(ActPrompts.ACT_EXCLUSIONS),
+            playerChoicesOfThisChapter = if (includePlayerChoices) chapter.data.answeredChoicesSummary() else null,
+        )
+    }
+
+    /**
+     * What the player picked on each card, as they read it — the option's text and its emotional
+     * weight. The hidden tags stay out: they're a clinical read of the player, and the prose must
+     * never start sounding like one.
+     */
+    private fun Chapter.answeredChoicesSummary(): String? {
+        val answers = playerChoiceAnswers ?: return null
+        return playerChoiceCards
+            .orEmpty()
+            .zip(answers)
+            .mapNotNull { (card, tag) ->
+                val picked = card.options.find { it.tag == tag } ?: return@mapNotNull null
+                "- ${card.choiceTitle} -> ${picked.text}" + (picked.emotionalTone?.let { " (tone: ${it.name})" } ?: "")
+            }.takeIf { it.isNotEmpty() }
+            ?.joinToString("\n")
+    }
+
+    suspend fun chapterSynthesisPrompt(
+        promptService: PromptService,
+        saga: SagaContent,
+        chapter: ChapterContent,
+        narrativeRules: NarrativeRules,
+        conversationDirective: String,
+    ): SplitPrompt {
+        val synthesisContext = chapterClosingContext(saga, chapter, includePlayerChoices = true)
 
         val args =
             ChapterSynthesisArgs(
@@ -197,6 +227,25 @@ object ChapterPrompts {
     }
 
     /**
+     * The chapter-closure dilemmas, asked for on their own before the chapter is synthesized —
+     * built from the same closing context the synthesis reads, so the cards are about what the
+     * player actually lived through, and their answers can then shape the synthesis itself.
+     */
+    suspend fun choiceCardsPrompt(
+        promptService: PromptService,
+        saga: SagaContent,
+        chapter: ChapterContent,
+    ): SplitPrompt {
+        val args =
+            ChapterSynthesisArgs(
+                chapterContext = chapterClosingContext(saga, chapter).toAINormalize(),
+                characterIndex = SagaPrompts.charactersSummary(saga),
+                narrativeStyle = emptyString(),
+            )
+        return promptService.buildSplitBlueprint(CHAPTER_CHOICE_CARDS_BLUEPRINT, args.asMap())
+    }
+
+    /**
      * Small non-streaming rewrite of the player spectrum. The model must reassess
      * [previousSpectrum] against the latest picks (reinforced, complicated or contradicted) and
      * return a fresh read, never a concatenation. Each pick is paired with its dilemma so the
@@ -204,7 +253,7 @@ object ChapterPrompts {
      */
     suspend fun playerSpectrumRewritePrompt(
         promptService: PromptService,
-        chapter: Chapter,
+        chapter: ChapterContent,
         previousSpectrum: String?,
         cards: List<GeneratedChoiceCard>,
         answers: List<String>,
@@ -213,13 +262,18 @@ object ChapterPrompts {
             cards
                 .zip(answers)
                 .joinToString("\n") { (card, tag) ->
-                    "- ${card.choiceTitle} => picked \"$tag\""
+                    val picked = card.options.find { it.tag == tag }
+                    val tone = picked?.emotionalTone?.let { ", tone: ${it.name}" }.orEmpty()
+                    "- ${card.choiceTitle} => picked \"${picked?.text ?: tag}\" (read: $tag$tone)"
                 }
 
         val args =
             PlayerSpectrumRewriteArgs(
                 previousSpectrum = previousSpectrum?.takeIf { it.isNotBlank() } ?: "None yet. This is the first read.",
-                chapterSummary = chapter.content.ifBlank { chapter.title },
+                // Answered before the synthesis, so the chapter has no prose of its own yet —
+                // its events are what the player just lived through.
+                chapterSummary =
+                    chapter.events.joinToString("\n") { "- ${it.data.title}: ${it.data.content}" },
                 answeredChoices = answeredChoices,
             )
 

@@ -11,6 +11,7 @@ import com.ilustris.sagai.core.ai.model.AudioAttachment
 import com.ilustris.sagai.core.ai.model.PromptBlueprint
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import com.ilustris.sagai.core.ai.prompts.PlayerSpectrumPrompts
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -312,6 +313,12 @@ class MessageUseCaseImpl
                                             conversationInstructions,
                                             actContext.renderInstructions(),
                                             playerInputInstructions,
+                                            // The last chapter-closure read of the player, so the
+                                            // cast plays off it live instead of only at the next
+                                            // chapter's closing synthesis. Characterization only.
+                                            PlayerSpectrumPrompts.lensInstructions(
+                                                PlayerSpectrumPrompts.latestSpectrum(saga),
+                                            ),
                                         ),
                                     userInteraction = true,
                                     filterOutputFields = ChatPrompts.messageOutputExclusions,

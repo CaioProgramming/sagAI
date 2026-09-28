@@ -38,6 +38,15 @@ interface ChapterUseCase {
     suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>>
 
     /**
+     * Deals the chapter-closure dilemmas, before the chapter is synthesized. Returns the chapter
+     * with [Chapter.playerChoiceCards] set: three pairs, or an empty list when nothing usable came
+     * back (the chapter then closes without cards). A chapter that already has a hand gets it back
+     * unchanged, so resuming never deals a new one. [ChoiceCardsReveal.screenTitle]/[ChoiceCardsReveal.screenSubtitle]
+     * are blank on that resume path (they aren't persisted) — the screen falls back to a static label.
+     */
+    fun generateChoiceCardsStream(chapterId: Int): Flow<StreamingState<ChoiceCardsReveal?>>
+
+    /**
      * Stores the player's picks (hidden tags, in card order) and rewrites the chapter's
      * playerSpectrum from them, seeded by the previous chapter's read.
      */
@@ -48,3 +57,14 @@ interface ChapterUseCase {
 
     fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContentWithLore<Chapter>?>>
 }
+
+/**
+ * What a freshly dealt hand of choice cards carries besides the cards themselves — the in-fiction
+ * framing the Milestone screen shows once, above whichever card is currently up. Not persisted:
+ * a resumed hand (the app closed with cards pending) falls back to a static label instead.
+ */
+data class ChoiceCardsReveal(
+    val chapter: Chapter,
+    val screenTitle: String,
+    val screenSubtitle: String,
+)

@@ -91,14 +91,17 @@ import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.ai.model.ShaderParamsConfig
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
+import com.ilustris.sagai.features.chapter.data.model.ChoiceOption
 import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.settings.ui.audit.JsonCodeBlock
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
@@ -345,7 +348,12 @@ fun DesignSystemPreviewView(
                                             ChapterChoiceCardsScreen(
                                                 state =
                                                     MilestoneUiState.ChoiceCardsStep(
-                                                        milestone = DesignSystemMocks.mockChapterFinishedMilestone(genre),
+                                                        milestone =
+                                                            SagaMilestone.ChoiceCards(
+                                                                chapter = DesignSystemMocks.mockChapterFinishedMilestone(genre).chapter,
+                                                                screenTitle = "The frost doesn't forgive hesitation.",
+                                                                screenSubtitle = "Weigh what it costs you.",
+                                                            ),
                                                         cards = MOCK_CHOICE_CARDS,
                                                         selections = selections,
                                                     ),
@@ -564,24 +572,27 @@ private val MOCK_CHOICE_CARDS =
     listOf(
         GeneratedChoiceCard(
             choiceTitle = "Who do you reach first?",
-            optionAText = "The friend who trusted you",
-            optionATag = "loyalty over pragmatism",
-            optionBText = "The stranger who holds the map",
-            optionBTag = "pragmatism over loyalty",
+            options =
+                listOf(
+                    ChoiceOption("The friend who trusted you", "loyalty over pragmatism", EmotionalTone.EMPATHETIC),
+                    ChoiceOption("The stranger who holds the map", "pragmatism over loyalty", EmotionalTone.DETERMINED),
+                ),
         ),
         GeneratedChoiceCard(
             choiceTitle = "Power, or the crew?",
-            optionAText = "Leave them behind and take it",
-            optionATag = "ambition over belonging",
-            optionBText = "Refuse, and walk away with them",
-            optionBTag = "belonging over ambition",
+            options =
+                listOf(
+                    ChoiceOption("Leave them behind and take it", "ambition over belonging", EmotionalTone.CYNICAL),
+                    ChoiceOption("Refuse, and walk away with them", "belonging over ambition", EmotionalTone.HOPEFUL),
+                ),
         ),
         GeneratedChoiceCard(
             choiceTitle = "Confront her, or let it go?",
-            optionAText = "Forgive her and say nothing",
-            optionATag = "forgives for the greater good",
-            optionBText = "Confront her in front of the others",
-            optionBTag = "truth over harmony",
+            options =
+                listOf(
+                    ChoiceOption("Forgive her and say nothing", "forgives for the greater good", EmotionalTone.MELANCHOLIC),
+                    ChoiceOption("Confront her in front of the others", "truth over harmony", EmotionalTone.ANGRY),
+                ),
         ),
     )
 

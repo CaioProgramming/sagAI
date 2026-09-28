@@ -1,6 +1,8 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.flatChapters
 
 /**
@@ -9,25 +11,48 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
  * happens stays with ContinuitySummary.
  */
 object PlayerSpectrumPrompts {
-    /** Empty when there is no spectrum yet, so callers can merge it unconditionally. */
+    /**
+     * Empty when there is no spectrum yet, so callers can merge it unconditionally. Rendered as
+     * one `KEY: text` block, the same shape every blueprint's own directives/rules take once
+     * flattened by renderInstructions() — a nested map here reached the model as a raw
+     * `{KEY=text, ...}` toString instead.
+     */
     fun lensInstructions(spectrumText: String?): Map<String, Any> {
         if (spectrumText.isNullOrBlank()) return emptyMap()
-        return mapOf(
-            "playerSpectrumLens" to
-                mapOf(
-                    "SPECTRUM_READ" to spectrumText.trim(),
-                    "SPECTRUM_SCOPE" to
-                        "Use the read above only to write subtler characterization of the cast.",
-                    "SPECTRUM_NEVER_PLOT" to
-                        "Never let it decide what structurally happens; that belongs to the events and continuity.",
-                    "SPECTRUM_NEVER_CONFIRM" to
-                        "Never resolve, confirm or reward the read outright. Complicate it instead.",
-                    "SPECTRUM_TECHNIQUES" to
-                        "Prefer ambiguity, questioned reciprocity, or drift toward unhealthy patterns where the story has earned it.",
-                    "SPECTRUM_HIDDEN" to
-                        "Never mention the read, the player's choices or this lens in the prose.",
-                ),
-        )
+        val rules =
+            linkedMapOf(
+                "SPECTRUM_READ" to spectrumText.trim(),
+                "SPECTRUM_SCOPE" to "Use the read above only to write subtler characterization of the cast.",
+                "SPECTRUM_NEVER_PLOT" to
+                    "Never let it decide what structurally happens; that belongs to the events and continuity.",
+                "SPECTRUM_NEVER_CONFIRM" to "Never resolve, confirm or reward the read outright. Complicate it instead.",
+                "SPECTRUM_TECHNIQUES" to
+                    "Prefer ambiguity, questioned reciprocity, or drift toward unhealthy patterns where the story has earned it.",
+                "SPECTRUM_HIDDEN" to "Never mention the read, the player's choices or this lens in the prose.",
+            )
+        return mapOf(LENS_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
+    }
+
+    const val LENS_BUCKET = "PlayerSpectrumLens"
+    const val CHOICES_BUCKET = "PlayerChoicesOfThisChapter"
+
+    /**
+     * How the chapter synthesis should use `playerChoicesOfThisChapter` — the concrete picks, as
+     * opposed to the abstract read in [lensInstructions]. Empty when the chapter closed without
+     * cards, so callers can merge it unconditionally.
+     */
+    fun choicesInstructions(hasChoices: Boolean): Map<String, Any> {
+        if (!hasChoices) return emptyMap()
+        val rules =
+            linkedMapOf(
+                "CHOICES_SCOPE" to
+                    "playerChoicesOfThisChapter are the player's answers about how they carry this chapter's events. Let them color the protagonist's interiority, resolve and the way the chapter lands.",
+                "CHOICES_NEVER_REWRITE" to "Never change, add or undo anything that happened in the events.",
+                "CHOICES_WEIGHT" to
+                    "Each pick's tone is how heavily it sits with the protagonist. Let the heaviest one echo in the closing image.",
+                "CHOICES_HIDDEN" to "Never quote the questions, list the options or say that a choice was made.",
+            )
+        return mapOf(CHOICES_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
     }
 
     /**
@@ -39,11 +64,22 @@ object PlayerSpectrumPrompts {
         saga: SagaContent,
         chapterId: Int,
     ): String? {
-        val chapters = saga.flatChapters()
-        val index = chapters.indexOfFirst { it.data.id == chapterId }
-        val earlier = if (index >= 0) chapters.subList(0, index) else chapters
-        return earlier
-            .asReversed()
-            .firstNotNullOfOrNull { it.data.playerSpectrum?.takeIf { spectrum -> spectrum.isNotBlank() } }
+        val chapters = saga.flatChapters().map { it.data }
+        val index = chapters.indexOfFirst { it.id == chapterId }
+        return latestSpectrum(if (index >= 0) chapters.subList(0, index) else chapters)
     }
+
+    /**
+     * The read currently in force for live generation — chat replies, the next chapter's
+     * introduction: the most recent answered one anywhere in the saga. The chapter being played
+     * has none of its own until it closes, so this is always the last closure's read.
+     */
+    fun latestSpectrum(saga: SagaContent): String? = latestSpectrum(saga.flatChapters().map { it.data })
+
+    fun latestSpectrum(saga: SagaMetadata): String? = latestSpectrum(saga.flatChapters().map { it.data })
+
+    private fun latestSpectrum(chaptersInOrder: List<Chapter>): String? =
+        chaptersInOrder
+            .asReversed()
+            .firstNotNullOfOrNull { it.playerSpectrum?.takeIf { spectrum -> spectrum.isNotBlank() } }
 }

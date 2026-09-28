@@ -78,10 +78,20 @@ fun ChapterChoiceCardsScreen(
                     .padding(horizontal = 24.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            // The screen's own framing — the story's voice setting up why it's asking, once,
+            // above whichever card is currently up. Blank on a resumed hand (not persisted), where
+            // a static line stands in.
             Text(
-                text = stringResource(R.string.milestone_choices_eyebrow),
-                style = MaterialTheme.typography.labelLarge.forStyle(style),
+                text = state.milestone.screenTitle.takeIf { it.isNotBlank() } ?: stringResource(R.string.milestone_choices_eyebrow),
+                style = MaterialTheme.typography.titleMedium.forStyle(style),
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                text = state.milestone.screenSubtitle.takeIf { it.isNotBlank() } ?: stringResource(R.string.milestone_choices_subtitle_fallback),
+                style = MaterialTheme.typography.bodyMedium.forStyle(style),
                 color = muted,
+                modifier = Modifier.fillMaxWidth(),
             )
             LinearProgressIndicator(
                 progress = { (index + 1) / total.toFloat() },
@@ -127,22 +137,16 @@ fun ChapterChoiceCardsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        GenreChoiceCard(
-                            text = card.optionAText,
-                            revealed = selected == 0,
-                            onClick = { onSelect(cardIndex, 0) },
-                            seed = cardIndex * 2,
-                            genre = genre,
-                            modifier = Modifier.weight(1f).aspectRatio(CARD_ASPECT),
-                        )
-                        GenreChoiceCard(
-                            text = card.optionBText,
-                            revealed = selected == 1,
-                            onClick = { onSelect(cardIndex, 1) },
-                            seed = cardIndex * 2 + 1,
-                            genre = genre,
-                            modifier = Modifier.weight(1f).aspectRatio(CARD_ASPECT),
-                        )
+                        card.options.forEachIndexed { optionIndex, option ->
+                            GenreChoiceCard(
+                                text = option.text,
+                                revealed = selected == optionIndex,
+                                onClick = { onSelect(cardIndex, optionIndex) },
+                                seed = cardIndex * card.options.size + optionIndex,
+                                genre = genre,
+                                modifier = Modifier.weight(1f).aspectRatio(CARD_ASPECT),
+                            )
+                        }
                     }
                 }
             }

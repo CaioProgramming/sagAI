@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.act.data.usecase.BookUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.chapter.data.usecase.ChoiceCardsReveal
 import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaEnding
@@ -74,6 +75,10 @@ class NarrativeActionExecutorImpl
 
                     is NarrativeAction.CreateChapter -> {
                         startChapter(action.act, environment)
+                    }
+
+                    is NarrativeAction.GenerateChoiceCards -> {
+                        dealChoiceCards(action.chapter, environment)
                     }
 
                     is NarrativeAction.GenerateChapter -> {
@@ -322,6 +327,34 @@ class NarrativeActionExecutorImpl
                 }
             environment.onReasoningChunk(null)
             return finalChapter ?: error("Failed to generate chapter introduction")
+        }
+
+        private suspend fun dealChoiceCards(
+            chapter: ChapterContent,
+            environment: NarrativeExecutionEnvironment,
+        ) = executeRequest {
+            var dealt: ChoiceCardsReveal? = null
+            chapterUseCase.generateChoiceCardsStream(chapter.data.id).collect { state ->
+                when (state) {
+                    is StreamingState.Reasoning -> {
+                        environment.onReasoningChunk(state.chunk)
+                    }
+
+                    is StreamingState.Success -> {
+                        dealt = state.data
+                        environment.onReasoningChunk(null)
+                    }
+
+                    is StreamingState.Error -> {
+                        environment.onReasoningChunk(null)
+                        if (state.isFlowCancellation()) {
+                            throw CancellationException(state.message)
+                        }
+                        error(state.message)
+                    }
+                }
+            }
+            dealt ?: error("Failed to deal choice cards")
         }
 
         private suspend fun updateChapter(

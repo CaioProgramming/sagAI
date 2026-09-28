@@ -495,6 +495,9 @@
     <!-- Marcos de Narrativa (evento = checkpoint, capítulo = fase, ato = volume) -->
     <string name="advance_evolve_timeline">Novo evento</string>
     <string name="releasing_evolve_timeline">Registrando este evento...</string>
+    <string name="advance_choice_cards">Pesar suas escolhas</string>
+    <string name="releasing_choice_cards">Preparando as escolhas...</string>
+    <string name="milestone_choice_cards_title">Suas escolhas</string>
     <string name="advance_close_chapter">Concluir fase</string>
     <string name="releasing_close_chapter">Resumindo esta fase...</string>
     <string name="advance_open_chapter">Continuar jornada</string>
@@ -525,6 +528,7 @@
     <string name="introduction_milestone">Introdução</string>
     <string name="milestone_loading_default">Moldando o que vem a seguir…</string>
     <string name="milestone_adjusting_lore">Ajustando alguns detalhes…</string>
+    <string name="milestone_choices_subtitle_fallback">Pese o que isso custa.</string>
     <string name="milestone_choices_eyebrow">Antes de fechar o capítulo</string>
     <string name="milestone_choices_progress">%1$d de %2$d</string>
     <string name="milestone_choices_hint">Vire uma carta. Mude de ideia virando a outra.</string>
@@ -532,7 +536,8 @@
     <string name="milestone_choices_classified">SIGILOSO</string>
     <string name="milestone_choices_next">Próxima</string>
     <string name="milestone_choices_submit">Selar o capítulo</string>
-    <string name="milestone_stuck_exit">Algo errado? Toque para verificar</string>
+    <string name="milestone_close_description">Fechar</string>
+    <string name="milestone_close_still_generating">Ainda estamos escrevendo a próxima parte da sua história. Só um instante.</string>
     <string name="milestone_error_title">A história travou num detalhe</string>
     <string name="milestone_emotional_note_label">Nota emocional</string>
     <string name="milestone_view_details">Ver detalhes</string>
