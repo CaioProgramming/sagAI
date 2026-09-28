@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.data.voicing
 
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
@@ -26,6 +27,11 @@ import javax.inject.Singleton
  */
 data class VoicedMessage(
     val message: Message,
+    val clip: VoicedClip,
+)
+
+/** A performed WAV, with the script and blocks the live captions follow. */
+data class VoicedClip(
     val audioPath: String,
     val script: PerformanceScript,
     val blocks: List<MessageBlock>,
@@ -59,17 +65,45 @@ class MessageVoicingUseCase
             message: Message,
             sceneBrief: String? = null,
         ): VoicedMessage? {
-            val blocks = MessageBlocks.split(message.text)
-            if (blocks.isEmpty()) return null
-
             val character =
                 message.characterId
                     ?.takeIf { message.senderType != SenderType.NARRATOR }
                     ?.let { id -> saga.characters.find { it.id == id } }
+            val clip =
+                voiceText(
+                    saga = saga,
+                    character = character,
+                    text = message.text,
+                    emotionalTone = message.emotionalTone,
+                    directory = "sagas/${saga.data.id}/audios",
+                    fileName = "message_${message.id}_audio",
+                    sceneBrief = sceneBrief,
+                ) ?: return null
+            val updated = messageRepository.updateMessage(message.copy(audioPath = clip.audioPath, audible = true))
+            return VoicedMessage(updated, clip)
+        }
+
+        /**
+         * Performs [text] as [character] (the narrator when null) and saves the WAV under
+         * [directory] (relative to the app's files dir), touching no table — for lines that don't
+         * live in the saga's messages, like the epilogue's. Null when there is nothing to perform.
+         */
+        suspend fun voiceText(
+            saga: SagaMetadata,
+            character: Character?,
+            text: String,
+            emotionalTone: EmotionalTone?,
+            directory: String,
+            fileName: String,
+            sceneBrief: String? = null,
+        ): VoicedClip? {
+            val blocks = MessageBlocks.split(text)
+            if (blocks.isEmpty()) return null
+
             val cast = character?.let { voiceCasting.voiceFor(saga, it) }
             val narratorVoice = voiceCasting.narratorVoice(saga)
 
-            val script = script(message, character, cast, blocks, sceneBrief)
+            val script = script(emotionalTone, character, cast, blocks, sceneBrief)
             if (script.lines.isEmpty()) return null
 
             val request = buildRequest(script, character, cast, narratorVoice)
@@ -77,17 +111,15 @@ class MessageVoicingUseCase
             val file =
                 fileHelper.saveBinaryFile(
                     wav,
-                    path = "sagas/${saga.data.id}/audios",
-                    fileName = "message_${message.id}_audio",
+                    path = directory,
+                    fileName = fileName,
                     extension = "wav",
-                ) ?: error("Could not save the audio for message ${message.id}")
-
-            val updated = messageRepository.updateMessage(message.copy(audioPath = file.absolutePath, audible = true))
-            return VoicedMessage(updated, file.absolutePath, script, blocks)
+                ) ?: error("Could not save the audio $directory/$fileName")
+            return VoicedClip(file.absolutePath, script, blocks)
         }
 
         private suspend fun script(
-            message: Message,
+            emotionalTone: EmotionalTone?,
             character: Character?,
             cast: CastVoice?,
             blocks: List<MessageBlock>,
@@ -104,7 +136,7 @@ class MessageVoicingUseCase
                                     AudioPerformanceArgs(
                                         speaker = speaker ?: NARRATOR_SPEAKER,
                                         speakerVoiceDirection = cast?.direction.orEmpty(),
-                                        emotionalTone = message.emotionalTone?.name.orEmpty(),
+                                        emotionalTone = emotionalTone?.name.orEmpty(),
                                         sceneBrief = sceneBrief.orEmpty(),
                                         blocks = MessageBlocks.render(blocks),
                                     ),

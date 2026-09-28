@@ -83,6 +83,7 @@ import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.home.data.model.subtitleActAndChapterOrdinals
 import com.ilustris.sagai.features.live.presentation.LiveCaption
+import com.ilustris.sagai.features.live.presentation.BaseLiveViewModel
 import com.ilustris.sagai.features.live.presentation.LiveConversationViewModel
 import com.ilustris.sagai.features.live.presentation.LiveHint
 import com.ilustris.sagai.features.live.presentation.LivePhase
@@ -111,6 +112,28 @@ fun LiveConversationView(
     viewModel: LiveConversationViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(sagaId) { viewModel.start(sagaId) }
+    LiveStage(
+        viewModel = viewModel,
+        sharedKey = liveSpeakerKey(sagaId),
+        onBack = onBack,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
+    )
+}
+
+/**
+ * The live screen itself, for any live conversation: the saga's, or one character's after the
+ * story ended. [subtitle] replaces the saga's volume/chapter line when given.
+ */
+@Composable
+fun LiveStage(
+    viewModel: BaseLiveViewModel,
+    sharedKey: String,
+    onBack: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    subtitle: String? = null,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val levelState = viewModel.level.collectAsStateWithLifecycle()
     val level = remember(levelState) { { levelState.value } }
@@ -243,7 +266,7 @@ fun LiveConversationView(
                     .statusBarsPadding()
                     .animateEnterExit(enter = fadeIn(tween(400, delayMillis = 350)), exit = fadeOut(tween(150))),
             ) {
-                TopBar(state, onBack)
+                TopBar(state, subtitle, onBack)
                 AnimatedVisibility(state.voicesRestingUntil != null) {
                     VoicesRestingBanner(state.voicesRestingUntil)
                 }
@@ -299,7 +322,7 @@ fun LiveConversationView(
                     speakers = state.speakers,
                     selectedSpeakerId = state.selectedSpeakerId,
                     enabled = !state.inputBlocked && phase != LivePhase.Thinking && phase != LivePhase.Voicing,
-                    canSwitchSpeaker = phase == LivePhase.Idle || phase is LivePhase.Speaking,
+                    canSwitchSpeaker = viewModel.canSwitchSpeaker && (phase == LivePhase.Idle || phase is LivePhase.Speaking),
                     listening = phase == LivePhase.Listening,
                     level = level,
                     ringColors = brush.ifEmpty { listOf(primary) },
@@ -309,7 +332,7 @@ fun LiveConversationView(
                     onPressEnd = viewModel::onPressEnd,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
-                    sharedKey = liveSpeakerKey(sagaId),
+                    sharedKey = sharedKey,
                 )
             }
         }
@@ -319,6 +342,7 @@ fun LiveConversationView(
 @Composable
 private fun TopBar(
     state: LiveUiState,
+    subtitle: String?,
     onBack: () -> Unit,
 ) {
     val saga = state.saga
@@ -342,7 +366,13 @@ private fun TopBar(
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
             )
-            if (saga != null && !saga.data.isEnded) {
+            if (subtitle != null) {
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                )
+            } else if (saga != null && !saga.data.isEnded) {
                 val (act, chapter) = saga.subtitleActAndChapterOrdinals()
                 Text(
                     stringResource(R.string.chat_view_subtitle, act.toRoman(), chapter.toRoman()),
