@@ -259,23 +259,15 @@ private fun HoldToTalkButton(
                         }.clip(CircleShape),
             )
         }
-
-        AnimatedVisibility(listening, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.offset(y = -(RECORD_SIZE / 2 + 34.dp))) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    stringResource(if (cancelArmed) R.string.live_release_to_cancel else R.string.live_drag_to_cancel),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (cancelArmed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                )
-                RecordingTimer()
-            }
-        }
     }
 }
 
-/** Elapsed time of the current hold. Its own composable so the ticking only recomposes itself. */
+/**
+ * Elapsed time of the current hold, after [prefix]. Its own composable so the ticking only
+ * recomposes itself.
+ */
 @Composable
-private fun RecordingTimer() {
+fun RecordingTimer(prefix: String? = null) {
     var seconds by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -283,8 +275,9 @@ private fun RecordingTimer() {
             seconds++
         }
     }
+    val time = "%d:%02d".format(seconds / 60, seconds % 60)
     Text(
-        "%d:%02d".format(seconds / 60, seconds % 60),
+        prefix?.let { "$it · $time" } ?: time,
         style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
     )

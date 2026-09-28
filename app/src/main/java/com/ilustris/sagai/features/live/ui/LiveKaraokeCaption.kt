@@ -1,15 +1,21 @@
 package com.ilustris.sagai.features.live.ui
 
-import androidx.compose.animation.AnimatedContent
+import android.os.SystemClock
+import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -98,45 +104,63 @@ fun LiveKaraokeCaption(
             }
         }
     }
-    // The window slides with the voice: one line of context above, the rest ahead.
-    val windowStart =
-        when {
-            currentBeat >= 0 -> (currentBeat - 1).coerceAtLeast(0)
-            caption.allDone -> (beats.size - VISIBLE_BEATS).coerceAtLeast(0)
-            else -> 0
+    // The whole line is scrollable — anything already said can be read back. While the voice is
+    // playing the list follows it, keeping one line of context above the current one, unless the
+    // player has just scrolled by hand: then it waits a few seconds before taking over again.
+    val listState = rememberLazyListState()
+    var lastManualScroll by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(listState) {
+        listState.interactionSource.interactions.collect { interaction ->
+            if (interaction is DragInteraction.Start || interaction is DragInteraction.Stop) {
+                lastManualScroll = SystemClock.uptimeMillis()
+            }
         }
+    }
+    LaunchedEffect(currentBeat) {
+        if (currentBeat < 0) return@LaunchedEffect
+        if (SystemClock.uptimeMillis() - lastManualScroll < MANUAL_SCROLL_HOLD_MS) return@LaunchedEffect
+        listState.animateScrollToItem((currentBeat - 1).coerceAtLeast(0))
+    }
+    // A new line (the player's, then the reply) starts from its top.
+    LaunchedEffect(caption.blocks) { listState.scrollToItem(0) }
 
-    AnimatedContent(
-        targetState = windowStart,
-        transitionSpec = {
-            (fadeIn(tween(350)) + slideInVertically(tween(350)) { it / 4 }) togetherWith
-                (fadeOut(tween(250)) + slideOutVertically(tween(250)) { -it / 4 })
-        },
-        label = "liveCaptionWindow",
-        modifier = modifier,
-    ) { start ->
-        Column(
-            Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            beats.subList(start, (start + VISIBLE_BEATS).coerceAtMost(beats.size)).forEach { beat ->
-                CenteredWordWrap(Modifier.fillMaxWidth()) {
-                    beat.words.forEach { word ->
-                        CaptionWordText(
-                            word = word,
-                            beat = beat,
-                            caption = caption,
-                            settled = settled,
-                            progress = progress,
-                            glowColor = glowColor,
-                        )
-                    }
+    LazyColumn(
+        state = listState,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier.fadeTopEdge(listState.canScrollBackward),
+    ) {
+        itemsIndexed(beats) { _, beat ->
+            CenteredWordWrap(Modifier.fillMaxWidth()) {
+                beat.words.forEach { word ->
+                    CaptionWordText(
+                        word = word,
+                        beat = beat,
+                        caption = caption,
+                        settled = settled,
+                        progress = progress,
+                        glowColor = glowColor,
+                    )
                 }
             }
         }
     }
 }
+
+/** Fades the top edge once there's something scrolled away above it. */
+private fun Modifier.fadeTopEdge(active: Boolean): Modifier =
+    if (!active) {
+        this
+    } else {
+        graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+            .drawWithContent {
+                drawContent()
+                drawRect(
+                    Brush.verticalGradient(0f to Color.Transparent, 0.18f to Color.Black),
+                    blendMode = BlendMode.DstIn,
+                )
+            }
+    }
 
 /**
  * Words wrapped into centered lines. Not FlowRow: this screen lives under the app's
@@ -239,7 +263,7 @@ private fun CaptionWordText(
     )
 }
 
-private const val VISIBLE_BEATS = 4
+private const val MANUAL_SCROLL_HOLD_MS = 3_000L
 private const val GLOW_RADIUS = 40f
 private const val SPOKEN_GLOW_RADIUS = 24f
 private const val SPOKEN_GLOW_ALPHA = 0.4f

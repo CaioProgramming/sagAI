@@ -285,7 +285,15 @@ fun LiveConversationView(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                HintLine(state)
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    HintLine(state)
+                    // Below the hint, never over the button: how to cancel and how long it's been.
+                    AnimatedVisibility(phase == LivePhase.Listening, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+                        RecordingTimer(
+                            prefix = stringResource(R.string.live_drag_to_cancel).takeIf { state.hint != LiveHint.RELEASE_TO_CANCEL },
+                        )
+                    }
+                }
                 LiveDock(
                     speakers = state.speakers,
                     selectedSpeakerId = state.selectedSpeakerId,
@@ -407,7 +415,12 @@ private fun Captions(
         }
 
         state.caption?.let { caption ->
-            LiveKaraokeCaption(caption = caption, progress = progress, glowColor = glowColor)
+            LiveKaraokeCaption(
+                caption = caption,
+                progress = progress,
+                glowColor = glowColor,
+                modifier = Modifier.weight(1f, fill = false),
+            )
         }
 
         if (state.canRetry) {
