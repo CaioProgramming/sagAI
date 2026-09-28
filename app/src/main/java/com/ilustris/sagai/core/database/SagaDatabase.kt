@@ -5,15 +5,19 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.ilustris.sagai.core.database.converters.BookConverters
 import com.ilustris.sagai.core.database.converters.CharacterPresenceListConverter
+import com.ilustris.sagai.core.database.converters.ChoiceCardListConverter
 import com.ilustris.sagai.core.database.converters.TimelineConverters
 import com.ilustris.sagai.core.database.converters.EnumConverters
 import com.ilustris.sagai.core.database.converters.FarewellListConverter
+import com.ilustris.sagai.core.database.converters.FloatArrayConverter
 import com.ilustris.sagai.core.database.converters.IntListConverter
 import com.ilustris.sagai.core.database.converters.StringListConverter
 import com.ilustris.sagai.core.database.model.ApiUsageDay
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.ApiUsageDao
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
+import com.ilustris.sagai.core.ai.rag.EmbeddingDao
+import com.ilustris.sagai.core.ai.rag.EmbeddingEntry
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.model.BookChapterPages
@@ -68,8 +72,9 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         CharacterArc::class,
         WorldLocation::class,
         WorldLocationVisit::class,
+        EmbeddingEntry::class,
     ],
-    version = 36,
+    version = 38,
     exportSchema = true,
 )
 @TypeConverters(
@@ -80,6 +85,8 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
     FarewellListConverter::class,
     CharacterPresenceListConverter::class,
     TimelineConverters::class,
+    ChoiceCardListConverter::class,
+    FloatArrayConverter::class,
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
@@ -115,6 +122,8 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun characterArcDao(): CharacterArcDao
 
     abstract fun worldLocationDao(): WorldLocationDao
+
+    abstract fun embeddingDao(): EmbeddingDao
 
     companion object {
         const val NAME = "SagaDatabase"

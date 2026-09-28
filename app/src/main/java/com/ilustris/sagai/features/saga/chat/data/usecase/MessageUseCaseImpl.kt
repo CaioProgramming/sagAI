@@ -90,6 +90,7 @@ class MessageUseCaseImpl
         private val sagaContentManager: SagaContentManager,
         private val globalShellService: GlobalShellService,
         private val database: SagaDatabase,
+        private val semanticRetrievalService: com.ilustris.sagai.core.ai.rag.SemanticRetrievalService,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -268,6 +269,7 @@ class MessageUseCaseImpl
                             updateLimit = narrativeRules.loreUpdateLimit,
                             narrativeRules = narrativeRules,
                             characterArcsById = characterArcsById,
+                            semanticRetrievalService = semanticRetrievalService,
                             maxMessageLimit =
                                 (if (inputMode == InputMode.VOICE) remoteConfigService.getLong(ChatPrompts.LIVE_REPLY_LIMIT_KEY) else null)
                                     ?.toInt()
@@ -356,8 +358,21 @@ class MessageUseCaseImpl
                                 // narrative judgements the model makes, not invariants to enforce
                                 // from here.
                                 val reply = state.data!!
+                                // Re-resolved right here instead of trusting `saga` (captured by
+                                // the caller before the multi-second gemmaClient.generate() call
+                                // above): narrative progression can advance currentEventId to a
+                                // new Timeline while this reply is in flight (e.g. the player
+                                // dismissing a NewEvent milestone mid-generation), and writing this
+                                // turn's sceneSummary/message onto that now-stale pinned timeline
+                                // splits the scene across two rows — the old one loses this turn's
+                                // content, the new one never gets one either, and a chapter close
+                                // later comes up a timeline short. Re-fetching narrows that race
+                                // from the whole generation call down to this DB round trip.
+                                val freshSaga =
+                                    sagaRepository.getSagaMetadata(saga.data.id).first()
+                                        ?: saga
                                 reply.sceneSummary?.let { summary ->
-                                    saga.getCurrentTimeLine()?.let { timeline ->
+                                    freshSaga.getCurrentTimeLine()?.let { timeline ->
                                         if (timeline.data.sceneSummary != summary) {
                                             timelineUseCase.updateTimeline(
                                                 timeline.data.copy(
@@ -368,9 +383,6 @@ class MessageUseCaseImpl
                                         }
                                     }
                                 }
-                                val freshSaga =
-                                    sagaRepository.getSagaMetadata(saga.data.id).first()
-                                        ?: saga
                                 val existingCharacter =
                                     resolveExistingCharacterForReply(freshSaga, reply)
                                 // Everything the reply writes to the DB goes in one transaction so
@@ -405,7 +417,7 @@ class MessageUseCaseImpl
                                         database.withTransaction {
                                             val saved =
                                                 insertAiReplyMessage(
-                                                    saga,
+                                                    freshSaga,
                                                     reply,
                                                     character = existingCharacter,
                                                 )
@@ -520,8 +532,13 @@ class MessageUseCaseImpl
 
             // Patched onto the scene the reply just wrote rather than written wholesale, so the
             // hook lands without clobbering the state the HIGH model established this turn.
+            // Re-resolved fresh for the same reason as generateMessage's own sceneSummary write
+            // above: `saga` here is whatever ChatGenerationService captured before this call's own
+            // gemmaClient.generate(), and narrative progression may have moved currentEventId on
+            // since.
             fallout.notificationHook?.takeIf { it.isNotBlank() }?.let { hook ->
-                saga.getCurrentTimeLine()?.let { timeline ->
+                val freshSaga = sagaRepository.getSagaMetadata(saga.data.id).first() ?: saga
+                freshSaga.getCurrentTimeLine()?.let { timeline ->
                     timeline.data.sceneSummary?.let { scene ->
                         timelineUseCase.updateTimeline(
                             timeline.data.copy(

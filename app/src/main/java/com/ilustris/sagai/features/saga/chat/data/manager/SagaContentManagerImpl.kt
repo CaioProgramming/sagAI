@@ -63,6 +63,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
+import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionMaterializer
@@ -117,6 +118,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
+import javax.inject.Provider
 import kotlin.time.Duration.Companion.seconds
 
 class SagaContentManagerImpl
@@ -145,6 +147,10 @@ class SagaContentManagerImpl
         private val bookGenerationService: BookGenerationService,
         private val chatIslandService: ChatIslandService,
         private val sagaNavigationTracker: SagaNavigationTracker,
+        // Provider, not a direct dependency: ChatGenerationService depends on MessageUseCase,
+        // which depends back on this class — a direct constructor reference would be a cycle.
+        // Only used to read activeGenerations, never called synchronously during construction.
+        private val chatGenerationServiceProvider: Provider<ChatGenerationService>,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -451,7 +457,23 @@ class SagaContentManagerImpl
             _showObjectiveOverlay.value = false
         }
 
-        override fun resetSagaSession() {
+        /**
+         * Tears the manager down to a blank slate for a genuinely new saga. Only [loadSaga] may
+         * call this, and only from its own "is this a different saga than the one already live"
+         * check — nulling `content`/`milestoneUpdate`/`isMilestoneActive` unconditionally is safe
+         * there because that guard has just confirmed nothing is relying on the current session.
+         *
+         * This used to also be callable directly from ChatViewModel.initChat(), which is what let
+         * a *second* ChatViewModel instance for a saga [MilestoneScreen] already had open — mid an
+         * unresolved milestone like the chapter-closure choice cards — wipe that shared state out
+         * from under it: with isMilestoneActive/milestoneUpdate gone, NarrativeCheck read a
+         * synthesized-but-unanswered chapter as fully complete and marched the saga into the next
+         * one before the player had even submitted a pick. A screen asking to load a saga has no
+         * business deciding whether the state is safe to discard; only the owner of that state
+         * does. Chat's whole authority here should end at "load this saga" — this method is now
+         * private specifically so nothing outside [loadSaga] can reach for it again.
+         */
+        private fun resetSagaSession() {
             Timber.d("resetSagaSession: clearing chat session state")
             sagaJob?.cancel()
             sagaJob = null
@@ -1194,13 +1216,37 @@ class SagaContentManagerImpl
                 }
 
                 is SagaMilestone.NewEvent -> {
-                    getSagaContent()?.currentActInfo?.currentChapterInfo?.let { chapter ->
-                        managerScope.launch {
+                    managerScope.launch {
+                        // A reply's own writes (see the comment in
+                        // MessageUseCaseImpl.generateMessage) target "the current timeline" as of
+                        // whenever they actually land, not whenever the turn started. Nulling
+                        // currentEventId — and CreateTimeline right behind it — while one of those
+                        // replies is still in flight is exactly what lets its
+                        // sceneSummary/message land on a timeline this saga has already moved
+                        // past, orphaning it with messages but no synthesized content. Generation
+                        // is expected to finish on its own (success, failure, or timeout all clear
+                        // this saga's entry), so waiting here just narrows the window instead of
+                        // risking it.
+                        chatGenerationServiceProvider
+                            .get()
+                            .activeGenerations
+                            .first { !it.containsKey(saga.data.id) }
+                        // Re-read fresh AFTER the wait, not captured before it: the wait can take
+                        // real time, and a concurrent progression run unblocked by that same
+                        // generation finishing (e.g. ChatViewModel's post-generation check) may
+                        // have already closed this exact timeline and moved currentEventId on to
+                        // a new one. Only close the pointer if it's still where it was when this
+                        // milestone was raised — otherwise there's nothing left for us to do, and
+                        // force-nulling an already-advanced pointer just makes CreateTimeline's
+                        // self-heal re-point back to it, landing on an intent-less reevaluate()
+                        // that never updates the Milestone screen out of Loading.
+                        val chapter = getSagaContent()?.currentActInfo?.currentChapterInfo
+                        if (chapter != null && chapter.data.currentEventId == milestone.timeline.id) {
                             chapterUseCase.updateChapter(
                                 chapter.data.copy(currentEventId = null),
                             )
-                            requestNarrativeProgression()
                         }
+                        requestNarrativeProgression()
                     }
                 }
 

@@ -35,6 +35,12 @@ data class Chapter(
     /** Where/when this chapter ends — populated by chapter synthesis, becomes the next chapter's [openingCheckpoint]. */
     @Embedded(prefix = "closing_")
     val closingCheckpoint: LocationCheckpoint? = null,
+    /** Rewritten (never appended) read of the player's leanings, seeded by the previous chapter's value. */
+    val playerSpectrum: String? = null,
+    /** This chapter's closure dilemmas; null/empty until synthesis produces them. */
+    val playerChoiceCards: List<GeneratedChoiceCard>? = null,
+    /** Tags of the options the player picked. Audit-only — never shown. Null until answered. */
+    val playerChoiceAnswers: List<String>? = null,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()
 }

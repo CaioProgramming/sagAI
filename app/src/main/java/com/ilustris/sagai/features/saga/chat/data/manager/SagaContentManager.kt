@@ -106,8 +106,6 @@ interface SagaContentManager {
 
     fun stopProcessing()
 
-    fun resetSagaSession()
-
     suspend fun updateSummary(sceneSummary: SceneSummary)
 
     suspend fun getSagaContent(): SagaContent?

@@ -78,4 +78,14 @@ object EnumConverters {
     @JvmStatic
     fun stringToTimeGapMagnitude(value: String?): TimeGapMagnitude? =
         if (value == null) null else runCatching { TimeGapMagnitude.valueOf(value) }.getOrNull()
+
+    @TypeConverter
+    @JvmStatic
+    fun embeddingSourceTypeToString(value: com.ilustris.sagai.core.ai.rag.EmbeddingSourceType): String = value.name
+
+    @TypeConverter
+    @JvmStatic
+    fun stringToEmbeddingSourceType(value: String): com.ilustris.sagai.core.ai.rag.EmbeddingSourceType =
+        runCatching { com.ilustris.sagai.core.ai.rag.EmbeddingSourceType.valueOf(value) }
+            .getOrDefault(com.ilustris.sagai.core.ai.rag.EmbeddingSourceType.UNKNOWN)
 }

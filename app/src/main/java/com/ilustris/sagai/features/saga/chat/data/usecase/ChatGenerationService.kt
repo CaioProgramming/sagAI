@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.globalshell.ChatGenerationWorkEffect
 import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.ChatGenerationOutcome
 import com.ilustris.sagai.features.saga.chat.data.model.ChatGenerationUiState
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -50,6 +51,57 @@ class ChatGenerationService
         val outcomes = _outcomes.asSharedFlow()
 
         private val jobs = ConcurrentHashMap<Int, Job>()
+
+        /**
+         * Marks [sagaId] as "about to generate" synchronously — no coroutine, no dispatcher
+         * hop — so [activeGenerations] already reflects it the instant this call returns.
+         *
+         * Exists because [generate] only writes to [activeGenerations] from inside the
+         * coroutine it launches, and callers save the user's message (a suspend DB write) before
+         * ever calling [generate]. That save alone invalidates the saga's Room flow, which
+         * ChatViewModel's own progression recheck observes — reading activeGenerations as
+         * "nothing generating for this saga yet" in the gap between the message landing and
+         * [generate] actually being called. A recheck landing in that gap could decide
+         * EvolveTimeline off the message count alone, before this turn's reply had even started,
+         * racing the reply instead of following it. Calling this first, before the save, closes
+         * that gap: the guard already reads true by the time the save's own invalidation fires.
+         */
+        fun reserve(
+            sagaId: Int,
+            sagaTitle: String,
+            genre: Genre,
+        ) {
+            _activeGenerations.update { map ->
+                if (map.containsKey(sagaId)) {
+                    map
+                } else {
+                    map +
+                        (
+                            sagaId to
+                                ChatGenerationUiState.Generating(
+                                    sagaId = sagaId,
+                                    sagaTitle = sagaTitle,
+                                    genre = genre,
+                                    speakerName = null,
+                                    reasoning = null,
+                                )
+                        )
+                }
+            }
+        }
+
+        /**
+         * Undoes a [reserve] that never turned into a real generation — the message failed to
+         * save, or the caller decided against generating after all (e.g. no active timeline yet).
+         * A no-op once [generate] has actually taken the slot: [jobs] having an active entry is
+         * what a real generation looks like, and only [generate]'s own completion (or [cancel])
+         * should clear that one.
+         */
+        fun releaseReservation(sagaId: Int) {
+            if (jobs[sagaId]?.isActive != true) {
+                _activeGenerations.update { it - sagaId }
+            }
+        }
 
         fun generate(
             saga: SagaMetadata,

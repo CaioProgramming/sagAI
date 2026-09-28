@@ -136,19 +136,6 @@ fun Genre.subtitle(): String =
         Genre.PUNK_ROCK -> "ANARCHY & RIOTS"
     }
 
-fun Genre.genreIcon(): Int =
-    when (this) {
-        Genre.FANTASY -> R.drawable.ic_dragon
-        Genre.CYBERPUNK -> R.drawable.scifi_icon
-        Genre.HORROR -> R.drawable.horror_icon
-        Genre.HEROES -> R.drawable.ic_eye_mask
-        Genre.CRIME -> R.drawable.crime
-        Genre.SHINOBI -> R.drawable.shinobi_background
-        Genre.SPACE_OPERA -> R.drawable.space_opera
-        Genre.COWBOY -> R.drawable.cowboys
-        Genre.PUNK_ROCK -> R.drawable.punk_rock
-    }
-
 @Composable
 fun Genre.colorPalette(): List<Color> = colorPalette(LocalGenreVisualConfig.current)
 

@@ -394,6 +394,17 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_35_36 =
+        object : Migration(35, 36) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Chapter-closure choice cards: the dilemmas, the (hidden) tags the player picked,
+                // and the per-chapter spectrum they rewrite. NULL means "not answered yet".
+                db.execSQL("ALTER TABLE Chapter ADD COLUMN `playerSpectrum` TEXT")
+                db.execSQL("ALTER TABLE Chapter ADD COLUMN `playerChoiceCards` TEXT")
+                db.execSQL("ALTER TABLE Chapter ADD COLUMN `playerChoiceAnswers` TEXT")
+            }
+        }
+
     val MIGRATION_32_33 =
         object : Migration(32, 33) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -587,13 +598,41 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_36_37 =
+        object : Migration(36, 37) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // RAG index: one row per atomic retrievable fact (wiki entry, character event,
+                // continuity fact, relationship), keyed by a stable sourceKey so re-indexing a
+                // source overwrites rather than duplicates. vector is a packed FloatArray blob —
+                // see FloatArrayConverter.
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `embedding_entries` (
+                        `sagaId` INTEGER NOT NULL,
+                        `sourceKey` TEXT NOT NULL,
+                        `sourceType` TEXT NOT NULL,
+                        `text` TEXT NOT NULL,
+                        `vector` BLOB NOT NULL,
+                        `modelId` TEXT NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`sagaId`, `sourceKey`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_embedding_entries_sagaId_sourceType` " +
+                        "ON `embedding_entries` (`sagaId`, `sourceType`)",
+                )
+            }
+        }
+
     /**
      * Live conversation: how the player sent each message (typed/voice), the pre-correction text
      * of a corrected typed message, and each character's persisted voice direction. All nullable
      * with no default, so existing rows read as typed messages and uncast voices.
      */
-    val MIGRATION_35_36 =
-        object : Migration(35, 36) {
+    val MIGRATION_37_38 =
+        object : Migration(37, 38) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE messages ADD COLUMN `inputMode` TEXT")
                 db.execSQL("ALTER TABLE messages ADD COLUMN `originalText` TEXT")
@@ -638,5 +677,7 @@ object DatabaseMigrations {
             MIGRATION_33_34,
             MIGRATION_34_35,
             MIGRATION_35_36,
+            MIGRATION_36_37,
+            MIGRATION_37_38,
         )
 }

@@ -671,6 +671,14 @@
     <string name="introduction_milestone">Introduction</string>
     <string name="milestone_loading_default">Shaping what happens next…</string>
     <string name="milestone_adjusting_lore">Adjusting a few things…</string>
+    <string name="milestone_choices_eyebrow">Before the chapter closes</string>
+    <string name="milestone_choices_progress">%1$d of %2$d</string>
+    <string name="milestone_choices_hint">Turn a card over. Change your mind by turning the other.</string>
+    <string name="milestone_choices_card_hidden">Face-down card. Tap to turn it over.</string>
+    <string name="milestone_choices_classified">CLASSIFIED</string>
+    <string name="milestone_choices_next">Next</string>
+    <string name="milestone_choices_submit">Seal the chapter</string>
+    <string name="milestone_stuck_exit">Something wrong? Tap to check</string>
     <string name="milestone_error_title">The story hit a snag</string>
     <string name="milestone_emotional_note_label">Emotional note</string>
     <string name="milestone_view_details">View details</string>

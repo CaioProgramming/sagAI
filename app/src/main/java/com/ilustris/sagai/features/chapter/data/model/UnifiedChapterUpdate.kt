@@ -13,6 +13,21 @@ data class UnifiedChapterUpdate(
     val continuitySummary: ContinuitySummary? = null,
     /** Where/when this chapter ends — becomes the next chapter's opening checkpoint. */
     val closingCheckpoint: GeneratedLocationCheckpoint? = null,
+    /** Three in-fiction dilemma pairs the player answers at chapter close. */
+    val playerChoiceCards: List<GeneratedChoiceCard> = emptyList(),
+)
+
+/**
+ * One forced-choice dilemma. The tags are never shown to the player — they only describe what
+ * picking each option reveals, and feed [Chapter.playerSpectrum].
+ */
+data class GeneratedChoiceCard(
+    /** A short, direct question — not a rambling dilemma sentence. */
+    val choiceTitle: String = "",
+    val optionAText: String = "",
+    val optionATag: String = "",
+    val optionBText: String = "",
+    val optionBTag: String = "",
 )
 
 data class GeneratedCharacterArc(

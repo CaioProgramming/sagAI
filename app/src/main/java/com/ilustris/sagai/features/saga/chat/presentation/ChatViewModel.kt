@@ -451,8 +451,17 @@ class ChatViewModel
             stateManager.updateLoading(true)
             enableDebugMode(isDebug)
 
-            sagaContentManager.resetSagaSession()
-
+            // No resetSagaSession() call here on purpose: whether the shared session needs
+            // tearing down is the manager's call, not this screen's. The guard above only knows
+            // about THIS ViewModel's own (possibly blank, on a fresh instance) uiState, not
+            // whether the manager already has this exact saga live elsewhere — e.g. the Milestone
+            // screen mid-chain on it, blocked on an unresolved milestone like the chapter-closure
+            // choice cards. A stray reset from here used to wipe that shared state out from under
+            // it: with isMilestoneActive/milestoneUpdate gone, NarrativeCheck read a synthesized-
+            // but-unanswered chapter as fully complete and marched the saga into the next one
+            // before the player had even submitted a pick. loadSaga() below has its own
+            // "already loaded, don't disrupt it" check against its own state, so it's the only
+            // place a reset should ever get decided.
             sagaObserverJob = observeSaga()
 
             milestoneObserverJob?.cancel()
@@ -1293,6 +1302,18 @@ class ChatViewModel
                             characterReference?.name ?: message.speakerName
                         }
 
+                    // Reserved before the save below, not after it succeeds — see
+                    // ChatGenerationService.reserve's own doc for why the order matters: saving
+                    // the user's message is what invalidates the Room flow that drives this
+                    // saga's own progression recheck (further down in this file), and that
+                    // recheck used to find activeGenerations still empty for this saga in the gap
+                    // before generate() got called, letting it decide EvolveTimeline off the
+                    // user's message alone — running in parallel with, or even before, this
+                    // turn's reply.
+                    if (isFromUser) {
+                        chatGenerationService.reserve(saga.data.id, saga.data.title, saga.data.genre)
+                    }
+
                     messageUseCase
                         .saveMessage(
                             saga,
@@ -1315,6 +1336,9 @@ class ChatViewModel
                                 triggerGeneration(saga, savedMessage, sceneSummaryData)
                             }
                         }.onFailureAsync {
+                            if (isFromUser) {
+                                chatGenerationService.releaseReservation(saga.data.id)
+                            }
                             sagaThemeManager.showSnackBar(
                                 message = context.getString(R.string.message_save_error),
                                 action =
@@ -1379,6 +1403,7 @@ class ChatViewModel
             sceneSummary: SceneSummary?,
         ) {
         if (saga.getCurrentTimeLine() == null) {
+                chatGenerationService.releaseReservation(saga.data.id)
                 sagaContentManager.checkNarrativeProgression(saga)
                 return
             }

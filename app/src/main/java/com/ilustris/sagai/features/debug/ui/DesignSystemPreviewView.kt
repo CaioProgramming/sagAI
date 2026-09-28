@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,12 +40,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -63,6 +68,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
@@ -77,16 +83,20 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.gson.GsonBuilder
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.ai.model.ShaderParamsConfig
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
+import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.settings.ui.audit.JsonCodeBlock
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
@@ -95,8 +105,11 @@ import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
 import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
+import com.ilustris.sagai.features.saga.milestone.ui.ChapterChoiceCardsScreen
 import com.ilustris.sagai.features.saga.milestone.ui.toStoryBeat
 import com.ilustris.sagai.ui.animations.comicExtrude
+import com.ilustris.sagai.ui.components.IosStyleMenu
+import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.WordArtText
 import com.ilustris.sagai.ui.components.island.AdvanceIslandContent
@@ -145,6 +158,9 @@ fun DesignSystemPreviewView(
     val genre = Genre.entries[pagerState.currentPage]
     var showStarryLoaderPreview by remember { mutableStateOf(false) }
     var milestonePreviewKind by remember { mutableStateOf<MilestonePreviewKind?>(null) }
+    var showCharacterPreview by remember { mutableStateOf(false) }
+    var showMoreDebugMenu by remember { mutableStateOf(false) }
+    var showIslandMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(showStarryLoaderPreview) {
         if (showStarryLoaderPreview) {
@@ -311,11 +327,33 @@ fun DesignSystemPreviewView(
                                                             coverImage = null,
                                                             actCoverImages = emptyList(),
                                                             bookGenerationState = BookGenerationUiState.Idle,
-                                                            onContinue = { milestonePreviewKind = MilestonePreviewKind.CHAPTER },
+                                                            onContinue = { milestonePreviewKind = MilestonePreviewKind.CHOICES },
                                                             onNavigate = {},
                                                             onGenerateBook = {},
                                                         ),
                                                 genre = genre,
+                                            )
+                                        }
+
+                                        // Sits before the chapter closure, like the real chain. Picks
+                                        // are kept locally so the mandatory-answer gating is testable;
+                                        // only indices ever reach the screen, never the hidden tags.
+                                        MilestonePreviewKind.CHOICES -> {
+                                            var selections by remember(genre) {
+                                                mutableStateOf<List<Int?>>(List(MOCK_CHOICE_CARDS.size) { null })
+                                            }
+                                            ChapterChoiceCardsScreen(
+                                                state =
+                                                    MilestoneUiState.ChoiceCardsStep(
+                                                        milestone = DesignSystemMocks.mockChapterFinishedMilestone(genre),
+                                                        cards = MOCK_CHOICE_CARDS,
+                                                        selections = selections,
+                                                    ),
+                                                genre = genre,
+                                                onSelect = { card, option ->
+                                                    selections = selections.toMutableList().also { it[card] = option }
+                                                },
+                                                onSubmit = { milestonePreviewKind = MilestonePreviewKind.CHAPTER },
                                             )
                                         }
 
@@ -434,14 +472,13 @@ fun DesignSystemPreviewView(
                         .background(
                             MaterialTheme.colorScheme.background.copy(alpha = .3f),
                             CircleShape,
-                        ).size(24.dp)
-                        .padding(4.dp),
+                        ).size(40.dp),
             ) {
                 Icon(
                     painterResource(R.drawable.ic_back_left),
                     contentDescription = stringResource(R.string.back_button_description),
                     tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.size(20.dp),
                 )
             }
 
@@ -453,46 +490,68 @@ fun DesignSystemPreviewView(
                 textAlign = TextAlign.Center,
             )
 
-            IconButton(
-                onClick = {
-                    showStarryLoaderPreview = true
-                },
+            Row(
                 modifier =
                     Modifier
                         .background(
                             MaterialTheme.colorScheme.background.copy(alpha = .3f),
                             CircleShape,
-                        ).size(24.dp)
-                        .padding(4.dp),
+                        ).padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    painterResource(R.drawable.ic_full_spark),
-                    null,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.fillMaxSize(),
+                DebugPillIconButton(
+                    icon = R.drawable.ic_full_spark,
+                    contentDescription = "Preview Starry Loader",
+                    onClick = { showStarryLoaderPreview = true },
                 )
-            }
-
-            IconButton(
-                onClick = { milestonePreviewKind = MilestonePreviewKind.LOADING },
-                modifier =
-                    Modifier
-                        .background(
-                            MaterialTheme.colorScheme.background.copy(alpha = .3f),
-                            CircleShape,
-                        ).size(24.dp)
-                        .padding(4.dp),
-            ) {
-                Icon(
-                    painterResource(R.drawable.ic_spark),
-                    contentDescription = "Preview Milestone screens",
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.fillMaxSize(),
+                DebugPillIconButton(
+                    icon = R.drawable.character_icon,
+                    contentDescription = "Preview character generation",
+                    onClick = { showCharacterPreview = true },
                 )
-            }
 
-            IslandTestIconButton(viewModel, genre)
+                Box(contentAlignment = Alignment.Center) {
+                    DebugPillIconButton(
+                        icon = R.drawable.ic_more_vert,
+                        contentDescription = "More debug tools",
+                        onClick = { showMoreDebugMenu = true },
+                    )
+                    IosStyleMenu(
+                        expanded = showMoreDebugMenu,
+                        onDismissRequest = { showMoreDebugMenu = false },
+                    ) {
+                        IosStyleMenuItem(
+                            text = "Preview Milestone screens",
+                            onClick = {
+                                showMoreDebugMenu = false
+                                milestonePreviewKind = MilestonePreviewKind.LOADING
+                            },
+                        )
+                        IosStyleMenuItem(
+                            text = "Test Island",
+                            onClick = {
+                                showMoreDebugMenu = false
+                                showIslandMenu = true
+                            },
+                        )
+                    }
+                    IslandTestMenu(
+                        viewModel = viewModel,
+                        genre = genre,
+                        expanded = showIslandMenu,
+                        onDismiss = { showIslandMenu = false },
+                    )
+                }
+            }
         }
+    }
+
+    if (showCharacterPreview) {
+        CharacterGenerationPreviewSheet(
+            viewModel = viewModel,
+            genre = genre,
+            onDismiss = { showCharacterPreview = false },
+        )
     }
 }
 
@@ -500,7 +559,132 @@ fun DesignSystemPreviewView(
 private const val MOCK_COVER_URL =
     "https://i.pinimg.com/564x/0a/92/7d/0a927df0b8a6a12a5276e03882775739.jpg"
 
-private enum class MilestonePreviewKind { LOADING, EVENT, CHAPTER, ACT, INTRO, ERROR }
+/** Stand-in dilemmas for the chapter-closure choice cards. Tags are dummies: the screen never shows them. */
+private val MOCK_CHOICE_CARDS =
+    listOf(
+        GeneratedChoiceCard(
+            choiceTitle = "Who do you reach first?",
+            optionAText = "The friend who trusted you",
+            optionATag = "loyalty over pragmatism",
+            optionBText = "The stranger who holds the map",
+            optionBTag = "pragmatism over loyalty",
+        ),
+        GeneratedChoiceCard(
+            choiceTitle = "Power, or the crew?",
+            optionAText = "Leave them behind and take it",
+            optionATag = "ambition over belonging",
+            optionBText = "Refuse, and walk away with them",
+            optionBTag = "belonging over ambition",
+        ),
+        GeneratedChoiceCard(
+            choiceTitle = "Confront her, or let it go?",
+            optionAText = "Forgive her and say nothing",
+            optionATag = "forgives for the greater good",
+            optionBText = "Confront her in front of the others",
+            optionBTag = "truth over harmony",
+        ),
+    )
+
+private enum class MilestonePreviewKind { LOADING, EVENT, CHOICES, CHAPTER, ACT, INTRO, ERROR }
+
+/**
+ * Runs the real character-generation and image-generation pipelines against an in-memory mock
+ * saga ([DesignSystemMocks.mockSagaContent]) — nothing here is persisted, so it's safe to
+ * regenerate repeatedly while tuning a genre's appearance/identity blueprint rules. Wrapped in
+ * [SagAITheme] for [genre] so the sheet reads in the same palette as the preview it's testing.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CharacterGenerationPreviewSheet(
+    viewModel: DesignSystemViewModel,
+    genre: Genre,
+    onDismiss: () -> Unit,
+) {
+    val state by viewModel.characterPreviewState.collectAsStateWithLifecycle()
+
+    SagAITheme(genre = genre) {
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            containerColor = MaterialTheme.colorScheme.background,
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
+            ) {
+                Text(
+                    "Character preview — ${genre.name}",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                Button(
+                    onClick = { viewModel.generateRandomCharacterPreview(genre) },
+                    enabled = !state.isGeneratingCharacter,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (state.isGeneratingCharacter) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(if (state.character == null) "Generate random character" else "Regenerate character")
+                    }
+                }
+
+                state.error?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text(it, color = MaterialTheme.colorScheme.error)
+                }
+
+                state.character?.let { character ->
+                    Spacer(Modifier.height(16.dp))
+                    JsonCodeBlock(character.toJsonFormat())
+
+                    Spacer(Modifier.height(16.dp))
+                    Button(
+                        onClick = { viewModel.generatePreviewImage(genre) },
+                        enabled = !state.isGeneratingImage,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (state.isGeneratingImage) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Text(if (state.bitmap == null) "Generate portrait" else "Regenerate portrait")
+                        }
+                    }
+
+                    state.bitmap?.let { bitmap ->
+                        Spacer(Modifier.height(16.dp))
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Generated portrait for ${character.name}",
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(16.dp)),
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun BoxScope.GenrePager(pagerState: androidx.compose.foundation.pager.PagerState) {
@@ -929,12 +1113,30 @@ private fun SliderRow(spec: SliderSpec) {
     }
 }
 
+/** One icon inside the debug tools pill — no background of its own, the pill supplies it. */
 @Composable
-private fun IslandTestIconButton(
+private fun DebugPillIconButton(
+    icon: Int,
+    contentDescription: String?,
+    onClick: () -> Unit,
+) {
+    IconButton(onClick = onClick, modifier = Modifier.size(44.dp)) {
+        Icon(
+            painterResource(icon),
+            contentDescription = contentDescription,
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+@Composable
+private fun IslandTestMenu(
     viewModel: DesignSystemViewModel,
     genre: Genre,
+    expanded: Boolean,
+    onDismiss: () -> Unit,
 ) {
-    var showIslandMenu by remember { mutableStateOf(false) }
     val objectiveSample = stringResource(R.string.island_test_objective_sample)
     val processingSample = stringResource(R.string.island_test_advance_processing_sample)
     val bookSagaTitle = stringResource(R.string.island_test_book_generation_saga_title)
@@ -944,136 +1146,121 @@ private fun IslandTestIconButton(
     val imageReasoning = stringResource(R.string.island_test_image_generation_reasoning)
     val imageFallbackPrompt = stringResource(R.string.island_test_image_fallback_prompt)
 
-    Box {
-        IconButton(
-            onClick = { showIslandMenu = true },
-            modifier =
-                Modifier
-                    .background(
-                        MaterialTheme.colorScheme.background.copy(alpha = .3f),
-                        CircleShape,
-                    ).size(24.dp)
-                    .padding(4.dp),
-        ) {
-            Icon(painterResource(R.drawable.ic_cosmos), "Test Island")
-        }
-
-        DropdownMenu(
-            showIslandMenu,
-            onDismissRequest = { showIslandMenu = false },
-        ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.island_test_objective)) },
-                onClick = {
-                    showIslandMenu = false
-                    viewModel.testIsland(
-                        ObjectiveIslandContent(
-                            titleRes = R.string.current_objective,
-                            objective = objectiveSample,
+    DropdownMenu(
+        expanded,
+        onDismissRequest = onDismiss,
+    ) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.island_test_objective)) },
+            onClick = {
+                onDismiss()
+                viewModel.testIsland(
+                    ObjectiveIslandContent(
+                        titleRes = R.string.current_objective,
+                        objective = objectiveSample,
+                        genre = genre,
+                        progress = 0.4f,
+                    ),
+                )
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.island_test_advance_idle)) },
+            onClick = {
+                onDismiss()
+                viewModel.testIsland(
+                    AdvanceIslandContent(
+                        action = NarrativeAction.CreateAct,
+                        reasoning = null,
+                        isProcessing = false,
+                        genre = genre,
+                        onAction = {},
+                    ),
+                )
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.island_test_advance_processing)) },
+            onClick = {
+                onDismiss()
+                viewModel.testIsland(
+                    AdvanceIslandContent(
+                        action = NarrativeAction.CreateAct,
+                        reasoning = processingSample,
+                        isProcessing = true,
+                        genre = genre,
+                        onAction = {},
+                    ),
+                )
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.island_test_book_generation)) },
+            onClick = {
+                onDismiss()
+                viewModel.testIsland(
+                    BookGenerationIslandContent(
+                        BookGenerationUiState.Generating(
+                            sagaId = 1,
+                            sagaTitle = bookSagaTitle,
+                            actId = 1,
+                            actTitle = bookActTitle,
                             genre = genre,
-                            progress = 0.4f,
+                            reasoning = bookReasoning,
                         ),
-                    )
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.island_test_advance_idle)) },
-                onClick = {
-                    showIslandMenu = false
-                    viewModel.testIsland(
-                        AdvanceIslandContent(
-                            action = NarrativeAction.CreateAct,
-                            reasoning = null,
-                            isProcessing = false,
-                            genre = genre,
-                            onAction = {},
-                        ),
-                    )
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.island_test_advance_processing)) },
-                onClick = {
-                    showIslandMenu = false
-                    viewModel.testIsland(
-                        AdvanceIslandContent(
-                            action = NarrativeAction.CreateAct,
-                            reasoning = processingSample,
-                            isProcessing = true,
-                            genre = genre,
-                            onAction = {},
-                        ),
-                    )
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.island_test_book_generation)) },
-                onClick = {
-                    showIslandMenu = false
-                    viewModel.testIsland(
-                        BookGenerationIslandContent(
-                            BookGenerationUiState.Generating(
-                                sagaId = 1,
-                                sagaTitle = bookSagaTitle,
-                                actId = 1,
-                                actTitle = bookActTitle,
-                                genre = genre,
-                                reasoning = bookReasoning,
+                    ),
+                )
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.island_test_image_generation)) },
+            onClick = {
+                onDismiss()
+                viewModel.testIsland(
+                    ImageGenerationIslandContent(
+                        state =
+                            ImageGenerationUiState.Generating(
+                                label = imageLabel,
+                                reasoning = imageReasoning,
+                                imageType = ImageType.ICON,
                             ),
-                        ),
-                    )
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.island_test_image_generation)) },
-                onClick = {
-                    showIslandMenu = false
-                    viewModel.testIsland(
-                        ImageGenerationIslandContent(
-                            state =
-                                ImageGenerationUiState.Generating(
-                                    label = imageLabel,
-                                    reasoning = imageReasoning,
-                                    imageType = ImageType.ICON,
-                                ),
-                            debugImageFallbackService = viewModel.debugImageFallbackService,
-                            onCancel = {},
-                            onDismissReveal = {},
-                        ),
-                    )
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.island_test_manual_image_fallback)) },
-                onClick = {
-                    showIslandMenu = false
-                    viewModel.testIsland(
-                        ImageGenerationIslandContent(
-                            state =
-                                ImageGenerationUiState.AwaitingManualFallback(
-                                    prompt = imageFallbackPrompt,
-                                ),
-                            debugImageFallbackService = viewModel.debugImageFallbackService,
-                            onCancel = {},
-                            onDismissReveal = {},
-                        ),
-                    )
-                },
-            )
-            HorizontalDivider()
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        stringResource(R.string.island_test_dismiss),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                },
-                onClick = {
-                    showIslandMenu = false
-                    viewModel.testIsland(null)
-                },
-            )
-        }
+                        debugImageFallbackService = viewModel.debugImageFallbackService,
+                        onCancel = {},
+                        onDismissReveal = {},
+                    ),
+                )
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.island_test_manual_image_fallback)) },
+            onClick = {
+                onDismiss()
+                viewModel.testIsland(
+                    ImageGenerationIslandContent(
+                        state =
+                            ImageGenerationUiState.AwaitingManualFallback(
+                                prompt = imageFallbackPrompt,
+                            ),
+                        debugImageFallbackService = viewModel.debugImageFallbackService,
+                        onCancel = {},
+                        onDismissReveal = {},
+                    ),
+                )
+            },
+        )
+        HorizontalDivider()
+        DropdownMenuItem(
+            text = {
+                Text(
+                    stringResource(R.string.island_test_dismiss),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            },
+            onClick = {
+                onDismiss()
+                viewModel.testIsland(null)
+            },
+        )
     }
 }
 
