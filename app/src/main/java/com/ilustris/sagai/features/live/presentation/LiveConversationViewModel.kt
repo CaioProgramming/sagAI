@@ -2,6 +2,11 @@ package com.ilustris.sagai.features.live.presentation
 
 import MessageStatus
 import android.Manifest
+import android.content.Context
+import com.ilustris.sagai.core.media.SagaPlaybackService
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.AudioGenClient
@@ -89,6 +94,7 @@ class LiveConversationViewModel
         private val player: LiveAudioPlayer,
         private val sessionTracker: LiveSessionTracker,
         private val backgroundWork: LiveBackgroundWork,
+        @ApplicationContext private val context: Context,
     ) : ViewModel() {
         private val _state = MutableStateFlow(LiveUiState())
         val state: StateFlow<LiveUiState> = _state.asStateFlow()
@@ -127,6 +133,7 @@ class LiveConversationViewModel
             observeVoiceQuota()
             observeMilestones()
             observeReactions()
+            observeMusicDucking()
         }
 
         fun hasMicPermission() = permissionService.getPermissionStatus(Manifest.permission.RECORD_AUDIO) == PermissionStatus.GRANTED
@@ -602,6 +609,24 @@ class LiveConversationViewModel
             }
         }
 
+        /**
+         * Lowers the saga's music while the player records (less of it leaks into the mic) and while
+         * a voice plays, so neither competes with it — same duck the audiobook uses.
+         */
+        private fun observeMusicDucking() {
+            viewModelScope.launch {
+                state
+                    .map { it.phase == LivePhase.Listening || it.phase == LivePhase.Speaking(silent = false) }
+                    .distinctUntilChanged()
+                    .collect { ducked -> setMusicDucked(ducked) }
+            }
+        }
+
+        private fun setMusicDucked(ducked: Boolean) {
+            val action = if (ducked) SagaPlaybackService.ACTION_DUCK else SagaPlaybackService.ACTION_UNDUCK
+            SagaPlaybackService.startSafely(context, SagaPlaybackService.playbackIntent(context, action))
+        }
+
         // endregion
 
         /**
@@ -655,6 +680,7 @@ class LiveConversationViewModel
         }
 
         override fun onCleared() {
+            setMusicDucked(false)
             recorder.cancel()
             player.stop()
             setTurnInFlight(false)
