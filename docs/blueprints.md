@@ -14,8 +14,9 @@ This document tracks all the AI prompt blueprints used in the Sagas application.
 | :--- | :--- | :--- | :---: |
 | `dynamic_saga_creation_blueprint` | Generates CTA cards to inspire new story creation. | Home | ✅ |
 | `reply_generation_blueprint` | The "Storyteller"—main narrative generation engine. Also receives `maxMessageLimit` (from the `chat_input_limit` parameter) and must compose within that character ceiling instead of writing long and cutting. | Chat | ✅ |
-| `epilogue_chat_intro_blueprint` | Ephemeral post-ending epilogue chat—character's opening line, warm reunion, never advances plot. | Chat | 📝 |
-| `epilogue_chat_reply_blueprint` | Ephemeral post-ending epilogue chat—ongoing replies, never advances plot, never persisted. | Chat | 📝 |
+| `epilogue_chat_intro_blueprint` | Epilogue chat (persisted per character)—the character opens the talk: a first meeting, or a reunion (`REUNION`) when `conversationHistory` + `timeSinceLastConversation` are present. Colored by `characterKnowledgeOfPlayer` (`WHAT_YOU_KNOW`, RC v1087). Never advances plot. | Chat | ✅ |
+| `epilogue_chat_reply_blueprint` | Epilogue chat replies, never advancing plot; reads `characterKnowledgeOfPlayer` (`WHAT_YOU_KNOW`, RC v1087) so the character keeps knowing the player after old turns leave the prompt. | Chat | ✅ |
+| `epilogue_knowledge_blueprint` | Rewrites (never appends) a character's `CharacterKnowledge` of the player — `impression`, `sharedMoments`, `openThreads` — from the previous knowledge + the turns since the last pass; runs every 10 turns and on leaving (≥4). Published as RC v1087 (2026-09-28). | Chat | ✅ |
 | `chat_writing_pal_blueprint` | The "Ghostwriter"—checks messages for character style/typos. | Chat | ✅ |
 | `chat_reaction_blueprint` | The "Emote"—quick NPC reactions (emojis and short thoughts). | Chat | ✅ |
 | `scene_summarization_blueprint` | The "Analyst"—extracts factual states for continuity. | Chat | ✅ |

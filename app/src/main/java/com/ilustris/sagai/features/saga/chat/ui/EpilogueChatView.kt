@@ -2,6 +2,8 @@
 
 package com.ilustris.sagai.features.saga.chat.ui
 
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import MessageStatus
 import android.graphics.Matrix
 import android.graphics.Shader
@@ -185,7 +187,13 @@ fun EpilogueChatView(
                     isLoading = isReplying,
                     onBackClick = onBack,
                     modifier = Modifier.fillMaxWidth(),
-                    actionContent = { EpilogueInfoAction() },
+                    actionContent = {
+                        EpilogueRestartAction(
+                            characterName = character?.data?.name.orEmpty(),
+                            enabled = !isReplying && messages.isNotEmpty(),
+                            onRestart = viewModel::restartConversation,
+                        )
+                    },
                 )
 
                 val listState = rememberLazyListState()
@@ -290,30 +298,38 @@ fun EpilogueChatView(
 }
 
 /**
- * Placeholder icon ([R.drawable.ic_spark]) until a dedicated one is designed — opens a tooltip
- * explaining the conversation is temporary, replacing the old persistent disclaimer banner.
+ * Starts the conversation over, after a confirmation: the turns go, but the character still
+ * remembers the player (their knowledge is kept) and greets them again.
  */
 @Composable
-private fun EpilogueInfoAction() {
-    val tooltipState = rememberTooltipState(isPersistent = true)
-    val coroutineScope = rememberCoroutineScope()
-
-    TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-        state = tooltipState,
-        tooltip = {
-            PlainTooltip {
-                Text(stringResource(R.string.epilogue_chat_disclaimer))
-            }
-        },
-    ) {
-        IconButton(onClick = { coroutineScope.launch { tooltipState.show() } }, modifier = Modifier.size(32.dp).padding(2.dp)) {
-            Icon(
-                painterResource(R.drawable.ic_temp),
-                contentDescription = stringResource(R.string.epilogue_chat_disclaimer),
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+private fun EpilogueRestartAction(
+    characterName: String,
+    enabled: Boolean,
+    onRestart: () -> Unit,
+) {
+    var confirming by remember { mutableStateOf(false) }
+    IconButton(onClick = { confirming = true }, enabled = enabled, modifier = Modifier.size(32.dp).padding(2.dp)) {
+        Icon(
+            painterResource(R.drawable.baseline_refresh_24),
+            contentDescription = stringResource(R.string.epilogue_restart),
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text(stringResource(R.string.epilogue_restart_title)) },
+            text = { Text(stringResource(R.string.epilogue_restart_message, characterName)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirming = false
+                    onRestart()
+                }) { Text(stringResource(R.string.epilogue_restart)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
     }
 }
 

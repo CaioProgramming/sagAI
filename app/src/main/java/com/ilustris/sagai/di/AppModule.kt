@@ -1,5 +1,7 @@
 package com.ilustris.sagai.di
 
+import com.ilustris.sagai.features.characters.data.source.CharacterKnowledgeDao
+import com.ilustris.sagai.features.saga.datasource.EpilogueMessageDao
 import android.content.Context
 import androidx.work.WorkManager
 import coil3.ImageLoader
@@ -271,6 +273,14 @@ object AppModule {
     @Provides
     @Singleton
     fun provideMessageDao(database: SagaDatabase): MessageDao = database.messageDao()
+
+    @Provides
+    @Singleton
+    fun provideEpilogueMessageDao(database: SagaDatabase): EpilogueMessageDao = database.epilogueMessageDao()
+
+    @Provides
+    @Singleton
+    fun provideCharacterKnowledgeDao(database: SagaDatabase): CharacterKnowledgeDao = database.characterKnowledgeDao()
 
     @Provides
     @Singleton

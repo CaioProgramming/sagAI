@@ -1,6 +1,10 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
+import android.content.Context
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.features.characters.data.usecase.CharacterKnowledgeService
+import com.ilustris.sagai.features.saga.datasource.EpilogueMessageDao
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.mergeInstructions
@@ -17,6 +21,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.EpilogueReply
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import java.io.File
 import javax.inject.Inject
 
 class EpilogueChatUseCaseImpl
@@ -26,13 +31,31 @@ class EpilogueChatUseCaseImpl
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
+        private val epilogueMessageDao: EpilogueMessageDao,
+        private val knowledgeService: CharacterKnowledgeService,
+        @ApplicationContext private val context: Context,
     ) : EpilogueChatUseCase {
+        override fun observeConversation(characterId: Int): Flow<List<EpilogueMessage>> =
+            epilogueMessageDao.observeConversation(characterId)
+
+        override suspend fun saveMessage(message: EpilogueMessage): EpilogueMessage =
+            message.copy(id = epilogueMessageDao.insert(message).toInt())
+
+        override suspend fun clearConversation(
+            sagaId: Int,
+            characterId: Int,
+        ) {
+            epilogueMessageDao.deleteConversation(characterId)
+            audioDirectory(context, sagaId, characterId).deleteRecursively()
+        }
+
         override fun openConversation(
             saga: SagaContent,
             character: CharacterContent,
             arcs: List<CharacterArc>,
+            history: List<EpilogueMessage>,
         ): Flow<StreamingState<EpilogueReply?>> =
-            generateTurn(saga, character, arcs, conversationSoFar = emptyList(), userMessage = null)
+            generateTurn(saga, character, arcs, conversationSoFar = history, userMessage = null)
 
         override fun reply(
             saga: SagaContent,
@@ -59,6 +82,7 @@ class EpilogueChatUseCaseImpl
                             arcs = arcs,
                             conversationSoFar = conversationSoFar,
                             userMessage = userMessage,
+                            knowledge = knowledgeService.get(character.data.id),
                         )
 
                     val generateStream =
@@ -89,4 +113,19 @@ class EpilogueChatUseCaseImpl
                     )
                 }
             }
+
+        override fun compactKnowledge(
+            saga: SagaContent,
+            character: CharacterContent,
+            leaving: Boolean,
+        ) = knowledgeService.compactIfDue(saga, character, leaving)
+
+        companion object {
+            /** Where a character's epilogue audio lives; inside the saga folder, so it goes with the saga. */
+            fun audioDirectory(
+                context: Context,
+                sagaId: Int,
+                characterId: Int,
+            ): File = context.filesDir.resolve("sagas/$sagaId/epilogue/$characterId")
+        }
     }

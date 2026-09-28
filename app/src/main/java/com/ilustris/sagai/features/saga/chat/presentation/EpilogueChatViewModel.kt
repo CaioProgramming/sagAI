@@ -23,11 +23,11 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Owns the epilogue chat's conversation state entirely in memory: a plain [ViewModel]-scoped
- * [StateFlow] is enough, since the only requirement is that the conversation is wiped on process
- * death, not that it survives across screens or app restarts. Never reads from or writes to
- * [com.ilustris.sagai.features.saga.chat.datasource.MessageDao] — messages here are never
- * persisted.
+ * The epilogue chat with one character. The conversation is persisted per character and observed
+ * from the database, so it survives leaving the screen and process death; the character opens the
+ * talk on a first meeting or when enough time passed since the last one (a reunion), and every few
+ * turns — and on the way out — the conversation is folded into what the character knows about the
+ * player. It never touches the saga's own messages.
  */
 @HiltViewModel
 class EpilogueChatViewModel
@@ -83,6 +83,7 @@ class EpilogueChatViewModel
             loadedFor = key
 
             loadJob?.cancel()
+            compactOnLeave()
             resetState()
 
             loadJob =
@@ -103,7 +104,16 @@ class EpilogueChatViewModel
                             ?.let { protagonistId -> loadedCharacter.findRelationship(protagonistId) }
                             ?.let { relation -> "${relation.data.emoji} ${relation.data.title}".trim() }
 
-                    collectTurn(epilogueChatUseCase.openConversation(loadedSaga, loadedCharacter, loadedArcs))
+                    val history = epilogueChatUseCase.observeConversation(characterId).first()
+                    _messages.value = history
+                    launch { epilogueChatUseCase.observeConversation(characterId).collect { _messages.value = it } }
+
+                    // First meeting, or a reunion after a while: the character speaks first. A
+                    // quick return just picks up where the talk stopped.
+                    val lastTalk = history.lastOrNull()?.timestamp
+                    if (lastTalk == null || System.currentTimeMillis() - lastTalk > REUNION_GAP_MS) {
+                        collectTurn(epilogueChatUseCase.openConversation(loadedSaga, loadedCharacter, loadedArcs, history))
+                    }
                 }
         }
 
@@ -127,18 +137,34 @@ class EpilogueChatViewModel
             val currentCharacter = _character.value ?: return
 
             _error.value = false
-            _messages.value = _messages.value + EpilogueMessage(text = trimmed, isUser = true)
+            // Shown right away; the database emission that follows carries the same turn.
+            val pending = EpilogueMessage(sagaId = currentSaga.data.id, characterId = currentCharacter.data.id, text = trimmed, isUser = true)
+            val conversation = _messages.value + pending
+            _messages.value = conversation
 
             viewModelScope.launch {
+                epilogueChatUseCase.saveMessage(pending)
                 collectTurn(
                     epilogueChatUseCase.reply(
                         saga = currentSaga,
                         character = currentCharacter,
                         arcs = arcs,
-                        conversationSoFar = _messages.value,
+                        conversationSoFar = conversation,
                         userMessage = trimmed,
                     ),
                 )
+                epilogueChatUseCase.compactKnowledge(currentSaga, currentCharacter)
+            }
+        }
+
+        /** Starts over: the turns go, the character still remembers the player, and greets them again. */
+        fun restartConversation() {
+            val currentSaga = saga ?: return
+            val currentCharacter = _character.value ?: return
+            if (_isReplying.value) return
+            viewModelScope.launch {
+                epilogueChatUseCase.clearConversation(currentSaga.data.id, currentCharacter.data.id)
+                collectTurn(epilogueChatUseCase.openConversation(currentSaga, currentCharacter, arcs, emptyList()))
             }
         }
 
@@ -155,8 +181,19 @@ class EpilogueChatViewModel
                     is StreamingState.Success -> {
                         _isReplying.value = false
                         _reasoningChunk.value = null
-                        state.data?.text?.takeIf { it.isNotBlank() }?.let { replyText ->
-                            _messages.value = _messages.value + EpilogueMessage(text = replyText, isUser = false)
+                        val currentSaga = saga
+                        val currentCharacter = _character.value
+                        val reply = state.data
+                        if (reply != null && reply.text.isNotBlank() && currentSaga != null && currentCharacter != null) {
+                            epilogueChatUseCase.saveMessage(
+                                EpilogueMessage(
+                                    sagaId = currentSaga.data.id,
+                                    characterId = currentCharacter.data.id,
+                                    text = reply.text,
+                                    isUser = false,
+                                    emotionalTone = reply.emotionalTone,
+                                ),
+                            )
                         }
                     }
 
@@ -169,5 +206,22 @@ class EpilogueChatViewModel
                     }
                 }
             }
+        }
+    
+        override fun onCleared() {
+            compactOnLeave()
+            super.onCleared()
+        }
+
+        /** A short visit still leaves a mark on what the character knows of the player. */
+        private fun compactOnLeave() {
+            val currentSaga = saga ?: return
+            val currentCharacter = _character.value ?: return
+            epilogueChatUseCase.compactKnowledge(currentSaga, currentCharacter, leaving = true)
+        }
+
+        companion object {
+            /** How long apart two visits must be for the character to greet the player again. */
+            private const val REUNION_GAP_MS = 6 * 60 * 60 * 1000L
         }
     }

@@ -1,0 +1,9 @@
+{
+  "epilogue_chat_intro_blueprint": {
+    "REUNION": "When conversationHistory is present you have talked with the player before, timeSinceLastConversation ago. Greet them as someone you already know — pick up an open thread or something they shared — instead of opening as if meeting again right after the saga.",
+    "WHAT_YOU_KNOW": "characterKnowledgeOfPlayer, when present, is what you've come to know about the player in past talks. Let it color how you greet them; never recite it."
+  },
+  "epilogue_chat_reply_blueprint": {
+    "WHAT_YOU_KNOW": "characterKnowledgeOfPlayer, when present, is what you've come to know about the player in past talks, including ones no longer in conversationHistory. Let it shape how you treat them and bring it up when it fits; never recite it as a list."
+  }
+}

@@ -1136,6 +1136,9 @@
     <string name="live_voices_resting">Vozes descansando até %1$s · seguindo com legendas</string>
     <string name="live_narrator">Narrador</string>
     <string name="live_you">você</string>
+    <string name="epilogue_restart">Começar de novo</string>
+    <string name="epilogue_restart_title">Começar de novo com %1$s?</string>
+    <string name="epilogue_restart_message">A conversa será apagada, mas %1$s vai continuar lembrando de tudo que aprendeu sobre você.</string>
 </resources>
 
 

@@ -20,7 +20,6 @@
     <string name="save_saga">Save saga</string>
     <string name="character_gallery_title">Characters</string>
     <string name="back_button_description">Back</string>
-    <string name="epilogue_chat_disclaimer">This conversation won\'t be saved</string>
     <string name="send_button_description">Send</string>
     <string name="talk_to_character_again">Talk to %1$s again</string>
     <string name="lets_create_saga">Let\'s create your saga</string>
@@ -1149,4 +1148,7 @@
     <string name="live_voices_resting">Voices rest until %1$s · continuing with captions</string>
     <string name="live_narrator">Narrator</string>
     <string name="live_you">you</string>
+    <string name="epilogue_restart">Start over</string>
+    <string name="epilogue_restart_title">Start over with %1$s?</string>
+    <string name="epilogue_restart_message">The conversation will be cleared, but %1$s will still remember everything they learned about you.</string>
 </resources>

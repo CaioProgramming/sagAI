@@ -640,6 +640,35 @@ object DatabaseMigrations {
             }
         }
 
+    /**
+     * Epilogue chats become persistent: one row per turn, per character, and a 1:1 table with what
+     * each character has come to know about the player (rewritten by compaction, never appended).
+     * Both cascade with the character. SQL copied from the exported 39.json schema.
+     */
+    val MIGRATION_38_39 =
+        object : Migration(38, 39) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `epilogue_messages` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`sagaId` INTEGER NOT NULL, `characterId` INTEGER NOT NULL, `text` TEXT NOT NULL, " +
+                        "`isUser` INTEGER NOT NULL, `emotionalTone` TEXT, `inputMode` TEXT, `audioPath` TEXT, " +
+                        "`timestamp` INTEGER NOT NULL, FOREIGN KEY(`characterId`) REFERENCES `Characters`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_epilogue_messages_characterId_timestamp` " +
+                        "ON `epilogue_messages` (`characterId`, `timestamp`)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `character_knowledge` (`characterId` INTEGER NOT NULL, " +
+                        "`sagaId` INTEGER NOT NULL, `impression` TEXT NOT NULL, `sharedMoments` TEXT NOT NULL, " +
+                        "`openThreads` TEXT NOT NULL, `compactedThroughMessageId` INTEGER NOT NULL, " +
+                        "`updatedAt` INTEGER NOT NULL, PRIMARY KEY(`characterId`), FOREIGN KEY(`characterId`) " +
+                        "REFERENCES `Characters`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -679,5 +708,6 @@ object DatabaseMigrations {
             MIGRATION_35_36,
             MIGRATION_36_37,
             MIGRATION_37_38,
+            MIGRATION_38_39,
         )
 }

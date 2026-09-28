@@ -18,6 +18,10 @@ import com.ilustris.sagai.core.database.source.ApiUsageDao
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.ai.rag.EmbeddingDao
 import com.ilustris.sagai.core.ai.rag.EmbeddingEntry
+import com.ilustris.sagai.features.characters.data.model.CharacterKnowledge
+import com.ilustris.sagai.features.characters.data.source.CharacterKnowledgeDao
+import com.ilustris.sagai.features.saga.chat.data.model.EpilogueMessage
+import com.ilustris.sagai.features.saga.datasource.EpilogueMessageDao
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.model.BookChapterPages
@@ -73,8 +77,10 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         WorldLocation::class,
         WorldLocationVisit::class,
         EmbeddingEntry::class,
+        EpilogueMessage::class,
+        CharacterKnowledge::class,
     ],
-    version = 38,
+    version = 39,
     exportSchema = true,
 )
 @TypeConverters(
@@ -124,6 +130,10 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun worldLocationDao(): WorldLocationDao
 
     abstract fun embeddingDao(): EmbeddingDao
+
+    abstract fun epilogueMessageDao(): EpilogueMessageDao
+
+    abstract fun characterKnowledgeDao(): CharacterKnowledgeDao
 
     companion object {
         const val NAME = "SagaDatabase"
