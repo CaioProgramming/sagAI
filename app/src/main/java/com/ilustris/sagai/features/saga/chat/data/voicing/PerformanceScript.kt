@@ -71,23 +71,62 @@ object MessageBlocks {
 object PerformanceScripts {
     /**
      * The script without a model: dialogue by [speaker] (or the narrator when the message is
-     * narration), narrator blocks by the narrator, actions and thoughts dropped. Still better than
-     * the old tag-stripping, which lost narration inside character messages entirely.
+     * narration), narrator blocks by the narrator, thoughts dropped. Actions are dropped too, except
+     * the ones that are plainly a sound the speaker's own voice makes — a sigh, a laugh, a cough —
+     * which become a cue on the nearest line they say, so a timed-out script still breathes.
      */
     fun deterministic(
         blocks: List<MessageBlock>,
         speaker: String?,
-    ): PerformanceScript =
-        PerformanceScript(
-            lines =
-                blocks
-                    .filter { it.canBeSpoken }
-                    .map { block ->
-                        val who =
-                            if (block.type == BlockType.NARRATOR || speaker.isNullOrBlank()) NARRATOR_SPEAKER else speaker
-                        PerformanceLine(speaker = who, text = block.text, block = block.index)
-                    },
+    ): PerformanceScript {
+        val lines =
+            blocks
+                .filter { it.canBeSpoken }
+                .map { block ->
+                    val who =
+                        if (block.type == BlockType.NARRATOR || speaker.isNullOrBlank()) NARRATOR_SPEAKER else speaker
+                    PerformanceLine(speaker = who, text = block.text, block = block.index)
+                }.toMutableList()
+
+        blocks.filter { it.type == BlockType.ACTION }.forEach { action ->
+            val cue = vocalCue(action.text) ?: return@forEach
+            val speakerLines = lines.withIndex().filter { !it.value.isNarrator }
+            // The line right after the action takes it as a lead-in; an action at the very end
+            // trails the last thing said instead.
+            val next = speakerLines.firstOrNull { it.value.block > action.index }
+            val previous = speakerLines.lastOrNull { it.value.block < action.index }
+            when {
+                next != null -> lines[next.index] = next.value.copy(text = "$cue ${next.value.text}")
+                previous != null -> lines[previous.index] = previous.value.copy(text = "${previous.value.text} $cue")
+            }
+        }
+        return PerformanceScript(lines = lines)
+    }
+
+    /**
+     * Common vocal sounds hidden in an action, by stem (Portuguese and English). Only sounds a
+     * voice actually makes: "draws a sword" has none and stays silent.
+     */
+    private val VOCAL_CUES =
+        listOf(
+            Regex("suspir|\\bsigh") to "[sighs]",
+            Regex("gargalh|risad|\\bri(u|o|ndo|r)?\\b|\\briso\\b|laugh|chuckl") to "[laughs]",
+            Regex("toss(e|i|indo|iu)|cough") to "[coughs]",
+            Regex("solu[cç]|chor(a|o|ando|ou)|\\bsob(s|bing)\\b|\\bcr(y|ies|ying)\\b") to "[crying]",
+            Regex("engol(e|iu|indo) em seco|gulp") to "[gulps]",
+            Regex("ofeg|arf(a|ando|ou)|pant") to "[panting]",
+            Regex("sussurr|cochich|whisper") to "[whispering]",
+            Regex("grit(a|o|ando|ou)|berr|shout|yell") to "[shouting]",
+            Regex("geme|gemid|groan") to "[groans]",
+            Regex("bufa|bufou|bufando|scoff") to "[scoffs]",
+            Regex("respira fundo|inspira fundo|deep breath") to "[deep breath]",
+            Regex("pigarre|clears? (his|her|their) throat") to "[clears throat]",
         )
+
+    fun vocalCue(action: String): String? {
+        val text = action.lowercase()
+        return VOCAL_CUES.firstOrNull { (regex, _) -> regex.containsMatchIn(text) }?.second
+    }
 
     /**
      * Keeps only lines the TTS can take: non-blank, spoken by [speaker] or the narrator (the

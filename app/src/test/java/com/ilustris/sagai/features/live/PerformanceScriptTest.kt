@@ -33,6 +33,23 @@ class PerformanceScriptTest {
     }
 
     @Test
+    fun `deterministic script turns vocal actions into cues on the nearest line`() {
+        val lead = PerformanceScripts.deterministic(MessageBlocks.split("<action>Suspira devagar.</action> Tanto faz."), speaker = "Kuri")
+        assertEquals("[sighs] Tanto faz.", lead.lines.single().text)
+
+        val trail = PerformanceScripts.deterministic(MessageBlocks.split("Continue latindo. <action>tossindo sangue</action>"), speaker = "Kuri")
+        assertEquals("Continue latindo. [coughs]", trail.lines.single().text)
+    }
+
+    @Test
+    fun `silent actions add no cue`() {
+        assertEquals(null, PerformanceScripts.vocalCue("puxa a espada e abre a porta"))
+        assertEquals(null, PerformanceScripts.vocalCue("sorri de canto"))
+        assertEquals(null, PerformanceScripts.vocalCue("para sob a chuva"))
+        assertEquals("[laughs]", PerformanceScripts.vocalCue("ri baixo"))
+    }
+
+    @Test
     fun `narrator message has only the narrator speaking`() {
         val script = PerformanceScripts.deterministic(MessageBlocks.split("A chuva para."), speaker = null)
 

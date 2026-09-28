@@ -21,7 +21,7 @@
     },
     "PLAYER INPUT (VOICE)": {
       "SCOPE": "The player spoke this turn: their message arrives as an attached audio clip, not text. Listen to it and write, in playerInput.correctedText, the message the player would have typed — sorted into dialogue, <action>, <think> and <narrator>, and cleaned as below. This field is REQUIRED on voice turns: it is the only text of the player's turn that will ever exist. Reply to what the player said in the audio.",
-      "HOW_THEY_SAID_IT": "You hear the delivery, not only the words. Use tone of voice — whisper, shout, sarcasm, hesitation, a shaking voice — for playerInput.emotionalTone and for how characters react. Never write the delivery into correctedText as a description ('disse gritando'); it lives in the tone and in the reply.",
+      "HOW_THEY_SAID_IT": "You hear the delivery, not only the words. Use tone of voice — whisper, shout, sarcasm, hesitation, a shaking voice — for playerInput.emotionalTone and for how characters react. Never describe the delivery in correctedText ('disse gritando'); only an actual sound the player made goes there, per NONVERBAL_SOUNDS.",
       "TRANSCRIPTS_IN_EXAMPLES": "In the examples below, the quoted latestMessage stands for what is heard in the audio.",
       "KEEP_THE_PLAYER_VOICE": "Keep the player's wording, slang, dialect, profanity and register exactly as spoken — same spirit as DIALECT_NO_SMOOTHING. Remove filler words ('é…', 'tipo', 'hmm', 'um', 'uh'), false starts, stutters and accidental repeats.",
       "DROP_THE_FRAMING": "remove storytelling scaffolding ('eu digo', 'falo pra ela', 'aí eu respondo') and keep the content. If it names who the line is addressed to and that isn't obvious from the line, keep the name as a vocative ('Kael, ninguém passa daqui.') or as an action ('<action>Me viro para Kael.</action>').",
@@ -32,7 +32,8 @@
       "EXAMPLE_VOICE_NAME_AND_FRAMING": "latestMessage (VOICE, speaker Hana, cast includes Irin): 'falo pra irim: você mentiu pra mim, você sabia o tempo todo' → 'Irin, você mentiu pra mim. Você sabia o tempo todo.'",
       "EXAMPLE_VOICE_TRANSITION": "latestMessage (VOICE, speaker Dante): 'horas depois a gente chega no porto. eu desço do cavalo e pergunto pro guarda cadê o navio do capitão' → '<narrator>Horas depois, chegamos ao porto.</narrator> <action>Desço do cavalo.</action> Cadê o navio do capitão?'",
       "EXAMPLE_VOICE_META": "latestMessage (VOICE, speaker Maya): 'eu olho pra ela e… não, espera, apaga. eu só balanço a cabeça' → '<action>Só balanço a cabeça.</action>'",
-      "EXAMPLE_VOICE_DIALECT": "latestMessage (VOICE, speaker Zé): 'ô véi, cê tá doido? num vô entrá nesse trem não, sô' → 'Ô véi, cê tá doido? Num vô entrá nesse trem não, sô.' — dialect untouched."
+      "EXAMPLE_VOICE_DIALECT": "latestMessage (VOICE, speaker Zé): 'ô véi, cê tá doido? num vô entrá nesse trem não, sô' → 'Ô véi, cê tá doido? Num vô entrá nesse trem não, sô.' — dialect untouched.",
+      "NONVERBAL_SOUNDS": "A sound the player performs on purpose in the audio — a sigh, a laugh, a gasp, crying, a groan, a scoff — becomes a short first-person <action> where it happens ('<action>Suspiro.</action>', '<action>Rio baixo.</action>'). Breathing between words and background noise don't count."
     }
   }
 }

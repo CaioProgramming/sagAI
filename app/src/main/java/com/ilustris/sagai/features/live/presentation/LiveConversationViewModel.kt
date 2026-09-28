@@ -465,9 +465,7 @@ class LiveConversationViewModel
             viewModelScope.launch {
                 var castDone = false
                 sagaRepository.getSagaMetadata(sagaId).filterNotNull().collect { saga ->
-                    val speakers =
-                        listOfNotNull(saga.mainCharacter) +
-                            saga.characters.filter { it.id != saga.mainCharacter?.id }.sortedBy { it.joinedAt }
+                    val speakers = centeredSpeakers(saga)
                     _state.update {
                         it.copy(
                             saga = saga,
@@ -493,6 +491,20 @@ class LiveConversationViewModel
                     }
                 }
             }
+        }
+
+        /**
+         * The main character in the middle and the rest split around it, like Instagram's filter
+         * carousel: the selector opens centered on the main character with others on both sides,
+         * instead of everyone piled to its right.
+         */
+        private fun centeredSpeakers(saga: SagaMetadata): List<Character> {
+            val main = saga.mainCharacter
+            val others = saga.characters.filter { it.id != main?.id }.sortedBy { it.joinedAt }
+            if (main == null) return others
+            val left = others.filterIndexed { index, _ -> index % 2 == 1 }.reversed()
+            val right = others.filterIndexed { index, _ -> index % 2 == 0 }
+            return left + main + right
         }
 
         private fun observeOutcomes(sagaId: Int) {

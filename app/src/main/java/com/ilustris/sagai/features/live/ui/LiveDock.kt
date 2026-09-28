@@ -99,9 +99,18 @@ fun LiveDock(
                 }
             }
     }
+    // The speakers arrive after the first frame, so the pager is created on page 0: the first
+    // time they land it jumps straight to the selected one; later changes animate.
+    var positioned by remember { mutableStateOf(false) }
     LaunchedEffect(selectedSpeakerId, speakers) {
         val index = speakers.indexOfFirst { it.id == selectedSpeakerId }
-        if (index >= 0 && index != pagerState.currentPage) pagerState.animateScrollToPage(index)
+        if (index < 0) return@LaunchedEffect
+        if (!positioned) {
+            pagerState.scrollToPage(index)
+            positioned = true
+        } else if (index != pagerState.currentPage) {
+            pagerState.animateScrollToPage(index)
+        }
     }
 
     val selected = speakers.getOrNull(pagerState.currentPage)

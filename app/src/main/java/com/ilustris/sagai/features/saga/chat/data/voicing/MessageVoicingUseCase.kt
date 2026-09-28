@@ -162,7 +162,10 @@ class MessageVoicingUseCase
                 ?: "Speaker"
 
         companion object {
-            private const val SCRIPT_TIMEOUT_MS = 3_000L
+            // Gemma answers the script in ~5-6s in practice (measured 2026-09-28), not the ~1s the
+            // plan guessed: at 3s it always timed out and every clip lost its sounds. TTS itself
+            // takes ~10s, so a few more seconds here is a small share of the wait.
+            private const val SCRIPT_TIMEOUT_MS = 8_000L
             private const val NARRATOR_LABEL = "Narrator"
         }
     }
