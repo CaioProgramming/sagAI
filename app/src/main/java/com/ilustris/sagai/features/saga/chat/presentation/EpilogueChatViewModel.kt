@@ -1,5 +1,10 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
+import android.content.Context
+import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
+import com.ilustris.sagai.features.saga.chat.ui.components.audio.BubbleAudioPlayer
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.services.RemoteConfigService
 import androidx.lifecycle.ViewModel
@@ -39,7 +44,20 @@ class EpilogueChatViewModel
         private val characterUseCase: CharacterUseCase,
         private val sagaRepository: SagaRepository,
         private val remoteConfigService: RemoteConfigService,
+        @ApplicationContext context: Context,
     ) : ViewModel() {
+        /** Plays the bubbles' audio: the player's recorded lines and the character's voiced replies. */
+        private val bubbleAudio = BubbleAudioPlayer(context, viewModelScope)
+        val audioPlaybackState: StateFlow<AudioPlaybackState?> = bubbleAudio.state
+
+        fun playOrPauseAudio(message: EpilogueMessage) {
+            val path = message.audioPath?.takeIf { File(it).exists() } ?: return
+            bubbleAudio.toggle(message.id, path)
+        }
+
+        /** Before handing the stage to live mode, which plays its own audio. */
+        fun stopAudio() = bubbleAudio.stop()
+
         /** Same kill switch as the saga's live mode. */
         private val _liveEnabled = MutableStateFlow(false)
         val liveEnabled: StateFlow<Boolean> = _liveEnabled.asStateFlow()
@@ -90,6 +108,7 @@ class EpilogueChatViewModel
             loadedFor = key
 
             loadJob?.cancel()
+            bubbleAudio.stop()
             compactOnLeave()
             resetState()
 
@@ -217,6 +236,7 @@ class EpilogueChatViewModel
         }
     
         override fun onCleared() {
+            bubbleAudio.release()
             compactOnLeave()
             super.onCleared()
         }

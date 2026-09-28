@@ -150,6 +150,7 @@ fun EpilogueChatView(
     viewModel: EpilogueChatViewModel = hiltViewModel(),
 ) {
     val liveEnabled by viewModel.liveEnabled.collectAsStateWithLifecycle()
+    val audioPlaybackState by viewModel.audioPlaybackState.collectAsStateWithLifecycle()
     val character by viewModel.character.collectAsStateWithLifecycle()
     val protagonist by viewModel.protagonist.collectAsStateWithLifecycle()
     val genre by viewModel.genre.collectAsStateWithLifecycle()
@@ -230,12 +231,17 @@ fun EpilogueChatView(
                             genre = resolvedGenre,
                             flatEvents = emptyList(),
                             canAnimate = true,
+                            audioPlaybackState = audioPlaybackState,
                             // This is a closed 1:1 conversation — the only character whose avatar
                             // can ever appear here is the one we're already talking to, so tapping
                             // it just closes back to the CharacterDetailsView the player came from
                             // instead of pushing a duplicate of the same detail screen on top.
                             onAction = { action ->
-                                if (action is MessageAction.ClickCharacter) onBack()
+                                when (action) {
+                                    is MessageAction.ClickCharacter -> onBack()
+                                    is MessageAction.PlayAudio -> viewModel.playOrPauseAudio(epilogueMessage)
+                                    else -> Unit
+                                }
                             },
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
@@ -297,7 +303,11 @@ fun EpilogueChatView(
                     genre = resolvedGenre,
                     isReplying = isReplying,
                     onSend = { viewModel.sendMessage(it) },
-                    onOpenLive = { onNavigate(EpilogueLiveKey(sagaIdInt, characterId)) }.takeIf { liveEnabled },
+                    onOpenLive =
+                        {
+                            viewModel.stopAudio()
+                            onNavigate(EpilogueLiveKey(sagaIdInt, characterId))
+                        }.takeIf { liveEnabled },
                     avatarModifier =
                         with(sharedTransitionScope) {
                             Modifier.sharedElement(
@@ -731,7 +741,8 @@ private fun EpilogueMessage.toMessageContent(
 ) = MessageContent(
     message =
         Message(
-            id = 0,
+            // The epilogue row's own id: the audio player tells bubbles apart by it.
+            id = id,
             text = text,
             timestamp = timestamp,
             senderType = if (isUser) SenderType.USER else SenderType.CHARACTER,
@@ -741,6 +752,11 @@ private fun EpilogueMessage.toMessageContent(
             timelineId = 0,
             status = MessageStatus.OK,
             viewed = true,
+            emotionalTone = emotionalTone,
+            inputMode = inputMode,
+            // The player shows whenever the file exists; never "audible" on its own, since that
+            // flag makes a bubble offer Regenerate audio, which the epilogue doesn't do.
+            audioPath = audioPath,
         ),
     character = if (isUser) null else character,
     reactions = emptyList(),
