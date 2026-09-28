@@ -10,8 +10,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -25,6 +23,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.Layout
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.TextStyle
@@ -74,7 +73,6 @@ private fun beatsOf(blocks: List<MessageBlock>): List<CaptionBeat> =
  * been spoken; it ticks with playback, so only the words read it, and each one recomposes only when
  * it flips from ahead to spoken.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LiveKaraokeCaption(
     caption: LiveCaption,
@@ -123,7 +121,7 @@ fun LiveKaraokeCaption(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             beats.subList(start, (start + VISIBLE_BEATS).coerceAtMost(beats.size)).forEach { beat ->
-                FlowRow(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+                CenteredWordWrap(Modifier.fillMaxWidth()) {
                     beat.words.forEach { word ->
                         CaptionWordText(
                             word = word,
@@ -135,6 +133,48 @@ fun LiveKaraokeCaption(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Words wrapped into centered lines. Not FlowRow: this screen lives under the app's
+ * SharedTransitionLayout, whose lookahead pass made FlowRow place words it hadn't measured in that
+ * pass when the caption window changed ("LookaheadDelegate has not been measured yet"). This
+ * measures every word on every pass, so there's nothing left unmeasured to place.
+ */
+@Composable
+private fun CenteredWordWrap(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Layout(content = content, modifier = modifier) { measurables, constraints ->
+        val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0)) }
+        val maxWidth = constraints.maxWidth
+        val lines = mutableListOf<MutableList<Int>>(mutableListOf())
+        var lineWidth = 0
+        placeables.forEachIndexed { index, placeable ->
+            if (lineWidth + placeable.width > maxWidth && lines.last().isNotEmpty()) {
+                lines.add(mutableListOf())
+                lineWidth = 0
+            }
+            lines.last().add(index)
+            lineWidth += placeable.width
+        }
+        val lineHeights = lines.map { line -> line.maxOfOrNull { placeables[it].height } ?: 0 }
+        val width = if (constraints.hasBoundedWidth) maxWidth else placeables.sumOf { it.width }
+        val height = lineHeights.sum().coerceIn(constraints.minHeight, constraints.maxHeight)
+        layout(width, height) {
+            var y = 0
+            lines.forEachIndexed { lineIndex, line ->
+                var x = (width - line.sumOf { placeables[it].width }) / 2
+                line.forEach { index ->
+                    val placeable = placeables[index]
+                    placeable.place(x, y + (lineHeights[lineIndex] - placeable.height) / 2)
+                    x += placeable.width
+                }
+                y += lineHeights[lineIndex]
             }
         }
     }
