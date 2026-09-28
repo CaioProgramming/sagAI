@@ -5,7 +5,8 @@
 Implemented on `claude/live-conversation-feature-1r0d61` (not compiled in the cloud session: the
 Android SDK host was blocked, so validate with `./gradlew installDebug`):
 
-- **Data:** `Message.inputMode` / `originalText`, `Character.voiceDirection` (migration 35 → 36);
+- **Data:** `Message.inputMode` / `originalText`, `Character.voiceDirection` (migration 37 → 38 — renumbered after merging the
+  Plan 1 choice cards (35 → 36) and RAG (36 → 37) migrations);
   `AIReply.playerInput` (`PlayerInputFeedback`) applied through `PlayerInputCorrection`'s guard;
   `GeneratedReply` carries the updated user message to the fallout and to live mode.
 - **Reply:** voice turns attach the WAV inline; transcription only when the model can't hear or the

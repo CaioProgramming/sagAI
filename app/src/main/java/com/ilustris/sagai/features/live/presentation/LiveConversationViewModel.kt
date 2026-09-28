@@ -575,16 +575,33 @@ class LiveConversationViewModel
 
         // endregion
 
-        /** The app went to the background: nothing keeps talking or listening. */
+        /**
+         * The app went to the background: the session ends. Nothing keeps talking or listening, and
+         * a turn still in flight is let go — its reply lands in the chat silently (voicing that
+         * already started finishes in [LiveBackgroundWork]; voicing that hadn't is never started).
+         */
         fun pause() {
-            if (_state.value.phase == LivePhase.Listening) {
-                listenJob?.cancel()
-                recorder.cancel()
-                toIdle(LiveHint.CANCELLED)
-            }
-            if (_state.value.phase is LivePhase.Speaking) {
-                interruptSpeaking()
-                finishTurn()
+            when (_state.value.phase) {
+                LivePhase.Listening -> {
+                    listenJob?.cancel()
+                    recorder.cancel()
+                    toIdle(LiveHint.CANCELLED)
+                }
+
+                // Dropping the pending message makes onReply ignore the reply when it lands, so
+                // it can't start playing while the app is in the background.
+                LivePhase.Thinking -> {
+                    pendingUserMessage = null
+                    setTurnInFlight(false)
+                    toIdle(LiveHint.HOLD_TO_TALK)
+                }
+
+                LivePhase.Voicing, is LivePhase.Speaking -> {
+                    interruptSpeaking()
+                    finishTurn()
+                }
+
+                else -> Unit
             }
         }
 
