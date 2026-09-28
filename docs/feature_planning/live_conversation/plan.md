@@ -18,10 +18,11 @@ Android SDK host was blocked, so validate with `./gradlew installDebug`):
   the screen (`LiveConversationKey` in `SagaEntryProvider`), milestone/notification gating via
   `isInConversation`, entry from the chat input behind `live_conversation_enabled` (on in debug).
 
-To publish in Remote Config: `tts_voices`, `player_input_blueprint`, `voice_casting_blueprint`,
-`audio_performance_blueprint` (drafts in this folder), `live_conversation_enabled`, and the
-`reply_generation_blueprint` `USER_TONE` wording (`playerInput.emotionalTone`). Everything has a
-fallback, so none of them blocks a build.
+Published to Remote Config (v1084, 2026-09-28): `tts_voices`, `player_input_blueprint`,
+`voice_casting_blueprint`, `audio_performance_blueprint`, and the `reply_generation_blueprint`
+`USER_TONE` wording (`playerInput.emotionalTone`, falling back to `userTone` so released builds
+keep working). Still unpublished on purpose: `live_conversation_enabled` (on in debug; off in
+release until launch) and the optional `live_reply_limit` / `voiceThinkingLevel` knobs.
 
 Not done yet: line-by-line TTS streaming (phase 4), AGSL blob (the Canvas version ships first),
 shared bounds for the input bar/title (only the avatar is shared), the "corrigido" marker on typed

@@ -1,16 +1,14 @@
 {
   "title": "voice_casting",
   "role": "You are the casting director of an interactive story. You pick one prebuilt TTS voice for a character and write how that character delivers lines, once, so every future line sounds like the same person.",
-  "template": "SAGA: {sagaContext}\nCHARACTER: {character}\nGENDER: {characterGender}\nAGE: {characterAge}\nVOICES ALREADY USED IN THIS SAGA: {voicesInUse}\n{voiceGuide}",
   "directives": {
-    "FIT_OVER_UNIQUENESS": "Pick the voice whose description best fits the character's gender, apparent age, personality and role. Prefer a voice not in VOICES ALREADY USED only when two voices fit equally well; never pick a worse fit just to avoid a repeat. Shared voices are fine.",
+    "FIT_OVER_UNIQUENESS": "Pick the voice from voiceGuide whose description best fits the character's gender, apparent age, personality and role. Prefer one not in voicesInUse only when two fit equally well; never pick a worse fit just to avoid a repeat. Shared voices are fine.",
     "DIRECTION_MAKES_THE_PERSON": "voiceDirection is what makes two characters with the same voice sound like different people. Describe delivery, not the voice itself: pace (fast, clipped, unhurried), energy, pitch range, texture (breathy, rough, crisp, nasal), register and accent (formal, street, rural, archaic), and emotional baseline (guarded, warm, weary, restless).",
     "FROM_THE_CHARACTER": "Derive every choice from the character's personality, age, background and role in this saga. Never generic labels like 'friendly and confident'. Good: 'Fala rápido e atropelado quando nervoso, baixa a voz nas ameaças, arrasta as vogais do interior.'",
     "SHORT": "One to three sentences. It rides along on every line this character speaks."
   },
   "rules": {
-    "VOICE_ID": "voice must be one of the ids listed in Available voices, exactly as written (lowercase).",
-    "LANGUAGE": "Write voiceDirection in the saga's language.",
-    "OUTPUT": "Return only {\"voice\": \"<id>\", \"voiceDirection\": \"<direction>\"}."
+    "VOICE_ID": "voice must be one of the ids in voiceGuide, exactly as written (lowercase).",
+    "LANGUAGE": "Write voiceDirection in the saga's language."
   }
 }

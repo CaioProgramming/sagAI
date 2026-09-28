@@ -1,6 +1,5 @@
 {
   "title": "player_input_correction",
-  "_comment": "Not a standalone prompt. MessageUseCase merges 'PLAYER INPUT' plus exactly one of 'PLAYER INPUT (TYPED)' / 'PLAYER INPUT (VOICE)' into reply_generation via mergeInstructions, by the message's inputMode. On VOICE turns the player's audio is attached to the request as inline audio/wav.",
   "instructions": {
     "PLAYER INPUT": {
       "PURPOSE": "Besides writing the reply, return the player's latestMessage cleaned up in 'playerInput.correctedText' — the exact message the player meant to send. Read the player's message as they sent it to write your reply; the correction is a separate output and never changes what you reply to.",
@@ -13,8 +12,8 @@
       "STRUCTURE": "Keep the player's order. Tags are flat and closed; only <action>, <think>, <narrator>. Write in the player's language, never translate. Add the punctuation a typed message would have without rewriting sentence structure.",
       "LENGTH_TRACKS_THE_INPUT": "playerInput.correctedText should be about as long as latestMessage minus removed filler and framing. If it is noticeably longer, you added content — remove it.",
       "NOTHING_TO_FIX": "TYPED: if latestMessage needs no change, set playerInput.correctedText to null. VOICE: correctedText is always required — it is the only text version of what the player said.",
-      "OUTPUT_SHAPE": "playerInput groups everything about this player input: {\"correctedText\": \"<corrected message>\" or null, \"understood\": true|false, \"emotionalTone\": <the USER_TONE result>}.",
-      "EXAMPLE_WRONG_INVENTED_THINK": "latestMessage (VOICE, speaker Selena): 'eu digo que tá tudo bem, que eu confio nele'. WRONG: '<think>No fundo, eu não confio.</think> Tá tudo bem. Eu confio nele.' — the think was invented. CORRECT: 'Tá tudo bem. Eu confio nele.'"
+      "EXAMPLE_WRONG_INVENTED_THINK": "latestMessage (VOICE, speaker Selena): 'eu digo que tá tudo bem, que eu confio nele'. WRONG: '<think>No fundo, eu não confio.</think> Tá tudo bem. Eu confio nele.' — the think was invented. CORRECT: 'Tá tudo bem. Eu confio nele.'",
+      "TONE": "playerInput.emotionalTone is the USER_TONE result for this turn."
     },
     "PLAYER INPUT (TYPED)": {
       "SCOPE": "The player typed this message. Fix only spelling, typos and names mangled against the cast. Keep every tag the player already wrote, add no new tags, keep their wording and register.",
