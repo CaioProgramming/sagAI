@@ -157,7 +157,7 @@ fun CosmicBlob(
             }
         }
 
-        // Radial audio wave: only while a voice is actually playing.
+        // Radial audio wave: only while there is sound — a voice playing, or the mic while recording.
         Canvas(Modifier.size(portraitSize + 64.dp)) {
             val target = if (showWave) level() else 0f
             smoothed[1] += (target - smoothed[1]) * 0.15f

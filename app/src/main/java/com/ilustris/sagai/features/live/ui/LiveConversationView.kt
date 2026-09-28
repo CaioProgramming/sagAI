@@ -210,7 +210,8 @@ fun LiveConversationView(
                 narratorImage = state.saga?.data?.icon,
                 level = level,
                 showRing = phase == LivePhase.Thinking || phase == LivePhase.Voicing,
-                showWave = phase == LivePhase.Speaking(silent = false),
+                // Reacts to whoever is making sound: the voice playing, or the player's mic.
+                showWave = phase == LivePhase.Speaking(silent = false) || phase == LivePhase.Listening,
                 reduceMotion = reduceMotion,
                 modifier =
                     Modifier
