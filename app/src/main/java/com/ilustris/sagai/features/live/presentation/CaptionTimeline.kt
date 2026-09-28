@@ -9,9 +9,24 @@ import com.ilustris.sagai.features.saga.chat.data.voicing.PerformanceScript
  * block being spoken and to switch the portrait to the narrator on narration.
  */
 class CaptionTimeline private constructor(
-    private val starts: List<Pair<Long, PerformanceLine>>,
+    private val spans: List<Span>,
 ) {
-    fun lineAt(positionMs: Long): PerformanceLine? = starts.lastOrNull { it.first <= positionMs }?.second
+    private class Span(
+        val start: Long,
+        val end: Long,
+        val line: PerformanceLine,
+    )
+
+    fun lineAt(positionMs: Long): PerformanceLine? = spanAt(positionMs)?.line
+
+    /** How far into [lineAt]'s line [positionMs] is, 0..1 — drives the word-by-word caption fill. */
+    fun progressAt(positionMs: Long): Float {
+        val span = spanAt(positionMs) ?: return 0f
+        val length = (span.end - span.start).coerceAtLeast(1)
+        return ((positionMs - span.start).toFloat() / length).coerceIn(0f, 1f)
+    }
+
+    private fun spanAt(positionMs: Long): Span? = spans.lastOrNull { it.start <= positionMs }
 
     companion object {
         private val CUE_REGEX = Regex("\\[[^\\]]*]")
@@ -30,13 +45,13 @@ class CaptionTimeline private constructor(
                 }
             val total = weights.sum().coerceAtLeast(1)
             var elapsed = 0L
-            val starts =
+            val spans =
                 script.lines.mapIndexed { index, line ->
                     val start = elapsed
                     elapsed += durationMs * weights[index] / total
-                    start to line
+                    Span(start, elapsed, line)
                 }
-            return CaptionTimeline(starts)
+            return CaptionTimeline(spans)
         }
     }
 }

@@ -97,6 +97,13 @@ class LiveConversationViewModel
         private val _level = MutableStateFlow(0f)
         val level: StateFlow<Float> = _level.asStateFlow()
 
+        /**
+         * How much of the caption's current block has been spoken, 0..1. Ticks with playback, so
+         * it's its own flow: only the caption's words read it, and only to flip spoken/unspoken.
+         */
+        private val _captionProgress = MutableStateFlow(0f)
+        val captionProgress: StateFlow<Float> = _captionProgress.asStateFlow()
+
         private val _reactions = MutableSharedFlow<LiveReaction>(extraBufferCapacity = 16)
         val reactions: SharedFlow<LiveReaction> = _reactions.asSharedFlow()
 
@@ -362,6 +369,7 @@ class LiveConversationViewModel
                         (AudioUtils.wavDurationMs(file) ?: 0L)
                 }
             val timeline = CaptionTimeline.from(voiced.script, durationMs)
+            _captionProgress.value = 0f
             _state.update {
                 it.copy(
                     phase = LivePhase.Speaking(silent = false),
@@ -377,6 +385,7 @@ class LiveConversationViewModel
                     val window = (position / WaveformExtractor.STEP_MS).toInt()
                     _level.value = ((envelope.getOrNull(window) ?: 0f) / peak).coerceIn(0f, 1f)
                     val line = timeline.lineAt(position) ?: return@play
+                    if (line.block >= 0) _captionProgress.value = timeline.progressAt(position)
                     _state.update { state ->
                         state.copy(
                             caption =
@@ -415,8 +424,16 @@ class LiveConversationViewModel
                 )
             }
             blocks.forEach { block ->
+                _captionProgress.value = 0f
                 _state.update { it.copy(caption = it.caption?.copy(current = block.index)) }
-                delay((block.text.length * SILENT_MS_PER_CHAR).coerceAtLeast(SILENT_MIN_BLOCK_MS))
+                // No audio to follow: the fill advances at reading pace instead.
+                val blockMs = (block.text.length * SILENT_MS_PER_CHAR).coerceAtLeast(SILENT_MIN_BLOCK_MS)
+                var elapsed = 0L
+                while (elapsed < blockMs) {
+                    delay(SILENT_TICK_MS)
+                    elapsed += SILENT_TICK_MS
+                    _captionProgress.value = (elapsed.toFloat() / blockMs).coerceAtMost(1f)
+                }
             }
         }
 
@@ -636,5 +653,6 @@ class LiveConversationViewModel
             private const val SILENT_VOICING_BEAT_MS = 900L
             private const val SILENT_MS_PER_CHAR = 55L
             private const val SILENT_MIN_BLOCK_MS = 900L
+            private const val SILENT_TICK_MS = 80L
         }
     }

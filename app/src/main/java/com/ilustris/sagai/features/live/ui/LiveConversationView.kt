@@ -1,5 +1,11 @@
 package com.ilustris.sagai.features.live.ui
 
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import android.Manifest
 import android.provider.Settings
 import androidx.compose.animation.AnimatedContent
@@ -108,6 +114,8 @@ fun LiveConversationView(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val levelState = viewModel.level.collectAsStateWithLifecycle()
     val level = remember(levelState) { { levelState.value } }
+    val captionProgressState = viewModel.captionProgress.collectAsStateWithLifecycle()
+    val captionProgress = remember(captionProgressState) { { captionProgressState.value } }
     val reduceMotion = rememberReduceMotion()
 
     // Going to the background ends whatever was being recorded or played.
@@ -240,22 +248,38 @@ fun LiveConversationView(
                 }
             }
 
+            // Bounded so a long line can never run under the dock; its bottom edge fades out
+            // instead of being cut.
+            val captionTop = blobCenterY + 104.dp
             Captions(
                 state = state,
+                progress = captionProgress,
+                glowColor = focusColor,
                 modifier =
                     Modifier
                         .align(Alignment.TopCenter)
-                        .offset(y = blobCenterY + 104.dp)
+                        .offset(y = captionTop)
+                        .fillMaxWidth()
+                        .height((maxHeight - captionTop - DOCK_RESERVED).coerceAtLeast(0.dp))
+                        .fadeBottomEdge()
                         .padding(horizontal = 28.dp)
                         .animateEnterExit(enter = fadeIn(tween(400, delayMillis = 400)), exit = fadeOut(tween(150))),
                 onRetry = viewModel::retry,
+            )
+
+            // Same fade the chat puts under its input: separates the dock from the captions.
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight(BOTTOM_FADE_HEIGHT)
+                    .background(fadeGradientBottom(primary)),
             )
 
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .background(Brush.verticalGradient(listOf(Color.Transparent, SPACE.copy(alpha = 0.95f))))
                     .navigationBarsPadding()
                     .padding(top = 40.dp, bottom = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -343,6 +367,8 @@ private fun VoicesRestingBanner(until: Long?) {
 @Composable
 private fun Captions(
     state: LiveUiState,
+    progress: () -> Float,
+    glowColor: Color,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -381,64 +407,13 @@ private fun Captions(
         }
 
         state.caption?.let { caption ->
-            val window = captionWindow(caption)
-            AnimatedContent(
-                targetState = window,
-                transitionSpec = {
-                    (fadeIn(tween(350)) + slideInVertically(tween(350)) { it / 3 }) togetherWith
-                        (fadeOut(tween(250)) + androidx.compose.animation.slideOutVertically(tween(250)) { -it / 3 })
-                },
-                contentKey = { it.first },
-                label = "liveCaption",
-            ) { (_, text) ->
-                Text(
-                    text,
-                    style = MaterialTheme.typography.titleLarge.copy(lineHeight = 30.sp),
-                    textAlign = TextAlign.Center,
-                )
-            }
+            LiveKaraokeCaption(caption = caption, progress = progress, glowColor = glowColor)
         }
 
         if (state.canRetry) {
             TextButton(onClick = onRetry) { Text(stringResource(R.string.live_retry)) }
         }
     }
-}
-
-/**
- * At most three blocks around the one being spoken, so the caption stays a few lines tall; the
- * window slides as the voice moves on. Returns (window start, styled text).
- */
-@Composable
-private fun captionWindow(caption: LiveCaption): Pair<Int, AnnotatedString> {
-    val on = MaterialTheme.colorScheme.onBackground
-    val blocks = caption.blocks
-    val anchor = caption.current.coerceAtLeast(0)
-    val start = if (caption.isPlayerLine || caption.current < 0) 0 else (anchor - 1).coerceAtLeast(0)
-    val end = (start + 3).coerceAtMost(blocks.size)
-    val text =
-        buildAnnotatedString {
-            blocks.subList(start, end).forEach { block ->
-                val color =
-                    when {
-                        caption.isPlayerLine -> on
-                        caption.allDone -> on.copy(alpha = 0.8f)
-                        block.index == caption.current -> on
-                        caption.current >= 0 && block.index < caption.current -> on.copy(alpha = 0.7f)
-                        else -> on.copy(alpha = 0.3f)
-                    }
-                val quiet = block.type == BlockType.ACTION || block.type == BlockType.THINK
-                withStyle(
-                    SpanStyle(
-                        color = if (quiet) color.copy(alpha = color.alpha * 0.8f) else color,
-                        fontStyle = if (quiet) FontStyle.Italic else FontStyle.Normal,
-                        fontSize = if (quiet) 16.sp else 21.sp,
-                    ),
-                ) { append(block.text) }
-                append(" ")
-            }
-        }
-    return start to text
 }
 
 @Composable
@@ -504,5 +479,20 @@ private fun rememberReduceMotion(): Boolean {
     }
 }
 
+/** Masks the bottom of whatever it's applied to into transparency. */
+private fun Modifier.fadeBottomEdge(): Modifier =
+    graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+        .drawWithContent {
+            drawContent()
+            drawRect(
+                Brush.verticalGradient(0.7f to Color.Black, 1f to Color.Transparent),
+                blendMode = BlendMode.DstIn,
+            )
+        }
+
 private val SPACE = Color(0xFF07060D)
+
+/** Height kept clear for the hint, the speaker carousel and its name. */
+private val DOCK_RESERVED = 230.dp
+private const val BOTTOM_FADE_HEIGHT = 0.3f
 private const val BLOB_CENTER = 0.36f
