@@ -102,7 +102,6 @@ class ReviewExpressivenessPage(
                 BlobMascot(
                     expression = rememberMascotExpression(it),
                     color = MaterialTheme.colorScheme.primary,
-                    eyeColor = MaterialTheme.colorScheme.background,
                     look = { tilt.value },
                     modifier =
                         Modifier

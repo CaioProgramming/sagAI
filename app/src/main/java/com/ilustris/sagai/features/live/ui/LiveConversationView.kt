@@ -7,7 +7,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.CompositingStrategy
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import android.Manifest
-import android.provider.Settings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -60,7 +59,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -91,6 +89,7 @@ import com.ilustris.sagai.features.live.presentation.LiveUiState
 import com.ilustris.sagai.features.saga.chat.data.voicing.BlockType
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.hexToColor
+import com.ilustris.sagai.ui.theme.rememberReduceMotion
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import java.text.DateFormat
 import java.util.Date
@@ -511,15 +510,6 @@ private fun HintLine(state: LiveUiState) {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 24.dp),
         )
-    }
-}
-
-/** The system's "remove animations" setting: motion slows to a crawl instead of stopping. */
-@Composable
-private fun rememberReduceMotion(): Boolean {
-    val context = LocalContext.current
-    return remember(context) {
-        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
     }
 }
 

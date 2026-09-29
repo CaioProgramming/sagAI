@@ -28,12 +28,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
-import com.ilustris.sagai.ui.genre.surface.StoryBody
-import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
+import com.ilustris.sagai.ui.genre.surface.StoryBody
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.terminal.TerminalCommandButton
 import com.ilustris.sagai.ui.genre.terminal.TerminalLine
 import com.ilustris.sagai.ui.genre.terminal.TerminalPortraitPlate
@@ -151,10 +152,14 @@ fun TerminalStoryBeat(
             beat.aside?.let { aside ->
                 val s = next()
                 TerminalOutput(visible = printed >= s, host = host, command = "cat emotional.log", accent = accent, canAnimate = canAnimate, onFinished = { if (printed == s) printed = s + 1 }) {
-                    Text(
-                        text = "  ${aside.text}",
-                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, color = normal.copy(alpha = .55f)),
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
+                        AsideMascot(aside, color = accent, canAnimate = canAnimate, modifier = Modifier.size(28.dp))
+                        Text(
+                            text = aside.text,
+                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, color = normal.copy(alpha = .55f)),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }

@@ -46,8 +46,10 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.genre.PhysicalButton
+import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.GenreStoryAmbientOverlay
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryAside
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryBeatTone
@@ -162,7 +164,7 @@ private fun BookPage(
                 BookDramatisPersonae(beat.cast, beat.castLabel, accent, ink)
             }
 
-            beat.aside?.let { BookMarginNote(it.label, it.text, ink) }
+            beat.aside?.let { BookMarginNote(it, ink, canAnimate) }
         }
 
         beat.progress?.takeIf { it.total > 1 }?.let { BookFolio(it, ink) }
@@ -366,32 +368,38 @@ private fun BookDramatisPersonae(
  */
 @Composable
 private fun BookMarginNote(
-    label: String,
-    text: String,
+    aside: StoryAside,
     ink: Color,
+    canAnimate: Boolean,
 ) {
-    Column(
+    Row(
         Modifier
             .fillMaxWidth()
             .rotate(-0.6f)
             .padding(start = 18.dp, top = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
     ) {
-        Text(
-            text = label,
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    fontStyle = FontStyle.Italic,
-                    color = ink.copy(alpha = .45f),
-                ),
-        )
-        Text(
-            text = text,
-            style =
-                MaterialTheme.typography.bodySmall.copy(
-                    fontStyle = FontStyle.Italic,
-                    color = ink.copy(alpha = .6f),
-                ),
-        )
+        // Printed, not painted: the same ink as the type, like the Expressiveness page's blob.
+        AsideMascot(aside, color = ink.copy(alpha = .8f), canAnimate = canAnimate, modifier = Modifier.size(36.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = aside.label,
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontStyle = FontStyle.Italic,
+                        color = ink.copy(alpha = .45f),
+                    ),
+            )
+            Text(
+                text = aside.text,
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontStyle = FontStyle.Italic,
+                        color = ink.copy(alpha = .6f),
+                    ),
+            )
+        }
     }
 }
 

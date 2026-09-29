@@ -170,7 +170,6 @@ fun PinVibeNote(
         BlobMascot(
             expression = rememberMascotExpression(tone),
             color = tone.color,
-            eyeColor = rememberCorkboardPalette().paper,
             animate = canAnimate,
             modifier = Modifier.size(VIBE_BLOB_SIZE),
         )

@@ -106,7 +106,6 @@ class BookExpressivenessPage(
                 BlobMascot(
                     expression = rememberMascotExpression(it),
                     color = ink,
-                    eyeColor = MaterialTheme.colorScheme.background,
                     look = { tilt.value },
                     modifier = Modifier.size(BLOB_SIZE),
                 )

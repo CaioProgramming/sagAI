@@ -40,13 +40,6 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.compiledColorPalette
 import com.ilustris.sagai.ui.genre.collage.AssemblingPiece
-import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
-import com.ilustris.sagai.ui.genre.surface.StoryBeat
-import com.ilustris.sagai.ui.genre.surface.StoryBody
-import com.ilustris.sagai.ui.genre.surface.storyRoot
-import com.ilustris.sagai.ui.genre.surface.GenreStoryAmbientOverlay
-import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
-import com.ilustris.sagai.ui.genre.surface.StoryProgress
 import com.ilustris.sagai.ui.genre.collage.CharacterSticker
 import com.ilustris.sagai.ui.genre.collage.PAPER_INK
 import com.ilustris.sagai.ui.genre.collage.TornPaperScrap
@@ -54,6 +47,14 @@ import com.ilustris.sagai.ui.genre.collage.TornPaperStrip
 import com.ilustris.sagai.ui.genre.collage.TornPhotoScrap
 import com.ilustris.sagai.ui.genre.collage.readableTextColor
 import com.ilustris.sagai.ui.genre.collage.rememberTearReveal
+import com.ilustris.sagai.ui.genre.surface.AsideMascot
+import com.ilustris.sagai.ui.genre.surface.GenreStoryAmbientOverlay
+import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryBeat
+import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
+import com.ilustris.sagai.ui.genre.surface.StoryBody
+import com.ilustris.sagai.ui.genre.surface.StoryProgress
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.theme.LocalSagaGenre
 
 /** The title rips across first; the body follows once the reader has had a beat with it. */
@@ -250,20 +251,30 @@ fun CollageStoryBeat(
                 }
 
                 beat.aside?.let { aside ->
-                    AssemblingPiece(rotation = 4f, delayMs = 2600L, canAnimate = canAnimate, seed = 99, scaleFrom = 1f) {
+                    AssemblingPiece(rotation = 4f, delayMs = COLLAGE_ASIDE_DELAY_MS, canAnimate = canAnimate, seed = 99, scaleFrom = 1f) {
                         TornPaperScrap(seed = 99, paperColor = accent, modifier = Modifier.width(250.dp)) {
-                            Column {
-                                Text(
-                                    text = aside.label.uppercase(),
-                                    color = accent.readableTextColor().copy(alpha = .7f),
-                                    fontWeight = FontWeight.Black,
-                                    style = MaterialTheme.typography.labelSmall,
-                                )
-                                Text(
-                                    text = aside.text,
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        text = aside.label.uppercase(),
+                                        color = accent.readableTextColor().copy(alpha = .7f),
+                                        fontWeight = FontWeight.Black,
+                                        style = MaterialTheme.typography.labelSmall,
+                                    )
+                                    Text(
+                                        text = aside.text,
+                                        color = accent.readableTextColor(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.padding(top = 4.dp),
+                                    )
+                                }
+                                // Inked like the type on the scrap, so its eyes show the paper.
+                                AsideMascot(
+                                    aside,
                                     color = accent.readableTextColor(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.padding(top = 4.dp),
+                                    canAnimate = canAnimate,
+                                    entranceDelayMillis = COLLAGE_ASIDE_DELAY_MS,
+                                    modifier = Modifier.size(40.dp),
                                 )
                             }
                         }
@@ -360,3 +371,6 @@ private fun CollageTab(
         }
     }
 }
+
+/** When the aside's scrap assembles — the blob on it waits for the same moment to arrive. */
+private const val COLLAGE_ASIDE_DELAY_MS = 2600L

@@ -55,7 +55,9 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.WikiCard
+import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryAside
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryBody
@@ -172,7 +174,7 @@ fun PlainStoryBeat(
                         CastRow(beat.cast, beat.castLabel, genre, Modifier.padding(top = 16.dp))
                     }
 
-                    beat.aside?.let { AsideNote(it.label, it.text, Modifier.padding(top = 16.dp)) }
+                    beat.aside?.let { AsideNote(it, canAnimate, Modifier.padding(top = 16.dp)) }
                 }
             }
         }
@@ -347,27 +349,32 @@ private fun CastRow(
 /** A quiet, neutrally-bordered aside — deliberately not competing with the story above it. */
 @Composable
 private fun AsideNote(
-    label: String,
-    text: String,
+    aside: StoryAside,
+    canAnimate: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Row(
         modifier
             .fillMaxWidth()
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)
             .padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp),
-        )
+        AsideMascot(aside, canAnimate = canAnimate, modifier = Modifier.size(40.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = aside.label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = aside.text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
     }
 }
