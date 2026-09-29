@@ -1,7 +1,6 @@
 package com.ilustris.sagai.core.ai
 
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.JsonSyntaxException
 import com.ilustris.sagai.core.ai.key.ApiKeyDiagnosis
@@ -93,7 +92,7 @@ internal inline fun <reified T> parseGenerationJson(
     if (cleanedJsonString.isEmpty()) {
         error("Failed to parse JSON")
     }
-    val aiGeneration = parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
+    val aiGeneration = parseAIGenerationFromJson<T>(aiOutputGson, cleanedJsonString)
     aiGeneration.error?.let { generationError ->
         generationError.type?.let { status -> throw GuardrailsException(status) }
     }
