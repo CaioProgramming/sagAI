@@ -13,7 +13,26 @@ data class Voice(
     val id: String = "",
     val gender: String = "",
     val description: String = "",
+    /**
+     * What the narrator picker shows the player. [description] stays as it is: it is English text for
+     * the casting prompts ([com.ilustris.sagai.core.ai.VoiceCatalog.selectionGuide]), not for people.
+     * Nullable on purpose — Gson builds these without running Kotlin defaults, so a voice from an
+     * older Remote Config value would otherwise hold a null in a non-null field.
+     */
+    val name: String? = null,
+    val tagline: String? = null,
+    /** A short clip of the voice greeting someone, played in the picker. Blank until hosted. */
+    val sampleUrl: String? = null,
+    /** [com.ilustris.sagai.features.newsaga.data.model.Genre] names this voice is preselected for. */
+    val suggestedGenres: List<String>? = null,
+    /** Orb colors as `#RRGGBB`; the picker falls back to the saga's genre palette when missing. */
+    val palette: List<String>? = null,
 ) {
+    /** Only voices curated with a display name are offered to the player. */
+    val isPickable: Boolean get() = !name.isNullOrBlank()
+
+    fun isSuggestedFor(genre: String): Boolean = suggestedGenres?.any { it.equals(genre, ignoreCase = true) } == true
+
     companion object {
         val BUNDLED =
             listOf(

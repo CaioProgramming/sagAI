@@ -129,6 +129,7 @@ import com.ilustris.sagai.ui.genre.surface.GenreStoryLoading
 import com.ilustris.sagai.ui.genre.surface.GenreStoryNotice
 import com.ilustris.sagai.ui.genre.surface.GenreStorySurface
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
+import com.ilustris.sagai.features.voicepicker.ui.VoicePicker
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
@@ -164,6 +165,7 @@ fun DesignSystemPreviewView(
     var showCharacterPreview by remember { mutableStateOf(false) }
     var showMoreDebugMenu by remember { mutableStateOf(false) }
     var showIslandMenu by remember { mutableStateOf(false) }
+    var showVoicePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(showStarryLoaderPreview) {
         if (showStarryLoaderPreview) {
@@ -536,6 +538,13 @@ fun DesignSystemPreviewView(
                             },
                         )
                         IosStyleMenuItem(
+                            text = "Preview voice picker",
+                            onClick = {
+                                showMoreDebugMenu = false
+                                showVoicePicker = true
+                            },
+                        )
+                        IosStyleMenuItem(
                             text = "Test Island",
                             onClick = {
                                 showMoreDebugMenu = false
@@ -554,12 +563,37 @@ fun DesignSystemPreviewView(
         }
     }
 
+    if (showVoicePicker) {
+        VoicePickerPreviewSheet(genre = genre, onDismiss = { showVoicePicker = false })
+    }
+
     if (showCharacterPreview) {
         CharacterGenerationPreviewSheet(
             viewModel = viewModel,
             genre = genre,
             onDismiss = { showCharacterPreview = false },
         )
+    }
+}
+
+/** The narrator picker on its own, so the samples can be heard without creating a saga. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VoicePickerPreviewSheet(
+    genre: Genre,
+    onDismiss: () -> Unit,
+) {
+    SagAITheme(genre = genre) {
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            containerColor = MaterialTheme.colorScheme.background,
+        ) {
+            VoicePicker(
+                genre = genre,
+                onConfirm = { onDismiss() },
+                modifier = Modifier.padding(bottom = 32.dp),
+            )
+        }
     }
 }
 
