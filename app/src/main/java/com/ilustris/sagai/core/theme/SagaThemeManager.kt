@@ -67,6 +67,13 @@ class SagaThemeManager
 
         private var themeFetchJob: Job? = null
 
+        /**
+         * Genre of the last saga the player was actually inside. It survives going back to a neutral
+         * screen (where [currentGenre] is cleared), but not the process.
+         */
+        var lastSagaGenre: Genre? = null
+            private set
+
         private var lastEntryVfxGenre: Genre? = null
 
         private var lastEntryVfxAtMs = 0L
@@ -111,6 +118,7 @@ class SagaThemeManager
 
             _currentGenre.value = genre
             if (genre != null) {
+                lastSagaGenre = genre
                 themeFetchJob?.cancel()
                 themeFetchJob =
                     managerScope.launch {

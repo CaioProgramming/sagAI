@@ -73,6 +73,7 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
+import com.ilustris.sagai.features.settings.ui.components.AppIconSheet
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -127,6 +128,7 @@ fun SettingsView(
     var showBackupSheet by remember { mutableStateOf(false) }
     var showBackups by remember { mutableStateOf(true) }
     var showPremiumSheet by remember { mutableStateOf(false) }
+    var showIconSheet by remember { mutableStateOf(false) }
 
     val exportLauncher =
         PermissionService.rememberDatabaseExportLauncher { uri ->
@@ -574,6 +576,20 @@ fun SettingsView(
                             viewModel.setMusicEnabled(!it)
                         },
                     )
+
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                        thickness = 1.dp,
+                    )
+
+                    PreferencesContainer(
+                        stringResource(R.string.settings_app_icon_title),
+                        stringResource(R.string.settings_app_icon_description),
+                        isActivated = true,
+                        showSwitch = false,
+                        onClickSwitch = { showIconSheet = true },
+                    )
                 }
             }
 
@@ -846,6 +862,10 @@ fun SettingsView(
             showBackupSheet = false
             showBackups = false
         })
+    }
+
+    if (showIconSheet) {
+        AppIconSheet(onDismiss = { showIconSheet = false })
     }
 
     if (showPremiumSheet && isWiping.not()) {

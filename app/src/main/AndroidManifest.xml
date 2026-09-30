@@ -64,12 +64,151 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.App.Starting">
+            android:theme="@style/Theme.App.Starting" />
+
+        <!--
+            Launcher icons. MainActivity is never the launcher entry itself: exactly one of these aliases
+            is enabled at a time (see AppIconManager). DefaultIcon is the one enabled in the manifest.
+        -->
+        <activity-alias
+            android:name=".launcher.DefaultIcon"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@drawable/ic_dragon"
+            android:roundIcon="@drawable/ic_dragon"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".launcher.FantasyIcon"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_dragon_fantasy"
+            android:roundIcon="@drawable/ic_dragon_fantasy"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".launcher.CyberpunkIcon"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_dragon_cyberpunk"
+            android:roundIcon="@drawable/ic_dragon_cyberpunk"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".launcher.HorrorIcon"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_dragon_horror"
+            android:roundIcon="@drawable/ic_dragon_horror"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".launcher.HeroesIcon"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_dragon_heroes"
+            android:roundIcon="@drawable/ic_dragon_heroes"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".launcher.CrimeIcon"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_dragon_crime"
+            android:roundIcon="@drawable/ic_dragon_crime"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".launcher.ShinobiIcon"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_dragon_shinobi"
+            android:roundIcon="@drawable/ic_dragon_shinobi"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".launcher.SpaceOperaIcon"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_dragon_space_opera"
+            android:roundIcon="@drawable/ic_dragon_space_opera"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".launcher.CowboyIcon"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_dragon_cowboy"
+            android:roundIcon="@drawable/ic_dragon_cowboy"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".launcher.PunkRockIcon"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_dragon_punk_rock"
+            android:roundIcon="@drawable/ic_dragon_punk_rock"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"

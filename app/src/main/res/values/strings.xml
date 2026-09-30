@@ -928,7 +928,15 @@
     <string name="guardrail_continuity_title">Narrative Inconsistency</string>
     <string name="guardrail_continuity_message">Your input doesn\'t seem to fit the current story world. Please keep it consistent with the setting.</string>
     <string name="guardrail_dismiss">Got it</string>
-    <string name="mascot_insight_label">Mascot\'s Emotional Insight</string>
+    <string name="app_icon_title">App icon</string>
+    <string name="app_icon_description">Choose how Sagas looks on your home screen.</string>
+    <string name="app_icon_default">Sagas</string>
+    <string name="app_icon_follow_title">Follow my last saga</string>
+    <string name="app_icon_follow_description">When you leave the app, the icon switches to the theme of the last saga you played.</string>
+    <string name="app_icon_delay_note">The new icon is applied when you leave the app, and your home screen can take a few seconds to show it.</string>
+    <string name="settings_app_icon_title">App icon</string>
+    <string name="settings_app_icon_description">Pick a dragon for your home screen, or let it follow your sagas.</string>
+    <string name="mascot_insight_label">Emotional notes</string>
 
     <!-- Milestone Dashboard -->
     <string name="milestone_label_narrative">Narrative</string>

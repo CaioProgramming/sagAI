@@ -914,7 +914,15 @@
     <string name="saga_brain_event_in_progress">Evento %1$d – em progresso</string>
     <string name="saga_brain_stage_in_progress_body">Continue jogando para saber mais sobre essa etapa da história.</string>
     <string name="see_your_universe">Veja seu universo</string>
-    <string name="mascot_insight_label">Percepção emocional do mascote</string>
+    <string name="app_icon_title">Ícone do app</string>
+    <string name="app_icon_description">Escolha como o Sagas aparece na sua tela inicial.</string>
+    <string name="app_icon_default">Sagas</string>
+    <string name="app_icon_follow_title">Acompanhar minha última saga</string>
+    <string name="app_icon_follow_description">Quando você sai do app, o ícone troca para o tema da última saga que você jogou.</string>
+    <string name="app_icon_delay_note">O novo ícone é aplicado quando você sair do app, e a tela inicial pode levar alguns segundos para mostrá-lo.</string>
+    <string name="settings_app_icon_title">Ícone do app</string>
+    <string name="settings_app_icon_description">Escolha um dragão para a tela inicial ou deixe que ele acompanhe suas sagas.</string>
+    <string name="mascot_insight_label">Notas emocionais</string>
 
     <!-- Milestone Dashboard -->
     <string name="milestone_label_narrative">Narrativa</string>

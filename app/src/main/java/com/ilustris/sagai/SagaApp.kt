@@ -12,6 +12,7 @@ import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.google.mlkit.common.sdkinternal.MlKitContext
 import com.ilustris.sagai.core.ai.local.MlKitLocalAiExecutor
 import com.ilustris.sagai.core.error.SagasExceptionHandler
+import com.ilustris.sagai.core.icon.AppIconManager
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.permissions.NotificationUtils
 import com.ilustris.sagai.core.services.BillingService
@@ -39,6 +40,9 @@ class SagaApp :
     @Inject
     lateinit var appLifecycleManager: AppLifecycleManager
 
+    @Inject
+    lateinit var appIconManager: AppIconManager
+
     override fun onCreate() {
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler(SagasExceptionHandler(this, defaultHandler))
@@ -56,6 +60,7 @@ class SagaApp :
                 mlKitLocalAiExecutor.warmup()
             }
             observePurchasesOnForeground()
+            syncIconOnBackground()
         }
     }
 
@@ -75,6 +80,18 @@ class SagaApp :
             appLifecycleManager.isAppInForeground
                 .filter { it }
                 .collect { billingService.checkPurchases() }
+        }
+    }
+
+    /**
+     * Switches the launcher icon (the player's pick, or the last saga's) only once the app is out of sight: the
+     * system closes the app when its icon changes, so it must not happen while the player is using it.
+     */
+    private fun syncIconOnBackground() {
+        CoroutineScope(Dispatchers.IO).launch {
+            appLifecycleManager.isAppInForeground
+                .filter { !it }
+                .collect { appIconManager.applyOnBackground() }
         }
     }
 
