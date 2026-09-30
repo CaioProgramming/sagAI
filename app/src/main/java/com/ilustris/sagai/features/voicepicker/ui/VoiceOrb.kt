@@ -134,18 +134,26 @@ fun VoiceOrb(
             )
         }
 
-        // Specular glint: a short bright arc and a soft highlight, upper-left.
+        // Specular glint: a short arc, built from stacked strokes (wide and faint to thin and
+        // bright) so it reads as a soft reflection instead of a flat line.
         val glintRadius = radius * 0.86f
         rotate(-128f, center) {
-            drawArc(
-                brush = Brush.sweepGradient(0f to Color.White.copy(alpha = 0.85f * alpha), 0.12f to Color.Transparent, center = center),
-                startAngle = 0f,
-                sweepAngle = 48f,
-                useCenter = false,
-                topLeft = Offset(center.x - glintRadius, center.y - glintRadius),
-                size = Size(glintRadius * 2, glintRadius * 2),
-                style = Stroke(width = radius * 0.035f, cap = StrokeCap.Round),
-            )
+            GLINT_PASSES.forEach { (width, strength) ->
+                drawArc(
+                    brush =
+                        Brush.sweepGradient(
+                            0f to Color.White.copy(alpha = strength * alpha),
+                            0.14f to Color.Transparent,
+                            center = center,
+                        ),
+                    startAngle = 0f,
+                    sweepAngle = 50f,
+                    useCenter = false,
+                    topLeft = Offset(center.x - glintRadius, center.y - glintRadius),
+                    size = Size(glintRadius * 2, glintRadius * 2),
+                    style = Stroke(width = radius * width, cap = StrokeCap.Round),
+                )
+            }
         }
         drawCircle(
             brush =
@@ -187,6 +195,8 @@ fun VoiceOrb(
     }
 }
 
+/** Stroke width (fraction of the radius) and opacity of each glint pass. */
+private val GLINT_PASSES = listOf(0.18f to 0.06f, 0.11f to 0.1f, 0.06f to 0.2f, 0.03f to 0.55f, 0.012f to 0.9f)
 private const val SPHERE_FRACTION = 0.8f
 private const val BLOB_COUNT = 4
 private const val WAVE_POINTS = 96

@@ -19,7 +19,7 @@ import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaCreationState
-import com.ilustris.sagai.ui.navigation.ChatKey
+import com.ilustris.sagai.ui.navigation.NarratorVoiceKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -532,7 +532,7 @@ class NewSagaViewModel
         private fun navigateToSaga(saga: Saga) {
             effect.value =
                 Effect.Navigate(
-                    key = ChatKey(saga.id.toString(), false),
+                    key = NarratorVoiceKey(saga.id.toString()),
                 )
         }
     }

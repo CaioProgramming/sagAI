@@ -1148,6 +1148,8 @@
     <string name="epilogue_restart_title">Começar de novo com %1$s?</string>
     <string name="epilogue_restart_message">A conversa será apagada, mas %1$s vai continuar lembrando de tudo que aprendeu sobre você.</string>
     <string name="voice_picker_confirm">Escolher %1$s</string>
+    <string name="narrator_voice_title">Escolha seu narrador</string>
+    <string name="narrator_voice_subtitle">Essa voz vai narrar a sua saga daqui pra frente.</string>
 </resources>
 
 

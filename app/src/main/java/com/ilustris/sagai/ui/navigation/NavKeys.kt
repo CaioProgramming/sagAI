@@ -36,6 +36,15 @@ data class ChatKey(
     val isDebug: Boolean = false,
 ) : NavKey
 
+/**
+ * Where a freshly created saga lands before its chat: the player picks the narrator voice the saga
+ * keeps for good (chat narration, live mode and audiobook). Not reachable via deep link.
+ */
+@Serializable
+data class NarratorVoiceKey(
+    val sagaId: String,
+) : NavKey
+
 @Serializable
 data class SagaDetailKey(
     val sagaId: String,

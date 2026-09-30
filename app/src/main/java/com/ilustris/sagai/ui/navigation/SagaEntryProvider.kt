@@ -31,6 +31,7 @@ import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
 import com.ilustris.sagai.features.saga.detail.ui.SagaWikiView
 import com.ilustris.sagai.features.settings.ui.ApiSettingsView
 import com.ilustris.sagai.features.settings.ui.SettingsView
+import com.ilustris.sagai.features.voicepicker.ui.NarratorVoiceView
 import com.ilustris.sagai.features.settings.ui.audit.AIAuditLogView
 import com.ilustris.sagai.features.timeline.ui.SagaEventsView
 
@@ -119,6 +120,16 @@ fun createSagaEntryProvider(
             onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    entry<NarratorVoiceKey> { key ->
+        NarratorVoiceView(
+            sagaId = key.sagaId,
+            onDone = {
+                navigator.goBack()
+                navigator.navigate(ChatKey(key.sagaId))
+            },
         )
     }
 

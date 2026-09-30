@@ -284,7 +284,7 @@ class BookAudioUseCaseImpl
          * One narrator voice per saga, not per volume — otherwise each book picks its own random
          * voice the first time it is narrated, and the same saga ends up sounding like a different
          * person book to book. Priority: this book already has one (its own narration existed
-         * before the saga-wide field did) > the saga's persisted voice, if still a known one > pick
+         * before the saga-wide field did) > the saga's persisted voice (chosen by the player, or picked on first use) > pick
          * a random voice and persist it on the saga so every future book reuses it.
          */
         private suspend fun narratorVoice(
@@ -293,11 +293,12 @@ class BookAudioUseCaseImpl
             config: BookAudioConfig,
         ): Voice {
             voiceCatalog.find(book.narrationVoice)?.let { return it }
-            val knownVoices = config.voices.mapNotNull { voiceCatalog.find(it) }
-            voiceCatalog.find(saga.narratorVoice)?.takeIf { it in knownVoices }?.let { voice ->
+            // The saga's own voice wins even when book_audio_config doesn't list it: the player chose it.
+            voiceCatalog.find(saga.narratorVoice)?.let { voice ->
                 bookAudioDao.setNarrationVoice(book.id, voice.id)
                 return voice
             }
+            val knownVoices = config.voices.mapNotNull { voiceCatalog.find(it) }
             val voice = knownVoices.randomOrNull() ?: error("book_audio_config has no known voices")
             bookAudioDao.setNarrationVoice(book.id, voice.id)
             sagaRepository.updateSaga(saga.copy(narratorVoice = voice.id))
