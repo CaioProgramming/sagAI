@@ -225,7 +225,12 @@ object ChatPrompts {
                         listOf(
                             RetrievalGroup(listOf(EmbeddingSourceType.WIKI), topK = 3),
                             RetrievalGroup(
-                                listOf(EmbeddingSourceType.CHARACTER_EVENT, EmbeddingSourceType.CONTINUITY_FACT),
+                                listOf(
+                                    EmbeddingSourceType.CHARACTER_EVENT,
+                                    EmbeddingSourceType.CONTINUITY_FACT,
+                                    EmbeddingSourceType.CHARACTER_RELATION,
+                                    EmbeddingSourceType.LOCATION,
+                                ),
                                 topK = 5,
                             ),
                         ),

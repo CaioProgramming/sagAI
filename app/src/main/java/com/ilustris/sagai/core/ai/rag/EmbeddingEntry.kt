@@ -68,6 +68,7 @@ enum class EmbeddingSourceType {
     CHARACTER_EVENT,
     CHARACTER_RELATION,
     CONTINUITY_FACT,
+    LOCATION,
 
     /** Safe fallback for a stored value that no longer matches a constant above — see
      * [com.ilustris.sagai.core.database.converters.EnumConverters]. Never written on purpose;

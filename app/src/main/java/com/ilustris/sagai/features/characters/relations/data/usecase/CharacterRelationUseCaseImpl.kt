@@ -2,6 +2,8 @@ package com.ilustris.sagai.features.characters.relations.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
+import com.ilustris.sagai.core.ai.rag.EmbeddingSourceType
+import com.ilustris.sagai.core.ai.rag.SemanticIndexService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -21,6 +23,7 @@ class CharacterRelationUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val relationRepository: CharacterRelationRepository,
         private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val semanticIndexService: SemanticIndexService,
     ) : CharacterRelationUseCase {
         override suspend fun generateCharacterRelation(
             timeline: Timeline,
@@ -123,7 +126,17 @@ class CharacterRelationUseCaseImpl
                         title = relationTitle,
                         sagaId = saga.data.id,
                     )
-                relationRepository.insertRelationAndEvent(newCharacterRelation, timelineId)
+                relationRepository.insertRelationAndEvent(newCharacterRelation, timelineId).also { saved ->
+                    indexRelationEvent(
+                        sagaId = saga.data.id,
+                        relationId = saved.id,
+                        timelineId = timelineId,
+                        firstCharacter = firstCharacter,
+                        secondCharacter = secondCharacter,
+                        title = saved.title,
+                        description = saved.description,
+                    )
+                }
             } else {
                 val timelineContent = saga.findTimeline(timelineId)
                 val relationAlreadyUpdatedAtTimeline =
@@ -145,8 +158,40 @@ class CharacterRelationUseCaseImpl
                     emoji = relationEmoji,
                     timestamp = System.currentTimeMillis(),
                 )
+                indexRelationEvent(
+                    sagaId = saga.data.id,
+                    relationId = existingRelationshipContent.data.id,
+                    timelineId = timelineId,
+                    firstCharacter = firstCharacter,
+                    secondCharacter = secondCharacter,
+                    title = relationTitle,
+                    description = relationDescription,
+                )
 
                 existingRelationshipContent.data
             }
+        }
+
+        /**
+         * Keeps the RAG index in step with `relationship_update_events` — each update is its own
+         * atomic fact (the relation's base row never changes after creation, only new events get
+         * appended), so this indexes per-event rather than upserting a single "current state" key.
+         * Retrieved via semantic search in [com.ilustris.sagai.core.ai.prompts.ChatPrompts.replyMessagePrompt].
+         */
+        private fun indexRelationEvent(
+            sagaId: Int,
+            relationId: Int,
+            timelineId: Int,
+            firstCharacter: Character,
+            secondCharacter: Character,
+            title: String,
+            description: String,
+        ) {
+            semanticIndexService.index(
+                sagaId = sagaId,
+                sourceKey = "characterRelation:$relationId:$timelineId",
+                sourceType = EmbeddingSourceType.CHARACTER_RELATION,
+                text = "${firstCharacter.name} & ${secondCharacter.name} — $title\n$description",
+            )
         }
     }
