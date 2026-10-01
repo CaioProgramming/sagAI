@@ -31,6 +31,14 @@ sealed class SagaCreationState {
         val message: String,
     ) : SagaCreationState()
 
+    /** The contract is written and the saga and protagonist are saved; the portrait is next. */
+    data object ContractReady : SagaCreationState()
+
+    /** The protagonist's portrait is done (or gave up), so the saga's cover is next. */
+    data class CharacterReady(
+        val character: Character,
+    ) : SagaCreationState()
+
     data class Success(
         val saga: Saga,
         val character: Character,

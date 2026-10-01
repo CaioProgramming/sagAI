@@ -1180,6 +1180,11 @@
     <string name="new_saga_field_name">Nome</string>
     <string name="new_saga_field_description">Descrição</string>
     <string name="new_saga_edit_done">Concluir</string>
+
+    <string name="new_saga_saving_contract">Escrevendo o contrato…</string>
+    <string name="new_saga_saving_character">Dando vida ao protagonista…</string>
+    <string name="new_saga_saving_saga">Desenhando a capa da saga…</string>
+    <string name="new_saga_saving_done">Sua saga está pronta</string>
 </resources>
 
 

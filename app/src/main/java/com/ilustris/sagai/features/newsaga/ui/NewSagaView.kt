@@ -326,27 +326,8 @@ private fun NewSagaCreationContent(
         contentAlignment = Alignment.Center,
     ) {
         when {
-            uiState.isSaving -> {
-                val bookEntry =
-                    uiState.libraryBooks.firstOrNull {
-                        it.first.draft.id == uiState.lockedSaga?.id
-                    }
-                bookEntry?.let { entry ->
-                    with(sharedTransitionScope) {
-                        NewSagaBookFocus(
-                            book = entry.first,
-                            visualConfig = entry.second,
-                            reasoning = uiState.statusMessage,
-                            isOpened = false,
-                            isLoading = true,
-                            lockedCharacter = uiState.lockedCharacter,
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            sharedContentKey = "new-saga-book-${entry.first.draft.id}",
-                            showReasoning = true,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                }
+            uiState.showSaveProgress -> {
+                NewSagaSaveProgress(uiState = uiState)
             }
 
             uiState.showGenreLoader -> {

@@ -632,7 +632,15 @@ class NewSagaViewModel
         private fun saveSaga() {
             val sagaDraft = _uiState.value.lockedSaga ?: return
             val characterInfo = _uiState.value.lockedCharacter ?: return
-            updateState { copy(isSaving = true, savingError = null) }
+            updateState {
+                copy(
+                    isSaving = true,
+                    savingError = null,
+                    saveStage = SaveStage.Contract,
+                    savedCharacter = null,
+                    savedSaga = null,
+                )
+            }
 
             newSagaUseCase
                 .sealSacredContract(
@@ -644,8 +652,23 @@ class NewSagaViewModel
                             updateState { copy(statusMessage = state.message) }
                         }
 
+                        is SagaCreationState.ContractReady -> {
+                            updateState { copy(saveStage = SaveStage.Character) }
+                        }
+
+                        is SagaCreationState.CharacterReady -> {
+                            updateState { copy(saveStage = SaveStage.Saga, savedCharacter = state.character) }
+                        }
+
                         is SagaCreationState.Success -> {
-                            updateState { copy(isSaving = false) }
+                            // Stays "saving" so the finished cards hold on screen until the chat opens.
+                            updateState {
+                                copy(
+                                    saveStage = SaveStage.Done,
+                                    savedSaga = state.saga,
+                                    savedCharacter = state.character,
+                                )
+                            }
                             viewModelScope.launch {
                                 delay(3000)
                                 resetAfterSave()
@@ -661,6 +684,7 @@ class NewSagaViewModel
                                         state.error.message
                                             ?: "Unknown error occurred while saving",
                                     isSaving = false,
+                                    saveStage = SaveStage.Contract,
                                 )
                             }
                         }

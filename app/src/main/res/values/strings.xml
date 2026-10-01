@@ -1192,4 +1192,9 @@
     <string name="new_saga_field_name">Name</string>
     <string name="new_saga_field_description">Description</string>
     <string name="new_saga_edit_done">Done</string>
+
+    <string name="new_saga_saving_contract">Writing the contract…</string>
+    <string name="new_saga_saving_character">Bringing the protagonist to life…</string>
+    <string name="new_saga_saving_saga">Drawing the saga\'s cover…</string>
+    <string name="new_saga_saving_done">Your saga is ready</string>
 </resources>

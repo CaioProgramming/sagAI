@@ -212,6 +212,15 @@ internal fun NewSagaReviewContent(
                 }
             }
         }
+        uiState.savingError?.let { error ->
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            )
+        }
         Text(
             text = stringResource(R.string.new_saga_review_hint),
             style = MaterialTheme.typography.labelMedium,

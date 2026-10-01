@@ -101,6 +101,7 @@ class NewSagaUseCaseImpl
                                         savedSaga.copy(mainCharacterId = savedCharacter.id)
                                     val updatedSaga =
                                         updateSaga(finalizedSaga).getSuccess() ?: finalizedSaga
+                                    emit(SagaCreationState.ContractReady)
 
                                     characterUseCase
                                         .generateCharacterImageStream(savedCharacter, updatedSaga)
@@ -111,6 +112,7 @@ class NewSagaUseCaseImpl
                                                 is StreamingState.Success -> {
                                                     val finalCharacter =
                                                         charIconState.data.data.first
+                                                    emit(SagaCreationState.CharacterReady(finalCharacter))
                                                     sagaRepository
                                                         .generateSagaIconStream(
                                                             updatedSaga,
@@ -141,6 +143,7 @@ class NewSagaUseCaseImpl
                                                 }
 
                                                 is StreamingState.Error -> {
+                                                    emit(SagaCreationState.CharacterReady(savedCharacter))
                                                     sagaRepository
                                                         .generateSagaIconStream(
                                                             updatedSaga,

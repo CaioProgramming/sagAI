@@ -93,7 +93,7 @@ private fun Modifier.sheen(
 
 /** The genre's primary color at the top, fading into the background: the card's surface. */
 @Composable
-private fun Modifier.cardSurface(
+internal fun Modifier.cardSurface(
     sheenOffset: Float,
     glow: Float = 0.55f,
 ): Modifier {
