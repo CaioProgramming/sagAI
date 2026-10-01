@@ -104,11 +104,9 @@ class NewSagaViewModel
                                     )
                                 }
                             }.onFailureAsync {
-                                val state = _uiState.value
-                                if (generation != echoesRequestGeneration || state.isGenerating) {
-                                    return@onFailureAsync
-                                }
-                                updateState { copy(error = genericErrorMessage()) }
+                                // The suggestions are a nicety: the player can always type an idea, so a
+                                // failed request (the model API throws intermittent 500s) stays silent.
+                                Timber.w(it, "Initial universe echoes failed; showing the idea screen without chips")
                             }
                     } catch (e: Exception) {
                         if (e.isFlowCancellation()) {
