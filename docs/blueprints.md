@@ -1,10 +1,10 @@
 # Sagas AI Prompt Blueprints
 
-This document tracks all the AI prompt blueprints used in the Sagas application. Each blueprint is stored in Firebase Remote Config with a `_blueprint` suffix and follows a modular structure: **Role**, **System Directives**, **Rules**, and **Template**.
+This document tracks all the AI prompt blueprints used in the Sagas application. Each blueprint is stored in Firebase Remote Config with a `_blueprint` suffix and follows a modular structure: **Role**, **System Directives** and **Rules**. The old **Template** section is deprecated.
 
 ## Design Principles
 - **Agnostic Core:** Role, Directives, and Rules should be context-free.
-- **Dynamic Templates:** All variable data (Saga context, history, character names) must be injected via the `template` section.
+- **Variables via args, no template:** All variable data (Saga context, history, character names) is passed as the args map/object to `buildSplitBlueprint`, which injects it as a `# TASK CONTEXT`. Don't write a `template` in new blueprints; the field is deprecated and only kept for blueprints already published with one.
 - **Tag-Based Expression:** Use `<action>`, `<think>`, and `<narrator>` tags for richer character prose.
 - **Consistent Nomenclature:** Firebase keys must end with `_blueprint`.
 
