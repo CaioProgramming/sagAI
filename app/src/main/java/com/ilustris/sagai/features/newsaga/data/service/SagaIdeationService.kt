@@ -7,7 +7,6 @@ import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.CosmicLibraryArgs
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
-import com.ilustris.sagai.core.ai.prompts.PlayerSpectrumPrompts
 import com.ilustris.sagai.core.ai.prompts.SagaQuizArgs
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -46,7 +45,7 @@ class SagaIdeationService
                             themes = genreConfigService.formatGenreAesthetics(Genre.entries - excludedGenres.toSet()),
                             userTraits = userTraits,
                         ),
-                    ).mergeInstructions(PlayerSpectrumPrompts.traitsInstructions(userTraits))
+                    )
             return gemmaClient.generateStreaming<LibraryPitchesResponse>(
                 promptSplit = splitPrompt,
                 requirement = ModelRequirement.MEDIUM,
@@ -85,8 +84,8 @@ class SagaIdeationService
                 promptService
                     .buildSplitBlueprint(
                         NewSagaPrompts.SAGA_QUIZ_BLUEPRINT,
-                        SagaQuizArgs(playerIdea = idea),
-                    ).mergeInstructions(PlayerSpectrumPrompts.quizLensInstructions(playerProfile))
+                        SagaQuizArgs(playerIdea = idea, playerProfile = playerProfile),
+                    )
             val quiz =
                 gemmaClient
                     .generate<GeneratedContent<GeneratedPlayerChoices>>(

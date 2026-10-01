@@ -100,6 +100,8 @@ data class SacredBindingArgs(
 
 data class SagaQuizArgs(
     val playerIdea: String,
+    /** The player's profile as JSON; null (and so left out of the prompt) for a first-time player. */
+    val playerProfile: String? = null,
 )
 
 data class CosmicLibraryArgs(

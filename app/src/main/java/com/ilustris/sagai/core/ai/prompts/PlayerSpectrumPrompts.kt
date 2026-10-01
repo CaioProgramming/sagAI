@@ -59,44 +59,6 @@ object PlayerSpectrumPrompts {
         return mapOf(CARDS_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
     }
 
-    const val QUIZ_BUCKET = "PlayerForCreationQuiz"
-
-    /**
-     * What the saga-creation quiz gets to know about who is playing: their profile, as a glance and
-     * never a brief. The idea decides what the questions are about; the profile may only nudge one
-     * of them. Empty for a first-time player, so callers can merge it unconditionally.
-     */
-    fun quizLensInstructions(playerProfile: String?): Map<String, Any> {
-        if (playerProfile.isNullOrBlank()) return emptyMap()
-        val rules =
-            linkedMapOf(
-                "QUIZ_PROFILE" to playerProfile.trim(),
-                "QUIZ_PROFILE_GLANCE" to
-                    "A glance at who is playing, nothing more. The idea decides what the questions are about; the profile may nudge at most one of them, never the topics or the tone.",
-                "QUIZ_STAY_PLAIN" to
-                    "Questions and options stay simple and concrete. Never hint at the profile or any analysis.",
-            )
-        return mapOf(QUIZ_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
-    }
-
-    const val TRAITS_BUCKET = "PlayerTraitsForStories"
-
-    /**
-     * How the story proposals read `userTraits`, the psychological reading the creation quiz leaves
-     * behind: it says how this player relates to stories and conflict, so it shapes how the stories
-     * are built and never what they are about. Empty without a quiz, so callers can merge it
-     * unconditionally.
-     */
-    fun traitsInstructions(userTraits: String?): Map<String, Any> {
-        if (userTraits.isNullOrBlank()) return emptyMap()
-        val rules =
-            linkedMapOf(
-                "USER_TRAITS_SCOPE" to
-                    "userTraits is a psychological reading of the player, taken from a projective quiz: what their choices indicate about how they relate to stories and conflict. Use it for how the stories are built, whatever the theme (pace, intimacy, moral weight, the kind of antagonist, how much loss), never for what they are about. The idea alone decides the theme, the setting and the genres. Never take a topic, a setting or a plot element from userTraits, never turn them into a character's wound or backstory, and never quote them.",
-            )
-        return mapOf(TRAITS_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
-    }
-
     /**
      * How the chapter synthesis uses `playerChoicesOfThisChapter`: the picks weigh events and
      * colour the protagonist, and their hidden `read`s become the player's next [Chapter.playerSpectrum].
