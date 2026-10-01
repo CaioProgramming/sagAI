@@ -27,6 +27,12 @@ data class Voice(
     val suggestedGenres: List<String>? = null,
     /** Orb colors as `#RRGGBB`; the picker falls back to the saga's genre palette when missing. */
     val palette: List<String>? = null,
+    /**
+     * How this voice delivers a story as the saga's narrator (pacing, attitude, where the humor or
+     * weight lands), in English because it goes straight into the TTS instruction. Kept apart from
+     * [description] on purpose: that one is timbre only and is all the character casting reads.
+     */
+    val narratorDirection: String? = null,
 ) {
     /** Only voices curated with a display name are offered to the player. */
     val isPickable: Boolean get() = !name.isNullOrBlank()

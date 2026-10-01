@@ -57,10 +57,12 @@ class BookAudioUseCaseImpl
          * request wants, instead of going through [com.ilustris.sagai.core.ai.GemmaClient]'s
          * system-instruction split.
          */
-        private suspend fun narrationInstruction(): String? {
+        private suspend fun narrationInstruction(voice: Voice? = null): String? {
             val blueprint = remoteConfigService.getJson<PromptBlueprint>(NARRATION_BLUEPRINT_KEY) ?: return null
             val lines = (blueprint.directives + blueprint.rules).entries.map { (key, value) -> "$key: $value" }
-            return lines.joinToString("\n").takeIf { it.isNotBlank() }
+            // The voice's own delivery goes last so it reads as the more specific instruction.
+            val persona = voice?.narratorDirection?.trim()?.takeIf { it.isNotBlank() }?.let { "$VOICE_DELIVERY_KEY: $it" }
+            return (lines + listOfNotNull(persona)).joinToString("\n").takeIf { it.isNotBlank() }
         }
 
         override fun sections(act: ActContent): List<AudioSection> {
@@ -192,7 +194,7 @@ class BookAudioUseCaseImpl
                     AudioConfig(
                         voice = voice,
                         prompt = plan.text,
-                        instruction = narrationInstruction() ?: error("$NARRATION_BLUEPRINT_KEY is not configured"),
+                        instruction = narrationInstruction(voice) ?: error("$NARRATION_BLUEPRINT_KEY is not configured"),
                     ),
                 ) ?: error("Narration returned no audio")
 
@@ -337,6 +339,7 @@ class BookAudioUseCaseImpl
             private const val TAG = "🎧 Audiobook"
             const val CONFIG_KEY = "book_audio_config"
             const val NARRATION_BLUEPRINT_KEY = "book_audio_narration_blueprint"
+            private const val VOICE_DELIVERY_KEY = "VOICE_DELIVERY"
             private const val WAV_HEADER_BYTES = 44
 
             /** 24 kHz, 16-bit mono PCM. */
