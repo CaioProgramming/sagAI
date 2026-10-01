@@ -38,6 +38,4 @@ class ChapterDaoImpl
         override suspend fun getChapterContentById(chapterId: Int) = chapterDao.getChapterContentById(chapterId)
 
         override suspend fun getChapterById(chapterId: Int) = chapterDao.getChapterById(chapterId)
-
-        override suspend fun getLatestPlayerSpectrum() = chapterDao.getLatestPlayerSpectrum()
     }

@@ -384,7 +384,7 @@ private val NewSagaUiState.showGenreLoader: Boolean
     get() = phase == NewSagaScreenPhase.Creation && isGenerating && libraryBooks.isEmpty() && !isSaving
 
 private val NewSagaUiState.showSaveButton: Boolean
-    get() = isReadyToSave && lockedSaga != null && lockedCharacter != null
+    get() = isReadyToSave && lockedSaga != null && lockedCharacter != null && !showSaveProgress
 
 private val NewSagaUiState.useShimmerReasoning: Boolean
     get() = isGenerating || isSaving || isLoadingMore || isLoadingQuiz

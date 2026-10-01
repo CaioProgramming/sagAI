@@ -59,24 +59,22 @@ object PlayerSpectrumPrompts {
         return mapOf(CARDS_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
     }
 
-    const val QUIZ_BUCKET = "PlayerReadForCreationQuiz"
+    const val QUIZ_BUCKET = "PlayerForCreationQuiz"
 
     /**
-     * Same idea as [cardsLensInstructions] for the saga-creation quiz: the read the player already has
-     * (from earlier sagas) makes the quiz harder instead of confirming it. Empty for a first-time
-     * player, so callers can merge it unconditionally.
+     * What the saga-creation quiz gets to know about who is playing: their profile, as a glance and
+     * never a brief. The idea decides what the questions are about; the profile may only nudge one
+     * of them. Empty for a first-time player, so callers can merge it unconditionally.
      */
-    fun quizLensInstructions(spectrumText: String?): Map<String, Any> {
-        if (spectrumText.isNullOrBlank()) return emptyMap()
+    fun quizLensInstructions(playerProfile: String?): Map<String, Any> {
+        if (playerProfile.isNullOrBlank()) return emptyMap()
         val rules =
             linkedMapOf(
-                "QUIZ_READ" to spectrumText.trim(),
-                "QUIZ_TEST_THE_READ" to
-                    "Make the dilemmas challenge the read above: raise the cost of the pattern the player has shown, and make the option they would usually avoid tempting.",
-                "QUIZ_NEVER_CONFIRM" to
-                    "At least one card must be a dilemma where the read predicts one answer and the other is just as defensible.",
+                "QUIZ_PROFILE" to playerProfile.trim(),
+                "QUIZ_PROFILE_GLANCE" to
+                    "A glance at who is playing, nothing more. The idea decides what the questions are about; the profile may nudge at most one of them, never the topics or the tone.",
                 "QUIZ_STAY_PLAIN" to
-                    "Questions and options stay simple and concrete. Never hint at an analysis, a pattern or this read.",
+                    "Questions and options stay simple and concrete. Never hint at the profile or any analysis.",
             )
         return mapOf(QUIZ_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
     }

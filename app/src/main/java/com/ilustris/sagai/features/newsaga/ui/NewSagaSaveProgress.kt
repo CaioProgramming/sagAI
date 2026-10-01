@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Gender
@@ -149,6 +150,7 @@ private fun StackedCard(
     Box(
         modifier =
             Modifier
+                .zIndex(front)
                 .padding(top = PEEK_DP.dp)
                 .width(CardWidth)
                 .height(CardHeight)
@@ -176,6 +178,32 @@ private fun StackedCard(
     }
 }
 
+/** The finished artwork as the card's whole background, fading out toward the bottom under the name. */
+@Composable
+private fun FadedArtwork(
+    model: String,
+    alpha: Float,
+) {
+    AsyncImage(
+        model = model,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        alignment = Alignment.TopCenter,
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .alpha(alpha)
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    drawRect(
+                        brush = Brush.verticalGradient(0.55f to Color.Black, 1f to Color.Transparent),
+                        blendMode = BlendMode.DstIn,
+                    )
+                },
+    )
+}
+
 @Composable
 private fun SaveStoryCard(
     title: String,
@@ -184,54 +212,41 @@ private fun SaveStoryCard(
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val litProgress by animateFloatAsState(if (lit) 1f else 0f, tween(900), label = "save_story_lit")
-    val shape = RoundedCornerShape(26.dp)
-    Column(
-        modifier = Modifier.fillMaxSize().cardSurface(sheenOffset = 0f).padding(horizontal = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .padding(top = 44.dp)
-                    .size(104.dp)
-                    .drawBehind {
-                        if (litProgress < 1f) {
-                            drawRoundRect(
-                                color = Color.White.copy(alpha = 0.28f * (1f - litProgress)),
-                                cornerRadius = CornerRadius(26.dp.toPx()),
-                                style = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 10f))),
-                            )
-                        }
-                    }.clip(shape)
-                    .background(Brush.linearGradient(listOf(primary.copy(alpha = 0.95f * litProgress), primary.copy(alpha = 0.35f * litProgress)))),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (lit && cover.isNotBlank()) {
-                AsyncImage(
-                    model = cover,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().alpha(litProgress),
-                )
-            } else {
+    val hasCover = lit && cover.isNotBlank()
+    Box(modifier = Modifier.fillMaxSize().cardSurface(sheenOffset = 0f)) {
+        if (hasCover) {
+            FadedArtwork(model = cover, alpha = litProgress)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 20.dp).padding(bottom = 30.dp),
+            )
+        } else {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Icon(
                     painter = themePainter(),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f + 0.65f * litProgress),
-                    modifier = Modifier.size(46.dp),
+                    tint = primary.copy(alpha = 0.4f + 0.6f * litProgress),
+                    modifier = Modifier.padding(top = 64.dp).size(72.dp),
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth().padding(top = 28.dp),
                 )
             }
         }
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth().padding(top = 28.dp),
-        )
-        if (!lit) PendingBar()
     }
 }
 
@@ -245,28 +260,8 @@ private fun SaveHeroCard(
     val primary = MaterialTheme.colorScheme.primary
     val litProgress by animateFloatAsState(if (lit) 1f else 0f, tween(900), label = "save_hero_lit")
     Box(modifier = Modifier.fillMaxSize().cardSurface(sheenOffset = 0f, glow = 0.45f)) {
-        val fade =
-            Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .height(200.dp)
-                .padding(top = 16.dp)
-                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                .drawWithContent {
-                    drawContent()
-                    drawRect(
-                        brush = Brush.verticalGradient(0.35f to Color.Black, 0.98f to Color.Transparent),
-                        blendMode = BlendMode.DstIn,
-                    )
-                }
         if (lit && portrait.isNotBlank()) {
-            AsyncImage(
-                model = portrait,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.TopCenter,
-                modifier = fade.alpha(litProgress),
-            )
+            FadedArtwork(model = portrait, alpha = litProgress)
         } else {
             Image(
                 painter =
@@ -284,43 +279,30 @@ private fun SaveHeroCard(
                     ColorFilter.tint(
                         androidx.compose.ui.graphics.lerp(Color.Black.copy(alpha = 0.82f), primary, litProgress),
                     ),
-                modifier = fade,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .padding(top = 16.dp)
+                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                        .drawWithContent {
+                            drawContent()
+                            drawRect(
+                                brush = Brush.verticalGradient(0.35f to Color.Black, 0.98f to Color.Transparent),
+                                blendMode = BlendMode.DstIn,
+                            )
+                        },
             )
         }
-        Column(
+        Text(
+            text = name,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 20.dp).padding(bottom = 30.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        if (!lit) {
-            Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp)) { PendingBar() }
-        }
+        )
     }
-}
-
-/** A short shimmering line: this card's artwork is still being made. */
-@Composable
-private fun PendingBar() {
-    Box(
-        modifier =
-            Modifier
-                .padding(top = 16.dp)
-                .width(46.dp)
-                .height(3.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f))
-                .reactiveShimmer(
-                    repeatMode = RepeatMode.Restart,
-                    shimmerColors = themeShimmer(),
-                    isPlaying = true,
-                ),
-    )
 }

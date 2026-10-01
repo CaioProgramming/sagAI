@@ -44,6 +44,4 @@ interface ChapterDao {
     @Query("SELECT * FROM Chapter WHERE id = :chapterId")
     suspend fun getChapterById(chapterId: Int): Chapter?
 
-    @Query("SELECT playerSpectrum FROM Chapter WHERE playerSpectrum IS NOT NULL AND playerSpectrum != '' ORDER BY createdAt DESC, id DESC LIMIT 1")
-    suspend fun getLatestPlayerSpectrum(): String?
 }

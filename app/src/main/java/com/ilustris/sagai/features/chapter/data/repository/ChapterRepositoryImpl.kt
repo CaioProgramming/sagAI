@@ -30,8 +30,6 @@ class ChapterRepositoryImpl
             return chapter
         }
 
-        override suspend fun getLatestPlayerSpectrum() = chapterDao.getLatestPlayerSpectrum()
-
         override suspend fun deleteChapter(chapter: Chapter) = chapterDao.deleteChapter(chapter)
 
         override suspend fun deleteChapterById(chapterId: Int) = chapterDao.deleteChapterById(chapterId)

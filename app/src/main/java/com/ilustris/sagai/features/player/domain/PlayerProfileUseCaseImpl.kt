@@ -23,6 +23,8 @@ class PlayerProfileUseCaseImpl
     ) : PlayerProfileUseCase {
         override fun observeProfile(): Flow<PlayerProfileData?> = playerProfileRepository.observeProfile()
 
+        override suspend fun getProfile(): PlayerProfileData? = playerProfileRepository.getProfile()
+
         override suspend fun recordActInsight(
             saga: SagaContent,
             act: Act,

@@ -20,6 +20,4 @@ interface ChapterRepository {
 
     suspend fun deleteAllChapters()
 
-    /** The player's most recent read across every saga, or null before the first answered chapter. */
-    suspend fun getLatestPlayerSpectrum(): String?
 }

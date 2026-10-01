@@ -5,12 +5,13 @@ import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.google.gson.Gson
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.player.domain.PlayerProfileUseCase
 import com.ilustris.sagai.features.newsaga.data.model.LibraryPitchesResponse
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.service.SagaIdeationService
@@ -28,7 +29,7 @@ class NewSagaUseCaseImpl
         private val sagaIdeationService: SagaIdeationService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val worldLocationUseCase: WorldLocationUseCase,
-        private val chapterRepository: ChapterRepository,
+        private val playerProfileUseCase: PlayerProfileUseCase,
     ) : NewSagaUseCase {
         override fun executePrompt(
             prompt: String,
@@ -47,8 +48,18 @@ class NewSagaUseCaseImpl
 
         override suspend fun provideInitialEchoes() = sagaIdeationService.suggestUniverseEchoes()
 
+        /**
+         * The quiz gets a glance at who is playing: their profile as JSON, the same shape the profile
+         * updates use. A first-time player has none, and the quiz then probes the idea alone.
+         */
         override suspend fun generateQuiz(idea: String) =
-            sagaIdeationService.generateCreationQuiz(idea, chapterRepository.getLatestPlayerSpectrum())
+            sagaIdeationService.generateCreationQuiz(
+                idea,
+                playerProfileUseCase
+                    .getProfile()
+                    ?.takeIf { it.topics.isNotEmpty() }
+                    ?.let { Gson().toJson(it) },
+            )
 
         override fun sealSacredContract(
             sagaDraft: SagaDraft,
