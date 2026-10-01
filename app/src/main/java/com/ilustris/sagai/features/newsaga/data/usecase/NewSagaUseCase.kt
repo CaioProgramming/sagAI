@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.newsaga.data.usecase
 
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.chapter.data.model.GeneratedPlayerChoices
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -47,6 +48,9 @@ interface NewSagaUseCase {
     ): Flow<StreamingState<LibraryPitchesResponse?>>
 
     suspend fun provideInitialEchoes(): RequestResult<UniverseSuggestions>
+
+    /** The opening quiz for [idea], tuned to the player's read from earlier sagas when there is one. */
+    suspend fun generateQuiz(idea: String): RequestResult<GeneratedPlayerChoices>
 
     fun sealSacredContract(
         sagaDraft: SagaDraft,

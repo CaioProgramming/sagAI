@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
@@ -27,6 +28,7 @@ class NewSagaUseCaseImpl
         private val sagaIdeationService: SagaIdeationService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val worldLocationUseCase: WorldLocationUseCase,
+        private val chapterRepository: ChapterRepository,
     ) : NewSagaUseCase {
         override fun executePrompt(
             prompt: String,
@@ -44,6 +46,9 @@ class NewSagaUseCaseImpl
             }
 
         override suspend fun provideInitialEchoes() = sagaIdeationService.suggestUniverseEchoes()
+
+        override suspend fun generateQuiz(idea: String) =
+            sagaIdeationService.generateCreationQuiz(idea, chapterRepository.getLatestPlayerSpectrum())
 
         override fun sealSacredContract(
             sagaDraft: SagaDraft,

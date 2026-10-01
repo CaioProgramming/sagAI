@@ -59,6 +59,28 @@ object PlayerSpectrumPrompts {
         return mapOf(CARDS_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
     }
 
+    const val QUIZ_BUCKET = "PlayerReadForCreationQuiz"
+
+    /**
+     * Same idea as [cardsLensInstructions] for the saga-creation quiz: the read the player already has
+     * (from earlier sagas) makes the quiz harder instead of confirming it. Empty for a first-time
+     * player, so callers can merge it unconditionally.
+     */
+    fun quizLensInstructions(spectrumText: String?): Map<String, Any> {
+        if (spectrumText.isNullOrBlank()) return emptyMap()
+        val rules =
+            linkedMapOf(
+                "QUIZ_READ" to spectrumText.trim(),
+                "QUIZ_TEST_THE_READ" to
+                    "Make the dilemmas challenge the read above: raise the cost of the pattern the player has shown, and make the option they would usually avoid tempting.",
+                "QUIZ_NEVER_CONFIRM" to
+                    "At least one card must be a dilemma where the read predicts one answer and the other is just as defensible.",
+                "QUIZ_STAY_PLAIN" to
+                    "Questions and options stay simple and concrete. Never hint at an analysis, a pattern or this read.",
+            )
+        return mapOf(QUIZ_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
+    }
+
     /**
      * How the chapter synthesis uses `playerChoicesOfThisChapter`: the picks weigh events and
      * colour the protagonist, and their hidden `read`s become the player's next [Chapter.playerSpectrum].

@@ -56,6 +56,8 @@ class NewSagaViewModel
         val effect = MutableStateFlow<Effect?>(null)
 
         private var promptJob: Job? = null
+        private var quizJob: Job? = null
+        private var lastIdea: String = ""
         private var initialEchoesJob: Job? = null
         private var echoesRequestGeneration = 0
         private var lastUserPrompt: String = ""
@@ -161,6 +163,18 @@ class NewSagaViewModel
                     selectEcho(intent)
                 }
 
+                is NewSagaIntent.QuizSelect -> {
+                    quizSelect(intent.cardIndex, intent.optionIndex)
+                }
+
+                is NewSagaIntent.QuizNext -> {
+                    quizNext()
+                }
+
+                is NewSagaIntent.QuizPrevious -> {
+                    quizPrevious()
+                }
+
                 is NewSagaIntent.LoadMore -> {
                     loadMore()
                 }
@@ -172,43 +186,62 @@ class NewSagaViewModel
         }
 
         /**
+         * One step back per call, so a stray tap never throws the whole flow away.
          * @return true when the screen should pop; false when back was handled internally.
          */
         fun onBackPressed(): Boolean {
             val state = _uiState.value
             if (state.isSaving) return false
 
-            if (state.phase == NewSagaScreenPhase.Creation) {
-                navigateBack()
-                return false
+            when {
+                state.isLoadingQuiz -> {
+                    quizJob?.cancel()
+                    updateState { copy(isLoadingQuiz = false) }
+                }
+
+                state.phase == NewSagaScreenPhase.Creation -> {
+                    promptJob?.cancel()
+                    updateState {
+                        copy(
+                            phase = NewSagaScreenPhase.Quiz,
+                            quizIndex = (quiz?.cards?.lastIndex ?: 0).coerceAtLeast(0),
+                            isGenerating = false,
+                            isLoadingMore = false,
+                            libraryBooks = emptyList(),
+                            lockedSaga = null,
+                            lockedCharacter = null,
+                            isReadyToSave = false,
+                            currentVisualConfig = null,
+                            statusMessage = null,
+                            error = null,
+                        )
+                    }
+                }
+
+                state.phase == NewSagaScreenPhase.Quiz -> {
+                    if (state.quizIndex > 0) {
+                        updateState { copy(quizIndex = quizIndex - 1) }
+                    } else {
+                        updateState {
+                            copy(
+                                phase = NewSagaScreenPhase.Suggestions,
+                                quiz = null,
+                                quizAnswers = emptyList(),
+                                quizIndex = 0,
+                                error = null,
+                            )
+                        }
+                        if (_uiState.value.universeEchoes.isEmpty()) requestInitialEchoes()
+                    }
+                }
+
+                else -> return true
             }
-            return true
+            return false
         }
 
         private fun navigateBack() {
-            val state = _uiState.value
-            if (state.isSaving) return
-
-            if (state.phase == NewSagaScreenPhase.Creation) {
-                promptJob?.cancel()
-                updateState {
-                    copy(
-                        phase = NewSagaScreenPhase.Suggestions,
-                        isGenerating = false,
-                        isLoadingMore = false,
-                        libraryBooks = emptyList(),
-                        lockedSaga = null,
-                        lockedCharacter = null,
-                        isReadyToSave = false,
-                        currentVisualConfig = null,
-                        statusMessage = null,
-                        error = null,
-                    )
-                }
-                if (_uiState.value.universeEchoes.isEmpty()) {
-                    requestInitialEchoes()
-                }
-            }
+            onBackPressed()
         }
 
         private fun selectSaga(draft: SagaDraft) {
@@ -259,12 +292,6 @@ class NewSagaViewModel
         }
 
         private fun selectEcho(intent: NewSagaIntent.SelectEcho) {
-            updateState {
-                copy(
-                    statusMessage = "Exploring the ${intent.echo.genre.name} universe...",
-                    universeEchoes = emptyList(),
-                )
-            }
             submitUserPrompt(intent.echo.pitch)
         }
 
@@ -350,10 +377,95 @@ class NewSagaViewModel
             }
         }
 
+        /** The player's idea: asks the quiz first, the stories only come after it is answered. */
         private fun submitUserPrompt(prompt: String) {
             if (prompt.isBlank()) return
-            lastUserPrompt = prompt
+            lastIdea = prompt
             cancelInitialEchoes()
+            quizJob?.cancel()
+            updateState {
+                copy(
+                    error = null,
+                    isLoadingQuiz = true,
+                    quiz = null,
+                    quizAnswers = emptyList(),
+                    quizIndex = 0,
+                    libraryBooks = emptyList(),
+                    lockedSaga = null,
+                    lockedCharacter = null,
+                    isReadyToSave = false,
+                    currentVisualConfig = null,
+                )
+            }
+            quizJob =
+                viewModelScope.launch {
+                    newSagaUseCase
+                        .generateQuiz(prompt)
+                        .onSuccessAsync { quiz ->
+                            updateState {
+                                copy(
+                                    isLoadingQuiz = false,
+                                    phase = NewSagaScreenPhase.Quiz,
+                                    quiz = quiz,
+                                    quizAnswers = List(quiz.cards.size) { null },
+                                    quizIndex = 0,
+                                )
+                            }
+                        }.onFailureAsync {
+                            updateState { copy(isLoadingQuiz = false, error = genericErrorMessage()) }
+                        }
+                }
+        }
+
+        private fun quizSelect(
+            cardIndex: Int,
+            optionIndex: Int,
+        ) {
+            updateState {
+                if (cardIndex !in quizAnswers.indices) {
+                    this
+                } else {
+                    copy(quizAnswers = quizAnswers.toMutableList().also { it[cardIndex] = optionIndex })
+                }
+            }
+        }
+
+        private fun quizPrevious() {
+            updateState { copy(quizIndex = (quizIndex - 1).coerceAtLeast(0)) }
+        }
+
+        private fun quizNext() {
+            val state = _uiState.value
+            val cards = state.quiz?.cards ?: return
+            if (state.currentQuizAnswer == null) return
+            if (state.quizIndex < cards.lastIndex) {
+                updateState { copy(quizIndex = quizIndex + 1) }
+            } else {
+                submitQuiz()
+            }
+        }
+
+        /**
+         * The stories are asked for with the idea plus what the picks revealed — the hidden insights,
+         * as a taste note the library prompt can lean on. [lastUserPrompt] carries the same text so
+         * "load more" keeps the taste.
+         */
+        private fun submitQuiz() {
+            val state = _uiState.value
+            val cards = state.quiz?.cards ?: return
+            val tastes =
+                cards.mapIndexedNotNull { index, card ->
+                    state.quizAnswers.getOrNull(index)?.let { card.options.getOrNull(it)?.insight }
+                }
+            val prompt =
+                buildString {
+                    append(lastIdea)
+                    if (tastes.isNotEmpty()) {
+                        append("\n\nWhat this player wants from the story (never quote or mention it):")
+                        tastes.forEach { append("\n- $it") }
+                    }
+                }
+            lastUserPrompt = prompt
             updateState {
                 copy(
                     phase = NewSagaScreenPhase.Creation,

@@ -3,12 +3,18 @@ package com.ilustris.sagai.features.newsaga.data.service
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.CosmicLibraryArgs
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
+import com.ilustris.sagai.core.ai.prompts.PlayerSpectrumPrompts
+import com.ilustris.sagai.core.ai.prompts.SagaQuizArgs
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
+import com.ilustris.sagai.features.chapter.data.model.GeneratedPlayerChoices
+import com.ilustris.sagai.features.chapter.data.model.isAnswerable
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.LibraryPitchesResponse
@@ -66,6 +72,33 @@ class SagaIdeationService
                 )!!
             }
 
+        /**
+         * The three dilemmas asked before any story is proposed. [playerProfile] (the player's read
+         * from earlier sagas, if any) makes them harder; without it they probe the idea alone. Fewer
+         * than [QUIZ_CARD_COUNT] usable cards is a failure, never a partial quiz.
+         */
+        suspend fun generateCreationQuiz(
+            idea: String,
+            playerProfile: String?,
+        ) = executeRequest {
+            val splitPrompt =
+                promptService
+                    .buildSplitBlueprint(
+                        NewSagaPrompts.SAGA_QUIZ_BLUEPRINT,
+                        SagaQuizArgs(playerIdea = idea),
+                    ).mergeInstructions(PlayerSpectrumPrompts.quizLensInstructions(playerProfile))
+            val quiz =
+                gemmaClient
+                    .generate<GeneratedContent<GeneratedPlayerChoices>>(
+                        promptSplit = splitPrompt,
+                        requirement = ModelRequirement.MEDIUM,
+                        temperatureRandomness = .8f,
+                    )?.data
+            val cards = (quiz?.cards as List<GeneratedChoiceCard>?).orEmpty().filter { it.isAnswerable() }
+            if (cards.size < QUIZ_CARD_COUNT) error("Quiz came back with ${cards.size} usable cards")
+            quiz!!.copy(cards = cards.take(QUIZ_CARD_COUNT))
+        }
+
         suspend fun sealSacredContract(
             sagaDraft: SagaDraft,
             characterInfo: CharacterInfo,
@@ -109,3 +142,5 @@ class SagaIdeationService
             )
         }
     }
+
+const val QUIZ_CARD_COUNT = 3

@@ -80,3 +80,15 @@ data class GeneratedCharacterArc(
     val arcTitle: String,
     val arcContent: String,
 )
+
+internal const val PLAYER_CHOICE_OPTION_COUNT = 2
+
+/** Gson leaves omitted fields null despite the types, so every check here is null-safe. */
+internal fun GeneratedChoiceCard.isAnswerable(): Boolean {
+    val dealtOptions = (options as List<ChoiceOption?>?).orEmpty()
+    return !(choiceTitle as String?).isNullOrBlank() &&
+        dealtOptions.size == PLAYER_CHOICE_OPTION_COUNT &&
+        dealtOptions.all { option ->
+            option != null && !(option.text as String?).isNullOrBlank() && !(option.insight as String?).isNullOrBlank()
+        }
+}

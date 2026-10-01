@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.newsaga.ui.presentation
 
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.features.chapter.data.model.GeneratedPlayerChoices
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
@@ -17,12 +18,20 @@ data class NewSagaUiState(
     val isGenerating: Boolean = false,
     val isLoadingMore: Boolean = false,
     val isSaving: Boolean = false,
+    val isLoadingQuiz: Boolean = false,
+    val quiz: GeneratedPlayerChoices? = null,
+    /** The option index picked for each quiz card, null until answered. */
+    val quizAnswers: List<Int?> = emptyList(),
+    val quizIndex: Int = 0,
     val isReadyToSave: Boolean = false,
     val error: String? = null,
     val savingError: String? = null,
     val currentVisualConfig: GenreVisualConfig? = null,
     val genresVisuals: List<Pair<Genre, GenreVisualConfig?>>? = null,
 ) {
+    val currentQuizAnswer: Int?
+        get() = quizAnswers.getOrNull(quizIndex)
+
     val hasMoreGenres: Boolean
         get() = libraryBooks.map { it.first.draft.genre }.toSet().size < Genre.entries.size
 }

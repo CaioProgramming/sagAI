@@ -39,6 +39,15 @@ sealed interface NewSagaIntent {
         val echo: UniverseEcho,
     ) : NewSagaIntent
 
+    data class QuizSelect(
+        val cardIndex: Int,
+        val optionIndex: Int,
+    ) : NewSagaIntent
+
+    data object QuizNext : NewSagaIntent
+
+    data object QuizPrevious : NewSagaIntent
+
     data object LoadMore : NewSagaIntent
 
     data object NavigateBack : NewSagaIntent

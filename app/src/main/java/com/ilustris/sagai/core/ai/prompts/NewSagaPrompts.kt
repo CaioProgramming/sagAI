@@ -98,6 +98,10 @@ data class SacredBindingArgs(
     val themeStyle: String,
 )
 
+data class SagaQuizArgs(
+    val playerIdea: String,
+)
+
 data class CosmicLibraryArgs(
     val userPrompt: String,
     val themes: String,
@@ -122,6 +126,7 @@ object NewSagaPrompts {
     const val SAAGA_IDEATION_PROCESS = "ideation_task"
     const val COSMIC_LIBRARY_BLUEPRINT = "cosmic_library_blueprint"
     const val UNIVERSE_ECHOES_BLUEPRINT = "universe_echoes_blueprint"
+    const val SAGA_QUIZ_BLUEPRINT = "saga_creation_quiz_blueprint"
     const val SACRED_BINDING_BLUEPRINT = "sacred_binding_blueprint"
 
     suspend fun conversationalSagaReply(

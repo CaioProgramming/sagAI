@@ -1162,4 +1162,14 @@
     <string name="voice_picker_confirm">Choose %1$s</string>
     <string name="narrator_voice_title">Choose your narrator</string>
     <string name="narrator_voice_subtitle">This voice will narrate your saga from here on.</string>
+
+    <!-- New saga quiz -->
+    <string name="new_saga_quiz_title">Just three more choices</string>
+    <string name="new_saga_quiz_subtitle">They help pick the right stories for your idea.</string>
+    <string name="new_saga_quiz_progress">Question %1$d of %2$d</string>
+    <string name="new_saga_quiz_hint">Tap a card to see it</string>
+    <string name="new_saga_quiz_next">Next</string>
+    <string name="new_saga_quiz_see_stories">See stories</string>
+    <string name="new_saga_quiz_back">Back</string>
+    <string name="new_saga_quiz_loading">Preparing your questions…</string>
 </resources>
