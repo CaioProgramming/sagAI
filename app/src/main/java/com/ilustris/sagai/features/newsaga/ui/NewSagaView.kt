@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -41,10 +40,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.dropShadow
@@ -70,19 +67,15 @@ import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.GenreMemoriesLoader
-import com.ilustris.sagai.ui.components.NewSagaBookFocus
 import com.ilustris.sagai.ui.theme.SagAITheme
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
-import com.ilustris.sagai.ui.theme.morphingColor
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeShimmer
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun NewSagaView(
@@ -120,26 +113,10 @@ fun NewSagaView(
             }
 
         with(sharedTransitionScope) {
-            val surface = MaterialTheme.colorScheme.background
-            val bottomAccent = morphingColor(duration = 3.seconds)
-
-            Box(
-                modifier =
-                    Modifier
-                        .background(surface)
-                        .fillMaxSize()
-                        .imePadding(),
+            NewSagaCosmicBackground(
+                accent = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.imePadding(),
             ) {
-                Box(
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.25f)
-                        .background(
-                            fadeGradientBottom(bottomAccent),
-                        ),
-                )
-
                 Column(
                     modifier =
                         Modifier
