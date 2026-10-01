@@ -105,7 +105,8 @@ data class SagaQuizArgs(
 data class CosmicLibraryArgs(
     val userPrompt: String,
     val themes: String,
-    val genreAesthetics: String = "",
+    /** The player's quiz read, one trait per line; null (and so left out of the prompt) without a quiz. */
+    val userTraits: String? = null,
 )
 
 @Suppress("ktlint:standard:max-line-length")

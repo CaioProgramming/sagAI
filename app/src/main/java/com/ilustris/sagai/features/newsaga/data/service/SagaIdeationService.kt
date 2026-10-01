@@ -34,19 +34,19 @@ class SagaIdeationService
         suspend fun generateCosmicLibrary(
             userPrompt: String,
             excludedGenres: List<Genre> = emptyList(),
+            userTraits: String? = null,
         ): Flow<StreamingState<LibraryPitchesResponse?>> {
-            val availableGenres = Genre.entries - excludedGenres.toSet()
-            val themes = availableGenres.joinToString(", ") { it.name }
-            val genreAesthetics = genreConfigService.formatGenreAesthetics()
+            // Only the themes still on offer, once: a "load more" never re-sends the ones already shown.
             val splitPrompt =
-                promptService.buildSplitBlueprint(
-                    NewSagaPrompts.COSMIC_LIBRARY_BLUEPRINT,
-                    CosmicLibraryArgs(
-                        userPrompt = userPrompt,
-                        themes = genreConfigService.formatGenreAesthetics(),
-                        genreAesthetics = genreAesthetics,
-                    ),
-                )
+                promptService
+                    .buildSplitBlueprint(
+                        NewSagaPrompts.COSMIC_LIBRARY_BLUEPRINT,
+                        CosmicLibraryArgs(
+                            userPrompt = userPrompt,
+                            themes = genreConfigService.formatGenreAesthetics(Genre.entries - excludedGenres.toSet()),
+                            userTraits = userTraits,
+                        ),
+                    ).mergeInstructions(PlayerSpectrumPrompts.traitsInstructions(userTraits))
             return gemmaClient.generateStreaming<LibraryPitchesResponse>(
                 promptSplit = splitPrompt,
                 requirement = ModelRequirement.MEDIUM,

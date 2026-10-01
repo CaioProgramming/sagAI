@@ -53,6 +53,7 @@ interface NewSagaUseCase {
     fun executePrompt(
         prompt: String,
         excludedGenres: List<Genre> = emptyList(),
+        userTraits: String? = null,
     ): Flow<StreamingState<LibraryPitchesResponse?>>
 
     suspend fun provideInitialEchoes(): RequestResult<UniverseSuggestions>

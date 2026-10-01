@@ -34,9 +34,10 @@ class NewSagaUseCaseImpl
         override fun executePrompt(
             prompt: String,
             excludedGenres: List<Genre>,
+            userTraits: String?,
         ): Flow<StreamingState<LibraryPitchesResponse?>> =
             flow {
-                val sourceFlow = sagaIdeationService.generateCosmicLibrary(prompt, excludedGenres)
+                val sourceFlow = sagaIdeationService.generateCosmicLibrary(prompt, excludedGenres, userTraits)
                 emitAll(
                     reasoningSynthesizerService.synthesizeReasoning(
                         sourceFlow = sourceFlow,

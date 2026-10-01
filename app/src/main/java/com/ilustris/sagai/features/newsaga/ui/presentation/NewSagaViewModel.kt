@@ -61,6 +61,7 @@ class NewSagaViewModel
         private var initialEchoesJob: Job? = null
         private var echoesRequestGeneration = 0
         private var lastUserPrompt: String = ""
+        private var lastTraits: String? = null
 
         init {
             preFetchVisualConfigs()
@@ -344,6 +345,7 @@ class NewSagaViewModel
             val usedGenres = state.libraryBooks.map { it.first.draft.genre }
             collectLibraryStream(
                 prompt = lastUserPrompt,
+                userTraits = lastTraits,
                 excludedGenres = usedGenres,
                 append = true,
             )
@@ -487,9 +489,9 @@ class NewSagaViewModel
         }
 
         /**
-         * The stories are asked for with the idea plus what the picks revealed — the hidden insights,
-         * as a taste note the library prompt can lean on. [lastUserPrompt] carries the same text so
-         * "load more" keeps the taste.
+         * The stories are asked for with the idea alone as the prompt; what the picks indicated (the hidden
+         * readings) travels apart as userTraits, kept for "load more", so it shapes how the stories are
+         * built without ever being read as a theme.
          */
         private fun submitQuiz() {
             val state = _uiState.value
@@ -498,15 +500,9 @@ class NewSagaViewModel
                 cards.mapIndexedNotNull { index, card ->
                     state.quizAnswers.getOrNull(index)?.let { card.options.getOrNull(it)?.insight }
                 }
-            val prompt =
-                buildString {
-                    append(lastIdea)
-                    if (tastes.isNotEmpty()) {
-                        append("\n\nWhat this player wants from the story (never quote or mention it):")
-                        tastes.forEach { append("\n- $it") }
-                    }
-                }
-            lastUserPrompt = prompt
+            // The idea stays the prompt, untouched; the taste travels apart so it can only tune.
+            lastUserPrompt = lastIdea
+            lastTraits = tastes.joinToString("\n") { "- $it" }.ifBlank { null }
             updateState {
                 copy(
                     phase = NewSagaScreenPhase.Creation,
@@ -520,18 +516,19 @@ class NewSagaViewModel
                     currentVisualConfig = null,
                 )
             }
-            collectLibraryStream(prompt = prompt, append = false)
+            collectLibraryStream(prompt = lastIdea, userTraits = lastTraits, append = false)
         }
 
         private fun collectLibraryStream(
             prompt: String,
+            userTraits: String? = null,
             excludedGenres: List<Genre> = emptyList(),
             append: Boolean = false,
         ) {
             promptJob?.cancel()
             promptJob =
                 newSagaUseCase
-                    .executePrompt(prompt, excludedGenres)
+                    .executePrompt(prompt, excludedGenres, userTraits)
                     .onStart {
                         updateState {
                             copy(
@@ -705,6 +702,7 @@ class NewSagaViewModel
                 )
             }
             lastUserPrompt = ""
+            lastTraits = null
             requestInitialEchoes()
         }
 

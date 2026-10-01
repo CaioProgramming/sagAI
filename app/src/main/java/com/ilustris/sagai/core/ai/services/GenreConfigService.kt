@@ -39,8 +39,8 @@ class GenreConfigService
 
         suspend fun mapGenreAesthetic(genre: Genre) = mapOf(genre.name to aesthetic(genre))
 
-        suspend fun formatGenreAesthetics(): String =
-            Genre.entries
+        suspend fun formatGenreAesthetics(genres: List<Genre> = Genre.entries): String =
+            genres
                 .map {
                     mapGenreAesthetic(it)
                 }.normalizetoAIItems(describeName = false)
