@@ -1172,4 +1172,24 @@
     <string name="new_saga_quiz_see_stories">See stories</string>
     <string name="new_saga_quiz_back">Back</string>
     <string name="new_saga_quiz_loading">Preparing your questions…</string>
+
+    <string name="new_saga_stories_title">Your stories</string>
+    <string name="new_saga_stories_subtitle">Swipe to see the stories.</string>
+    <string name="new_saga_pick_story">Choose this story</string>
+    <string name="new_saga_change_idea">Change the idea</string>
+    <string name="new_saga_more_genres">Exploring other genres…</string>
+    <string name="new_saga_more_genres_hint">Swipe to see other genres</string>
+    <string name="new_saga_hero_title">Who is the protagonist?</string>
+    <string name="new_saga_hero_subtitle">Swipe to choose.</string>
+    <string name="new_saga_pick_hero">Go with %1$s</string>
+    <string name="new_saga_change_story">Pick another story</string>
+    <string name="new_saga_review_title">Save saga</string>
+    <string name="new_saga_review_subtitle">Check the two cards. Once saved, the story begins.</string>
+    <string name="new_saga_review_hint">Tap the card behind to switch. Hold the front one to edit.</string>
+    <string name="new_saga_edit_story">Edit story</string>
+    <string name="new_saga_edit_hero">Edit protagonist</string>
+    <string name="new_saga_field_title">Title</string>
+    <string name="new_saga_field_name">Name</string>
+    <string name="new_saga_field_description">Description</string>
+    <string name="new_saga_edit_done">Done</string>
 </resources>

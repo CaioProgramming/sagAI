@@ -175,6 +175,14 @@ class NewSagaViewModel
                     quizPrevious()
                 }
 
+                is NewSagaIntent.FocusStory -> {
+                    updateState { copy(focusedIndex = intent.index) }
+                }
+
+                is NewSagaIntent.ChangeIdea -> {
+                    changeIdea()
+                }
+
                 is NewSagaIntent.LoadMore -> {
                     loadMore()
                 }
@@ -199,12 +207,21 @@ class NewSagaViewModel
                     updateState { copy(isLoadingQuiz = false) }
                 }
 
+                state.phase == NewSagaScreenPhase.Creation && state.lockedCharacter != null -> {
+                    unlockCharacter()
+                }
+
+                state.phase == NewSagaScreenPhase.Creation && state.lockedSaga != null -> {
+                    unlockSaga()
+                }
+
                 state.phase == NewSagaScreenPhase.Creation -> {
                     promptJob?.cancel()
                     updateState {
                         copy(
                             phase = NewSagaScreenPhase.Quiz,
                             quizIndex = (quiz?.cards?.lastIndex ?: 0).coerceAtLeast(0),
+                            focusedIndex = 0,
                             isGenerating = false,
                             isLoadingMore = false,
                             libraryBooks = emptyList(),
@@ -238,6 +255,30 @@ class NewSagaViewModel
                 else -> return true
             }
             return false
+        }
+
+        /** From the stories, back to the idea screen: what was asked and proposed is dropped. */
+        private fun changeIdea() {
+            promptJob?.cancel()
+            updateState {
+                copy(
+                    phase = NewSagaScreenPhase.Suggestions,
+                    quiz = null,
+                    quizAnswers = emptyList(),
+                    quizIndex = 0,
+                    focusedIndex = 0,
+                    isGenerating = false,
+                    isLoadingMore = false,
+                    libraryBooks = emptyList(),
+                    lockedSaga = null,
+                    lockedCharacter = null,
+                    isReadyToSave = false,
+                    currentVisualConfig = null,
+                    statusMessage = null,
+                    error = null,
+                )
+            }
+            if (_uiState.value.universeEchoes.isEmpty()) requestInitialEchoes()
         }
 
         private fun navigateBack() {
@@ -470,6 +511,7 @@ class NewSagaViewModel
                 copy(
                     phase = NewSagaScreenPhase.Creation,
                     error = null,
+                    focusedIndex = 0,
                     universeEchoes = emptyList(),
                     libraryBooks = emptyList(),
                     lockedSaga = null,

@@ -105,7 +105,7 @@ fun NewSagaView(
         }
     }
 
-    val currentGenre = uiState.lockedSaga?.genre
+    val currentGenre = uiState.lockedSaga?.genre ?: uiState.focusedGenre
 
     SagAITheme(
         genre = currentGenre,
@@ -214,7 +214,7 @@ fun NewSagaView(
                             enabled = !uiState.isSaving,
                             onClick = { viewModel.onIntent(NewSagaIntent.SaveSaga) },
                         )
-                    } else if (!uiState.isSaving && uiState.phase != NewSagaScreenPhase.Quiz) {
+                    } else if (!uiState.isSaving && uiState.phase == NewSagaScreenPhase.Suggestions) {
                         PromptBar(
                             value = userInput,
                             onValueChange = { userInput = it },
@@ -353,19 +353,16 @@ private fun NewSagaCreationContent(
                 GenreLoaderContent(uiState = uiState, message = uiState.statusMessage)
             }
 
+            uiState.lockedCharacter != null -> {
+                NewSagaReviewContent(uiState = uiState, onIntent = onIntent)
+            }
+
+            uiState.lockedSaga != null -> {
+                NewSagaHeroesContent(uiState = uiState, onIntent = onIntent)
+            }
+
             uiState.libraryBooks.isNotEmpty() -> {
-                LibraryPager(
-                    books = uiState.libraryBooks,
-                    lockedSaga = uiState.lockedSaga,
-                    lockedCharacter = uiState.lockedCharacter,
-                    isGenerating = uiState.isGenerating,
-                    isLoadingMore = uiState.isLoadingMore,
-                    hasMoreGenres = uiState.hasMoreGenres,
-                    onLoadMore = { onIntent(NewSagaIntent.LoadMore) },
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    onIntent = onIntent,
-                )
+                NewSagaStoriesContent(uiState = uiState, onIntent = onIntent)
             }
 
             uiState.statusMessage != null -> {

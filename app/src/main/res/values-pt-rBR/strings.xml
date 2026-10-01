@@ -1160,6 +1160,26 @@
     <string name="new_saga_quiz_see_stories">Ver histórias</string>
     <string name="new_saga_quiz_back">Voltar</string>
     <string name="new_saga_quiz_loading">Preparando as perguntas…</string>
+
+    <string name="new_saga_stories_title">Suas histórias</string>
+    <string name="new_saga_stories_subtitle">Deslize para ver as histórias.</string>
+    <string name="new_saga_pick_story">Escolher esta história</string>
+    <string name="new_saga_change_idea">Mudar a ideia</string>
+    <string name="new_saga_more_genres">Explorando outros gêneros…</string>
+    <string name="new_saga_more_genres_hint">Deslize para ver outros gêneros</string>
+    <string name="new_saga_hero_title">Quem é o protagonista?</string>
+    <string name="new_saga_hero_subtitle">Deslize para escolher.</string>
+    <string name="new_saga_pick_hero">Seguir com %1$s</string>
+    <string name="new_saga_change_story">Trocar de história</string>
+    <string name="new_saga_review_title">Salvar saga</string>
+    <string name="new_saga_review_subtitle">Confira as duas cartas. Depois de salva, a história começa.</string>
+    <string name="new_saga_review_hint">Toque na carta de trás para alternar. Segure a da frente para editar.</string>
+    <string name="new_saga_edit_story">Editar história</string>
+    <string name="new_saga_edit_hero">Editar protagonista</string>
+    <string name="new_saga_field_title">Título</string>
+    <string name="new_saga_field_name">Nome</string>
+    <string name="new_saga_field_description">Descrição</string>
+    <string name="new_saga_edit_done">Concluir</string>
 </resources>
 
 
