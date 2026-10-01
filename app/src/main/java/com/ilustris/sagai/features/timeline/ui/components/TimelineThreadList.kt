@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.domain.TimelineViewContent
@@ -42,6 +43,8 @@ fun TimelineThreadList(
                 ) {
                     Text(
                         text = group.title,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
                         style =
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,

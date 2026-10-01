@@ -52,7 +52,7 @@ fun TimelineCommunityNote(
                 animate = false,
             )
             Text(
-                text = stringResource(id = R.string.mascot_insight_label), // Needs to be added to strings.xml or used as literal
+                text = stringResource(id = R.string.mascot_insight_label),
                 style =
                     MaterialTheme.typography.labelMedium.copy(
                         fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
