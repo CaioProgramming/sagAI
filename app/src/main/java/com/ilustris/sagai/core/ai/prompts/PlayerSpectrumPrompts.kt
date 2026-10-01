@@ -92,7 +92,7 @@ object PlayerSpectrumPrompts {
         val rules =
             linkedMapOf(
                 "USER_TRAITS_SCOPE" to
-                    "userTraits is a psychological reading of the player, taken from a projective quiz: what their choices indicate about how they relate to stories and conflict. Use it for how the stories are built, whatever the theme (pace, intimacy, moral weight, the kind of antagonist, how much loss), never for what they are about. The idea alone decides the theme, the setting and the genres. Never take a topic, a setting or a plot element from userTraits, and never quote them.",
+                    "userTraits is a psychological reading of the player, taken from a projective quiz: what their choices indicate about how they relate to stories and conflict. Use it for how the stories are built, whatever the theme (pace, intimacy, moral weight, the kind of antagonist, how much loss), never for what they are about. The idea alone decides the theme, the setting and the genres. Never take a topic, a setting or a plot element from userTraits, never turn them into a character's wound or backstory, and never quote them.",
             )
         return mapOf(TRAITS_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
     }
