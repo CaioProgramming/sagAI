@@ -67,13 +67,13 @@ internal fun NewSagaQuizContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = quiz.screenTitle.takeIf { it.isNotBlank() } ?: stringResource(R.string.new_saga_quiz_title),
+            text = (quiz.screenTitle as String?)?.takeIf { it.isNotBlank() } ?: stringResource(R.string.new_saga_quiz_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.fillMaxWidth(),
         )
         Text(
-            text = quiz.screenSubtitle.takeIf { it.isNotBlank() } ?: stringResource(R.string.new_saga_quiz_subtitle),
+            text = (quiz.screenSubtitle as String?)?.takeIf { it.isNotBlank() } ?: stringResource(R.string.new_saga_quiz_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = muted,
             modifier = Modifier.fillMaxWidth(),
@@ -81,11 +81,6 @@ internal fun NewSagaQuizContent(
         LinearProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth(),
-        )
-        Text(
-            text = stringResource(R.string.new_saga_quiz_progress, index + 1, total),
-            style = MaterialTheme.typography.labelMedium,
-            color = muted,
         )
 
         AnimatedContent(

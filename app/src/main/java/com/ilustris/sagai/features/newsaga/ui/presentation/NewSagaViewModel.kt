@@ -99,7 +99,7 @@ class NewSagaViewModel
                                 updateState {
                                     copy(
                                         universeEchoes = echoes,
-                                        statusMessage = it.message.ifBlank { statusMessage },
+                                        statusMessage = (it.message as String?)?.ifBlank { null } ?: statusMessage,
                                     )
                                 }
                             }.onFailureAsync {
@@ -583,7 +583,8 @@ class NewSagaViewModel
                     val config = visualConfigService.getVisualConfig(normalized.draft.genre)
                     if (config != null) normalized to config else null
                 }
-            val welcomeMessage = response.welcomeMessage.ifBlank { null }
+            // Gson leaves an omitted field null despite the type, and a null welcome used to crash here.
+            val welcomeMessage = (response.welcomeMessage as String?)?.ifBlank { null }
             updateState {
                 val mergedBooks =
                     if (append) {

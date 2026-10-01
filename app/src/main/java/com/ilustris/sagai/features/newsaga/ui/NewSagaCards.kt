@@ -141,7 +141,7 @@ internal fun StoryCard(
             )
         }
         Text(
-            text = draft.title,
+            text = (draft.title as String?).orEmpty(),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 3,
@@ -149,7 +149,7 @@ internal fun StoryCard(
             modifier = Modifier.fillMaxWidth(),
         )
         Text(
-            text = draft.description,
+            text = (draft.description as String?).orEmpty(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
             maxLines = if (compact) 4 else 8,
@@ -205,14 +205,14 @@ internal fun HeroCard(
                     .padding(bottom = 24.dp),
         ) {
             Text(
-                text = character.name,
+                text = (character.name as String?).orEmpty(),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = character.description,
+                text = (character.description as String?).orEmpty(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
                 maxLines = 6,
