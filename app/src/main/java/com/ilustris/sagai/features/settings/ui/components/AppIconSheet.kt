@@ -142,7 +142,7 @@ private fun IconTile(
                     ),
         ) {
             Image(
-                painterResource(if (dark) R.drawable.ic_dragon_bg_dark else R.drawable.ic_dragon_bg_light),
+                painterResource(if (dark) icon.backgroundDark else icon.backgroundLight),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize().scale(LAUNCHER_ZOOM),
             )
