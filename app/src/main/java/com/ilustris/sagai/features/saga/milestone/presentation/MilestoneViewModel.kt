@@ -347,19 +347,17 @@ class MilestoneViewModel
         fun submitChoiceAnswers() {
             val state = _uiState.value as? MilestoneUiState.ChoiceCardsStep ?: return
             if (state.selections.any { it == null }) return
-            val tags =
-                state.cards.zip(state.selections).map { (card, pick) ->
-                    card.options[pick!!].tag
-                }
+            // The picked option's index: it's what identifies the answer, and the cards themselves
+            // stay on the chapter for the synthesis to resolve it against.
+            val answers = state.selections.map { it!!.toString() }
 
             submittingChoices = true
             _uiState.value = MilestoneUiState.Loading()
             viewModelScope.launch {
-                // Only the answers themselves can fail here — the spectrum rewrite is best-effort
-                // inside recordPlayerChoiceAnswers. Unsaved answers mean the synthesis can't read
-                // them, so the cards come back rather than the chain moving on without them.
+                // Unsaved answers mean the synthesis can't read them, so the cards come back
+                // rather than the chain moving on without them.
                 chapterUseCase
-                    .recordPlayerChoiceAnswers(state.milestone.chapter.id, tags)
+                    .recordPlayerChoiceAnswers(state.milestone.chapter.id, answers)
                     .onSuccessAsync {
                         choiceSelections = emptyList()
                         // Submitting is this milestone's Continue: it releases the chain into

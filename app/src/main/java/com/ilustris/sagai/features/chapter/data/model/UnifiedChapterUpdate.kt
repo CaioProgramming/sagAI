@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.chapter.data.model
 
+import com.google.gson.annotations.SerializedName
 import com.ilustris.sagai.core.ai.model.GeneratedChapter
 import com.ilustris.sagai.features.narrative.data.model.ContinuitySummary
 import com.ilustris.sagai.features.narrative.data.model.GeneratedLocationCheckpoint
@@ -14,6 +15,11 @@ data class UnifiedChapterUpdate(
     val continuitySummary: ContinuitySummary? = null,
     /** Where/when this chapter ends — becomes the next chapter's opening checkpoint. */
     val closingCheckpoint: GeneratedLocationCheckpoint? = null,
+    /**
+     * The player's read after answering this chapter's cards: the previous read, reassessed against
+     * the picks. Only asked for (and only kept) when the chapter closed with answered cards.
+     */
+    val playerSpectrum: String? = null,
 )
 
 /**
@@ -30,11 +36,29 @@ data class GeneratedChoiceCard(
 data class ChoiceOption(
     /** What the player reads on the card face. */
     val text: String = "",
-    /** What choosing this reveals about the player. Never shown — it feeds [Chapter.playerSpectrum]. */
-    val tag: String = "",
+    /**
+     * A psychological read of what taking this option shows about the player — the motive and what
+     * it protects them from. Never shown; it feeds [Chapter.playerSpectrum]. Hands stored before
+     * this was a sentence called it `tag`, hence the alternate name.
+     */
+    @SerializedName(value = "insight", alternate = ["tag"])
+    val insight: String = "",
     /** The emotional weight of taking this option, on the same scale the story's events use. */
     val emotionalTone: EmotionalTone? = null,
+    /**
+     * Title of the chapter event whose stakes this option carries. Picking it tells the synthesis
+     * which events the player leaned into. Blank when the option isn't about one event, or when the
+     * model's title didn't match a real one.
+     */
+    val eventTitle: String = "",
 )
+
+/**
+ * The option [answer] refers to. New answers are the picked option's index; hands answered before
+ * that stored the option's tag (now [ChoiceOption.insight]) as the answer, so those still resolve.
+ */
+fun GeneratedChoiceCard.pickedOption(answer: String): ChoiceOption? =
+    answer.toIntOrNull()?.let { options.getOrNull(it) } ?: options.find { it.insight == answer }
 
 /**
  * The whole hand dealt for a chapter's closure: the screen's own framing (shown once, above

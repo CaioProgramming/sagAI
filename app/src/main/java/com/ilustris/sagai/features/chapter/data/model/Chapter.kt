@@ -39,7 +39,7 @@ data class Chapter(
     val playerSpectrum: String? = null,
     /** This chapter's closure dilemmas; null/empty until synthesis produces them. */
     val playerChoiceCards: List<GeneratedChoiceCard>? = null,
-    /** Tags of the options the player picked. Audit-only — never shown. Null until answered. */
+    /** Index of the option picked on each card, as strings (hands answered early stored tags instead). Null until answered. */
     val playerChoiceAnswers: List<String>? = null,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()

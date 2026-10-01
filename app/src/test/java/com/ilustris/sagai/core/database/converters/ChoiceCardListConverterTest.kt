@@ -43,6 +43,19 @@ class ChoiceCardListConverterTest {
     }
 
     @Test
+    fun `reads options stored with the old tag name and keeps event titles`() {
+        val stored =
+            """[{"choiceTitle":"Q?","options":[{"text":"A","tag":"old label","emotionalTone":"ANGRY"},""" +
+                """{"text":"B","insight":"new read","eventTitle":"O Decreto"}]}]"""
+
+        val options = converter.toChoiceCardList(stored)!!.single().options
+        assertEquals("old label", options[0].insight)
+        assertEquals("new read", options[1].insight)
+        assertEquals("O Decreto", options[1].eventTitle)
+        assertEquals("", options[0].eventTitle)
+    }
+
+    @Test
     fun `null stays null so an unanswered chapter is distinguishable`() {
         assertNull(converter.fromChoiceCardList(null))
         assertNull(converter.toChoiceCardList(null))

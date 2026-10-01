@@ -37,8 +37,8 @@ class ChoiceCardListConverter {
             choiceTitle = string("choiceTitle"),
             options =
                 listOf(
-                    ChoiceOption(text = string("optionAText"), tag = string("optionATag")),
-                    ChoiceOption(text = string("optionBText"), tag = string("optionBTag")),
+                    ChoiceOption(text = string("optionAText"), insight = string("optionATag")),
+                    ChoiceOption(text = string("optionBText"), insight = string("optionBTag")),
                 ),
         )
 

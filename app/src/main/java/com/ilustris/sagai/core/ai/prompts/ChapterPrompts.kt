@@ -12,7 +12,7 @@ import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
+import com.ilustris.sagai.features.chapter.data.model.pickedOption
 import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.buildContextualHistory
@@ -44,17 +44,10 @@ data class ChapterSynthesisArgs(
     val narrativeStyle: String,
 )
 
-data class PlayerSpectrumRewriteArgs(
-    val previousSpectrum: String,
-    val chapterSummary: String,
-    val answeredChoices: String,
-)
-
 object ChapterPrompts {
     const val CHAPTER_GENERATION_BLUEPRINT = "chapter_generation_blueprint"
     const val CHAPTER_INTRODUCTION_BLUEPRINT = "chapter_introduction_blueprint"
     const val CHAPTER_SYNTHESIS_BLUEPRINT = "chapter_synthesis_blueprint"
-    const val PLAYER_SPECTRUM_REWRITE_BLUEPRINT = "player_spectrum_rewrite_blueprint"
     const val CHAPTER_CHOICE_CARDS_BLUEPRINT = "chapter_choice_cards_blueprint"
 
     /**
@@ -191,18 +184,25 @@ object ChapterPrompts {
     }
 
     /**
-     * What the player picked on each card, as they read it — the option's text and its emotional
-     * weight. The hidden tags stay out: they're a clinical read of the player, and the prose must
-     * never start sounding like one.
+     * What the player picked on each card: the option as they read it, its emotional weight and the
+     * event whose stakes it carries — plus the option's hidden insight, which is only there for the
+     * synthesis to write the player's next read from (see PlayerSpectrumPrompts.choicesInstructions,
+     * which forbids it reaching the prose). Answers resolve by index, or by insight for hands
+     * answered before that.
      */
     private fun Chapter.answeredChoicesSummary(): String? {
         val answers = playerChoiceAnswers ?: return null
         return playerChoiceCards
             .orEmpty()
             .zip(answers)
-            .mapNotNull { (card, tag) ->
-                val picked = card.options.find { it.tag == tag } ?: return@mapNotNull null
-                "- ${card.choiceTitle} -> ${picked.text}" + (picked.emotionalTone?.let { " (tone: ${it.name})" } ?: "")
+            .mapNotNull { (card, answer) ->
+                val picked = card.pickedOption(answer) ?: return@mapNotNull null
+                buildString {
+                    append("- ${card.choiceTitle} -> ${picked.text}")
+                    picked.emotionalTone?.let { append(" (tone: ${it.name})") }
+                    if (picked.eventTitle.isNotBlank()) append(" [event: ${picked.eventTitle}]")
+                    append(" [read: ${picked.insight}]")
+                }
             }.takeIf { it.isNotEmpty() }
             ?.joinToString("\n")
     }
@@ -243,40 +243,5 @@ object ChapterPrompts {
                 narrativeStyle = emptyString(),
             )
         return promptService.buildSplitBlueprint(CHAPTER_CHOICE_CARDS_BLUEPRINT, args.asMap())
-    }
-
-    /**
-     * Small non-streaming rewrite of the player spectrum. The model must reassess
-     * [previousSpectrum] against the latest picks (reinforced, complicated or contradicted) and
-     * return a fresh read, never a concatenation. Each pick is paired with its dilemma so the
-     * hidden tag is read in context; the tags never reach the player.
-     */
-    suspend fun playerSpectrumRewritePrompt(
-        promptService: PromptService,
-        chapter: ChapterContent,
-        previousSpectrum: String?,
-        cards: List<GeneratedChoiceCard>,
-        answers: List<String>,
-    ): SplitPrompt {
-        val answeredChoices =
-            cards
-                .zip(answers)
-                .joinToString("\n") { (card, tag) ->
-                    val picked = card.options.find { it.tag == tag }
-                    val tone = picked?.emotionalTone?.let { ", tone: ${it.name}" }.orEmpty()
-                    "- ${card.choiceTitle} => picked \"${picked?.text ?: tag}\" (read: $tag$tone)"
-                }
-
-        val args =
-            PlayerSpectrumRewriteArgs(
-                previousSpectrum = previousSpectrum?.takeIf { it.isNotBlank() } ?: "None yet. This is the first read.",
-                // Answered before the synthesis, so the chapter has no prose of its own yet —
-                // its events are what the player just lived through.
-                chapterSummary =
-                    chapter.events.joinToString("\n") { "- ${it.data.title}: ${it.data.content}" },
-                answeredChoices = answeredChoices,
-            )
-
-        return promptService.buildSplitBlueprint(PLAYER_SPECTRUM_REWRITE_BLUEPRINT, args)
     }
 }

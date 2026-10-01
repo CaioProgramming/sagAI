@@ -576,47 +576,15 @@ class ChapterUseCaseImpl
             answers: List<String>,
         ): RequestResult<Chapter> =
             executeRequest {
-                val (saga, chapterContent) = fetchContext(chapterId)
-                val chapter = chapterContent.data
+                val chapter = fetchContext(chapterId).second.data
                 val cards = chapter.playerChoiceCards.orEmpty()
                 require(cards.isNotEmpty() && answers.size == cards.size) {
                     "Expected ${cards.size} answers for chapter $chapterId, got ${answers.size}"
                 }
-
-                // The answers land first, on their own: they're what moves the chain on to the
-                // chapter synthesis (NarrativeCheck stops asking for cards once they exist), so a
-                // failed rewrite below must never leave the player re-answering the same cards.
-                val answered = chapterRepository.updateChapter(chapter.copy(playerChoiceAnswers = answers))
-
-                // Re-answering a chapter reassesses its own read; otherwise it inherits the last one.
-                val previousSpectrum =
-                    chapter.playerSpectrum?.takeIf { it.isNotBlank() }
-                        ?: PlayerSpectrumPrompts.previousSpectrum(saga, chapterId)
-
-                val spectrum =
-                    try {
-                        val prompt =
-                            ChapterPrompts.playerSpectrumRewritePrompt(
-                                promptService = promptService,
-                                chapter = chapterContent,
-                                previousSpectrum = previousSpectrum,
-                                cards = cards,
-                                answers = answers,
-                            )
-                        gemmaClient
-                            .generate<GeneratedContent<String>>(
-                                promptSplit = prompt,
-                                requireTranslation = false,
-                                requirement = ModelRequirement.LOW,
-                            )?.let { it.data as String? }
-                            ?.takeIf { it.isNotBlank() }
-                    } catch (e: Exception) {
-                        if (e is kotlinx.coroutines.CancellationException) throw e
-                        Timber.e(e, "Player spectrum rewrite failed for chapter $chapterId")
-                        null
-                    } ?: return@executeRequest answered
-
-                chapterRepository.updateChapter(answered.copy(playerSpectrum = spectrum))
+                // Only the answers: they're what moves the chain on (NarrativeCheck stops asking for
+                // cards once they exist) and the synthesis that follows reads them — including to
+                // write the player's next read, so there is nothing else to generate here.
+                chapterRepository.updateChapter(chapter.copy(playerChoiceAnswers = answers))
             }
 
         override fun generateChoiceCardsStream(chapterId: Int): Flow<StreamingState<ChoiceCardsReveal?>> =
@@ -648,6 +616,9 @@ class ChapterUseCaseImpl
                                         promptSplit =
                                             prompt.mergeInstructions(
                                                 genreConfigService.conversationInstructions(saga.data.genre),
+                                                PlayerSpectrumPrompts.cardsLensInstructions(
+                                                    PlayerSpectrumPrompts.latestSpectrum(saga),
+                                                ),
                                             ),
                                         requirement = ModelRequirement.MEDIUM,
                                     ),
@@ -668,10 +639,12 @@ class ChapterUseCaseImpl
                                     // step is mandatory, and three forced choices read as a deliberate
                                     // beat while one or two read as a bug. An empty list records "tried,
                                     // nothing usable" so the chapter moves on instead of asking again.
+                                    val eventTitles = chapterContent.events.map { it.data.title }
                                     val validCards =
                                         (dealt?.cards as List<GeneratedChoiceCard>?)
                                             .orEmpty()
                                             .filter { it.isAnswerable() }
+                                            .map { it.withGroundedEvents(eventTitles) }
                                     val hand =
                                         if (validCards.size >= PLAYER_CHOICE_CARD_COUNT) {
                                             validCards.take(PLAYER_CHOICE_CARD_COUNT)
@@ -781,6 +754,16 @@ class ChapterUseCaseImpl
                                                     synthesis.continuitySummary
                                                         ?: mergedChapter.continuitySummary,
                                                 closingCheckpoint = closingCheckpoint ?: mergedChapter.closingCheckpoint,
+                                                // Only asked for when the cards were answered. A model that
+                                                // skips it leaves the field blank rather than the read wrong:
+                                                // latestSpectrum() falls back to the last non-blank one.
+                                                playerSpectrum =
+                                                    if (chapterContent.data.playerChoiceAnswers.isNullOrEmpty()) {
+                                                        mergedChapter.playerSpectrum
+                                                    } else {
+                                                        (synthesis.playerSpectrum as String?)?.trim()?.takeIf { it.isNotBlank() }
+                                                            ?: mergedChapter.playerSpectrum
+                                                    },
                                             ),
                                         )
                                     closingCheckpoint?.locationId?.let {
@@ -870,11 +853,25 @@ private const val PLAYER_CHOICE_CARD_COUNT = 3
 private const val PLAYER_CHOICE_OPTION_COUNT = 2
 
 /** Gson leaves omitted fields null despite the types, so every check here is null-safe. */
+/**
+ * Keeps an option's [ChoiceOption.eventTitle] only when it names a real event of the chapter (matched
+ * ignoring case and spacing), and stores the event's own spelling. A title the model got wrong just
+ * drops the anchor — the card stays valid.
+ */
+private fun GeneratedChoiceCard.withGroundedEvents(eventTitles: List<String>): GeneratedChoiceCard =
+    copy(
+        options =
+            options.map { option ->
+                val match = eventTitles.firstOrNull { it.trim().equals((option.eventTitle as String?).orEmpty().trim(), ignoreCase = true) }
+                option.copy(eventTitle = match.orEmpty())
+            },
+    )
+
 private fun GeneratedChoiceCard.isAnswerable(): Boolean {
     val dealtOptions = (options as List<ChoiceOption?>?).orEmpty()
     return !(choiceTitle as String?).isNullOrBlank() &&
         dealtOptions.size == PLAYER_CHOICE_OPTION_COUNT &&
         dealtOptions.all { option ->
-            option != null && !(option.text as String?).isNullOrBlank() && !(option.tag as String?).isNullOrBlank()
+            option != null && !(option.text as String?).isNullOrBlank() && !(option.insight as String?).isNullOrBlank()
         }
 }
