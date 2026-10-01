@@ -1,6 +1,17 @@
 package com.ilustris.sagai.ui.genre.choice
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.clip
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -152,38 +163,92 @@ private fun GenreEmblem(
     )
 }
 
-// region Plain
+// region Plain (no genre yet: the saga-creation quiz)
+
+private val CosmicBase = Color(0xFF100E1A)
+private val CosmicFace = Color(0xFF15122A)
+private val CosmicViolet = Color(0xFF8B6CFF)
+
+/** A band of light that slowly crosses the card, so it reads as glossy under the cosmic glow. */
+@Composable
+private fun Modifier.cosmicSheen(alpha: Float): Modifier {
+    val transition = rememberInfiniteTransition(label = "cosmic_sheen")
+    val progress by transition.animateFloat(
+        initialValue = -0.3f,
+        targetValue = 1.3f,
+        animationSpec = infiniteRepeatable(tween(7000, easing = LinearEasing), RepeatMode.Restart),
+        label = "cosmic_sheen_progress",
+    )
+    return drawWithContent {
+        drawContent()
+        val shift = (progress - 0.5f) * size.width * 2f
+        drawRect(
+            brush =
+                Brush.linearGradient(
+                    colorStops =
+                        arrayOf(
+                            0.30f to Color.Transparent,
+                            0.40f to Color.White.copy(alpha = 0.06f),
+                            0.47f to Color.White.copy(alpha = 0.34f),
+                            0.51f to Color(0xFFBEAAFF),
+                            0.57f to Color.White.copy(alpha = 0.10f),
+                            0.66f to Color.Transparent,
+                        ),
+                    start = Offset(shift, 0f),
+                    end = Offset(shift + size.width, size.height * 0.6f),
+                ),
+            alpha = alpha,
+            blendMode = BlendMode.Screen,
+        )
+    }
+}
 
 @Composable
 private fun PlainBack(genre: Genre?) {
-    val scheme = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(20.dp)
     Box(
         Modifier
             .fillMaxSize()
             .shadow(8.dp, shape)
-            .background(Brush.verticalGradient(listOf(scheme.primary, scheme.tertiary)), shape)
-            .border(1.5.dp, Color.White.copy(alpha = .35f), shape),
+            .clip(shape)
+            .background(CosmicBase)
+            .background(Brush.radialGradient(listOf(CosmicViolet.copy(alpha = 0.3f), Color.Transparent)))
+            .drawBehind {
+                val center = Offset(size.width / 2f, size.height * 0.45f)
+                var radius = 14.dp.toPx()
+                while (radius < size.height) {
+                    drawCircle(Color.White.copy(alpha = 0.04f), radius, center, style = Stroke(1.dp.toPx()))
+                    radius += 14.dp.toPx()
+                }
+            }.cosmicSheen(alpha = 0.3f)
+            .border(1.dp, Color.White.copy(alpha = 0.16f), shape),
         contentAlignment = Alignment.Center,
     ) {
-        GenreEmblem(genre, Color.White.copy(alpha = .85f), Modifier.size(44.dp))
+        GenreEmblem(genre, Color(0xFFD6CAFF), Modifier.size(34.dp))
     }
 }
 
 @Composable
 private fun PlainFace(text: String) {
-    val scheme = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(20.dp)
     Box(
         Modifier
             .fillMaxSize()
             .shadow(8.dp, shape)
-            .background(scheme.surfaceContainerHigh, shape)
-            .border(1.5.dp, scheme.primary, shape)
+            .clip(shape)
+            .background(CosmicFace)
+            .background(Brush.verticalGradient(listOf(CosmicViolet.copy(alpha = 0.34f), Color.Transparent)))
+            .cosmicSheen(alpha = 0.22f)
+            .border(1.dp, Color(0xFFD6CAFF).copy(alpha = 0.6f), shape)
             .padding(16.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = optionStyle(text), color = scheme.onSurface, textAlign = TextAlign.Center)
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
