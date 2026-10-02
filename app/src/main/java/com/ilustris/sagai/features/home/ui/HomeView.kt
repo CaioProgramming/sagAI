@@ -89,12 +89,12 @@ import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
 import com.ilustris.sagai.features.premium.MiniPremiumCard
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
+import com.ilustris.sagai.ui.components.LuminousButton
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SAGA_THEME_TRANSITION_MS
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.iridescentGradient
 import com.ilustris.sagai.ui.theme.sagaBrush
 import java.util.Calendar
 
@@ -435,39 +435,15 @@ private fun ChatList(
                 }
             }
             item {
-                Button(
-                    onClick = {
-                        onAction(HomeUiAction.CreateNewSaga)
-                    },
-                    shape = MaterialTheme.shapes.large,
-                    colors =
-                        ButtonDefaults.buttonColors().copy(
-                            containerColor = Color.Transparent,
-                        ),
+                LuminousButton(
+                    text = stringResource(R.string.home_create_new_saga_title).uppercase(),
+                    icon = painterResource(R.drawable.ic_spark),
+                    onClick = { onAction(HomeUiAction.CreateNewSaga) },
                     modifier =
                         Modifier
                             .padding(32.dp)
-                            .dropShadow(MaterialTheme.shapes.large) {
-                                brush =
-                                    Brush.horizontalGradient(iridescentGradient)
-                                radius = 20f
-                                spread = .4f
-                            }
-                            .background(
-                                MaterialTheme.colorScheme.onBackground,
-                                MaterialTheme.shapes.large,
-                            )
                             .fillMaxWidth(),
-                ) {
-                    Text(
-                        stringResource(R.string.home_create_new_saga_title).uppercase(),
-                        style =
-                            MaterialTheme.typography.titleSmall.copy(
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.background,
-                            ),
-                    )
-                }
+                )
             }
 
             if (!state.isPremium) {
