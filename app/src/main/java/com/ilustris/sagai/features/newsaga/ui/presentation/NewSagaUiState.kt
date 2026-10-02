@@ -16,7 +16,7 @@ enum class SaveStage { Contract, Character, Saga, Done }
 data class NewSagaUiState(
     val phase: NewSagaScreenPhase = NewSagaScreenPhase.Suggestions,
     val statusMessage: String? = null,
-    val universeEchoes: List<Pair<UniverseEcho, GenreVisualConfig>> = emptyList(),
+    val universeEchoes: List<UniverseEcho> = emptyList(),
     val libraryBooks: List<Pair<SagaBook, GenreVisualConfig>> = emptyList(),
     val lockedSaga: SagaDraft? = null,
     val lockedCharacter: CharacterInfo? = null,
@@ -50,7 +50,11 @@ data class NewSagaUiState(
     val focusedGenre: Genre?
         get() =
             if (phase == NewSagaScreenPhase.Creation && lockedSaga == null) {
-                libraryBooks.getOrNull(focusedIndex)?.first?.draft?.genre
+                libraryBooks
+                    .getOrNull(focusedIndex)
+                    ?.first
+                    ?.draft
+                    ?.genre
             } else {
                 null
             }

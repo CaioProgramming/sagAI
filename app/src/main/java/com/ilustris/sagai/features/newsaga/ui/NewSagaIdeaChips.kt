@@ -24,11 +24,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,7 +49,7 @@ private const val CHIP_ROWS = 2
  */
 @Composable
 internal fun IdeaChipsSection(
-    echoes: List<Pair<UniverseEcho, GenreVisualConfig>>,
+    echoes: List<UniverseEcho>,
     onEchoSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -65,10 +65,9 @@ internal fun IdeaChipsSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            itemsIndexed(
-                items = echoes,
-                key = { _, (echo, _) -> echo.pitch },
-            ) { index, (echo, _) ->
+            itemsIndexed(echoes, key = { index, echo ->
+                echo.pitch
+            }) { index, echo ->
                 IdeaChip(
                     echo = echo,
                     index = index,

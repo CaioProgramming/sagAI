@@ -93,10 +93,7 @@ class NewSagaViewModel
                                     return@onSuccessAsync
                                 }
                                 val echoes =
-                                    it.suggestions.mapNotNull { echo ->
-                                        val config = visualConfigService.getVisualConfig(echo.genre)
-                                        if (config != null) echo to config else null
-                                    }
+                                    it.suggestions
                                 updateState {
                                     copy(
                                         universeEchoes = echoes,
@@ -251,7 +248,9 @@ class NewSagaViewModel
                     }
                 }
 
-                else -> return true
+                else -> {
+                    return true
+                }
             }
             return false
         }

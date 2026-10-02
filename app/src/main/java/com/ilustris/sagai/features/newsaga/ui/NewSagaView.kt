@@ -427,7 +427,9 @@ fun PromptBar(
                     spread = 1f
                     brush = themeBrush
                 }
-                // The glow above stays; the field itself is the shared glass, softer than the chips.
+                // The glow above stays, but the field is solid: the glass is translucent, and without
+                // this base the glow would show through it and tint the whole input.
+                .background(MaterialTheme.colorScheme.background, shape)
                 .glassSurface(shape, primaryColor) { 0.5f }
                 .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
