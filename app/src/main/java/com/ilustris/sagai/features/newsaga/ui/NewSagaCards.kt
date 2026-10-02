@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -171,31 +172,14 @@ internal fun HeroCard(
     sheenOffset: Float = 0f,
 ) {
     Box(modifier = modifier.cardSurface(sheenOffset, glow = 0.45f)) {
-        Image(
-            painter = painterResource(character.gender.silhouette()),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            alignment = Alignment.BottomCenter,
-            colorFilter = ColorFilter.tint(Color.Black.copy(alpha = 0.82f)),
+        HeroSilhouette(
+            gender = character.gender,
             modifier =
                 Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
                     .height(300.dp)
-                    .padding(top = 16.dp)
-                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                    .drawWithContent {
-                        drawContent()
-                        drawRect(
-                            brush =
-                                Brush.verticalGradient(
-                                    0.30f to Color.Black,
-                                    0.62f to Color.Black.copy(alpha = 0.55f),
-                                    0.98f to Color.Transparent,
-                                ),
-                            blendMode = BlendMode.DstIn,
-                        )
-                    },
+                    .padding(top = 16.dp),
         )
         Column(
             modifier =
@@ -223,12 +207,66 @@ internal fun HeroCard(
     }
 }
 
-private fun Gender.silhouette(): Int =
-    when (this) {
-        Gender.MALE -> R.drawable.ic_silhouette_male
-        Gender.FEMALE -> R.drawable.ic_silhouette_female
-        Gender.Other -> R.drawable.ic_silhouette_neutral
+/**
+ * The locked figure of a protagonist: a silhouette that fades out toward the bottom. The fade is an
+ * alpha mask on the figure itself, never a colored overlay, so it never bands against the card.
+ * [lit] (0..1) takes the figure from locked black to the theme's color, as its artwork arrives.
+ * Anyone without a silhouette of their own ([Gender.Other]) gets the spark, lit by the theme.
+ */
+@Composable
+internal fun HeroSilhouette(
+    gender: Gender,
+    modifier: Modifier = Modifier,
+    lit: Float = 0f,
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val resource =
+        when (gender) {
+            Gender.MALE -> R.drawable.ic_silhouette_male
+            Gender.FEMALE -> R.drawable.ic_silhouette_female
+            Gender.Other -> null
+        }
+    if (resource != null) {
+        Image(
+            painter = painterResource(resource),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            alignment = Alignment.BottomCenter,
+            colorFilter = ColorFilter.tint(lerp(Color.Black.copy(alpha = 0.82f), primary, lit)),
+            modifier =
+                modifier
+                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(
+                            brush =
+                                Brush.verticalGradient(
+                                    0.30f to Color.Black,
+                                    0.62f to Color.Black.copy(alpha = 0.55f),
+                                    0.98f to Color.Transparent,
+                                ),
+                            blendMode = BlendMode.DstIn,
+                        )
+                    },
+        )
+    } else {
+        Box(modifier, contentAlignment = Alignment.Center) {
+            Box(
+                Modifier
+                    .size(150.dp)
+                    .background(
+                        Brush.radialGradient(listOf(primary.copy(alpha = 0.3f + 0.25f * lit), Color.Transparent)),
+                    ),
+            )
+            Icon(
+                painter = painterResource(R.drawable.ic_spark),
+                contentDescription = null,
+                tint = primary.copy(alpha = 0.55f + 0.45f * lit),
+                modifier = Modifier.size(72.dp),
+            )
+        }
     }
+}
 
 /** The last page of the stories pager: reaching it asks for stories of genres not offered yet. */
 @Composable
