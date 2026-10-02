@@ -481,39 +481,6 @@ internal inline fun <reified T> GeminiAIClient.streamingGenerationFlow(params: G
     }
 }
 
-/**
- * The thinking level this request should actually carry.
- *
- * Resolved at assembly time rather than trusting the level frozen into the params, because the
- * params are fixed before the retry loop starts — so a `minimal` rejection recorded mid-flight
- * would otherwise be re-sent verbatim on every remaining attempt and fail identically.
- */
-@PublishedApi
-internal fun GeminiAIClient.effectiveThinkingLevel(
-    model: String,
-    requested: String?,
-): String? {
-    if (requested == null) return null
-
-    // `minimal` is the one direction proven in production: some models omit it from the low end
-    // entirely, and the safe fallback is one step up, not a step down.
-    if (requested == "minimal" && !modelCatalog.supportsThinkingLevel(model, "minimal")) {
-        return "low"
-    }
-
-    // Any other level this exact model has taught us — via a 400 on an earlier attempt of this
-    // same call — that it rejects: step down the ladder toward less reasoning instead of resending
-    // the same rejected value on every remaining attempt. This is the actual mechanism that makes
-    // a retry after markThinkingLevelUnsupported different from the attempt that just failed: the
-    // assembly calls this fresh every pass, so a value recorded moments ago already applies here.
-    val startIndex = THINKING_LEVEL_LADDER.indexOf(requested)
-    if (startIndex < 0) return requested
-    return THINKING_LEVEL_LADDER
-        .drop(startIndex)
-        .firstOrNull { modelCatalog.supportsThinkingLevel(model, it) }
-        ?: THINKING_LEVEL_LADDER.last()
-}
-
 @PublishedApi
 internal fun GeminiAIClient.buildGenerationAssembly(params: GeminiSyncGenerationParams): GeminiRequestAssembly =
     assembleGeminiRequest {
@@ -524,7 +491,7 @@ internal fun GeminiAIClient.buildGenerationAssembly(params: GeminiSyncGeneration
         // when the tier's first pick couldn't, so dropping it here only affects a mid-request fallback.
         audio(params.audio?.takeIf { modelCatalog.supportsAudioInput(params.model) })
         generation(params.requirement, params.temperatureRandomness)
-        thinking(effectiveThinkingLevel(params.model, params.thinkingLevel))
+        thinking(modelCatalog.thinkingConfig(params.model, params.thinkingLevel))
         if (!params.includeSystemInFullPrompt) {
             fullPrompt(includeSystemInstruction = false)
         }
@@ -537,7 +504,7 @@ internal fun GeminiAIClient.buildGenerationAssembly(params: GeminiStreamingGener
         system(params.systemInstruction)
         references(params.references)
         generation(params.requirement, params.temperatureRandomness)
-        thinking(effectiveThinkingLevel(params.model, params.thinkingLevel))
+        thinking(modelCatalog.thinkingConfig(params.model, params.thinkingLevel))
         if (!params.includeSystemInFullPrompt) {
             fullPrompt(includeSystemInstruction = false)
         }

@@ -46,6 +46,9 @@ data class GeminiThinkingConfig(
     val includeThoughts: Boolean? = null,
     @SerializedName("thinkingLevel")
     val thinkingLevel: String? = null,
+    /** Gemini 2.5's way of steering reasoning; mutually exclusive with [thinkingLevel]. */
+    @SerializedName("thinkingBudget")
+    val thinkingBudget: Int? = null,
 )
 
 /** Exactly one of [voiceConfig] (one voice) or [multiSpeakerVoiceConfig] (up to two named speakers). */

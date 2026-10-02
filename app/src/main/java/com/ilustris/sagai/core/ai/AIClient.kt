@@ -35,7 +35,7 @@ enum class ModelRequirement {
  *
  * [ModelRequirement.MINIMAL] maps to `minimal` rather than up to `low`. It used to map up, because
  * not every model offers `minimal` and a rejection broke the tier; that fear is now handled by
- * [GeminiAIClient.effectiveThinkingLevel], which learns the refusal and degrades on its own. The
+ * [ModelCatalog.thinkingConfig], which learns the refusal and degrades on its own. The
  * old mapping also had it backwards in practice — measured on `gemini-3.6-flash`, `low` spends 87
  * reasoning tokens against the model's own default of 69, so the cheapest tier was thinking the
  * hardest.

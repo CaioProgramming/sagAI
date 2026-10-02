@@ -34,7 +34,7 @@ class GeminiRequestBuilder internal constructor() {
     private var requirement: ModelRequirement = ModelRequirement.MEDIUM
     private var temperatureRandomness: Float = 0.5f
     private var includeSystemInFullPrompt: Boolean = true
-    private var thinkingLevel: String? = null
+    private var thinkingConfig: GeminiThinkingConfig? = null
 
     fun task(value: String) {
         taskPrompt = value
@@ -62,12 +62,12 @@ class GeminiRequestBuilder internal constructor() {
     }
 
     /**
-     * The Gemini `thinkingLevel` for this request, already resolved to a value the API accepts.
-     * Null omits `thinkingConfig` entirely — for a tier with thinking switched off, or a model
-     * that doesn't support it.
+     * The thinking control for this request, already shaped for the model's family (see
+     * [ModelCatalog.thinkingConfig]). Null omits `thinkingConfig` entirely — for a tier with
+     * thinking switched off, or a model whose default is what we want.
      */
-    fun thinking(level: String?) {
-        thinkingLevel = level
+    fun thinking(config: GeminiThinkingConfig?) {
+        thinkingConfig = config
     }
 
     /** Whether [buildFullPromptText] should embed the system instruction (token diagnostics). */
@@ -100,15 +100,7 @@ class GeminiRequestBuilder internal constructor() {
                                 requirement,
                                 temperatureRandomness,
                             ),
-                        thinkingConfig =
-                            thinkingLevel?.let { level ->
-                                GeminiThinkingConfig(
-                                    // No point asking for summaries of reasoning we just asked the
-                                    // model not to do — `minimal` returns zero thought tokens.
-                                    includeThoughts = level != "minimal",
-                                    thinkingLevel = level,
-                                )
-                            },
+                        thinkingConfig = thinkingConfig,
                     ),
             )
 

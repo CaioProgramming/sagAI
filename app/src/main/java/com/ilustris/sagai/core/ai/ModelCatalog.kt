@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.core.ai.model.GeminiThinkingConfig
 import com.ilustris.sagai.core.network.GeminiApiClient
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -129,10 +130,69 @@ class ModelCatalog
             }
         }
 
+        /**
+         * The `thinkingConfig` a request to [model] should carry for the [requested] level, or null
+         * to omit it.
+         *
+         * Resolved at assembly time rather than trusting the level frozen into the params, because
+         * the params are fixed before the retry loop starts — so a rejection recorded mid-flight
+         * would otherwise be re-sent verbatim on every remaining attempt and fail identically.
+         *
+         * Families take their reasoning control differently (measured against the API, not assumed):
+         *  - Gemini 2.5 answers `thinkingLevel` with a 400 and is steered by `thinkingBudget`. Only
+         *    `minimal` has a counterpart (a zero budget); any other level leaves the model's own
+         *    default rather than inventing a level-to-tokens table.
+         *  - Gemma 4 accepts `minimal` and nothing above it — `low` is a 400 — so every level clamps
+         *    to it, and the rejection never has to be paid for with a failed request.
+         *  - Everything else (Gemini 3) takes the level, stepping down the ladder past any level this
+         *    exact model has taught us it rejects. That learned path stays as the net for exceptions
+         *    inside a family, which the family checks above are too coarse to know about.
+         */
+        fun thinkingConfig(
+            model: String,
+            requested: String?,
+        ): GeminiThinkingConfig? {
+            if (requested == null) return null
+            val name = model.replace("models/", "")
+            return when {
+                name.startsWith("gemini-2.5", ignoreCase = true) -> {
+                    GeminiThinkingConfig(thinkingBudget = 0).takeIf { requested == MINIMAL }
+                }
+
+                name.startsWith("gemma", ignoreCase = true) -> {
+                    GeminiThinkingConfig(includeThoughts = false, thinkingLevel = MINIMAL)
+                }
+
+                else -> {
+                    val level = steppedLevel(model, requested)
+                    // No point asking for summaries of reasoning we just asked the model not to do —
+                    // `minimal` returns zero thought tokens.
+                    GeminiThinkingConfig(includeThoughts = level != MINIMAL, thinkingLevel = level)
+                }
+            }
+        }
+
+        private fun steppedLevel(
+            model: String,
+            requested: String,
+        ): String {
+            // `minimal` is the one direction proven in production: some models omit it from the low
+            // end entirely, and the safe fallback is one step up, not a step down.
+            if (requested == MINIMAL && !supportsThinkingLevel(model, MINIMAL)) return "low"
+
+            val startIndex = THINKING_LEVEL_LADDER.indexOf(requested)
+            if (startIndex < 0) return requested
+            return THINKING_LEVEL_LADDER
+                .drop(startIndex)
+                .firstOrNull { supportsThinkingLevel(model, it) }
+                ?: THINKING_LEVEL_LADDER.last()
+        }
+
         private fun cached(): Map<String, Int>? = limits?.takeIf { it.isNotEmpty() }
 
         companion object {
             private const val TAG = "📐 ModelCatalog"
+            private const val MINIMAL = "minimal"
 
             /**
              * Fallback only. Descends from the Gemma free tier's per-minute token budget, which is

@@ -189,6 +189,9 @@ object GeminiApiCodec {
                         thinking.thinkingLevel?.let {
                             thinkingObj.addProperty("thinkingLevel", it)
                         }
+                        thinking.thinkingBudget?.let {
+                            thinkingObj.addProperty("thinkingBudget", it)
+                        }
                     },
                 )
             }
