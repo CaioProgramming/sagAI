@@ -36,10 +36,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.ui.theme.sagaShape
 
+private const val GLOW_STEPS = 6
+private const val GLOW_STEP_DP = 4
+private const val GLOW_ALPHA = 0.14f
+
 /**
  * Dark glass lit by [tint], the way iOS lights a glass control: the color is never a fill, only light
  * caught by the edges.
- *  - a thin reflection hugging the bottom edge, with a faint wash rising from it;
+ *  - a soft reflection hugging the bottom edge, blurred inward, with a faint wash rising from it;
  *  - a specular rim that is bright at the top-left corner and takes the tint at the bottom-right.
  * [strength] (0..1) scales only the tinted light, so a disabled control keeps its rim but goes flat.
  * It is read while drawing, so animating it never recomposes.
@@ -64,13 +68,13 @@ internal fun Modifier.glassSurface(
                 Brush.verticalGradient(0.6f to Color.Transparent, 1f to tint.copy(alpha = 0.3f * s)),
             )
             drawContent()
-            // The reflection itself: a thin band of light just inside the bottom edge. The stroke is
-            // centered on the edge and the clip drops its outer half, so only the inner half remains.
-            drawOutline(
-                outline,
-                Brush.verticalGradient(0.55f to Color.Transparent, 1f to tint.copy(alpha = 0.75f * s)),
-                style = Stroke(width = 7.dp.toPx()),
-            )
+            // The reflection itself, softened: stacked strokes that widen while they overlap, so the
+            // light bleeds inward and fades instead of ending on a hard line. Each stroke is centered
+            // on the edge and the clip drops its outer half, so only the inner half remains.
+            val glow = Brush.verticalGradient(0.5f to Color.Transparent, 1f to tint.copy(alpha = GLOW_ALPHA * s))
+            for (step in 1..GLOW_STEPS) {
+                drawOutline(outline, glow, style = Stroke(width = (step * GLOW_STEP_DP).dp.toPx()))
+            }
             // The specular rim, one dp visible.
             drawOutline(
                 outline,
@@ -80,7 +84,7 @@ internal fun Modifier.glassSurface(
                             0f to light.copy(alpha = 0.55f),
                             0.22f to light.copy(alpha = 0.10f),
                             0.6f to light.copy(alpha = 0.04f),
-                            1f to tint.copy(alpha = 0.85f * s).compositeOver(light.copy(alpha = 0.12f)),
+                            1f to tint.copy(alpha = 0.6f * s).compositeOver(light.copy(alpha = 0.12f)),
                         ),
                     start = Offset.Zero,
                     end = Offset(size.width, size.height),
