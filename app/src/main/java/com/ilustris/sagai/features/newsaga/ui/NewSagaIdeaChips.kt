@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.UniverseEcho
 import com.ilustris.sagai.ui.theme.SagAITheme
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.themePainter
 import kotlinx.coroutines.delay
 
@@ -50,8 +49,8 @@ private const val CHIP_ROWS = 2
 
 /**
  * The idea suggestions as two rows of chips that scroll sideways. Each chip is its own genre's
- * theme: the icon and the primary color fading into the background, so it reads as a button lit by
- * that genre. Tapping one sends its pitch, like typing it. Chips arrive one after the other.
+ * theme, but only as a light: dark glass with the genre's color reflected from its bottom edge.
+ * Tapping one sends its pitch, like typing it. Chips arrive one after the other.
  */
 @Composable
 internal fun IdeaChipsSection(
@@ -110,21 +109,27 @@ private fun IdeaChip(
         SagAITheme(genre = echo.genre) {
             val shape = RoundedCornerShape(14.dp)
             val primary = MaterialTheme.colorScheme.primary
+            val onBackground = MaterialTheme.colorScheme.onBackground
+            // Dark glass: no color of its own. The genre only shows as a reflection rising from the
+            // bottom edge, and as a rim that is light at the top and the genre's color at the bottom.
             Row(
                 modifier =
                     Modifier
                         .fillMaxHeight()
-                        .border(1.dp, primary.gradientFade(), shape)
-                        .clip(shape)
-                        .background(MaterialTheme.colorScheme.background)
+                        .border(
+                            1.dp,
+                            Brush.verticalGradient(
+                                0f to onBackground.copy(alpha = 0.22f),
+                                0.5f to onBackground.copy(alpha = 0.06f),
+                                1f to primary.copy(alpha = 0.6f),
+                            ),
+                            shape,
+                        ).clip(shape)
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.55f))
                         .background(
                             Brush.verticalGradient(
-                                listOf(primary.copy(alpha = 0.7f), Color.Transparent),
-                            ),
-                        ).background(
-                            Brush.verticalGradient(
-                                listOf(Color.White.copy(alpha = 0.14f), Color.Transparent),
-                                endY = 60f,
+                                0.45f to Color.Transparent,
+                                1f to primary.copy(alpha = 0.38f),
                             ),
                         ).clickable(onClick = onClick)
                         .padding(8.dp),
