@@ -88,6 +88,8 @@ internal fun NewSagaStoriesContent(
         StepActions(
             primary = stringResource(R.string.new_saga_pick_story),
             primaryEnabled = onStory,
+            // On the last page the pager is asking for more genres: the wait shows on the button.
+            primaryLoading = !onStory && uiState.isLoadingMore,
             onPrimary = { books.getOrNull(pagerState.currentPage)?.let { onIntent(NewSagaIntent.SelectSaga(it.first.draft)) } },
             secondary = stringResource(R.string.new_saga_change_idea),
             onSecondary = { onIntent(NewSagaIntent.ChangeIdea) },
@@ -315,6 +317,7 @@ private fun StepActions(
     onPrimary: () -> Unit,
     secondary: String,
     onSecondary: () -> Unit,
+    primaryLoading: Boolean = false,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 8.dp),
@@ -324,6 +327,7 @@ private fun StepActions(
             text = primary,
             onClick = onPrimary,
             enabled = primaryEnabled,
+            isLoading = primaryLoading,
             modifier = Modifier.fillMaxWidth(),
         )
         TextButton(onClick = onSecondary) {

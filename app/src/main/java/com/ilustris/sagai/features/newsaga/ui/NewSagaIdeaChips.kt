@@ -5,8 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -33,9 +31,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
@@ -49,7 +44,7 @@ private const val CHIP_ROWS = 2
 
 /**
  * The idea suggestions as two rows of chips that scroll sideways. Each chip is its own genre's
- * theme, but only as a light: dark glass with the genre's color reflected from its bottom edge.
+ * theme, but only as a light: dark glass with the genre's color caught by its edges.
  * Tapping one sends its pitch, like typing it. Chips arrive one after the other.
  */
 @Composable
@@ -107,31 +102,13 @@ private fun IdeaChip(
         modifier = modifier,
     ) {
         SagAITheme(genre = echo.genre) {
-            val shape = RoundedCornerShape(14.dp)
-            val primary = MaterialTheme.colorScheme.primary
-            val onBackground = MaterialTheme.colorScheme.onBackground
-            // Dark glass: no color of its own. The genre only shows as a reflection rising from the
-            // bottom edge, and as a rim that is light at the top and the genre's color at the bottom.
+            // The shared dark glass, a notch softer than the action buttons.
             Row(
                 modifier =
                     Modifier
                         .fillMaxHeight()
-                        .border(
-                            1.dp,
-                            Brush.verticalGradient(
-                                0f to onBackground.copy(alpha = 0.22f),
-                                0.5f to onBackground.copy(alpha = 0.06f),
-                                1f to primary.copy(alpha = 0.6f),
-                            ),
-                            shape,
-                        ).clip(shape)
-                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.55f))
-                        .background(
-                            Brush.verticalGradient(
-                                0.45f to Color.Transparent,
-                                1f to primary.copy(alpha = 0.38f),
-                            ),
-                        ).clickable(onClick = onClick)
+                        .glassSurface(RoundedCornerShape(14.dp), MaterialTheme.colorScheme.primary) { 0.75f }
+                        .clickable(onClick = onClick)
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
