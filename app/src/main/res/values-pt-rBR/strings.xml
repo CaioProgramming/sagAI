@@ -1154,7 +1154,6 @@
     <!-- Quiz de nova saga -->
     <string name="new_saga_quiz_title">Só mais três escolhas</string>
     <string name="new_saga_quiz_subtitle">Elas ajudam a escolher as histórias certas pra sua ideia.</string>
-    <string name="new_saga_quiz_progress">Pergunta %1$d de %2$d</string>
     <string name="new_saga_quiz_hint">Toque numa carta para ver</string>
     <string name="new_saga_quiz_next">Próxima</string>
     <string name="new_saga_quiz_see_stories">Ver histórias</string>
