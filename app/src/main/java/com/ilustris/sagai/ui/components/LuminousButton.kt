@@ -1,6 +1,8 @@
 package com.ilustris.sagai.ui.components
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -10,6 +12,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,8 +24,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,7 +62,9 @@ private const val LIGHT_ALPHA = 0.1f
  * blurred one with a sharp sliver across it, blended to brighten), and a thin translucent rim
  * closes it. The label is dark ink on the pastel fill.
  *
- * The drift and the lights are drawn, never recomposed, and the drift stops when the screen does.
+ * Tapping lights it up: the pill lifts, the glows swell and a bloom spreads from the touch point,
+ * then it all fades back slowly. The drift, the lights and the tap are drawn, never recomposed, and
+ * the drift stops when the screen does.
  */
 @Composable
 fun LuminousButton(
@@ -71,6 +78,23 @@ fun LuminousButton(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(), label = "luminous_press")
+
+    // The tap's light. It rises fast while pressed and, on release, first makes sure a quick tap
+    // still reaches its peak, then fades slowly: the flash is what the player sees, not the hold.
+    val lumen = remember { Animatable(0f) }
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            lumen.animateTo(1f, tween(140))
+        } else if (lumen.value > 0f) {
+            lumen.animateTo(1f, tween(60))
+            lumen.animateTo(0f, tween(800, easing = LinearOutSlowInEasing))
+        }
+    }
+    // Where the finger landed: the light blooms from there.
+    val touch = remember { mutableStateOf<Offset?>(null) }
+    LaunchedEffect(interaction) {
+        interaction.interactions.collect { if (it is PressInteraction.Press) touch.value = it.pressPosition }
+    }
     val drift: State<Float>? =
         if (rememberLifecycleAnimationsActive()) {
             rememberInfiniteTransition(label = "luminous_drift").animateFloat(
@@ -93,12 +117,14 @@ fun LuminousButton(
                     brush = Brush.horizontalGradient(colors)
                     radius = 36f
                     spread = 2f
-                    alpha = 0.5f
+                    alpha = 0.5f + 0.3f * lumen.value
                 }.clip(shape)
                 .drawWithContent {
                     val w = size.width
                     val h = size.height
                     val outline = shape.createOutline(size, layoutDirection, this)
+                    val l = lumen.value
+                    val cx = w / 2f
 
                     // The blurry gradient, sliding sideways and mirroring at its ends.
                     val shift = (drift?.value ?: 0.5f) * w * 0.5f
@@ -111,25 +137,47 @@ fun LuminousButton(
                         ),
                     )
 
+                    if (l > 0f) {
+                        // The tap: the whole pill lifts a little, and a bloom spreads from the touch.
+                        drawRect(Color.White.copy(alpha = 0.2f * l), blendMode = BlendMode.Screen)
+                        val origin = touch.value ?: Offset(cx, h / 2f)
+                        val bloom = w * 0.45f * (0.5f + 0.5f * l)
+                        drawCircle(
+                            brush =
+                                Brush.radialGradient(
+                                    listOf(Color.White.copy(alpha = 0.6f * l), Color.Transparent),
+                                    center = origin,
+                                    radius = bloom,
+                                ),
+                            radius = bloom,
+                            center = origin,
+                            blendMode = BlendMode.Plus,
+                        )
+                    }
+
                     // White light seeping in from the top edge: stacked strokes that widen while
                     // they overlap (centered on the edge, the clip drops the outer half).
                     val topLight =
-                        Brush.verticalGradient(0f to Color.White.copy(alpha = LIGHT_ALPHA * 1.6f), 0.55f to Color.Transparent)
+                        Brush.verticalGradient(
+                            0f to Color.White.copy(alpha = (LIGHT_ALPHA * 1.6f * (1f + l)).coerceAtMost(1f)),
+                            0.55f to Color.Transparent,
+                        )
                     for (step in 1..LIGHT_STEPS) {
                         drawOutline(outline, topLight, style = Stroke(width = (step * LIGHT_STEP_DP).dp.toPx()))
                     }
 
-                    // The oval on the bottom edge: a blurred one, flattened, and a sharp sliver.
-                    val cx = w / 2f
-                    withTransform({ scale(scaleX = 1f, scaleY = 0.22f, pivot = Offset(cx, h)) }) {
+                    // The oval on the bottom edge: a blurred one, flattened, and a sharp sliver. Both
+                    // swell with the tap.
+                    val ovalRadius = w * (0.3f + 0.12f * l)
+                    withTransform({ scale(scaleX = 1f, scaleY = 0.22f + 0.2f * l, pivot = Offset(cx, h)) }) {
                         drawCircle(
                             brush =
                                 Brush.radialGradient(
-                                    listOf(Color.White.copy(alpha = 0.8f), Color.Transparent),
+                                    listOf(Color.White.copy(alpha = 0.8f + 0.2f * l), Color.Transparent),
                                     center = Offset(cx, h),
-                                    radius = w * 0.3f,
+                                    radius = ovalRadius,
                                 ),
-                            radius = w * 0.3f,
+                            radius = ovalRadius,
                             center = Offset(cx, h),
                             blendMode = BlendMode.Plus,
                         )
@@ -137,7 +185,7 @@ fun LuminousButton(
                     drawOval(
                         color = Color.White.copy(alpha = 0.9f),
                         topLeft = Offset(cx - w * 0.12f, h - 5.dp.toPx()),
-                        size = Size(w * 0.24f, 2.dp.toPx()),
+                        size = Size(w * (0.24f + 0.1f * l), 2.dp.toPx()),
                         blendMode = BlendMode.Plus,
                     )
 
@@ -147,9 +195,9 @@ fun LuminousButton(
                     drawOutline(
                         outline,
                         Brush.verticalGradient(
-                            0f to Color.White.copy(alpha = 0.75f),
-                            0.5f to Color.White.copy(alpha = 0.2f),
-                            1f to Color.White.copy(alpha = 0.5f),
+                            0f to Color.White.copy(alpha = (0.75f + 0.25f * l).coerceAtMost(1f)),
+                            0.5f to Color.White.copy(alpha = 0.2f + 0.2f * l),
+                            1f to Color.White.copy(alpha = 0.5f + 0.4f * l),
                         ),
                         style = Stroke(width = 2.dp.toPx()),
                     )
