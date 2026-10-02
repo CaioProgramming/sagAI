@@ -15,7 +15,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,7 +68,6 @@ import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.GenreMemoriesLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.morphingGradient
@@ -429,8 +427,8 @@ fun PromptBar(
                     spread = 1f
                     brush = themeBrush
                 }
-                .border(1.dp, MaterialTheme.colorScheme.onBackground.gradientFade(), shape)
-                .background(MaterialTheme.colorScheme.background, shape)
+                // The glow above stays; the field itself is the shared glass, softer than the chips.
+                .glassSurface(shape, primaryColor) { 0.5f }
                 .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
