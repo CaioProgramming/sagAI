@@ -49,9 +49,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
-import com.ilustris.sagai.ui.theme.iridescentGradient
 
 private val Ink = Color(0xFF111322)
+
+/** Blue into violet and rose, ending on a warm peach: the pastel family, with a warm end that reads as an action. */
+private val AuroraColors = listOf(Color(0xFF6EA8FF), Color(0xFFB58CFF), Color(0xFFFF8FD0), Color(0xFFFFC48A))
 private const val LIGHT_STEPS = 6
 private const val LIGHT_STEP_DP = 4
 private const val LIGHT_ALPHA = 0.1f
@@ -72,7 +74,7 @@ fun LuminousButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: Painter? = null,
-    colors: List<Color> = iridescentGradient.take(4),
+    colors: List<Color> = AuroraColors,
 ) {
     val shape = CircleShape
     val interaction = remember { MutableInteractionSource() }
@@ -139,13 +141,13 @@ fun LuminousButton(
 
                     if (l > 0f) {
                         // The tap: the whole pill lifts a little, and a bloom spreads from the touch.
-                        drawRect(Color.White.copy(alpha = 0.2f * l), blendMode = BlendMode.Screen)
+                        drawRect(Color.White.copy(alpha = 0.05f * l), blendMode = BlendMode.Screen)
                         val origin = touch.value ?: Offset(cx, h / 2f)
                         val bloom = w * 0.45f * (0.5f + 0.5f * l)
                         drawCircle(
                             brush =
                                 Brush.radialGradient(
-                                    listOf(Color.White.copy(alpha = 0.6f * l), Color.Transparent),
+                                    listOf(Color.White.copy(alpha = 0.3f * l), Color.Transparent),
                                     center = origin,
                                     radius = bloom,
                                 ),
