@@ -31,7 +31,6 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaIntent
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaUiState
 import com.ilustris.sagai.ui.genre.choice.GenreChoiceCard
-import com.ilustris.sagai.ui.genre.choice.GenreChoiceCta
 
 /**
  * The three dilemmas asked between the idea and the stories. Same pattern as the chapter's choice
@@ -131,14 +130,13 @@ internal fun NewSagaQuizContent(
             }
         }
 
-        GenreChoiceCta(
-            label =
+        GlassButton(
+            text =
                 stringResource(
                     if (isLast) R.string.new_saga_quiz_see_stories else R.string.new_saga_quiz_next,
                 ),
             enabled = uiState.currentQuizAnswer != null,
             onClick = { onIntent(NewSagaIntent.QuizNext) },
-            genre = null,
             modifier = Modifier.fillMaxWidth(),
         )
         TextButton(

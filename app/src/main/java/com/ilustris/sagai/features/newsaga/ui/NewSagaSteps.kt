@@ -320,13 +320,12 @@ private fun StepActions(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Button(
+        GlassButton(
+            text = primary,
             onClick = onPrimary,
             enabled = primaryEnabled,
             modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(primary)
-        }
+        )
         TextButton(onClick = onSecondary) {
             Text(secondary)
         }

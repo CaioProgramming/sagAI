@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -75,7 +74,6 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeShimmer
 
@@ -360,24 +358,15 @@ private fun SaveSagaButton(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    val buttonShape = sagaShape()
-    val color = MaterialTheme.colorScheme.primary
-    Button(
+    GlassButton(
+        text = stringResource(R.string.save_saga),
         onClick = onClick,
+        enabled = enabled,
         modifier =
             Modifier
                 .padding(horizontal = 32.dp, vertical = 16.dp)
-                .dropShadow(buttonShape) {
-                    this.color = color
-                    this.radius = 5f
-                    this.spread = 5f
-                }
                 .fillMaxWidth(),
-        shape = buttonShape,
-        enabled = enabled,
-    ) {
-        Text(stringResource(R.string.save_saga))
-    }
+    )
 }
 
 private val NewSagaUiState.showGenreLoader: Boolean
