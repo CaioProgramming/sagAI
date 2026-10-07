@@ -3,15 +3,7 @@ package com.ilustris.sagai.ui.genre.choice
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.clip
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -68,6 +60,8 @@ import com.ilustris.sagai.ui.genre.crime.rememberCorkboardPalette
 import com.ilustris.sagai.ui.genre.surfaceStyle
 import com.ilustris.sagai.ui.genre.terminal.neonGlow
 import com.ilustris.sagai.ui.theme.LocalSagaGenre
+import com.ilustris.sagai.ui.theme.glassLight
+import com.ilustris.sagai.ui.theme.glassSheen
 import kotlin.random.Random
 
 /**
@@ -169,40 +163,6 @@ private val CosmicBase = Color(0xFF100E1A)
 private val CosmicFace = Color(0xFF15122A)
 private val CosmicViolet = Color(0xFF8B6CFF)
 
-/** A band of light that slowly crosses the card, so it reads as glossy under the cosmic glow. */
-@Composable
-private fun Modifier.cosmicSheen(alpha: Float): Modifier {
-    val transition = rememberInfiniteTransition(label = "cosmic_sheen")
-    val progress by transition.animateFloat(
-        initialValue = -0.3f,
-        targetValue = 1.3f,
-        animationSpec = infiniteRepeatable(tween(7000, easing = LinearEasing), RepeatMode.Restart),
-        label = "cosmic_sheen_progress",
-    )
-    return drawWithContent {
-        drawContent()
-        val shift = (progress - 0.5f) * size.width * 2f
-        drawRect(
-            brush =
-                Brush.linearGradient(
-                    colorStops =
-                        arrayOf(
-                            0.30f to Color.Transparent,
-                            0.40f to Color.White.copy(alpha = 0.06f),
-                            0.47f to Color.White.copy(alpha = 0.34f),
-                            0.51f to Color(0xFFBEAAFF),
-                            0.57f to Color.White.copy(alpha = 0.10f),
-                            0.66f to Color.Transparent,
-                        ),
-                    start = Offset(shift, 0f),
-                    end = Offset(shift + size.width, size.height * 0.6f),
-                ),
-            alpha = alpha,
-            blendMode = BlendMode.Screen,
-        )
-    }
-}
-
 @Composable
 private fun PlainBack(genre: Genre?) {
     val shape = RoundedCornerShape(20.dp)
@@ -220,7 +180,7 @@ private fun PlainBack(genre: Genre?) {
                     drawCircle(Color.White.copy(alpha = 0.04f), radius, center, style = Stroke(1.dp.toPx()))
                     radius += 14.dp.toPx()
                 }
-            }.cosmicSheen(alpha = 0.3f)
+            }.glassSheen(shape, alpha = 0.3f, tint = Color(0xFFBEAAFF))
             .border(1.dp, Color.White.copy(alpha = 0.16f), shape),
         contentAlignment = Alignment.Center,
     ) {
@@ -238,7 +198,7 @@ private fun PlainFace(text: String) {
             .clip(shape)
             .background(CosmicFace)
             .background(Brush.verticalGradient(listOf(CosmicViolet.copy(alpha = 0.34f), Color.Transparent)))
-            .cosmicSheen(alpha = 0.22f)
+            .glassSheen(shape, alpha = 0.22f, tint = Color(0xFFBEAAFF))
             .border(1.dp, Color(0xFFD6CAFF).copy(alpha = 0.6f), shape)
             .padding(16.dp),
         contentAlignment = Alignment.Center,
@@ -267,6 +227,9 @@ private fun BookBack(genre: Genre?) {
             .fillMaxSize()
             .shadow(8.dp, shape)
             .background(leather, shape)
+            // Lacquered leather: the gilt catches light along the bottom edge.
+            .glassLight(shape, gilt, { 0.5f })
+            .glassSheen(shape, alpha = 0.14f, tint = gilt)
             .padding(8.dp)
             .border(1.5.dp, gilt.copy(alpha = .7f), RoundedCornerShape(6.dp))
             .padding(5.dp)
@@ -286,6 +249,8 @@ private fun BookFace(text: String) {
             .fillMaxSize()
             .shadow(8.dp, shape)
             .background(scheme.surfaceContainerHigh, shape)
+            .glassLight(shape, scheme.primary, { 0.4f })
+            .glassSheen(shape, alpha = 0.1f)
             .padding(8.dp)
             .border(1.dp, scheme.primary.copy(alpha = .55f), RoundedCornerShape(6.dp))
             .padding(14.dp),
@@ -311,11 +276,14 @@ private fun TerminalBack() {
     val accent = MaterialTheme.colorScheme.primary
     val plate = lerp(MaterialTheme.colorScheme.background, Color.Black, .5f)
     val mono = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.Monospace)
+    val shape = RoundedCornerShape(2.dp)
     Box(
         Modifier
             .fillMaxSize()
-            .background(plate, RoundedCornerShape(2.dp))
-            .border(1.dp, accent.copy(alpha = .8f), RoundedCornerShape(2.dp))
+            .background(plate, shape)
+            .glassLight(shape, accent, { 0.55f })
+            .glassSheen(shape, alpha = 0.1f, tint = accent)
+            .border(1.dp, accent.copy(alpha = .8f), shape)
             .padding(10.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -342,11 +310,14 @@ private fun TerminalBack() {
 private fun TerminalFace(text: String) {
     val accent = MaterialTheme.colorScheme.primary
     val plate = lerp(MaterialTheme.colorScheme.background, Color.Black, .5f)
+    val shape = RoundedCornerShape(2.dp)
     Box(
         Modifier
             .fillMaxSize()
-            .background(plate, RoundedCornerShape(2.dp))
-            .border(1.dp, accent, RoundedCornerShape(2.dp))
+            .background(plate, shape)
+            .glassLight(shape, accent, { 0.55f })
+            .glassSheen(shape, alpha = 0.1f, tint = accent)
+            .border(1.dp, accent, shape)
             .padding(12.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
@@ -393,6 +364,9 @@ private fun CrimeBack(seed: Int) {
                 .fillMaxSize()
                 .shadow(6.dp, shape)
                 .background(MANILA, shape)
+                // The folder sits in a plastic sleeve: a rim and a passing gloss, no tinted light.
+                .glassLight(shape, Color.White, { 0.3f }, light = Color.White)
+                .glassSheen(shape, alpha = 0.16f)
                 .border(1.dp, MANILA_EDGE, shape),
             contentAlignment = Alignment.Center,
         ) {
@@ -425,6 +399,8 @@ private fun CrimeFace(
                 .fillMaxSize()
                 .shadow(6.dp, shape)
                 .background(palette.paper, shape)
+                .glassLight(shape, Color.White, { 0.3f }, light = Color.White)
+                .glassSheen(shape, alpha = 0.16f)
                 .border(1.dp, Color.Black.copy(alpha = .08f), shape)
                 .padding(horizontal = 12.dp, vertical = 18.dp),
             contentAlignment = Alignment.Center,
@@ -511,7 +487,9 @@ private fun ComicBack() {
             .comicCardShadow()
             .background(primary)
             .border(3.dp, COMIC_INK)
-            .drawHalftone(COMIC_INK.copy(alpha = .22f)),
+            .drawHalftone(COMIC_INK.copy(alpha = .22f))
+            // Spot varnish: a printed cover catches a passing gloss, and nothing else changes.
+            .glassSheen(RectangleShape, alpha = 0.12f),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -531,6 +509,7 @@ private fun ComicFace(text: String) {
             .comicCardShadow()
             .background(COMIC_PAPER)
             .border(3.dp, COMIC_INK)
+            .glassSheen(RectangleShape, alpha = 0.1f)
             .padding(12.dp),
         contentAlignment = Alignment.Center,
     ) {
