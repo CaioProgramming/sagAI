@@ -1,6 +1,5 @@
 package com.ilustris.sagai.ui.genre.choice
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.draw.clip
@@ -10,6 +9,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -116,7 +119,7 @@ private fun CardBack(
         GenreSurfaceStyle.BOOK -> BookBack(genre)
         GenreSurfaceStyle.TERMINAL -> TerminalBack()
         GenreSurfaceStyle.CRIME -> CrimeBack(seed)
-        GenreSurfaceStyle.COLLAGE -> CollageBack(seed)
+        GenreSurfaceStyle.COLLAGE -> CollageBack(genre, seed)
         GenreSurfaceStyle.COMIC -> ComicBack(genre)
         GenreSurfaceStyle.DEFAULT -> PlainBack(genre)
     }
@@ -334,10 +337,12 @@ private fun TerminalFace(text: String) {
 
 // endregion
 
-// region Crime (corkboard)
+// region Crime (the case file)
 
 private val MANILA = Color(0xFFC9A66B)
 private val MANILA_EDGE = Color(0xFF9C7B45)
+private val MANILA_TAB = Color(0xFFD3B278)
+private val MANILA_PAGE = Color(0xFFE2CBA0)
 
 @Composable
 private fun PinHead(
@@ -353,35 +358,80 @@ private fun PinHead(
     )
 }
 
+/**
+ * A manila case folder seen from above: a tab on the top right, the edges of the pages inside
+ * showing along the right side, and the cover under a plastic sleeve's rim and passing gloss.
+ */
+@Composable
+private fun ManilaFolder(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val shape = RoundedCornerShape(3.dp)
+    Box(modifier) {
+        Box(Modifier.fillMaxSize().padding(top = 16.dp).background(MANILA_PAGE, shape))
+        Box(Modifier.fillMaxSize().padding(top = 14.dp, end = 3.dp).background(lerp(MANILA_PAGE, MANILA, .5f), shape))
+        Box(
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(end = 14.dp)
+                .fillMaxWidth(.32f)
+                .height(16.dp)
+                .background(MANILA_TAB, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+                .border(1.dp, MANILA_EDGE, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp)),
+        )
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(top = 12.dp, end = 6.dp)
+                .shadow(6.dp, shape)
+                .background(
+                    Brush.verticalGradient(listOf(lerp(MANILA, Color.White, .14f), MANILA, lerp(MANILA, Color.Black, .1f))),
+                    shape,
+                )
+                .glassLight(shape, Color.White, { 0.3f }, light = Color.White)
+                .glassSheen(shape, alpha = 0.16f)
+                .border(1.dp, MANILA_EDGE, shape),
+            content = content,
+        )
+    }
+}
+
+/**
+ * A rubber stamp: its own ink and its own type, never the saga's. Theme fonts are all too delicate
+ * for a stamp, so it takes the system face, heavy, inside a doubled box like a real one.
+ */
+@Composable
+private fun ClassifiedStamp(
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    val ink = color.copy(alpha = .9f)
+    Text(
+        text = stringResource(R.string.milestone_choices_classified),
+        style =
+            MaterialTheme.typography.titleMedium.copy(
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 2.sp,
+            ),
+        color = ink,
+        modifier =
+            modifier
+                .rotate(-6f)
+                .border(2.5.dp, ink, RoundedCornerShape(2.dp))
+                .padding(3.dp)
+                .border(1.dp, ink, RoundedCornerShape(1.dp))
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
 @Composable
 private fun CrimeBack(seed: Int) {
     val palette = rememberCorkboardPalette()
     val tilt = remember(seed) { (Random(seed).nextFloat() - .5f) * 6f }
-    val shape = RoundedCornerShape(3.dp)
-    Box(Modifier.fillMaxSize().rotate(tilt)) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .shadow(6.dp, shape)
-                .background(MANILA, shape)
-                // The folder sits in a plastic sleeve: a rim and a passing gloss, no tinted light.
-                .glassLight(shape, Color.White, { 0.3f }, light = Color.White)
-                .glassSheen(shape, alpha = 0.16f)
-                .border(1.dp, MANILA_EDGE, shape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(R.string.milestone_choices_classified),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black, letterSpacing = 2.sp),
-                color = palette.thread,
-                modifier =
-                    Modifier
-                        .rotate(-12f)
-                        .border(BorderStroke(2.5.dp, palette.thread), RoundedCornerShape(3.dp))
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-            )
-        }
-        PinHead(palette.pin, Modifier.align(Alignment.TopCenter).padding(top = 0.dp))
+    ManilaFolder(Modifier.fillMaxSize().rotate(tilt)) {
+        ClassifiedStamp(palette.thread, Modifier.align(Alignment.Center))
     }
 }
 
@@ -392,28 +442,28 @@ private fun CrimeFace(
 ) {
     val palette = rememberCorkboardPalette()
     val tilt = remember(seed) { (Random(seed).nextFloat() - .5f) * 6f }
-    val shape = RoundedCornerShape(3.dp)
-    Box(Modifier.fillMaxSize().rotate(tilt)) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .shadow(6.dp, shape)
-                .background(palette.paper, shape)
-                .glassLight(shape, Color.White, { 0.3f }, light = Color.White)
-                .glassSheen(shape, alpha = 0.16f)
-                .border(1.dp, Color.Black.copy(alpha = .08f), shape)
-                .padding(horizontal = 12.dp, vertical = 18.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = text,
-                style = optionStyle(text).copy(fontStyle = FontStyle.Italic),
-                // The paper is light stock in both themes, so the ink is fixed rather than themed.
-                color = palette.ink,
-                textAlign = TextAlign.Center,
-            )
+    val sheet = RoundedCornerShape(2.dp)
+    ManilaFolder(Modifier.fillMaxSize().rotate(tilt)) {
+        // The page pulled out of the folder, held by a pin.
+        Box(Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 14.dp)) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .shadow(2.dp, sheet)
+                    .background(palette.paper, sheet)
+                    .padding(horizontal = 10.dp, vertical = 18.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = text,
+                    style = optionStyle(text).copy(fontStyle = FontStyle.Italic),
+                    // The paper is light stock in both themes, so the ink is fixed rather than themed.
+                    color = palette.ink,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            PinHead(palette.pin, Modifier.align(Alignment.TopCenter).offset(y = (-5).dp))
         }
-        PinHead(palette.pin, Modifier.align(Alignment.TopCenter))
     }
 }
 
@@ -422,7 +472,10 @@ private fun CrimeFace(
 // region Collage (Punk Rock)
 
 @Composable
-private fun CollageBack(seed: Int) {
+private fun CollageBack(
+    genre: Genre?,
+    seed: Int,
+) {
     val accent = MaterialTheme.colorScheme.primary
     TornPaperScrap(
         seed = seed + 1,
@@ -430,12 +483,7 @@ private fun CollageBack(seed: Int) {
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(14.dp),
     ) {
-        Text(
-            text = "?",
-            style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Black),
-            color = PAPER_WHITE,
-            modifier = Modifier.align(Alignment.Center),
-        )
+        GenreEmblem(genre, PAPER_WHITE, Modifier.align(Alignment.Center).size(56.dp))
         Box(
             Modifier
                 .align(Alignment.TopCenter)
