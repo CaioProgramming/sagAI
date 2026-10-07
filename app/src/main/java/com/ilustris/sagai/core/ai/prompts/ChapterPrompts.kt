@@ -40,8 +40,6 @@ data class ChapterGenerationArgs(
 data class ChapterSynthesisArgs(
     val chapterContext: String,
     val characterIndex: String,
-    /** The chapter's chat, event by event; null (and so left out of the prompt) when it has none. */
-    val chapterTranscript: String? = null,
 )
 
 object ChapterPrompts {
@@ -150,6 +148,7 @@ object ChapterPrompts {
         saga: SagaContent,
         chapter: ChapterContent,
         includePlayerChoices: Boolean = false,
+        includeMessages: Boolean = false,
     ): ChapterConclusionContext {
         val chapterAct = saga.findChapterAct(chapter.data)
         val isFirstAct =
@@ -170,10 +169,15 @@ object ChapterPrompts {
             sagaData = saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
             mainCharacter = saga.mainCharacter?.data?.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
             eventsOfThisChapter =
-                chapter.events
-                    .sortedBy { it.data.createdAt }
-                    .map { it.data }
-                    .normalizetoAIItems(LorePrompts.TIMELINE_EXCLUDED_FIELDS),
+                if (includeMessages) {
+                    // Each event with the chat it came from, whole and in order.
+                    chapter.timelineWithMessages().normalizetoAIItems()
+                } else {
+                    chapter.events
+                        .sortedBy { it.data.createdAt }
+                        .map { it.data }
+                        .normalizetoAIItems(LorePrompts.TIMELINE_EXCLUDED_FIELDS)
+                },
             previousChaptersInCurrentAct =
                 (chapterAct?.chapters ?: emptyList())
                     .filter { it.data.id != chapter.data.id }
@@ -215,13 +219,12 @@ object ChapterPrompts {
         narrativeRules: NarrativeRules,
         conversationDirective: String,
     ): SplitPrompt {
-        val synthesisContext = chapterClosingContext(saga, chapter, includePlayerChoices = true)
+        val synthesisContext = chapterClosingContext(saga, chapter, includePlayerChoices = true, includeMessages = true)
 
         val args =
             ChapterSynthesisArgs(
                 chapterContext = synthesisContext.toAINormalize(),
                 characterIndex = SagaPrompts.charactersSummary(saga),
-                chapterTranscript = chapter.eventTranscripts(),
             )
 
         return promptService.buildSplitBlueprint(CHAPTER_SYNTHESIS_BLUEPRINT, args.asMap())
