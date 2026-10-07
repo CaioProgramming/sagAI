@@ -117,7 +117,7 @@ private fun CardBack(
         GenreSurfaceStyle.TERMINAL -> TerminalBack()
         GenreSurfaceStyle.CRIME -> CrimeBack(seed)
         GenreSurfaceStyle.COLLAGE -> CollageBack(seed)
-        GenreSurfaceStyle.COMIC -> ComicBack()
+        GenreSurfaceStyle.COMIC -> ComicBack(genre)
         GenreSurfaceStyle.DEFAULT -> PlainBack(genre)
     }
 }
@@ -478,7 +478,7 @@ private fun Modifier.comicCardShadow(shape: Shape = RectangleShape): Modifier =
     )
 
 @Composable
-private fun ComicBack() {
+private fun ComicBack(genre: Genre?) {
     val primary = MaterialTheme.colorScheme.primary
     Box(
         Modifier
@@ -492,11 +492,7 @@ private fun ComicBack() {
             .glassSheen(RectangleShape, alpha = 0.12f),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = "?!",
-            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Black),
-            color = COMIC_PAPER,
-        )
+        GenreEmblem(genre, COMIC_PAPER, Modifier.size(48.dp))
     }
 }
 
