@@ -91,22 +91,35 @@ fun GenreChoiceCard(
     val hiddenDescription = stringResource(R.string.milestone_choices_card_hidden)
     val interactionSource = remember { MutableInteractionSource() }
 
-    FlipCard(
-        faceUp = revealed,
-        modifier =
-            modifier
-                .semantics { contentDescription = if (revealed) text else hiddenDescription }
-                .clickable(
-                    interactionSource = interactionSource,
-                    // A ripple over a card reads as a button; this is a card being turned over.
-                    indication = null,
-                    role = Role.Button,
-                    enabled = !revealed,
-                    onClick = onClick,
-                ),
-        back = { CardBack(style, genre, seed) },
-        face = { CardFace(style, text, seed) },
-    )
+    val cardModifier =
+        modifier
+            .semantics { contentDescription = if (revealed) text else hiddenDescription }
+            .clickable(
+                interactionSource = interactionSource,
+                // A ripple over a card reads as a button; this is a card being turned over.
+                indication = null,
+                role = Role.Button,
+                enabled = !revealed,
+                onClick = onClick,
+            )
+
+    if (style == GenreSurfaceStyle.CRIME) {
+        // A case folder doesn't flip, it opens.
+        FolderOpenCard(
+            faceUp = revealed,
+            tilt = remember(seed) { (Random(seed).nextFloat() - .5f) * 6f },
+            modifier = cardModifier,
+            cover = { CrimeBack() },
+            inside = { CrimeFace(text) },
+        )
+    } else {
+        FlipCard(
+            faceUp = revealed,
+            modifier = cardModifier,
+            back = { CardBack(style, genre, seed) },
+            face = { CardFace(style, text, seed) },
+        )
+    }
 }
 
 @Composable
@@ -118,7 +131,7 @@ private fun CardBack(
     when (style) {
         GenreSurfaceStyle.BOOK -> BookBack(genre)
         GenreSurfaceStyle.TERMINAL -> TerminalBack()
-        GenreSurfaceStyle.CRIME -> CrimeBack(seed)
+        GenreSurfaceStyle.CRIME -> CrimeBack()
         GenreSurfaceStyle.COLLAGE -> CollageBack(genre, seed)
         GenreSurfaceStyle.COMIC -> ComicBack(genre)
         GenreSurfaceStyle.DEFAULT -> PlainBack(genre)
@@ -134,7 +147,7 @@ private fun CardFace(
     when (style) {
         GenreSurfaceStyle.BOOK -> BookFace(text)
         GenreSurfaceStyle.TERMINAL -> TerminalFace(text)
-        GenreSurfaceStyle.CRIME -> CrimeFace(text, seed)
+        GenreSurfaceStyle.CRIME -> CrimeFace(text)
         GenreSurfaceStyle.COLLAGE -> CollageFace(text, seed)
         GenreSurfaceStyle.COMIC -> ComicFace(text)
         GenreSurfaceStyle.DEFAULT -> PlainFace(text)
@@ -427,23 +440,18 @@ private fun ClassifiedStamp(
 }
 
 @Composable
-private fun CrimeBack(seed: Int) {
+private fun CrimeBack() {
     val palette = rememberCorkboardPalette()
-    val tilt = remember(seed) { (Random(seed).nextFloat() - .5f) * 6f }
-    ManilaFolder(Modifier.fillMaxSize().rotate(tilt)) {
+    ManilaFolder(Modifier.fillMaxSize()) {
         ClassifiedStamp(palette.thread, Modifier.align(Alignment.Center))
     }
 }
 
 @Composable
-private fun CrimeFace(
-    text: String,
-    seed: Int,
-) {
+private fun CrimeFace(text: String) {
     val palette = rememberCorkboardPalette()
-    val tilt = remember(seed) { (Random(seed).nextFloat() - .5f) * 6f }
     val sheet = RoundedCornerShape(2.dp)
-    ManilaFolder(Modifier.fillMaxSize().rotate(tilt)) {
+    ManilaFolder(Modifier.fillMaxSize()) {
         // The page pulled out of the folder, held by a pin.
         Box(Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 14.dp)) {
             Box(
