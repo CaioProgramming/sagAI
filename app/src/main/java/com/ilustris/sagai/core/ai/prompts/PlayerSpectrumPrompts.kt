@@ -34,7 +34,6 @@ object PlayerSpectrumPrompts {
     }
 
     const val LENS_BUCKET = "PlayerSpectrumLens"
-    const val CHOICES_BUCKET = "PlayerChoicesOfThisChapter"
 
     const val CARDS_BUCKET = "PlayerReadForChoiceCards"
 
@@ -57,35 +56,6 @@ object PlayerSpectrumPrompts {
                     "Questions and options stay simple and concrete, in the story's own terms. Never hint at an analysis, a pattern or this read.",
             )
         return mapOf(CARDS_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
-    }
-
-    /**
-     * How the chapter synthesis uses `playerChoicesOfThisChapter`: the picks weigh events and
-     * colour the protagonist, and their hidden `read`s become the player's next [Chapter.playerSpectrum].
-     * Empty when the chapter closed without cards, so callers can merge it unconditionally.
-     */
-    fun choicesInstructions(hasChoices: Boolean): Map<String, Any> {
-        if (!hasChoices) return emptyMap()
-        val rules =
-            linkedMapOf(
-                "CHOICES_SCOPE" to
-                    "playerChoicesOfThisChapter are the player's answers about how they carry this chapter's events. Let them color the protagonist's interiority, resolve and the way the chapter lands.",
-                "CHOICES_NEVER_REWRITE" to "Never change, add or undo anything that happened in the events.",
-                "CHOICES_EVENT_WEIGHT" to
-                    "An event named in a pick is one the player leaned into: give it MAJOR weight, a full scene and a lasting image. Every other Timeline entry is still rendered; none is dropped, merged or cut below its normal minimum.",
-                "CHOICES_WEIGHT" to
-                    "Each pick's tone is how heavily it sits with the protagonist. Let the heaviest one echo in the closing image.",
-                "CHOICES_HIDDEN" to "Never quote the questions, list the options or say that a choice was made.",
-                "CHOICES_READ_FOR_SPECTRUM_ONLY" to
-                    "Each pick's read is for playerSpectrum only. It never reaches the prose, the dialogue or any other field.",
-                "CHOICES_WRITE_SPECTRUM" to
-                    "Fill playerSpectrum with the player's read after these picks: reassess the previous read (SPECTRUM_READ) against the reads above and let it reinforce, complicate or contradict it. Return a fresh read, never a concatenation.",
-                "CHOICES_SPECTRUM_VOICE" to
-                    "playerSpectrum is two to four hedged sentences, under 80 words, observational ('tends to', 'seems to'). No names, no plot details, no clinical language, no moral judgment, and never quote a read.",
-                "CHOICES_CONTRADICTION_WINS" to
-                    "If the picks contradict the previous read, let the read change. Do not defend an earlier pattern.",
-            )
-        return mapOf(CHOICES_BUCKET to rules.entries.joinToString("\n") { (key, text) -> "$key: $text" })
     }
 
     /**

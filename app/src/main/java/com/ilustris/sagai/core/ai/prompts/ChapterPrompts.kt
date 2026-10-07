@@ -6,7 +6,6 @@ import com.ilustris.sagai.core.ai.prompts.ChapterPrompts.CHAPTER_SYNTHESIS_BLUEP
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.asMap
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -41,7 +40,8 @@ data class ChapterGenerationArgs(
 data class ChapterSynthesisArgs(
     val chapterContext: String,
     val characterIndex: String,
-    val narrativeStyle: String,
+    /** The chapter's chat, event by event; null (and so left out of the prompt) when it has none. */
+    val chapterTranscript: String? = null,
 )
 
 object ChapterPrompts {
@@ -171,6 +171,7 @@ object ChapterPrompts {
             mainCharacter = saga.mainCharacter?.data?.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
             eventsOfThisChapter =
                 chapter.events
+                    .sortedBy { it.data.createdAt }
                     .map { it.data }
                     .normalizetoAIItems(LorePrompts.TIMELINE_EXCLUDED_FIELDS),
             previousChaptersInCurrentAct =
@@ -186,8 +187,8 @@ object ChapterPrompts {
     /**
      * What the player picked on each card: the option as they read it, its emotional weight and the
      * event whose stakes it carries — plus the option's hidden insight, which is only there for the
-     * synthesis to write the player's next read from (see PlayerSpectrumPrompts.choicesInstructions,
-     * which forbids it reaching the prose). Answers resolve by index, or by insight for hands
+     * synthesis to write the player's next read from (the synthesis blueprint's CHOICES rules forbid it
+     * reaching the prose). Answers resolve by index, or by insight for hands
      * answered before that.
      */
     private fun Chapter.answeredChoicesSummary(): String? {
@@ -220,7 +221,7 @@ object ChapterPrompts {
             ChapterSynthesisArgs(
                 chapterContext = synthesisContext.toAINormalize(),
                 characterIndex = SagaPrompts.charactersSummary(saga),
-                narrativeStyle = emptyString(),
+                chapterTranscript = chapter.eventTranscripts(),
             )
 
         return promptService.buildSplitBlueprint(CHAPTER_SYNTHESIS_BLUEPRINT, args.asMap())
@@ -240,7 +241,6 @@ object ChapterPrompts {
             ChapterSynthesisArgs(
                 chapterContext = chapterClosingContext(saga, chapter).toAINormalize(),
                 characterIndex = SagaPrompts.charactersSummary(saga),
-                narrativeStyle = emptyString(),
             )
         return promptService.buildSplitBlueprint(CHAPTER_CHOICE_CARDS_BLUEPRINT, args.asMap())
     }

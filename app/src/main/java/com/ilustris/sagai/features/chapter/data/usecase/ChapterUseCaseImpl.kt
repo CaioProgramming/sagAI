@@ -711,9 +711,6 @@ class ChapterUseCaseImpl
                                             PlayerSpectrumPrompts.lensInstructions(
                                                 PlayerSpectrumPrompts.latestSpectrum(saga),
                                             ),
-                                            PlayerSpectrumPrompts.choicesInstructions(
-                                                hasChoices = !chapterContent.data.playerChoiceAnswers.isNullOrEmpty(),
-                                            ),
                                         ),
                                     requirement = ModelRequirement.HIGH,
                                 )
