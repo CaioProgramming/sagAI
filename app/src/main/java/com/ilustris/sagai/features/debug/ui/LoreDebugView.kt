@@ -40,6 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -261,20 +262,34 @@ fun LoreDebugView(
                                 .padding(16.dp),
                         contentAlignment = Alignment.BottomCenter,
                     ) {
-                        Button(
-                            onClick = { viewModel.toggleFixConfirmation() },
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                            shape = sagaShape(),
-                            enabled = !uiState.isFixing,
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text(
-                                if (uiState.isFixing) "Amarrando história..." else "Consertar História",
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold,
-                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(
+                                    onClick = { viewModel.backfillProgression() },
+                                    modifier = Modifier.weight(1f),
+                                    enabled = !uiState.isFixing,
+                                ) { Text("Gerar progressão") }
+                                OutlinedButton(
+                                    onClick = { viewModel.resetProgression() },
+                                    modifier = Modifier.weight(1f),
+                                    enabled = !uiState.isFixing,
+                                ) { Text("Zerar progressão") }
+                            }
+                            Button(
+                                onClick = { viewModel.toggleFixConfirmation() },
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
+                                shape = sagaShape(),
+                                enabled = !uiState.isFixing,
+                            ) {
+                                Text(
+                                    if (uiState.isFixing) "Amarrando história..." else "Consertar História",
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
                         }
                     }
                 }

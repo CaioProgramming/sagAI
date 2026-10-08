@@ -18,6 +18,8 @@ import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
+import com.ilustris.sagai.features.progression.domain.ProgressionConfig
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -83,6 +85,7 @@ class LoreDebugViewModel
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val timelineUseCase: TimelineUseCase,
         private val remoteConfigService: RemoteConfigService,
+        private val progressionUseCase: CharacterProgressionUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LoreDebugUiState())
         val uiState: StateFlow<LoreDebugUiState> = _uiState.asStateFlow()
@@ -378,6 +381,43 @@ class LoreDebugViewModel
 
                 _uiState.update { it.copy(isFixing = false, currentFixItem = 0) }
             }
+        }
+
+        /**
+         * Opt-in progression for a saga that predates the feature: turns it on and replays every
+         * completed event, in order, through the feat evaluation. Events already evaluated are
+         * skipped, so a run that failed halfway resumes where it stopped.
+         */
+        fun backfillProgression() {
+            val sagaId = _uiState.value.sagaMetadata?.data?.id ?: return
+            viewModelScope.launch {
+                val config = remoteConfigService.getJson<ProgressionConfig>("character_progression")
+                if (config == null || !config.enabled) {
+                    _uiState.update { it.copy(error = "character_progression não publicado ou ENABLED=false no Remote Config") }
+                    return@launch
+                }
+                val rules = remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
+                val saga = sagaUseCase.getSagaById(sagaId).first() ?: return@launch
+                if (!saga.data.progressionEnabled) sagaUseCase.updateSaga(saga.data.copy(progressionEnabled = true))
+
+                val pending = saga.flatEvents().filter { it.isComplete(rules) && !it.data.experienceGenerated }
+                _uiState.update {
+                    it.copy(isFixing = true, fixItemsCount = pending.size, currentFixItem = 0, reasoning = null)
+                }
+                pending.forEach { event ->
+                    updateFixProgress()
+                    progressionUseCase
+                        .evaluateEvent(sagaId, event.data.id)
+                        .onFailure { e -> _uiState.update { it.copy(error = "Evento ${event.data.id}: ${e.message}") } }
+                }
+                _uiState.update { it.copy(isFixing = false, currentFixItem = 0) }
+            }
+        }
+
+        /** Wipes the saga's feats and honors and clears the flags, to re-run after a prompt change. */
+        fun resetProgression() {
+            val sagaId = _uiState.value.sagaMetadata?.data?.id ?: return
+            viewModelScope.launch { progressionUseCase.resetSaga(sagaId) }
         }
 
         private fun updateFixProgress() {
