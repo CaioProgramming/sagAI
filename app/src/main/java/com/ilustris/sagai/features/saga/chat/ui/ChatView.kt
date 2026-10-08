@@ -6,6 +6,9 @@
 
 package com.ilustris.sagai.features.saga.chat.ui
 
+import com.ilustris.sagai.core.media.AmbientMusicPulse
+import com.ilustris.sagai.features.saga.chat.ui.components.MusicReactiveFade
+import kotlinx.coroutines.flow.MutableStateFlow
 import android.Manifest
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -168,7 +171,6 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.levitate
@@ -341,6 +343,7 @@ fun ChatView(
                                         genreVfxPulse = genreVfxPulse,
                                         reviewGenerationState = reviewGenerationState,
                                         onNavigate = onNavigate,
+                                        ambientMusicPulse = viewModel.ambientMusicPulse,
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
                                     )
@@ -437,6 +440,8 @@ fun ChatContent(
     genreVfxPulse: Boolean = false,
     reviewGenerationState: ReviewGenerationState = ReviewGenerationState.Idle,
     onNavigate: (androidx.navigation3.runtime.NavKey) -> Unit = {},
+    /** Null (previews) leaves the bottom fade static. */
+    ambientMusicPulse: AmbientMusicPulse? = null,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
 ) {
@@ -796,13 +801,17 @@ fun ChatContent(
                     )
                 }
 
-                Box(
-                    Modifier
-                        .constrainAs(bottomGradient) {
-                            bottom.linkTo(parent.bottom)
-                        }.fillMaxWidth()
-                        .fillMaxHeight(.2f)
-                        .background(fadeGradientBottom()),
+                val musicPlaying by (ambientMusicPulse?.isPlaying ?: remember { MutableStateFlow(false) })
+                    .collectAsStateWithLifecycle()
+                MusicReactiveFade(
+                    level = { ambientMusicPulse?.level() ?: 0f },
+                    isPlaying = musicPlaying,
+                    modifier =
+                        Modifier
+                            .constrainAs(bottomGradient) {
+                                bottom.linkTo(parent.bottom)
+                            }.fillMaxWidth()
+                            .fillMaxHeight(.2f),
                 )
 
                 if (!uiState.selectionState.isSelectionMode) {

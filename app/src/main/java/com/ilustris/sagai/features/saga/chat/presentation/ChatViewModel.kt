@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
+import com.ilustris.sagai.core.media.AmbientMusicPulse
 import MessageStatus
 import android.content.Context
 import android.graphics.Bitmap
@@ -92,6 +93,8 @@ class ChatViewModel
         private val wikiMapper: WikiMapper,
         private val characterUseCase: CharacterUseCase,
         private val sagaThemeManager: SagaThemeManager,
+        /** The saga music's loudness, for the chat's reactive bottom fade. */
+        val ambientMusicPulse: AmbientMusicPulse,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val chatGenerationService: ChatGenerationService,

@@ -59,4 +59,10 @@ interface MediaPlayerManager {
 
     /** Sets both channels to the same [volume] (0f–1f). Safe to call before a source is prepared. */
     fun setVolume(volume: Float)
+
+    /** The volume last set with [setVolume] (1f until then), ducked or not. */
+    val volume: Float
+
+    /** Where playback is inside the current source, in ms; null with nothing prepared. Cheap enough to read per frame. */
+    fun positionMs(): Long?
 }
