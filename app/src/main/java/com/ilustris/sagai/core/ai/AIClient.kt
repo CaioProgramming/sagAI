@@ -48,6 +48,10 @@ fun ModelRequirement.toGeminiThinkingLevel(): String =
         ModelRequirement.HIGH -> "high"
     }
 
+/** Bookkeeping flags the app owns; no model output ever carries them, whatever type it is built from. */
+private val SYSTEM_MANAGED_FIELDS =
+    listOf("progressionEnabled", "experienceGenerated", "honorsGenerated", "legacyGenerated")
+
 abstract class AIClient(
     protected val remoteConfigService: RemoteConfigService,
     protected val promptService: PromptService,
@@ -84,7 +88,7 @@ abstract class AIClient(
         type: Type,
     ): String =
         if (describeOutput) {
-            buildAIPromptOutputStructure(type, filterOutputFields)
+            buildAIPromptOutputStructure(type, filterOutputFields + SYSTEM_MANAGED_FIELDS)
         } else {
             dataTypeName
         }

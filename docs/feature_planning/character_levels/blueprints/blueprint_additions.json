@@ -16,5 +16,10 @@
   "reply_generation_blueprint": {
     "POWER_CONTEXT_IS_BINDING": "POWER_CONTEXT gives the level gap between the characters in the scene. In a contest of the dimension at stake (combat, skill, authority) the gap decides the outcome: narrate a clear advantage as a clear advantage and never invent difficulty to keep the scene tense. It does not decide emotional scenes.",
     "STATUS_GATES_PRESENCE": "A character with status DEAD only appears as a memory, a flashback or a spirit. A MISSING or ABSENT character does not walk into a scene without a reason the story gives."
+  },
+  "sacred_binding_blueprint": {
+    "LEVEL_PLACEMENT": "The protagonist gets baseLevel on the scale of 1 to 100 described by LEVEL_BANDS, by what their backstory says they can do today. They start with a lot of room to grow.",
+    "LEVEL_RATIONALE": "levelRationale is one line: why this level, pointing at the backstory.",
+    "SKILLS_LIST": "skills is a short list of the abilities the protagonist has today, as brief noun phrases. It replaces the abilities text fields."
   }
 }

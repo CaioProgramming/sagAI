@@ -19,7 +19,7 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
-import com.ilustris.sagai.features.progression.domain.ProgressionConfig
+import com.ilustris.sagai.features.progression.domain.ProgressionConfigProvider
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -86,6 +86,7 @@ class LoreDebugViewModel
         private val timelineUseCase: TimelineUseCase,
         private val remoteConfigService: RemoteConfigService,
         private val progressionUseCase: CharacterProgressionUseCase,
+        private val progressionConfigProvider: ProgressionConfigProvider,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LoreDebugUiState())
         val uiState: StateFlow<LoreDebugUiState> = _uiState.asStateFlow()
@@ -391,14 +392,17 @@ class LoreDebugViewModel
         fun backfillProgression() {
             val sagaId = _uiState.value.sagaMetadata?.data?.id ?: return
             viewModelScope.launch {
-                val config = remoteConfigService.getJson<ProgressionConfig>("character_progression")
-                if (config == null || !config.enabled) {
+                if (progressionConfigProvider.activeConfig() == null) {
                     _uiState.update { it.copy(error = "character_progression não publicado ou ENABLED=false no Remote Config") }
                     return@launch
                 }
                 val rules = remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
                 val saga = sagaUseCase.getSagaById(sagaId).first() ?: return@launch
                 if (!saga.data.progressionEnabled) sagaUseCase.updateSaga(saga.data.copy(progressionEnabled = true))
+
+                progressionUseCase
+                    .placeCharacters(sagaId)
+                    .onFailure { e -> _uiState.update { it.copy(error = "Colocação: ${e.message}") } }
 
                 val pending = saga.flatEvents().filter { it.isComplete(rules) && !it.data.experienceGenerated }
                 _uiState.update {

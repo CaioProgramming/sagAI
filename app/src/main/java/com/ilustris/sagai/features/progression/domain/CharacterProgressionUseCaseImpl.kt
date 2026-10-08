@@ -3,11 +3,11 @@ package com.ilustris.sagai.features.progression.domain
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.FeatEvaluationArgs
+import com.ilustris.sagai.core.ai.prompts.PlacementArgs
 import com.ilustris.sagai.core.ai.prompts.ProgressionPrompts
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
@@ -15,6 +15,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.progression.data.model.CharacterFeat
+import com.ilustris.sagai.features.progression.data.model.CharacterPlacementOutput
 import com.ilustris.sagai.features.progression.data.model.FeatEvaluation
 import com.ilustris.sagai.features.progression.data.source.ProgressionDao
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -31,15 +32,14 @@ class CharacterProgressionUseCaseImpl
         private val timelineRepository: TimelineRepository,
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
-        private val remoteConfigService: RemoteConfigService,
+        private val progressionConfigProvider: ProgressionConfigProvider,
     ) : CharacterProgressionUseCase {
         override suspend fun evaluateEvent(
             sagaId: Int,
             timelineId: Int,
         ): RequestResult<Unit> =
             executeRequest {
-                val config = remoteConfigService.getJson<ProgressionConfig>(CONFIG_KEY)
-                if (config == null || !config.enabled) return@executeRequest
+                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest
                 val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest
                 if (!saga.data.progressionEnabled) return@executeRequest
 
@@ -125,6 +125,53 @@ class CharacterProgressionUseCaseImpl
                 markEvaluated(event)
             }
 
+        override suspend fun placeCharacters(sagaId: Int): RequestResult<Unit> =
+            executeRequest {
+                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest
+                val unplaced = saga.characters.map { it.data }.filter { it.baseLevel == null }
+                if (unplaced.isEmpty()) return@executeRequest
+
+                val placement =
+                    gemmaClient.generate<CharacterPlacementOutput>(
+                        promptSplit =
+                            ProgressionPrompts.placement(
+                                promptService,
+                                PlacementArgs(
+                                    characters =
+                                        saga.characters
+                                            .map { it.data }
+                                            .map { character ->
+                                                mapOf(
+                                                    "name" to character.name,
+                                                    "isProtagonist" to (character.id == saga.data.mainCharacterId),
+                                                    "alreadyPlacedAtLevel" to character.baseLevel,
+                                                    "occupation" to character.profile.occupation,
+                                                    "personality" to character.profile.personality,
+                                                    "backstory" to character.backstory,
+                                                    "abilities" to character.details.abilities,
+                                                )
+                                            }.toAINormalize(),
+                                    levelBands = config.levelBands.toAINormalize(),
+                                    protagonistMaxLevel = config.playerStartLevelCap,
+                                ),
+                            ),
+                        requirement = ModelRequirement.HIGH,
+                    )!!
+
+                unplaced.forEach { character ->
+                    val entry = placement.placements.firstOrNull { it.name.trim().equals(character.name.trim(), ignoreCase = true) } ?: return@forEach
+                    characterUseCase.updateCharacter(
+                        character
+                            .copy(
+                                baseLevel = entry.baseLevel,
+                                levelRationale = entry.levelRationale,
+                                skills = entry.skills,
+                            ).withPlacement(config, isProtagonist = character.id == saga.data.mainCharacterId),
+                    )
+                }
+            }
+
         override suspend fun resetSaga(sagaId: Int) {
             progressionDao.deleteFeatsBySaga(sagaId)
             progressionDao.deleteHonorsBySaga(sagaId)
@@ -183,9 +230,5 @@ class CharacterProgressionUseCaseImpl
             if (!event.data.experienceGenerated) {
                 timelineRepository.updateTimeline(event.data.copy(experienceGenerated = true))
             }
-        }
-
-        private companion object {
-            const val CONFIG_KEY = "character_progression"
         }
     }

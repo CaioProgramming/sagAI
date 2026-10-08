@@ -14,6 +14,12 @@ interface CharacterProgressionUseCase {
         timelineId: Int,
     ): RequestResult<Unit>
 
+    /**
+     * Places the characters of a saga that predates the system (no `baseLevel` yet) in one call, so
+     * the cast is judged as a single scale. Characters already placed are left alone.
+     */
+    suspend fun placeCharacters(sagaId: Int): RequestResult<Unit>
+
     /** Debug reset: wipes the feats and honors of a saga and clears its generation flags. */
     suspend fun resetSaga(sagaId: Int)
 }

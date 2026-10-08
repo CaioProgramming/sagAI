@@ -20,3 +20,15 @@ data class GeneratedFeat(
     /** Id of the relationship update of this event that this feat matches, if any. */
     val relationshipEvidence: Int? = null,
 )
+
+/** Model output of the placement of an existing cast (the backfill of a saga that predates the system). */
+data class CharacterPlacementOutput(
+    val placements: List<PlacementEntry> = emptyList(),
+)
+
+data class PlacementEntry(
+    val name: String = "",
+    val baseLevel: Int = 1,
+    val levelRationale: String = "",
+    val skills: List<String> = emptyList(),
+)
