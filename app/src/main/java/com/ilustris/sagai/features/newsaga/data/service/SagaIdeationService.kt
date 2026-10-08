@@ -66,7 +66,7 @@ class SagaIdeationService
                     )
                 gemmaClient.generate<UniverseSuggestions>(
                     promptSplit = splitPrompt,
-                    temperatureRandomness = .5f,
+                    temperatureRandomness = 1f,
                     requirement = ModelRequirement.LOW,
                 )!!
             }
@@ -93,7 +93,7 @@ class SagaIdeationService
                         requirement = ModelRequirement.MEDIUM,
                         temperatureRandomness = .8f,
                     )?.data
-            val cards = (quiz?.cards as List<GeneratedChoiceCard>?).orEmpty().filter { it.isAnswerable() }
+            val cards = quiz?.cards.orEmpty().filter { it.isAnswerable() }
             if (cards.size < QUIZ_CARD_COUNT) error("Quiz came back with ${cards.size} usable cards")
             quiz!!.copy(cards = cards.take(QUIZ_CARD_COUNT))
         }

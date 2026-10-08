@@ -41,6 +41,24 @@ fun cropBitmapToCircle(bitmap: Bitmap?): Bitmap? {
     return outputBitmap
 }
 
+/**
+ * Trims [insetFraction] of the width and of the height off every edge, so the aspect ratio is
+ * preserved. Image models sometimes draw a frame and a paper margin around the artwork no matter
+ * what the prompt says; a small crop is a more reliable fix than another prompt rule.
+ */
+fun insetCropBitmap(
+    bitmap: Bitmap,
+    insetFraction: Float,
+): Bitmap {
+    if (insetFraction <= 0f || insetFraction >= 0.5f) return bitmap
+    val insetX = (bitmap.width * insetFraction).toInt()
+    val insetY = (bitmap.height * insetFraction).toInt()
+    val croppedWidth = bitmap.width - insetX * 2
+    val croppedHeight = bitmap.height - insetY * 2
+    if (croppedWidth <= 0 || croppedHeight <= 0) return bitmap
+    return Bitmap.createBitmap(bitmap, insetX, insetY, croppedWidth, croppedHeight)
+}
+
 // --- NEW FUNCTION START ---
 fun scaleBitmapForNotification(
     bitmap: Bitmap?,

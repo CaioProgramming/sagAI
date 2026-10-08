@@ -50,7 +50,7 @@ import com.ilustris.sagai.features.act.ui.components.BookReader
 import com.ilustris.sagai.features.audiobook.ui.AudiobookAction
 import com.ilustris.sagai.features.audiobook.ui.AudiobookMiniPlayer
 import com.ilustris.sagai.features.audiobook.ui.AudiobookViewModel
-import com.ilustris.sagai.ui.components.IosStyleMenu
+import com.ilustris.sagai.ui.components.IosStyleMenuHost
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 
@@ -235,24 +235,10 @@ fun BookReaderView(
                                 tint = MaterialTheme.colorScheme.onBackground,
                             )
                         }
-                        Box(contentAlignment = Alignment.Center) {
-                            IconButton(
-                                onClick = { showBookMenu = true },
-                                modifier = Modifier.clip(CircleShape),
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_more_vert),
-                                    contentDescription = stringResource(R.string.book_options_cd),
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                )
-                            }
-                            if (isGenerating) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(36.dp),
-                                    strokeWidth = 2.dp,
-                                )
-                            }
-                            IosStyleMenu(expanded = showBookMenu, onDismissRequest = { showBookMenu = false }) {
+                        IosStyleMenuHost(
+                            expanded = showBookMenu,
+                            onDismissRequest = { showBookMenu = false },
+                            menu = {
                                 IosStyleMenuItem(
                                     text = stringResource(R.string.share_pdf_cd),
                                     icon = painterResource(R.drawable.ic_share),
@@ -269,6 +255,25 @@ fun BookReaderView(
                                         viewModel.regenerateBook()
                                     },
                                 )
+                            },
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                IconButton(
+                                    onClick = { showBookMenu = true },
+                                    modifier = Modifier.clip(CircleShape),
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_more_vert),
+                                        contentDescription = stringResource(R.string.book_options_cd),
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                    )
+                                }
+                                if (isGenerating) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(36.dp),
+                                        strokeWidth = 2.dp,
+                                    )
+                                }
                             }
                         }
                     }

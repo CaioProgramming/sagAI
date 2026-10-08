@@ -10,12 +10,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.UniverseEcho
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.themePainter
@@ -60,10 +59,13 @@ internal fun IdeaChipsSection(
         val chipWidth = maxWidth * IDEA_CHIP_WIDTH_FRACTION
         LazyHorizontalGrid(
             rows = GridCells.Fixed(CHIP_ROWS),
-            modifier = Modifier.fillMaxWidth().height(IDEA_CHIPS_HEIGHT),
-            contentPadding = PaddingValues(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(IDEA_CHIPS_HEIGHT),
+            contentPadding = PaddingValues(8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Center,
         ) {
             itemsIndexed(echoes, key = { index, echo ->
                 echo.pitch
@@ -72,7 +74,11 @@ internal fun IdeaChipsSection(
                     echo = echo,
                     index = index,
                     onClick = { onEchoSelected(echo.pitch) },
-                    modifier = Modifier.width(chipWidth).fillMaxHeight(),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .widthIn(max = chipWidth)
+                            .wrapContentHeight(Alignment.CenterVertically),
                 )
             }
         }
@@ -105,8 +111,10 @@ private fun IdeaChip(
             Row(
                 modifier =
                     Modifier
-                        .fillMaxHeight()
-                        .glassSurface(RoundedCornerShape(14.dp), MaterialTheme.colorScheme.primary) { 0.75f }
+                        .glassSurface(
+                            RoundedCornerShape(14.dp),
+                            MaterialTheme.colorScheme.primary,
+                        ) { 0.75f }
                         .clickable(onClick = onClick)
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -119,10 +127,10 @@ private fun IdeaChip(
                     modifier = Modifier.size(16.dp),
                 )
                 Text(
-                    text = echo.title,
+                    text = echo.pitch,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 2,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
@@ -131,5 +139,12 @@ private fun IdeaChip(
     }
 }
 
-private val IDEA_CHIPS_HEIGHT = 120.dp
-private const val IDEA_CHIP_WIDTH_FRACTION = 0.3f
+/**
+ * The grid has a height of its own: without one it takes every pixel the screen has left and the
+ * chips float in the middle instead of sitting at the bottom. Two rows of 80 dp (a three-line chip,
+ * 64 dp, plus its 8 dp margin all around) and the 8 dp of content padding above and below. A chip
+ * is as wide as its text up to two thirds of the screen, which is what a pitch of 50 to 80
+ * characters needs to fit in three lines; a narrower chip cut most of them off.
+ */
+private val IDEA_CHIPS_HEIGHT = 176.dp
+private const val IDEA_CHIP_WIDTH_FRACTION = 0.66f

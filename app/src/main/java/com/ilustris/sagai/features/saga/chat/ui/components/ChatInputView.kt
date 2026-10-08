@@ -100,7 +100,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.title
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
-import com.ilustris.sagai.ui.components.IosStyleMenu
+import com.ilustris.sagai.ui.components.IosStyleMenuHost
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.hexToColor
@@ -637,7 +637,35 @@ fun ChatInputView(
 
                     val speechModeChipShape = MaterialTheme.shapes.extraLarge
                     val isInsideTag = currentTagInside != null
-                    Box {
+                    IosStyleMenuHost(
+                        expanded = speechModeMenu,
+                        onDismissRequest = { speechModeMenu = false },
+                        anchor = Alignment.BottomStart,
+                        menu = {
+                            speechModeOptions.forEach { (senderType, expressiveTag) ->
+                                val enabled = expressiveTag == null || !isInsideTag
+                                senderType.icon()?.let { iconRes ->
+                                    IosStyleMenuItem(
+                                        text = senderType.title(),
+                                        icon = painterResource(iconRes),
+                                        enabled = enabled,
+                                        onClick = {
+                                            speechModeMenu = false
+                                            if (expressiveTag != null) {
+                                                onUpdateInput(
+                                                    insertExpressiveTag(inputField, expressiveTag),
+                                                )
+                                            } else if (isInsideTag) {
+                                                onUpdateInput(
+                                                    escapeCursorFromTagAndClean(inputField),
+                                                )
+                                            }
+                                        },
+                                    )
+                                }
+                            }
+                        },
+                    ) {
                         Row(
                             modifier =
                                 Modifier
@@ -667,34 +695,6 @@ fun ChatInputView(
                                 style =
                                     MaterialTheme.typography.labelSmall,
                             )
-                        }
-                        IosStyleMenu(
-                            expanded = speechModeMenu,
-                            onDismissRequest = { speechModeMenu = false },
-                            anchor = Alignment.BottomStart,
-                        ) {
-                            speechModeOptions.forEach { (senderType, expressiveTag) ->
-                                val enabled = expressiveTag == null || !isInsideTag
-                                senderType.icon()?.let { iconRes ->
-                                    IosStyleMenuItem(
-                                        text = senderType.title(),
-                                        icon = painterResource(iconRes),
-                                        enabled = enabled,
-                                        onClick = {
-                                            speechModeMenu = false
-                                            if (expressiveTag != null) {
-                                                onUpdateInput(
-                                                    insertExpressiveTag(inputField, expressiveTag),
-                                                )
-                                            } else if (isInsideTag) {
-                                                onUpdateInput(
-                                                    escapeCursorFromTagAndClean(inputField),
-                                                )
-                                            }
-                                        },
-                                    )
-                                }
-                            }
                         }
                     }
 
@@ -823,17 +823,20 @@ fun ChatInputView(
                                                 1.dp,
                                                 resolvedColor.copy(alpha = .3f),
                                                 CircleShape,
-                                            ).background(
+                                            )
+                                            .background(
                                                 resolvedColor.copy(alpha = .1f),
                                                 CircleShape,
-                                            ).clip(CircleShape)
+                                            )
+                                            .clip(CircleShape)
                                             .clickable {
                                                 handleWikiSelection(
                                                     wiki,
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {

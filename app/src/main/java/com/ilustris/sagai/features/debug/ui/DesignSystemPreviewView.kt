@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -37,7 +36,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -70,7 +68,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.shadow.Shadow
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -98,7 +96,6 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
-import com.ilustris.sagai.features.settings.ui.audit.JsonCodeBlock
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -111,11 +108,12 @@ import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.ui.ChapterChoiceCardsScreen
 import com.ilustris.sagai.features.saga.milestone.ui.MilestoneDigestSheet
 import com.ilustris.sagai.features.saga.milestone.ui.toStoryBeat
+import com.ilustris.sagai.features.settings.ui.audit.JsonCodeBlock
+import com.ilustris.sagai.features.voicepicker.ui.VoicePicker
 import com.ilustris.sagai.ui.animations.comicExtrude
-import com.ilustris.sagai.ui.components.IosStyleMenu
+import com.ilustris.sagai.ui.components.IosStyleMenuHost
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.components.WordArtText
 import com.ilustris.sagai.ui.components.island.AdvanceIslandContent
 import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.ImageGenerationIslandContent
@@ -130,14 +128,12 @@ import com.ilustris.sagai.ui.genre.surface.GenreStoryLoading
 import com.ilustris.sagai.ui.genre.surface.GenreStoryNotice
 import com.ilustris.sagai.ui.genre.surface.GenreStorySurface
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
-import com.ilustris.sagai.features.voicepicker.ui.VoicePicker
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.rememberRotatingBorderAngle
-import com.ilustris.sagai.ui.theme.rememberVectorShape
 import com.ilustris.sagai.ui.theme.rotatingGradientBorder
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
@@ -246,221 +242,239 @@ fun DesignSystemPreviewView(
                                     .padding(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(24.dp),
                             ) {
-                            // Mini Chat Preview
-                            MiniChatPreview(genre, sharedTransitionScope, animatedVisibilityScope)
+                                // Mini Chat Preview
+                                MiniChatPreview(genre, sharedTransitionScope, animatedVisibilityScope)
 
-                            // Advance Button Simulation
-                            AdvanceSimulation()
+                                // Advance Button Simulation
+                                AdvanceSimulation()
 
-                            // Chat Input Preview
-                            ChatInputPreview(genre)
+                                // Chat Input Preview
+                                ChatInputPreview(genre)
 
-                            // Config Info Box
-                            VisualConfigInfo()
+                                // Config Info Box
+                                VisualConfigInfo()
 
-                            // Recap card, both states — otherwise the only way to see one is to
-                            // actually finish a saga in this genre.
-                            SampleLabel("RECAP CARD")
-                            RecapCardSample(genre)
+                                // Recap card, both states — otherwise the only way to see one is to
+                                // actually finish a saga in this genre.
+                                SampleLabel("RECAP CARD")
+                                RecapCardSample(genre)
 
-                            HorizontalDivider(Modifier.padding(vertical = 16.dp))
+                                HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
-                            // Legacy Samples (kept for detailed primitive validation)
-                            SampleLabel("PRIMITIVES VALIDATION")
-                            HeaderFontSample(genre)
-                            BubbleShapeSample(genre)
-                            GlowBorderSample(genre)
-                            RotatingStrokeSample(genre)
-                            ShaderFilterSample(genre)
+                                // Legacy Samples (kept for detailed primitive validation)
+                                SampleLabel("PRIMITIVES VALIDATION")
+                                HeaderFontSample(genre)
+                                BubbleShapeSample(genre)
+                                GlowBorderSample(genre)
+                                RotatingStrokeSample(genre)
+                                ShaderFilterSample(genre)
 
-                            Spacer(Modifier.height(48.dp))
+                                Spacer(Modifier.height(48.dp))
+                            }
                         }
-                    }
 
-                    StarryLoader(
-                        showStarryLoaderPreview,
-                        stringResource(R.string.settings_test_starry_loader_message),
-                        subtitle = stringResource(R.string.settings_test_starry_loader_subtitle),
-                    )
+                        StarryLoader(
+                            showStarryLoaderPreview,
+                            stringResource(R.string.settings_test_starry_loader_message),
+                            subtitle = stringResource(R.string.settings_test_starry_loader_subtitle),
+                        )
 
-                    // Lets you flip through the Milestone screen's states with mock content —
-                    // no need to actually play a saga up to a real milestone to see how it looks.
-                    // A Dialog (not an inline overlay) so it gets its own solid background and an
-                    // easy way out — it's a preview, it shouldn't lock the screen like the real one.
-                    milestonePreviewKind?.let { kind ->
-                        Dialog(
-                            onDismissRequest = { milestonePreviewKind = null },
-                            properties = DialogProperties(usePlatformDefaultWidth = false),
-                        ) {
-                            Surface(
-                                modifier = Modifier.fillMaxSize(),
-                                color = MaterialTheme.colorScheme.background,
+                        // Lets you flip through the Milestone screen's states with mock content —
+                        // no need to actually play a saga up to a real milestone to see how it looks.
+                        // A Dialog (not an inline overlay) so it gets its own solid background and an
+                        // easy way out — it's a preview, it shouldn't lock the screen like the real one.
+                        milestonePreviewKind?.let { kind ->
+                            Dialog(
+                                onDismissRequest = { milestonePreviewKind = null },
+                                properties = DialogProperties(usePlatformDefaultWidth = false),
                             ) {
-                                Box(Modifier.fillMaxSize()) {
-                                    // Every kind now goes through the same GenreStorySurface the
-                                    // real screen uses, so what shows up here is not a lookalike —
-                                    // it is the production composable with mock content. `genre` is
-                                    // passed explicitly rather than left to LocalSagaGenre so the
-                                    // pager can force one the ambient theme hasn't switched to yet.
-                                    when (kind) {
-                                        // The real screen advances out of Loading on its own once
-                                        // generation finishes. Nothing drives that here, so the
-                                        // preview adds its own "Next" without touching the
-                                        // production composable's contract.
-                                        MilestonePreviewKind.LOADING -> {
-                                            Column(Modifier.fillMaxSize()) {
-                                                Box(Modifier.fillMaxWidth().weight(1f)) {
-                                                    GenreStoryLoading(
-                                                        it.name,
-                                                        message = "Weaving the next thread of your story...",
-                                                        genre = genre,
-                                                    )
-                                                }
-                                                Button(
-                                                    onClick = { milestonePreviewKind = MilestonePreviewKind.EVENT },
-                                                    modifier = Modifier.fillMaxWidth().padding(24.dp),
-                                                ) {
-                                                    Text("Next")
+                                Surface(
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = MaterialTheme.colorScheme.background,
+                                ) {
+                                    Box(Modifier.fillMaxSize()) {
+                                        // Every kind now goes through the same GenreStorySurface the
+                                        // real screen uses, so what shows up here is not a lookalike —
+                                        // it is the production composable with mock content. `genre` is
+                                        // passed explicitly rather than left to LocalSagaGenre so the
+                                        // pager can force one the ambient theme hasn't switched to yet.
+                                        when (kind) {
+                                            // The real screen advances out of Loading on its own once
+                                            // generation finishes. Nothing drives that here, so the
+                                            // preview adds its own "Next" without touching the
+                                            // production composable's contract.
+                                            MilestonePreviewKind.LOADING -> {
+                                                Column(Modifier.fillMaxSize()) {
+                                                    Box(
+                                                        Modifier
+                                                            .fillMaxWidth()
+                                                            .weight(1f),
+                                                    ) {
+                                                        GenreStoryLoading(
+                                                            it.name,
+                                                            message = "Weaving the next thread of your story...",
+                                                            genre = genre,
+                                                        )
+                                                    }
+                                                    Button(
+                                                        onClick = { milestonePreviewKind = MilestonePreviewKind.EVENT },
+                                                        modifier =
+                                                            Modifier
+                                                                .fillMaxWidth()
+                                                                .padding(24.dp),
+                                                    ) {
+                                                        Text("Next")
+                                                    }
                                                 }
                                             }
-                                        }
 
-                                        MilestonePreviewKind.EVENT -> {
-                                            GenreStorySurface(
-                                                beat =
-                                                    MilestoneUiState
-                                                        .ClosureStep(
-                                                            DesignSystemMocks.mockNewEventMilestone(genre),
-                                                            stepIndex = 1,
-                                                            stepTotal = 3,
-                                                        ).toStoryBeat(
-                                                            sagaTitle = "Ashes of the Old Guard",
-                                                            coverImage = null,
-                                                            actCoverImages = emptyList(),
-                                                            bookGenerationState = BookGenerationUiState.Idle,
-                                                            onContinue = { milestonePreviewKind = MilestonePreviewKind.CHOICES },
-                                                            onOpenDigest = { digestPreview = DesignSystemMocks.mockNewEventMilestone(genre) },
-                                                            onGenerateBook = {},
-                                                        ),
-                                                genre = genre,
-                                            )
-                                        }
-
-                                        // Sits before the chapter closure, like the real chain. Picks
-                                        // are kept locally so the mandatory-answer gating is testable;
-                                        // only indices ever reach the screen, never the hidden tags.
-                                        MilestonePreviewKind.CHOICES -> {
-                                            var selections by remember(genre) {
-                                                mutableStateOf<List<Int?>>(List(MOCK_CHOICE_CARDS.size) { null })
-                                            }
-                                            ChapterChoiceCardsScreen(
-                                                state =
-                                                    MilestoneUiState.ChoiceCardsStep(
-                                                        milestone =
-                                                            SagaMilestone.ChoiceCards(
-                                                                chapter = DesignSystemMocks.mockChapterFinishedMilestone(genre).chapter,
-                                                                screenTitle = "The frost doesn't forgive hesitation.",
-                                                                screenSubtitle = "Weigh what it costs you.",
+                                            MilestonePreviewKind.EVENT -> {
+                                                GenreStorySurface(
+                                                    beat =
+                                                        MilestoneUiState
+                                                            .ClosureStep(
+                                                                DesignSystemMocks.mockNewEventMilestone(genre),
+                                                                stepIndex = 1,
+                                                                stepTotal = 3,
+                                                            ).toStoryBeat(
+                                                                sagaTitle = "Ashes of the Old Guard",
+                                                                coverImage = null,
+                                                                actCoverImages = emptyList(),
+                                                                bookGenerationState = BookGenerationUiState.Idle,
+                                                                onContinue = { milestonePreviewKind = MilestonePreviewKind.CHOICES },
+                                                                onOpenDigest = {
+                                                                    digestPreview =
+                                                                        DesignSystemMocks.mockNewEventMilestone(
+                                                                            genre,
+                                                                        )
+                                                                },
+                                                                onGenerateBook = {},
                                                             ),
-                                                        cards = MOCK_CHOICE_CARDS,
-                                                        selections = selections,
-                                                    ),
-                                                genre = genre,
-                                                onSelect = { card, option ->
-                                                    selections = selections.toMutableList().also { it[card] = option }
-                                                },
-                                                onSubmit = { milestonePreviewKind = MilestonePreviewKind.CHAPTER },
-                                            )
-                                        }
+                                                    genre = genre,
+                                                )
+                                            }
 
-                                        MilestonePreviewKind.CHAPTER -> {
-                                            GenreStorySurface(
-                                                beat =
-                                                    MilestoneUiState
-                                                        .ClosureStep(
-                                                            DesignSystemMocks.mockChapterFinishedMilestone(genre),
-                                                            stepIndex = 2,
-                                                            stepTotal = 3,
-                                                        ).toStoryBeat(
-                                                            sagaTitle = "Ashes of the Old Guard",
-                                                            coverImage = MOCK_COVER_URL,
-                                                            actCoverImages = emptyList(),
-                                                            bookGenerationState = BookGenerationUiState.Idle,
-                                                            onContinue = { milestonePreviewKind = MilestonePreviewKind.ACT },
-                                                            onOpenDigest = { digestPreview = DesignSystemMocks.mockChapterFinishedMilestone(genre) },
-                                                            onGenerateBook = {},
+                                            // Sits before the chapter closure, like the real chain. Picks
+                                            // are kept locally so the mandatory-answer gating is testable;
+                                            // only indices ever reach the screen, never the hidden tags.
+                                            MilestonePreviewKind.CHOICES -> {
+                                                var selections by remember(genre) {
+                                                    mutableStateOf<List<Int?>>(List(MOCK_CHOICE_CARDS.size) { null })
+                                                }
+                                                ChapterChoiceCardsScreen(
+                                                    state =
+                                                        MilestoneUiState.ChoiceCardsStep(
+                                                            milestone =
+                                                                SagaMilestone.ChoiceCards(
+                                                                    chapter = DesignSystemMocks.mockChapterFinishedMilestone(genre).chapter,
+                                                                    screenTitle = "The frost doesn't forgive hesitation.",
+                                                                    screenSubtitle = "Weigh what it costs you.",
+                                                                ),
+                                                            cards = MOCK_CHOICE_CARDS,
+                                                            selections = selections,
                                                         ),
-                                                genre = genre,
-                                            )
-                                        }
+                                                    genre = genre,
+                                                    onSelect = { card, option ->
+                                                        selections = selections.toMutableList().also { it[card] = option }
+                                                    },
+                                                    onSubmit = { milestonePreviewKind = MilestonePreviewKind.CHAPTER },
+                                                )
+                                            }
 
-                                        MilestonePreviewKind.ACT -> {
-                                            GenreStorySurface(
-                                                beat =
-                                                    MilestoneUiState
-                                                        .ClosureStep(
-                                                            DesignSystemMocks.mockActFinishedMilestone(),
-                                                            stepIndex = 3,
-                                                            stepTotal = 3,
-                                                        ).toStoryBeat(
+                                            MilestonePreviewKind.CHAPTER -> {
+                                                GenreStorySurface(
+                                                    beat =
+                                                        MilestoneUiState
+                                                            .ClosureStep(
+                                                                DesignSystemMocks.mockChapterFinishedMilestone(genre),
+                                                                stepIndex = 2,
+                                                                stepTotal = 3,
+                                                            ).toStoryBeat(
+                                                                sagaTitle = "Ashes of the Old Guard",
+                                                                coverImage = MOCK_COVER_URL,
+                                                                actCoverImages = emptyList(),
+                                                                bookGenerationState = BookGenerationUiState.Idle,
+                                                                onContinue = { milestonePreviewKind = MilestonePreviewKind.ACT },
+                                                                onOpenDigest = {
+                                                                    digestPreview =
+                                                                        DesignSystemMocks.mockChapterFinishedMilestone(genre)
+                                                                },
+                                                                onGenerateBook = {},
+                                                            ),
+                                                    genre = genre,
+                                                )
+                                            }
+
+                                            MilestonePreviewKind.ACT -> {
+                                                GenreStorySurface(
+                                                    beat =
+                                                        MilestoneUiState
+                                                            .ClosureStep(
+                                                                DesignSystemMocks.mockActFinishedMilestone(),
+                                                                stepIndex = 3,
+                                                                stepTotal = 3,
+                                                            ).toStoryBeat(
+                                                                sagaTitle = "Ashes of the Old Guard",
+                                                                coverImage = null,
+                                                                actCoverImages = DesignSystemMocks.mockActCoverImages(),
+                                                                bookGenerationState = BookGenerationUiState.Idle,
+                                                                onContinue = { milestonePreviewKind = MilestonePreviewKind.INTRO },
+                                                                onOpenDigest = {
+                                                                    digestPreview =
+                                                                        DesignSystemMocks.mockActFinishedMilestone()
+                                                                },
+                                                                onGenerateBook = {},
+                                                            ),
+                                                    genre = genre,
+                                                )
+                                            }
+
+                                            MilestonePreviewKind.INTRO -> {
+                                                GenreStoryIntroduction(
+                                                    beat =
+                                                        DesignSystemMocks.mockIntroductionMilestone().toStoryBeat(
                                                             sagaTitle = "Ashes of the Old Guard",
-                                                            coverImage = null,
-                                                            actCoverImages = DesignSystemMocks.mockActCoverImages(),
-                                                            bookGenerationState = BookGenerationUiState.Idle,
-                                                            onContinue = { milestonePreviewKind = MilestonePreviewKind.INTRO },
-                                                            onOpenDigest = { digestPreview = DesignSystemMocks.mockActFinishedMilestone() },
-                                                            onGenerateBook = {},
+                                                            onContinue = { milestonePreviewKind = MilestonePreviewKind.ERROR },
                                                         ),
-                                                genre = genre,
-                                            )
-                                        }
+                                                    genre = genre,
+                                                )
+                                            }
 
-                                        MilestonePreviewKind.INTRO -> {
-                                            GenreStoryIntroduction(
-                                                beat =
-                                                    DesignSystemMocks.mockIntroductionMilestone().toStoryBeat(
-                                                        sagaTitle = "Ashes of the Old Guard",
-                                                        onContinue = { milestonePreviewKind = MilestonePreviewKind.ERROR },
-                                                    ),
-                                                genre = genre,
+                                            // Never previewable before this refactor, and now the one
+                                            // state whose genre treatment nobody has ever laid eyes on.
+                                            MilestonePreviewKind.ERROR -> {
+                                                GenreStoryNotice(
+                                                    title = stringResource(R.string.milestone_error_title),
+                                                    message = "The story lost its thread while closing this chapter.",
+                                                    genre = genre,
+                                                    action =
+                                                        StoryBeatAction(
+                                                            id = "retry",
+                                                            label = stringResource(R.string.try_again),
+                                                            onClick = { milestonePreviewKind = null },
+                                                        ),
+                                                )
+                                            }
+                                        }
+                                        IconButton(
+                                            onClick = { milestonePreviewKind = null },
+                                            modifier =
+                                                Modifier
+                                                    .align(Alignment.TopStart)
+                                                    .statusBarsPadding()
+                                                    .padding(16.dp),
+                                        ) {
+                                            Text(
+                                                "✕",
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                color = MaterialTheme.colorScheme.onBackground,
                                             )
                                         }
-
-                                        // Never previewable before this refactor, and now the one
-                                        // state whose genre treatment nobody has ever laid eyes on.
-                                        MilestonePreviewKind.ERROR -> {
-                                            GenreStoryNotice(
-                                                title = stringResource(R.string.milestone_error_title),
-                                                message = "The story lost its thread while closing this chapter.",
-                                                genre = genre,
-                                                action =
-                                                    StoryBeatAction(
-                                                        id = "retry",
-                                                        label = stringResource(R.string.try_again),
-                                                        onClick = { milestonePreviewKind = null },
-                                                    ),
-                                            )
-                                        }
-                                    }
-                                    IconButton(
-                                        onClick = { milestonePreviewKind = null },
-                                        modifier =
-                                            Modifier
-                                                .align(Alignment.TopStart)
-                                                .statusBarsPadding()
-                                                .padding(16.dp),
-                                    ) {
-                                        Text(
-                                            "✕",
-                                            style = MaterialTheme.typography.headlineSmall,
-                                            color = MaterialTheme.colorScheme.onBackground,
-                                        )
                                     }
                                 }
                             }
                         }
                     }
-                }
                 }
             }
         }
@@ -525,35 +539,37 @@ fun DesignSystemPreviewView(
                 )
 
                 Box(contentAlignment = Alignment.Center) {
-                    DebugPillIconButton(
-                        icon = R.drawable.ic_more_vert,
-                        contentDescription = "More debug tools",
-                        onClick = { showMoreDebugMenu = true },
-                    )
-                    IosStyleMenu(
+                    IosStyleMenuHost(
                         expanded = showMoreDebugMenu,
                         onDismissRequest = { showMoreDebugMenu = false },
+                        menu = {
+                            IosStyleMenuItem(
+                                text = "Preview Milestone screens",
+                                onClick = {
+                                    showMoreDebugMenu = false
+                                    milestonePreviewKind = MilestonePreviewKind.LOADING
+                                },
+                            )
+                            IosStyleMenuItem(
+                                text = "Preview voice picker",
+                                onClick = {
+                                    showMoreDebugMenu = false
+                                    showVoicePicker = true
+                                },
+                            )
+                            IosStyleMenuItem(
+                                text = "Test Island",
+                                onClick = {
+                                    showMoreDebugMenu = false
+                                    showIslandMenu = true
+                                },
+                            )
+                        },
                     ) {
-                        IosStyleMenuItem(
-                            text = "Preview Milestone screens",
-                            onClick = {
-                                showMoreDebugMenu = false
-                                milestonePreviewKind = MilestonePreviewKind.LOADING
-                            },
-                        )
-                        IosStyleMenuItem(
-                            text = "Preview voice picker",
-                            onClick = {
-                                showMoreDebugMenu = false
-                                showVoicePicker = true
-                            },
-                        )
-                        IosStyleMenuItem(
-                            text = "Test Island",
-                            onClick = {
-                                showMoreDebugMenu = false
-                                showIslandMenu = true
-                            },
+                        DebugPillIconButton(
+                            icon = R.drawable.ic_more_vert,
+                            contentDescription = "More debug tools",
+                            onClick = { showMoreDebugMenu = true },
                         )
                     }
                     IslandTestMenu(
@@ -733,7 +749,6 @@ private fun CharacterGenerationPreviewSheet(
         }
     }
 }
-
 
 @Composable
 private fun BoxScope.GenrePager(pagerState: androidx.compose.foundation.pager.PagerState) {
@@ -934,7 +949,7 @@ private fun ShaderParamsTuningMenu(
     onChange: (ShaderParamsConfig) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val clipboardManager = LocalClipboardManager.current
+    val clipboardManager = LocalClipboard.current
 
     Column(
         Modifier
@@ -1145,7 +1160,11 @@ private fun shaderSliderGroups(
 
 @Composable
 private fun SliderRow(spec: SliderSpec) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+    ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(spec.label, style = MaterialTheme.typography.labelSmall)
             Text(
@@ -1157,7 +1176,10 @@ private fun SliderRow(spec: SliderSpec) {
             value = spec.value,
             onValueChange = spec.onValueChange,
             valueRange = spec.range,
-            modifier = Modifier.fillMaxWidth().height(28.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(28.dp),
         )
     }
 }
@@ -1342,7 +1364,10 @@ private fun RecapCardSample(genre: Genre) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         GenreRecapCard(
             card = RecapCard(title = title, stats = stats, callToAction = cta),
-            modifier = Modifier.fillMaxWidth().height(150.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
             genre = genre,
         )
         GenreRecapCard(
@@ -1358,7 +1383,10 @@ private fun RecapCardSample(genre: Genre) {
                             message = stringResource(R.string.recap_almost_ready, 2, 6),
                         ),
                 ),
-            modifier = Modifier.fillMaxWidth().height(150.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
             genre = genre,
         )
     }
