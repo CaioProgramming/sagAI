@@ -146,6 +146,8 @@ import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepositoryImpl
 import com.ilustris.sagai.features.timeline.data.source.TimelineDao
 import com.ilustris.sagai.features.timeline.domain.TimelineMapper
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCaseImpl
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCaseImpl
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
@@ -672,6 +674,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun proviesTimelineUseCase(timelineUseCaseImpl: TimelineUseCaseImpl): TimelineUseCase
+
+    @Binds
+    abstract fun providesCharacterProgressionUseCase(impl: CharacterProgressionUseCaseImpl): CharacterProgressionUseCase
 
     @Binds
     abstract fun providesActUseCase(actUseCaseImpl: ActUseCaseImpl): ActUseCase
