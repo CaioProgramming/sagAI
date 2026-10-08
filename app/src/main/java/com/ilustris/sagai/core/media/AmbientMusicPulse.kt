@@ -1,21 +1,26 @@
 package com.ilustris.sagai.core.media
 
+import android.content.Context
 import com.ilustris.sagai.core.theme.SagaThemeManager
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * How loud the saga's ambient music is right now, 0..1, for visuals that breathe with it. The
- * track in [SagaThemeManager.ambientMusicFile] is decoded once into an [AudioEnvelope] (kept per
- * file); [level] then samples that envelope at the player's position, scaled by its volume so a
- * ducked track (live mode, the audiobook) calms whatever is following it.
+ * track in [SagaThemeManager.ambientMusicFile] is decoded into an [AudioEnvelope] (seconds of work,
+ * so it is done once per file ever: kept in memory for the process and on disk across launches);
+ * [level] then samples that envelope at the player's position, scaled by its volume so a ducked
+ * track (live mode, the audiobook) calms whatever is following it.
  *
  * [level] is meant to be read in a draw phase every frame: it allocates nothing and does no I/O.
  */
@@ -25,15 +30,15 @@ class AmbientMusicPulse
     constructor(
         themeManager: SagaThemeManager,
         private val player: MediaPlayerManager,
+        @ApplicationContext private val context: Context,
     ) {
-        private class Decoded(
-            val path: String,
-            val modifiedAt: Long,
-            val envelope: FloatArray,
-        )
+        /** Envelopes already known, by track. Never cleared on a theme change: coming back is instant. */
+        private val envelopes = ConcurrentHashMap<String, FloatArray>()
+        private val decoding = ConcurrentHashMap.newKeySet<String>()
 
+        /** The track playing now, as a key into [envelopes]; null when there's no ambient track. */
         @Volatile
-        private var decoded: Decoded? = null
+        private var currentKey: String? = null
 
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -42,25 +47,41 @@ class AmbientMusicPulse
 
         init {
             scope.launch {
-                themeManager.ambientMusicFile.collectLatest { file -> decodeIfNeeded(file) }
+                themeManager.ambientMusicFile.collectLatest { file -> prepare(file) }
             }
         }
 
-        private fun decodeIfNeeded(file: File?) {
+        private fun prepare(file: File?) {
             if (file == null || !file.exists()) {
-                decoded = null
+                currentKey = null
                 return
             }
-            val current = decoded
-            if (current?.path == file.absolutePath && current.modifiedAt == file.lastModified()) return
-            // Dropped first: a new track must not borrow the old one's envelope while it decodes.
-            decoded = null
-            AudioEnvelope.decode(file)?.let { decoded = Decoded(file.absolutePath, file.lastModified(), it) }
+            // The modification time makes a re-downloaded track a different key.
+            val key = "${file.name}_${file.lastModified()}"
+            currentKey = key
+            if (envelopes.containsKey(key) || !decoding.add(key)) return
+            try {
+                val cached = diskFile(key)
+                val envelope =
+                    cached
+                        .takeIf { it.exists() }
+                        ?.let { runCatching { AudioEnvelope.fromBytes(it.readBytes()) }.getOrNull() }
+                        ?.takeIf { it.isNotEmpty() }
+                        ?: AudioEnvelope.decode(file)?.also { decoded ->
+                            runCatching { cached.parentFile?.mkdirs(); cached.writeBytes(AudioEnvelope.toBytes(decoded)) }
+                                .onFailure { Timber.w(it, "AmbientMusicPulse: couldn't cache the envelope") }
+                        }
+                if (envelope != null) envelopes[key] = envelope
+            } finally {
+                decoding.remove(key)
+            }
         }
 
-        /** 0 when nothing is playing or decoded. */
+        private fun diskFile(key: String) = File(context.cacheDir, "music_envelopes/$key.env")
+
+        /** 0 when nothing is playing or decoded yet. */
         fun level(): Float {
-            val envelope = decoded?.envelope ?: return 0f
+            val envelope = currentKey?.let { envelopes[it] } ?: return 0f
             if (!player.isPlaying.value) return 0f
             val position = player.positionMs() ?: return 0f
             val loudness = envelope.getOrElse((position / AudioEnvelope.STEP_MS).toInt()) { 0f }

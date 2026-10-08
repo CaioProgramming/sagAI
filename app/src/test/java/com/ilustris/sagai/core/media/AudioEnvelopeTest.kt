@@ -59,4 +59,16 @@ class AudioEnvelopeTest {
         assertTrue(AudioEnvelope.normalize(FloatArray(10)).all { it == 0f })
         assertEquals(0, AudioEnvelope.normalize(FloatArray(0)).size)
     }
+
+    @Test
+    fun `an envelope survives the disk cache unchanged`() {
+        val envelope = floatArrayOf(0f, 0.25f, 1f, 0.123456f, 0.9999f)
+        assertTrue(envelope.contentEquals(AudioEnvelope.fromBytes(AudioEnvelope.toBytes(envelope))))
+    }
+
+    @Test
+    fun `an empty or truncated cache file reads as an empty or shorter envelope, never a crash`() {
+        assertEquals(0, AudioEnvelope.fromBytes(ByteArray(0)).size)
+        assertEquals(1, AudioEnvelope.fromBytes(ByteArray(7)).size) // a torn trailing float is dropped
+    }
 }

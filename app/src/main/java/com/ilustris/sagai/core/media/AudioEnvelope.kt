@@ -5,6 +5,7 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import timber.log.Timber
 import java.io.File
+import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.sqrt
 
@@ -21,6 +22,13 @@ object AudioEnvelope {
     private const val MAX_DURATION_MS = 10 * 60 * 1000L
     private const val TIMEOUT_US = 10_000L
     private const val MAX_IDLE_TURNS = 500
+
+    /**
+     * Only every Nth sample feeds the RMS: a 100ms window holds thousands, so the loudness is the
+     * same to the eye and the per-sample work (the slow part, ~14M samples for a 3 min stereo track)
+     * drops by this factor. Odd, so both channels of an interleaved stream are still sampled.
+     */
+    private const val SAMPLE_STRIDE = 7
 
     /** The loudness this share of windows stay under is taken as "full", so one spike can't flatten the rest. */
     private const val REFERENCE_PERCENTILE = 0.95f
@@ -65,6 +73,19 @@ object AudioEnvelope {
         val windows get() = rms.size
     }
 
+    /** For the on-disk cache: a decoded envelope is a few KB, but costs seconds to make. */
+    fun toBytes(envelope: FloatArray): ByteArray {
+        val buffer = ByteBuffer.allocate(envelope.size * Float.SIZE_BYTES)
+        buffer.asFloatBuffer().put(envelope)
+        return buffer.array()
+    }
+
+    fun fromBytes(bytes: ByteArray): FloatArray {
+        val floats = FloatArray(bytes.size / Float.SIZE_BYTES)
+        ByteBuffer.wrap(bytes, 0, floats.size * Float.SIZE_BYTES).asFloatBuffer().get(floats)
+        return floats
+    }
+
     internal fun normalize(rms: FloatArray): FloatArray {
         if (rms.isEmpty()) return rms
         val reference = rms.sorted()[((rms.size - 1) * REFERENCE_PERCENTILE).toInt()]
@@ -95,51 +116,61 @@ object AudioEnvelope {
             var inputDone = false
             var outputDone = false
             var idleTurns = 0
+            var pcm = ShortArray(0)
 
             while (!outputDone) {
-                if (!inputDone) {
-                    val index = codec.dequeueInputBuffer(TIMEOUT_US)
-                    if (index >= 0) {
-                        val buffer = codec.getInputBuffer(index)!!
-                        val size = extractor.readSampleData(buffer, 0)
-                        if (size < 0) {
-                            codec.queueInputBuffer(index, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-                            inputDone = true
-                        } else {
-                            codec.queueInputBuffer(index, 0, size, extractor.sampleTime, 0)
-                            extractor.advance()
-                        }
+                // Feed everything the codec will take right now, without waiting on it.
+                while (!inputDone) {
+                    val index = codec.dequeueInputBuffer(0)
+                    if (index < 0) break
+                    val buffer = codec.getInputBuffer(index)!!
+                    val size = extractor.readSampleData(buffer, 0)
+                    if (size < 0) {
+                        codec.queueInputBuffer(index, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                        inputDone = true
+                    } else {
+                        codec.queueInputBuffer(index, 0, size, extractor.sampleTime, 0)
+                        extractor.advance()
                     }
                 }
 
-                val out = codec.dequeueOutputBuffer(info, TIMEOUT_US)
-                idleTurns = if (out == MediaCodec.INFO_TRY_AGAIN_LATER) idleTurns + 1 else 0
-                // A decoder that stops answering must not hang the caller.
-                if (idleTurns > MAX_IDLE_TURNS) error("decoder stalled")
-                when {
-                    out >= 0 -> {
-                        // The output format is read here, not from the track: decoders may change
-                        // the channel count or sample rate (e.g. HE-AAC upsampling).
+                // Then drain everything it has ready; only the first read may wait.
+                var timeout = TIMEOUT_US
+                while (!outputDone) {
+                    val out = codec.dequeueOutputBuffer(info, timeout)
+                    if (out == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                        // A decoder that stops answering must not hang the caller.
+                        if (++idleTurns > MAX_IDLE_TURNS) error("decoder stalled")
+                        break
+                    }
+                    idleTurns = 0
+                    timeout = 0
+                    if (out < 0) continue // format / buffers changed: nothing to read
+
+                    // The output format is read here, not from the track: decoders may change the
+                    // channel count or sample rate (e.g. HE-AAC upsampling).
+                    if (windower == null) {
                         val outFormat = codec.outputFormat
-                        if (windower == null) {
-                            val rate = outFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
-                            val channels = outFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
-                            windower = Windower(rate * channels * STEP_MS / 1000)
-                            windowsLimit = (MAX_DURATION_MS / STEP_MS).toInt()
-                        }
-                        val samples =
-                            codec
-                                .getOutputBuffer(out)!!
-                                .order(ByteOrder.nativeOrder())
-                                .asShortBuffer()
-                        samples.limit(info.size / 2)
-                        while (samples.hasRemaining() && windower.windows < windowsLimit) {
-                            windower.add(samples.get())
-                        }
-                        codec.releaseOutputBuffer(out, false)
-                        if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0 || windower.windows >= windowsLimit) {
-                            outputDone = true
-                        }
+                        val rate = outFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+                        val channels = outFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+                        windower = Windower(rate * channels * STEP_MS / 1000 / SAMPLE_STRIDE)
+                        windowsLimit = (MAX_DURATION_MS / STEP_MS).toInt()
+                    }
+                    val shorts = info.size / 2
+                    if (pcm.size < shorts) pcm = ShortArray(shorts)
+                    codec
+                        .getOutputBuffer(out)!!
+                        .order(ByteOrder.nativeOrder())
+                        .asShortBuffer()
+                        .get(pcm, 0, shorts)
+                    var i = 0
+                    while (i < shorts && windower.windows < windowsLimit) {
+                        windower.add(pcm[i])
+                        i += SAMPLE_STRIDE
+                    }
+                    codec.releaseOutputBuffer(out, false)
+                    if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0 || windower.windows >= windowsLimit) {
+                        outputDone = true
                     }
                 }
             }
