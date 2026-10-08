@@ -24,6 +24,10 @@ interface ProgressionDao {
     @Query("SELECT COALESCE(SUM(xp), 0) FROM character_feats WHERE characterId = :characterId")
     fun observeEarnedXp(characterId: Int): Flow<Int>
 
+    /** Earned XP of every character of a saga in one read, for the per-turn power context. */
+    @Query("SELECT characterId, SUM(xp) AS xp FROM character_feats WHERE sagaId = :sagaId GROUP BY characterId")
+    suspend fun getEarnedXpBySaga(sagaId: Int): List<CharacterXp>
+
     @Query("SELECT COALESCE(SUM(xp), 0) FROM character_feats WHERE characterId = :characterId")
     suspend fun getEarnedXp(characterId: Int): Int
 
@@ -73,3 +77,8 @@ interface ProgressionDao {
     @Query("DELETE FROM character_honors WHERE sagaId = :sagaId")
     suspend fun deleteHonorsBySaga(sagaId: Int)
 }
+
+data class CharacterXp(
+    val characterId: Int,
+    val xp: Int,
+)

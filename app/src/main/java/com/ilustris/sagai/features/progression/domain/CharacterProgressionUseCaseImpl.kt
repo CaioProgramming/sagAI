@@ -330,6 +330,26 @@ class CharacterProgressionUseCaseImpl
             if (!act.legacyGenerated) actUseCase.updateAct(act.copy(legacyGenerated = true))
         }
 
+        override suspend fun powerContext(
+            saga: SagaContent,
+            presentNames: List<String>,
+        ): String? {
+            if (!saga.data.progressionEnabled) return null
+            val config = progressionConfigProvider.activeConfig() ?: return null
+            val math = ProgressionMath(config)
+            val xpByCharacter = progressionDao.getEarnedXpBySaga(saga.data.id).associate { it.characterId to it.xp }
+            val inScene =
+                saga.characters
+                    .map { it.data }
+                    .filter { character ->
+                        character.id == saga.data.mainCharacterId || presentNames.any { it.trim().equals(character.name.trim(), ignoreCase = true) }
+                    }.mapNotNull { character ->
+                        val base = character.baseLevel ?: return@mapNotNull null
+                        PowerEntry(character.name, math.levelFor(base, xpByCharacter[character.id] ?: 0))
+                    }
+            return PowerContext(config).describe(inScene)
+        }
+
         override suspend fun resetSaga(sagaId: Int) {
             progressionDao.deleteFeatsBySaga(sagaId)
             progressionDao.deleteHonorsBySaga(sagaId)

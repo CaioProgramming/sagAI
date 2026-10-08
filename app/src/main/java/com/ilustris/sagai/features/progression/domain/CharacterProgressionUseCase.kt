@@ -38,6 +38,15 @@ interface CharacterProgressionUseCase {
         silent: Boolean = false,
     ): RequestResult<Unit>
 
+    /**
+     * The level-gap text for the reply prompt: who of [presentNames] (plus the protagonist) is
+     * stronger and by how much. Null when the system is off or fewer than two characters are placed.
+     */
+    suspend fun powerContext(
+        saga: com.ilustris.sagai.features.home.data.model.SagaContent,
+        presentNames: List<String>,
+    ): String?
+
     /** Debug reset: wipes the feats and honors of a saga and clears its generation flags. */
     suspend fun resetSaga(sagaId: Int)
 }

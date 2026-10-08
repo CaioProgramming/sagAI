@@ -14,7 +14,7 @@
     "STATUS_RETURNS": "Moving a DEAD character back to another status needs a clear reason in the story (a spirit, a resurrection, a mistaken report)."
   },
   "reply_generation_blueprint": {
-    "POWER_CONTEXT_IS_BINDING": "POWER_CONTEXT gives the level gap between the characters in the scene. In a contest of the dimension at stake (combat, skill, authority) the gap decides the outcome: narrate a clear advantage as a clear advantage and never invent difficulty to keep the scene tense. It does not decide emotional scenes.",
+    "POWER_CONTEXT_IS_BINDING": "powerContext gives the level gap between the characters in the scene. In a contest of the dimension at stake (combat, skill, authority) the gap decides the outcome: narrate a clear advantage as a clear advantage and never invent difficulty to keep the scene tense. It does not decide emotional scenes.",
     "STATUS_GATES_PRESENCE": "A character with status DEAD only appears as a memory, a flashback or a spirit. A MISSING or ABSENT character does not walk into a scene without a reason the story gives."
   },
   "sacred_binding_blueprint": {

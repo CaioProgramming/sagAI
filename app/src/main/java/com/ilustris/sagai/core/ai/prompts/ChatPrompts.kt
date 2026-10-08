@@ -187,6 +187,9 @@ object ChatPrompts {
             "events",
             "relationships",
             "artwork",
+            // The raw start level would contradict the derived one the power context states.
+            "baseLevel",
+            "levelRationale",
         )
 
     @Suppress("ktlint:standard:max-line-length")
@@ -204,6 +207,8 @@ object ChatPrompts {
          * recency- or string-based fallback, so this stays fully optional.
          */
         semanticRetrievalService: SemanticRetrievalService? = null,
+        /** Level gaps of the characters in the scene; null when the saga has no progression. */
+        powerContext: String? = null,
     ): SplitPrompt {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
@@ -285,6 +290,8 @@ object ChatPrompts {
                 if (narrativeContinuity.isNotEmpty()) {
                     put("narrativeContinuity", narrativeContinuity)
                 }
+
+                powerContext?.takeIf { it.isNotBlank() }?.let { put("powerContext", it) }
 
                 put(
                     "storyCharacters",
