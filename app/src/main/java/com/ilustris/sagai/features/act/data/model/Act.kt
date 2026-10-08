@@ -44,4 +44,7 @@ data class Act(
     /** Where/when this act ends — populated by act synthesis, becomes the next act's [openingCheckpoint]. */
     @Embedded(prefix = "closing_")
     val closingCheckpoint: LocationCheckpoint? = null,
+    /** True when the last legacy evaluation of this act succeeded, even with zero titles. */
+    @ColumnInfo(defaultValue = "0")
+    val legacyGenerated: Boolean = false,
 )

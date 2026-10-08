@@ -38,6 +38,9 @@ data class Timeline(
     val narrativeGuide: String? = null,
     /** Verbatim dialogue pairs from this event's real chat, captured for later fidelity. */
     val notableExchanges: List<NotableExchange>? = null,
+    /** True when the last feat evaluation of this event succeeded, even with zero feats; drives the review of failed generations. */
+    @ColumnInfo(defaultValue = "0")
+    val experienceGenerated: Boolean = false,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()
 

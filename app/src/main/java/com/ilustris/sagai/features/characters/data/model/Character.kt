@@ -64,6 +64,13 @@ data class Character(
     val voiceDirection: String? = null,
     @ColumnInfo(defaultValue = "")
     val artwork: String? = null,
+    /** Level the character enters the saga with (1 to 100); null for sagas without progression. */
+    val baseLevel: Int? = null,
+    /** One line on why [baseLevel], pointing at the backstory or at a character of the roster. */
+    val levelRationale: String? = null,
+    /** What the character can do today. Replaces [Abilities] in sagas with progression. */
+    @ColumnInfo(defaultValue = "[]")
+    val skills: List<String> = emptyList(),
 )
 
 data class Abilities(

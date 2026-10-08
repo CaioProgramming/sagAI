@@ -1,0 +1,20 @@
+{
+  "character_generation_blueprint": {
+    "LEVEL_PLACEMENT": "Place the character on the scale of 1 to 100 described by LEVEL_BANDS, by what the backstory says they can do today. 1 is an ordinary person of this world; 100 is a legend.",
+    "USE_THE_ROSTER": "When a roster of existing characters with their levels is given, place the new character relative to them: who they could face, outmatch or be outmatched by. The roster is the saga's own scale; the bands are only the first reference.",
+    "NO_FREE_INFLATION": "A character is not strong because they are important. A villain revealed late may enter very high, but only if the backstory supports it.",
+    "LEVEL_RATIONALE": "levelRationale is one line: why this level, pointing at the backstory or at a character in the roster.",
+    "SKILLS_LIST": "skills is a short list of the abilities the character has today, as brief noun phrases. It replaces the abilities text fields."
+  },
+  "unified_lore_generation_blueprint": {
+    "CHARACTER_STATUS": "For each character whose situation changed in this stretch of story, set status: ACTIVE, ABSENT (alive and away from the scene, reachable), MISSING or DEAD. Leave it out when nothing changed.",
+    "STATUS_NOTE": "statusNote is a short phrase when nuance matters ('jailed in the North Tower', 'travelling north'). A jailed character who can still appear in a scene stays ACTIVE.",
+    "STATUS_REASON": "Every status change needs statusReason: the event that caused it, in one line.",
+    "DEAD_IS_RARE": "Mark DEAD only when the story shows it plainly, never because a character is out of the scene or presumed lost. When in doubt, MISSING.",
+    "STATUS_RETURNS": "Moving a DEAD character back to another status needs a clear reason in the story (a spirit, a resurrection, a mistaken report)."
+  },
+  "reply_generation_blueprint": {
+    "POWER_CONTEXT_IS_BINDING": "POWER_CONTEXT gives the level gap between the characters in the scene. In a contest of the dimension at stake (combat, skill, authority) the gap decides the outcome: narrate a clear advantage as a clear advantage and never invent difficulty to keep the scene tense. It does not decide emotional scenes.",
+    "STATUS_GATES_PRESENCE": "A character with status DEAD only appears as a memory, a flashback or a spirit. A MISSING or ABSENT character does not walk into a scene without a reason the story gives."
+  }
+}

@@ -58,4 +58,7 @@ data class Saga(
     val playerCompass: String? = null,
     @ColumnInfo(defaultValue = "")
     val artwork: String? = null,
+    /** True only for sagas created with the progression system (or opted in by the debug backfill); old sagas stay false and untouched. */
+    @ColumnInfo(defaultValue = "0")
+    val progressionEnabled: Boolean = false,
 )

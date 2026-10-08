@@ -669,6 +669,51 @@ object DatabaseMigrations {
             }
         }
 
+    /**
+     * 39 -> 40: character progression. Additive only: flags default to off so existing sagas are
+     * untouched, plus the feat ledger and the honors tables. SQL copied from the exported 40.json schema.
+     */
+    val MIGRATION_39_40 =
+        object : Migration(39, 40) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `sagas` ADD COLUMN `progressionEnabled` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `Characters` ADD COLUMN `baseLevel` INTEGER")
+                db.execSQL("ALTER TABLE `Characters` ADD COLUMN `levelRationale` TEXT")
+                db.execSQL("ALTER TABLE `Characters` ADD COLUMN `skills` TEXT NOT NULL DEFAULT '[]'")
+                db.execSQL("ALTER TABLE `timelines` ADD COLUMN `experienceGenerated` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `Chapter` ADD COLUMN `honorsGenerated` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `acts` ADD COLUMN `legacyGenerated` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `character_feats` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`characterId` INTEGER NOT NULL, `sagaId` INTEGER NOT NULL, `timelineId` INTEGER NOT NULL, " +
+                        "`ordinal` INTEGER NOT NULL, `kind` TEXT NOT NULL, `title` TEXT NOT NULL, `changed` TEXT NOT NULL, " +
+                        "`cost` TEXT, `tier` INTEGER NOT NULL, `xp` INTEGER NOT NULL, `relationshipUpdateEventId` INTEGER, " +
+                        "`createdAt` INTEGER NOT NULL, FOREIGN KEY(`characterId`) REFERENCES `Characters`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`timelineId`) REFERENCES `timelines`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_character_feats_characterId_timelineId_ordinal` " +
+                        "ON `character_feats` (`characterId`, `timelineId`, `ordinal`)",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_character_feats_timelineId` ON `character_feats` (`timelineId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_character_feats_sagaId` ON `character_feats` (`sagaId`)")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `character_honors` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`characterId` INTEGER NOT NULL, `sagaId` INTEGER NOT NULL, `kind` TEXT NOT NULL, " +
+                        "`scopeId` INTEGER NOT NULL, `name` TEXT NOT NULL, `emoji` TEXT, `description` TEXT NOT NULL, " +
+                        "`featIds` TEXT NOT NULL, `posthumous` INTEGER NOT NULL, `announced` INTEGER NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, FOREIGN KEY(`characterId`) REFERENCES `Characters`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_character_honors_characterId` ON `character_honors` (`characterId`)")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_character_honors_sagaId_kind_scopeId` " +
+                        "ON `character_honors` (`sagaId`, `kind`, `scopeId`)",
+                )
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -709,5 +754,6 @@ object DatabaseMigrations {
             MIGRATION_36_37,
             MIGRATION_37_38,
             MIGRATION_38_39,
+            MIGRATION_39_40,
         )
 }

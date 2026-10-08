@@ -41,6 +41,9 @@ data class Chapter(
     val playerChoiceCards: List<GeneratedChoiceCard>? = null,
     /** Index of the option picked on each card, as strings (hands answered early stored tags instead). Null until answered. */
     val playerChoiceAnswers: List<String>? = null,
+    /** True when the last medals evaluation of this chapter succeeded, even with zero medals. */
+    @ColumnInfo(defaultValue = "0")
+    val honorsGenerated: Boolean = false,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()
 }

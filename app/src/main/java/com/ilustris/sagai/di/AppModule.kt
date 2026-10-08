@@ -1,6 +1,7 @@
 package com.ilustris.sagai.di
 
 import com.ilustris.sagai.features.characters.data.source.CharacterKnowledgeDao
+import com.ilustris.sagai.features.progression.data.source.ProgressionDao
 import com.ilustris.sagai.features.saga.datasource.EpilogueMessageDao
 import android.content.Context
 import androidx.work.WorkManager
@@ -281,6 +282,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideCharacterKnowledgeDao(database: SagaDatabase): CharacterKnowledgeDao = database.characterKnowledgeDao()
+
+    @Provides
+    @Singleton
+    fun provideProgressionDao(database: SagaDatabase): ProgressionDao = database.progressionDao()
 
     @Provides
     @Singleton
