@@ -630,6 +630,7 @@
     <string name="chat_search_older">Older result</string>
     <string name="chat_search_newer">Newer result</string>
     <string name="chat_search_open">Search messages</string>
+    <string name="chat_scroll_to_bottom">Scroll to latest message</string>
     <string name="faq_empty_state_title">We didn\'t find what you\'re looking for...</string>
     <string name="faq_ask_ai_button">Ask the Saga Master</string>
     <string name="faq_ask_ai_footer">Still unsure? Ask the Saga Master</string>

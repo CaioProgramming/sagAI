@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -183,9 +184,10 @@ fun ChapterContentView(
             characters = sagaContent?.getCharacters() ?: emptyList(),
             wiki = sagaContent?.wikis ?: emptyList(),
             style =
-                MaterialTheme.typography.bodyMedium.copy(
+                MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Normal,
                     fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                    lineHeight = 28.sp,
                     textAlign = TextAlign.Justify,
                     color = MaterialTheme.colorScheme.onBackground,
                 ),

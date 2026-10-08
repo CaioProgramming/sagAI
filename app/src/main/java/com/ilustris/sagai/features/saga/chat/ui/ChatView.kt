@@ -23,11 +23,13 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -87,7 +89,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -185,6 +186,9 @@ import kotlin.time.Duration.Companion.seconds
 
 /** Matches the spacer at the bottom of the list, which is what the chat input and its gradient cover. */
 private val CHAPTER_JUMP_BOTTOM_INSET = 150.dp
+
+private const val SCROLL_TO_BOTTOM_THRESHOLD = 2
+private const val INSTANT_SCROLL_THRESHOLD = 25
 
 private const val SEARCH_AUTO_JUMP_DELAY_MS = 350L
 private const val SEARCH_HIGHLIGHT_MS = 2200L
@@ -495,7 +499,7 @@ fun ChatContent(
                 Modifier.fillMaxSize(),
             ) {
                 rememberCoroutineScope()
-                val (debugControls, messages, chatInput, topBar, bottomGradient, chapterRail) =
+                val (debugControls, messages, chatInput, topBar, bottomGradient, chapterRail, scrollToBottom) =
                     createRefs()
 
                 // Resolved ahead of composition so the chapter rail can look up where a chapter
@@ -798,7 +802,7 @@ fun ChatContent(
                             bottom.linkTo(parent.bottom)
                         }.fillMaxWidth()
                         .fillMaxHeight(.2f)
-                        .background(fadeGradientBottom(resolvedColor)),
+                        .background(fadeGradientBottom()),
                 )
 
                 if (!uiState.selectionState.isSelectionMode) {
@@ -816,6 +820,58 @@ fun ChatContent(
                                     bottom.linkTo(parent.bottom)
                                 }.padding(end = 4.dp),
                     )
+                }
+
+                // reverseLayout: index 0 is the newest message, so being a few items past it
+                // means the reader has scrolled back through the history.
+                val showScrollToBottom by remember {
+                    derivedStateOf { listState.firstVisibleItemIndex > SCROLL_TO_BOTTOM_THRESHOLD }
+                }
+                AnimatedVisibility(
+                    visible = showScrollToBottom && !uiState.selectionState.isSelectionMode,
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut(),
+                    modifier =
+                        Modifier
+                            .constrainAs(scrollToBottom) {
+                                end.linkTo(parent.end, 16.dp)
+                                bottom.linkTo(chatInput.top, 12.dp)
+                            },
+                ) {
+                    IconButton(
+                        onClick = {
+                            railScope.launch {
+                                // A long way back would stutter animating through hundreds of
+                                // bubbles; reuse the chapter-jump's hide-then-fade for those.
+                                if (listState.firstVisibleItemIndex > INSTANT_SCROLL_THRESHOLD) {
+                                    jumpsInFlight++
+                                    try {
+                                        listState.scrollToItem(0)
+                                    } finally {
+                                        jumpsInFlight--
+                                    }
+                                } else {
+                                    listState.animateScrollToItem(0)
+                                }
+                            }
+                        },
+                        modifier =
+                            Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape)
+                                .border(
+                                    0.5.dp,
+                                    MaterialTheme.colorScheme.outlineVariant,
+                                    CircleShape,
+                                ),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_arrow_down),
+                            contentDescription = stringResource(R.string.chat_scroll_to_bottom),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
 
                 val hasActiveTimeline = content.getCurrentTimeLine() != null
@@ -1033,102 +1089,107 @@ fun ChatContent(
                     }
                 }
 
-                val alpha by animateFloatAsState(
-                    if (listState.canScrollForward.not()) 0f else 1f,
-                    animationSpec = tween(450, easing = EaseIn),
-                )
-                Column(
+                // At the very top the story's cover is the screen — the bar steps aside for it, and
+                // stays up while searching since that bar is the search field.
+                val showTopBar = listState.canScrollForward || isSearchActive
+                AnimatedVisibility(
+                    visible = showTopBar,
+                    enter = fadeIn(tween(450, easing = EaseIn)),
+                    exit = fadeOut(tween(450, easing = EaseIn)),
                     modifier =
                         Modifier
-                            .background(MaterialTheme.colorScheme.background)
                             .fillMaxWidth()
-                            .animateContentSize()
                             .constrainAs(topBar) {
                                 top.linkTo(parent.top)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                             },
-                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    val subtitle =
-                        if (saga.isEnded) {
-                            stringResource(id = R.string.chat_card_saga_ended)
-                        } else {
-                            val (actOrd, chapterOrd) = content.subtitleActAndChapterOrdinals()
-                            stringResource(
-                                R.string.chat_view_subtitle,
-                                actOrd.toRoman(),
-                                chapterOrd.toRoman(),
-                            )
-                        }
-
-                    AnimatedContent(isSearchActive, label = "chatTopBar") { searching ->
-                        if (searching) {
-                            ChatSearchBar(
-                                query = searchQuery,
-                                onQueryChange = { searchQuery = it },
-                                matchCount = searchMatches.size,
-                                currentMatch = currentMatchIndex + 1,
-                                recentSearches = uiState.recentSearches,
-                                onRecentSelected = { searchQuery = it },
-                                onOlder = { goToMatch(currentMatchIndex + 1) },
-                                onNewer = { goToMatch(currentMatchIndex - 1) },
-                                onClose = {
-                                    if (searchQuery.isNotBlank()) {
-                                        onAction(ChatUiAction.RecordSearchTerm(searchQuery))
-                                    }
-                                    isSearchActive = false
-                                    searchQuery = ""
-                                    currentMatchIndex = 0
-                                },
-                            )
-                        } else {
-                            SagaTopBar(
-                                saga.title,
-                                subtitle,
-                                saga.genre,
-                                isLoading = uiState.isGenerating || uiState.isLoading,
-                                onBackClick = {
-                                    onAction(ChatUiAction.Back)
-                                },
-                                modifier =
-                                    Modifier
-                                        .clickable {
-                                            onAction(
-                                                ChatUiAction.OpenSagaDetails,
-                                            )
-                                        }.fillMaxWidth()
-                                        .padding(start = 8.dp),
-                                titleModifier =
-                                    Modifier.graphicsLayer(alpha = alpha),
-                                actionContent = {
-                                    // Consumes its own click: the whole bar is clickable to open
-                                    // the saga details.
-                                    IconButton(onClick = { isSearchActive = true }) {
-                                        Icon(
-                                            painterResource(R.drawable.search),
-                                            contentDescription =
-                                                stringResource(R.string.chat_search_open),
-                                            modifier = Modifier.size(20.dp),
-                                        )
-                                    }
-                                },
-                            )
-                        }
-                    }
-
-                    LinearProgressIndicator(
+                    Column(
                         modifier =
                             Modifier
-                                .alpha(alpha)
-                                .height(1.dp)
-                                .fillMaxWidth(),
-                        progress = { progressState.value },
-                        drawStopIndicator = {},
-                        gapSize = 0.dp,
-                        color = resolvedColor,
-                        trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    )
+                                .background(MaterialTheme.colorScheme.background)
+                                .fillMaxWidth()
+                                .animateContentSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        val subtitle =
+                            if (saga.isEnded) {
+                                stringResource(id = R.string.chat_card_saga_ended)
+                            } else {
+                                val (actOrd, chapterOrd) = content.subtitleActAndChapterOrdinals()
+                                stringResource(
+                                    R.string.chat_view_subtitle,
+                                    actOrd.toRoman(),
+                                    chapterOrd.toRoman(),
+                                )
+                            }
+
+                        AnimatedContent(isSearchActive, label = "chatTopBar") { searching ->
+                            if (searching) {
+                                ChatSearchBar(
+                                    query = searchQuery,
+                                    onQueryChange = { searchQuery = it },
+                                    matchCount = searchMatches.size,
+                                    currentMatch = currentMatchIndex + 1,
+                                    recentSearches = uiState.recentSearches,
+                                    onRecentSelected = { searchQuery = it },
+                                    onOlder = { goToMatch(currentMatchIndex + 1) },
+                                    onNewer = { goToMatch(currentMatchIndex - 1) },
+                                    onClose = {
+                                        if (searchQuery.isNotBlank()) {
+                                            onAction(ChatUiAction.RecordSearchTerm(searchQuery))
+                                        }
+                                        isSearchActive = false
+                                        searchQuery = ""
+                                        currentMatchIndex = 0
+                                    },
+                                )
+                            } else {
+                                SagaTopBar(
+                                    saga.title,
+                                    subtitle,
+                                    saga.genre,
+                                    isLoading = uiState.isGenerating || uiState.isLoading,
+                                    onBackClick = {
+                                        onAction(ChatUiAction.Back)
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .clickable {
+                                                onAction(
+                                                    ChatUiAction.OpenSagaDetails,
+                                                )
+                                            }.fillMaxWidth()
+                                            .padding(start = 8.dp),
+                                    actionContent = {
+                                        // Consumes its own click: the whole bar is clickable to open
+                                        // the saga details.
+                                        IconButton(onClick = { isSearchActive = true }) {
+                                            Icon(
+                                                painterResource(R.drawable.search),
+                                                contentDescription =
+                                                    stringResource(R.string.chat_search_open),
+                                                modifier = Modifier.size(20.dp),
+                                            )
+                                        }
+                                    },
+                                )
+                            }
+                        }
+
+                        LinearProgressIndicator(
+                            modifier =
+                                Modifier
+                                    .height(1.dp)
+                                    .fillMaxWidth(),
+                            progress = { progressState.value },
+                            drawStopIndicator = {},
+                            gapSize = 0.dp,
+                            color = resolvedColor,
+                            trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                        )
+                    }
                 }
 
                 if (BuildConfig.DEBUG && isDebug && saga.isEnded.not() && !uiState.selectionState.isSelectionMode) {
@@ -1356,6 +1417,7 @@ fun SagaHeader(
     ) {
         sagaHeaderComponent(
             saga,
+            fadeColor = MaterialTheme.colorScheme.background,
             modifier =
                 Modifier
                     .fillMaxWidth()

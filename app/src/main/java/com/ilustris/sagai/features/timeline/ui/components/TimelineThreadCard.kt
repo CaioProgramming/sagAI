@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaInfo
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
@@ -97,9 +98,10 @@ fun TimelineThreadCard(
                 Text(
                     text = event.data.content,
                     style =
-                        MaterialTheme.typography.bodyMedium.copy(
+                        MaterialTheme.typography.bodyLarge.copy(
                             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             color = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 26.sp,
                         ),
                 )
 
@@ -279,9 +281,10 @@ fun TimelineReplyItem(
             Text(
                 text = content,
                 style =
-                    MaterialTheme.typography.bodySmall.copy(
+                    MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                        lineHeight = 22.sp,
                     ),
                 modifier = Modifier.padding(top = 2.dp),
             )

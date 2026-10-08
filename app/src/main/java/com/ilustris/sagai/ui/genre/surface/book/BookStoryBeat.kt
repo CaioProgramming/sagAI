@@ -49,6 +49,7 @@ import com.ilustris.sagai.ui.genre.PhysicalButton
 import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.GenreStoryAmbientOverlay
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryDigestCard
 import com.ilustris.sagai.ui.genre.surface.StoryAside
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
@@ -151,6 +152,8 @@ private fun BookPage(
                     onAnimationFinished = { revealed = true },
                 )
             } ?: LaunchedEffect(beat.key) { revealed = true }
+
+            beat.digest?.let { StoryDigestCard(it) }
 
             beat.figures.forEachIndexed { index, url ->
                 BookPlate(url = url, number = index + 1, accent = accent, ink = ink)
@@ -372,34 +375,38 @@ private fun BookMarginNote(
     ink: Color,
     canAnimate: Boolean,
 ) {
-    Row(
+    Column(
         Modifier
             .fillMaxWidth()
             .rotate(-0.6f)
             .padding(start = 18.dp, top = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Printed, not painted: the same ink as the type, like the Expressiveness page's blob.
-        AsideMascot(aside, color = ink.copy(alpha = .8f), canAnimate = canAnimate, modifier = Modifier.size(36.dp))
-        Column(Modifier.weight(1f)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Printed, not painted: the same ink as the type, like the Expressiveness page's blob.
+            AsideMascot(aside, color = ink.copy(alpha = .8f), canAnimate = canAnimate, modifier = Modifier.size(32.dp))
             Text(
                 text = aside.label,
                 style =
-                    MaterialTheme.typography.labelSmall.copy(
+                    MaterialTheme.typography.labelLarge.copy(
                         fontStyle = FontStyle.Italic,
-                        color = ink.copy(alpha = .45f),
-                    ),
-            )
-            Text(
-                text = aside.text,
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontStyle = FontStyle.Italic,
-                        color = ink.copy(alpha = .6f),
+                        fontWeight = FontWeight.Bold,
+                        color = ink.copy(alpha = .7f),
                     ),
             )
         }
+        Text(
+            text = aside.text,
+            style =
+                MaterialTheme.typography.bodyMedium.copy(
+                    fontStyle = FontStyle.Italic,
+                    lineHeight = 22.sp,
+                    color = ink.copy(alpha = .8f),
+                ),
+        )
     }
 }
 

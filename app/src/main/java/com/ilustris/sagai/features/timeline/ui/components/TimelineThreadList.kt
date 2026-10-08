@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.domain.TimelineViewContent
+import com.ilustris.sagai.ui.theme.fadeGradientTop
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -38,8 +39,8 @@ fun TimelineThreadList(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .background(fadeGradientTop())
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
                 ) {
                     Text(
                         text = group.title,

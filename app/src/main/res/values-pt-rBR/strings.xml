@@ -484,6 +484,7 @@
     <string name="chat_search_older">Resultado anterior</string>
     <string name="chat_search_newer">Resultado seguinte</string>
     <string name="chat_search_open">Buscar mensagens</string>
+    <string name="chat_scroll_to_bottom">Ir para a última mensagem</string>
     <string name="faq_empty_state_title">Não encontramos o que você procura...</string>
     <string name="faq_ask_ai_button">Perguntar ao Mestre da Saga</string>
     <string name="faq_ask_ai_footer">Ainda em dúvida? Pergunte ao Mestre da Saga</string>

@@ -5,13 +5,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.theme.fadeGradientTop
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -35,15 +35,8 @@ fun ChaptersGalleryContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .background(
-                                androidx.compose.ui.graphics.Brush.verticalGradient(
-                                    colors =
-                                        listOf(
-                                            MaterialTheme.colorScheme.background,
-                                            androidx.compose.ui.graphics.Color.Transparent,
-                                        ),
-                                ),
-                            ).padding(16.dp)
+                            .background(fadeGradientTop())
+                            .padding(16.dp)
                             .genreVfx(genre),
                 )
             }

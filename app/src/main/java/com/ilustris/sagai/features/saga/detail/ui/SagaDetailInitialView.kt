@@ -417,11 +417,15 @@ fun sagaHeaderComponent(
     modifier: Modifier,
     section: DetailSectionView.InitialSection? = null,
     imagePalette: ImagePalette? = null,
+    fadeColor: Color? = null,
     onAction: (DetailAction) -> Unit = {},
 ) {
     val genre = saga.genre
     // Already palette-animated by the enclosing PaletteTheme — plain reads stay smooth for free.
-    val adaptiveColor = MaterialTheme.colorScheme.primaryContainer
+    val themeContainer = MaterialTheme.colorScheme.primaryContainer
+    // Where the cover melts into whatever sits around it. Detail owns its own tinted backdrop;
+    // the chat passes the plain background so the cover blends into the conversation.
+    val adaptiveColor = fadeColor ?: themeContainer
     val adaptiveTextColor = MaterialTheme.colorScheme.onPrimary
     val accentColor by animateColorAsState(
         targetValue = imagePalette?.vibrant ?: imagePalette?.dominant ?: MaterialTheme.colorScheme.background,
@@ -463,7 +467,7 @@ fun sagaHeaderComponent(
                                 onAction(DetailAction.RegenerateIcon)
                             })
                             .gradientFill(
-                                adaptiveColor.gradientFade(),
+                                themeContainer.gradientFade(),
                             ).reactiveShimmer(
                                 true,
                                 shimmerColors = Color.White.shimmerize(),
@@ -512,7 +516,7 @@ fun sagaHeaderComponent(
                             .background(fadeGradientBottom(adaptiveColor))
                             .fillMaxWidth()
                             .padding(8.dp)
-                            .gradientFill(adaptiveColor.gradientFade())
+                            .gradientFill(themeContainer.gradientFade())
                             .reactiveShimmer(
                                 true,
                                 shimmerColors = Color.White.shimmerize(),
