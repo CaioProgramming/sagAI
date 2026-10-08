@@ -15,7 +15,16 @@ data class PlacementArgs(
     val protagonistMaxLevel: Int,
 )
 
+data class HonorsArgs(
+    val honorKind: String,
+    val scope: String,
+    val feats: String,
+    val medalsOfTheAct: String,
+)
+
 object ProgressionPrompts {
+    const val HONORS_BLUEPRINT = "character_honors_blueprint"
+
     const val PLACEMENT_BLUEPRINT = "character_placement_blueprint"
 
     const val FEAT_EVALUATION_BLUEPRINT = "character_feat_evaluation_blueprint"
@@ -29,4 +38,9 @@ object ProgressionPrompts {
         promptService: PromptService,
         args: PlacementArgs,
     ): SplitPrompt = promptService.buildSplitBlueprint(PLACEMENT_BLUEPRINT, args)
+
+    suspend fun honors(
+        promptService: PromptService,
+        args: HonorsArgs,
+    ): SplitPrompt = promptService.buildSplitBlueprint(HONORS_BLUEPRINT, args)
 }

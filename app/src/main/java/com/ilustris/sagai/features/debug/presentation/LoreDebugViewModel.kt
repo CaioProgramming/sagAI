@@ -405,14 +405,40 @@ class LoreDebugViewModel
                     .onFailure { e -> _uiState.update { it.copy(error = "Colocação: ${e.message}") } }
 
                 val pending = saga.flatEvents().filter { it.isComplete(rules) && !it.data.experienceGenerated }
+                val chapters =
+                    saga.flatChapters().filter {
+                        it.isFull(rules.chapterUpdateLimit, rules) && it.data.content.isNotEmpty() && !it.data.honorsGenerated
+                    }
+                val acts =
+                    saga.acts.filter {
+                        it.isFull(rules.actUpdateLimit, rules) && it.data.content.isNotEmpty() && !it.data.legacyGenerated
+                    }
                 _uiState.update {
-                    it.copy(isFixing = true, fixItemsCount = pending.size, currentFixItem = 0, reasoning = null)
+                    it.copy(
+                        isFixing = true,
+                        fixItemsCount = pending.size + chapters.size + acts.size,
+                        currentFixItem = 0,
+                        reasoning = null,
+                    )
                 }
                 pending.forEach { event ->
                     updateFixProgress()
                     progressionUseCase
                         .evaluateEvent(sagaId, event.data.id)
                         .onFailure { e -> _uiState.update { it.copy(error = "Evento ${event.data.id}: ${e.message}") } }
+                }
+                // History catch-up: honors are written already announced, so no islands for the past.
+                chapters.forEach { chapter ->
+                    updateFixProgress()
+                    progressionUseCase
+                        .evaluateChapterHonors(sagaId, chapter.data.id, silent = true)
+                        .onFailure { e -> _uiState.update { it.copy(error = "Capítulo ${chapter.data.id}: ${e.message}") } }
+                }
+                acts.forEach { act ->
+                    updateFixProgress()
+                    progressionUseCase
+                        .evaluateActLegacy(sagaId, act.data.id, silent = true)
+                        .onFailure { e -> _uiState.update { it.copy(error = "Ato ${act.data.id}: ${e.message}") } }
                 }
                 _uiState.update { it.copy(isFixing = false, currentFixItem = 0) }
             }

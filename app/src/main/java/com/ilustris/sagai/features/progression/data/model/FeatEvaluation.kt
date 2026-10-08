@@ -32,3 +32,28 @@ data class PlacementEntry(
     val levelRationale: String = "",
     val skills: List<String> = emptyList(),
 )
+
+/** Model output of the end-of-chapter honors. */
+data class MedalsOutput(
+    val medals: List<MedalDraft> = emptyList(),
+)
+
+data class MedalDraft(
+    val characterName: String = "",
+    val name: String = "",
+    val reason: String = "",
+    val emoji: String? = null,
+    val featRefs: List<Int> = emptyList(),
+)
+
+/** Model output of the end-of-act legacies. */
+data class LegaciesOutput(
+    val legacies: List<LegacyDraft> = emptyList(),
+)
+
+data class LegacyDraft(
+    val characterName: String = "",
+    val title: String = "",
+    val description: String = "",
+    val featRefs: List<Int> = emptyList(),
+)

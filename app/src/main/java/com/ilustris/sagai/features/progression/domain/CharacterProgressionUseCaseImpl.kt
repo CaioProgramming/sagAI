@@ -4,6 +4,15 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.FeatEvaluationArgs
 import com.ilustris.sagai.core.ai.prompts.PlacementArgs
+import com.ilustris.sagai.core.ai.prompts.HonorsArgs
+import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.data.usecase.ActUseCase
+import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.progression.data.model.CharacterHonor
+import com.ilustris.sagai.features.progression.data.model.HonorKind
+import com.ilustris.sagai.features.progression.data.model.LegaciesOutput
+import com.ilustris.sagai.features.progression.data.model.MedalsOutput
 import com.ilustris.sagai.core.ai.prompts.ProgressionPrompts
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
@@ -30,6 +39,8 @@ class CharacterProgressionUseCaseImpl
         private val sagaHistoryUseCase: SagaHistoryUseCase,
         private val characterUseCase: CharacterUseCase,
         private val timelineRepository: TimelineRepository,
+        private val chapterUseCase: ChapterUseCase,
+        private val actUseCase: ActUseCase,
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val progressionConfigProvider: ProgressionConfigProvider,
@@ -172,12 +183,165 @@ class CharacterProgressionUseCaseImpl
                 }
             }
 
+        override suspend fun evaluateChapterHonors(
+            sagaId: Int,
+            chapterId: Int,
+            silent: Boolean,
+        ): RequestResult<Unit> =
+            executeRequest {
+                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest
+                if (!saga.data.progressionEnabled) return@executeRequest
+                val chapter = saga.acts.flatMap { it.chapters }.first { it.data.id == chapterId }
+                val validator = HonorValidator(config)
+
+                val eventIds = chapter.events.map { it.data.id }.toSet()
+                val feats = progressionDao.getFeatsBySaga(sagaId).filter { it.timelineId in eventIds }
+                if (!validator.hasMedalMaterial(feats)) {
+                    markChapterHonored(chapter.data)
+                    return@executeRequest
+                }
+
+                val output =
+                    gemmaClient.generate<MedalsOutput>(
+                        promptSplit =
+                            ProgressionPrompts.honors(
+                                promptService,
+                                HonorsArgs(
+                                    honorKind = "MEDALS",
+                                    scope = chapter.data.toAINormalize(HONOR_SCOPE_EXCLUSIONS),
+                                    feats = featsForPrompt(saga, feats),
+                                    medalsOfTheAct = "",
+                                ),
+                            ),
+                        requirement = ModelRequirement.MEDIUM,
+                    )!!
+
+                val candidates =
+                    output.medals.mapNotNull { draft ->
+                        val character = characterByName(saga, draft.characterName) ?: return@mapNotNull null
+                        HonorCandidate(character.id, draft.name, draft.emoji, draft.reason, draft.featRefs)
+                    }
+                val honors = validator.validMedals(candidates, feats)
+                progressionDao.deleteHonors(sagaId, HonorKind.MEDAL.name, chapterId)
+                progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.MEDAL, chapterId, silent) })
+                markChapterHonored(chapter.data)
+            }
+
+        override suspend fun evaluateActLegacy(
+            sagaId: Int,
+            actId: Int,
+            silent: Boolean,
+        ): RequestResult<Unit> =
+            executeRequest {
+                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest
+                if (!saga.data.progressionEnabled) return@executeRequest
+                val act = saga.acts.first { it.data.id == actId }
+                val validator = HonorValidator(config)
+
+                val eventIds = act.chapters.flatMap { chapter -> chapter.events.map { it.data.id } }.toSet()
+                val feats = progressionDao.getFeatsBySaga(sagaId).filter { it.timelineId in eventIds }
+                if (!validator.hasLegacyMaterial(feats)) {
+                    markActLegacy(act.data)
+                    return@executeRequest
+                }
+
+                val medals =
+                    act.chapters.flatMap { progressionDao.getHonors(sagaId, HonorKind.MEDAL.name, it.data.id) }
+                val output =
+                    gemmaClient.generate<LegaciesOutput>(
+                        promptSplit =
+                            ProgressionPrompts.honors(
+                                promptService,
+                                HonorsArgs(
+                                    honorKind = "LEGACIES",
+                                    scope = act.data.toAINormalize(HONOR_SCOPE_EXCLUSIONS),
+                                    feats = featsForPrompt(saga, feats),
+                                    medalsOfTheAct =
+                                        medals
+                                            .map { mapOf("character" to nameOf(saga, it.characterId), "name" to it.name, "reason" to it.description) }
+                                            .toAINormalize(),
+                                ),
+                            ),
+                        requirement = ModelRequirement.MEDIUM,
+                    )!!
+
+                val candidates =
+                    output.legacies.mapNotNull { draft ->
+                        val character = characterByName(saga, draft.characterName) ?: return@mapNotNull null
+                        HonorCandidate(character.id, draft.title, null, draft.description, draft.featRefs)
+                    }
+                val honors = validator.validLegacies(candidates, feats)
+                progressionDao.deleteHonors(sagaId, HonorKind.TITLE.name, actId)
+                progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.TITLE, actId, silent) })
+                markActLegacy(act.data)
+            }
+
+        private fun ValidHonor.toHonor(
+            sagaId: Int,
+            kind: HonorKind,
+            scopeId: Int,
+            silent: Boolean,
+        ) = CharacterHonor(
+            characterId = characterId,
+            sagaId = sagaId,
+            kind = kind,
+            scopeId = scopeId,
+            name = name,
+            emoji = emoji,
+            description = description,
+            featIds = featIds,
+            announced = silent,
+        )
+
+        private fun featsForPrompt(
+            saga: SagaContent,
+            feats: List<CharacterFeat>,
+        ): String =
+            feats
+                .map { feat ->
+                    mapOf(
+                        "id" to feat.id,
+                        "character" to nameOf(saga, feat.characterId),
+                        "kind" to feat.kind,
+                        "title" to feat.title,
+                        "changed" to feat.changed,
+                        "cost" to feat.cost,
+                        "tier" to feat.tier,
+                    )
+                }.toAINormalize()
+
+        private fun nameOf(
+            saga: SagaContent,
+            characterId: Int,
+        ) = saga.characters.firstOrNull { it.data.id == characterId }?.data?.name.orEmpty()
+
+        private fun characterByName(
+            saga: SagaContent,
+            name: String,
+        ) = saga.characters.map { it.data }.firstOrNull { it.name.trim().equals(name.trim(), ignoreCase = true) }
+
+        private suspend fun markChapterHonored(chapter: Chapter) {
+            if (!chapter.honorsGenerated) chapterUseCase.updateChapter(chapter.copy(honorsGenerated = true))
+        }
+
+        private suspend fun markActLegacy(act: Act) {
+            if (!act.legacyGenerated) actUseCase.updateAct(act.copy(legacyGenerated = true))
+        }
+
         override suspend fun resetSaga(sagaId: Int) {
             progressionDao.deleteFeatsBySaga(sagaId)
             progressionDao.deleteHonorsBySaga(sagaId)
             val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return
             saga.flatEvents().filter { it.data.experienceGenerated }.forEach {
                 timelineRepository.updateTimeline(it.data.copy(experienceGenerated = false))
+            }
+            saga.acts.forEach { act ->
+                if (act.data.legacyGenerated) actUseCase.updateAct(act.data.copy(legacyGenerated = false))
+                act.chapters.filter { it.data.honorsGenerated }.forEach {
+                    chapterUseCase.updateChapter(it.data.copy(honorsGenerated = false))
+                }
             }
         }
 
@@ -230,5 +394,10 @@ class CharacterProgressionUseCaseImpl
             if (!event.data.experienceGenerated) {
                 timelineRepository.updateTimeline(event.data.copy(experienceGenerated = true))
             }
+        }
+
+        private companion object {
+            val HONOR_SCOPE_EXCLUSIONS =
+                listOf("id", "actId", "sagaId", "coverImage", "artwork", "currentEventId", "currentChapterId")
         }
     }
