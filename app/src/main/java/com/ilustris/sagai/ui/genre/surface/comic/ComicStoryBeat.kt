@@ -43,6 +43,7 @@ import com.ilustris.sagai.ui.genre.comic.SlantShape
 import com.ilustris.sagai.ui.genre.comic.comicNarrationBalloons
 import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryDigestCard
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
@@ -87,6 +88,7 @@ fun ComicStoryBeat(
     val fitsLoose =
         !hasAttachments &&
             beat.aside == null &&
+            beat.digest == null &&
             beat.body.orEmpty().length <= LOOSE_BODY_MAX_CHARS
 
     var revealed by remember(beat.key) { mutableStateOf(!canAnimate) }
@@ -205,6 +207,10 @@ private fun ComicPageColumn(
             ComicFadeIn(delayMillis = nextDelay()) {
                 ComicCaptionBox(text = it, align = TextAlign.Start, modifier = Modifier.fillMaxWidth())
             }
+        }
+
+        beat.digest?.let { digest ->
+            ComicFadeIn(delayMillis = nextDelay()) { StoryDigestCard(digest) }
         }
 
         beat.figures.forEachIndexed { index, url ->

@@ -109,6 +109,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBa
 import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.ui.ChapterChoiceCardsScreen
+import com.ilustris.sagai.features.saga.milestone.ui.MilestoneDigestSheet
 import com.ilustris.sagai.features.saga.milestone.ui.toStoryBeat
 import com.ilustris.sagai.ui.animations.comicExtrude
 import com.ilustris.sagai.ui.components.IosStyleMenu
@@ -162,6 +163,12 @@ fun DesignSystemPreviewView(
     val genre = Genre.entries[pagerState.currentPage]
     var showStarryLoaderPreview by remember { mutableStateOf(false) }
     var milestonePreviewKind by remember { mutableStateOf<MilestonePreviewKind?>(null) }
+    var digestPreview by remember { mutableStateOf<SagaMilestone?>(null) }
+    digestPreview?.let {
+        SagAITheme(genre = genre) {
+            MilestoneDigestSheet(it, onSeeMore = { digestPreview = null }, onDismiss = { digestPreview = null })
+        }
+    }
     var showCharacterPreview by remember { mutableStateOf(false) }
     var showMoreDebugMenu by remember { mutableStateOf(false) }
     var showIslandMenu by remember { mutableStateOf(false) }
@@ -327,13 +334,12 @@ fun DesignSystemPreviewView(
                                                             stepIndex = 1,
                                                             stepTotal = 3,
                                                         ).toStoryBeat(
-                                                            sagaId = 1,
                                                             sagaTitle = "Ashes of the Old Guard",
                                                             coverImage = null,
                                                             actCoverImages = emptyList(),
                                                             bookGenerationState = BookGenerationUiState.Idle,
                                                             onContinue = { milestonePreviewKind = MilestonePreviewKind.CHOICES },
-                                                            onNavigate = {},
+                                                            onOpenDigest = { digestPreview = DesignSystemMocks.mockNewEventMilestone(genre) },
                                                             onGenerateBook = {},
                                                         ),
                                                 genre = genre,
@@ -376,13 +382,12 @@ fun DesignSystemPreviewView(
                                                             stepIndex = 2,
                                                             stepTotal = 3,
                                                         ).toStoryBeat(
-                                                            sagaId = 1,
                                                             sagaTitle = "Ashes of the Old Guard",
                                                             coverImage = MOCK_COVER_URL,
                                                             actCoverImages = emptyList(),
                                                             bookGenerationState = BookGenerationUiState.Idle,
                                                             onContinue = { milestonePreviewKind = MilestonePreviewKind.ACT },
-                                                            onNavigate = {},
+                                                            onOpenDigest = { digestPreview = DesignSystemMocks.mockChapterFinishedMilestone(genre) },
                                                             onGenerateBook = {},
                                                         ),
                                                 genre = genre,
@@ -398,13 +403,12 @@ fun DesignSystemPreviewView(
                                                             stepIndex = 3,
                                                             stepTotal = 3,
                                                         ).toStoryBeat(
-                                                            sagaId = 1,
                                                             sagaTitle = "Ashes of the Old Guard",
                                                             coverImage = null,
                                                             actCoverImages = DesignSystemMocks.mockActCoverImages(),
                                                             bookGenerationState = BookGenerationUiState.Idle,
                                                             onContinue = { milestonePreviewKind = MilestonePreviewKind.INTRO },
-                                                            onNavigate = {},
+                                                            onOpenDigest = { digestPreview = DesignSystemMocks.mockActFinishedMilestone() },
                                                             onGenerateBook = {},
                                                         ),
                                                 genre = genre,

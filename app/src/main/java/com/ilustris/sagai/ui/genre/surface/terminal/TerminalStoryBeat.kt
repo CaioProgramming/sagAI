@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryDigestCard
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryBody
@@ -146,6 +147,13 @@ fun TerminalStoryBeat(
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         beat.cast.forEach { CastLine(it, accent, normal) }
                     }
+                }
+            }
+
+            beat.digest?.let { digest ->
+                val s = next()
+                TerminalOutput(visible = printed >= s, host = host, command = "cat details.log", accent = accent, canAnimate = canAnimate, onFinished = { if (printed == s) printed = s + 1 }) {
+                    StoryDigestCard(digest)
                 }
             }
 

@@ -58,6 +58,7 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryDigestCard
 import com.ilustris.sagai.ui.genre.surface.StoryAside
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
@@ -160,6 +161,8 @@ fun PlainStoryBeat(
                             modifier = Modifier.padding(top = 16.dp),
                         )
                     }
+
+                    beat.digest?.let { StoryDigestCard(it, Modifier.padding(top = 16.dp)) }
 
                     if (beat.figures.size == 1) {
                         FigureCard(beat.figures.first(), Modifier.padding(top = 16.dp))
@@ -347,7 +350,10 @@ private fun CastRow(
     }
 }
 
-/** A quiet, neutrally-bordered aside — deliberately not competing with the story above it. */
+/**
+ * A quiet, neutrally-bordered aside — deliberately not competing with the story above it. Laid out
+ * like the timeline's emotional note: the mascot and the label as a header, the text beneath.
+ */
 @Composable
 private fun AsideNote(
     aside: StoryAside,
@@ -373,11 +379,11 @@ private fun AsideNote(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-    }
-}
         Text(
             text = aside.text,
             style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
             fontStyle = FontStyle.Italic,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}

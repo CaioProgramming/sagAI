@@ -16,6 +16,7 @@ import com.ilustris.sagai.ui.genre.surface.StoryAside
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryBeatTone
+import com.ilustris.sagai.ui.genre.surface.StoryDigest
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
 import com.ilustris.sagai.ui.navigation.SagaActsKey
 import com.ilustris.sagai.ui.navigation.SagaChaptersKey
@@ -32,13 +33,12 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
  */
 @Composable
 fun MilestoneUiState.ClosureStep.toStoryBeat(
-    sagaId: Int,
     sagaTitle: String?,
     coverImage: String?,
     actCoverImages: List<String>,
     bookGenerationState: BookGenerationUiState,
     onContinue: () -> Unit,
-    onNavigate: (NavKey) -> Unit,
+    onOpenDigest: () -> Unit,
     onGenerateBook: (Act) -> Unit,
 ): StoryBeat {
     val figures =
@@ -71,17 +71,16 @@ fun MilestoneUiState.ClosureStep.toStoryBeat(
                 )
             },
         progress = StoryProgress(index = stepIndex, total = stepTotal),
+        digest =
+            milestone.digestText?.let {
+                StoryDigest(
+                    text = it,
+                    expandLabel = stringResource(R.string.milestone_digest_expand),
+                    onClick = onOpenDigest,
+                )
+            },
         actions =
             buildList {
-                milestone.detailDestination(sagaId)?.let { destination ->
-                    add(
-                        StoryBeatAction(
-                            id = "details",
-                            label = stringResource(R.string.milestone_view_details),
-                            onClick = { onNavigate(destination) },
-                        ),
-                    )
-                }
                 if (milestone is SagaMilestone.ActFinished) {
                     val generating =
                         (bookGenerationState as? BookGenerationUiState.Generating)?.actId == milestone.act.id
@@ -202,12 +201,22 @@ private fun SagaMilestone.emotionalToneOrNull(): EmotionalTone? =
         else -> null
     }
 
+/** The long text the closure generated — what the digest card previews and its sheet reads in full. */
+val SagaMilestone.digestText: String?
+    get() =
+        when (this) {
+            is SagaMilestone.NewEvent -> timeline.content
+            is SagaMilestone.ChapterFinished -> chapter.content
+            is SagaMilestone.ActFinished -> act.content
+            else -> null
+        }?.takeIf { it.isNotBlank() }
+
 /**
  * Pushed on top of the Milestone screen, not replacing it — the chain keeps waiting on its own
  * continue calls regardless of what's on screen, so "peeking" at the list and coming back leaves
  * the reveal exactly where the player left it.
  */
-private fun SagaMilestone.detailDestination(sagaId: Int): NavKey? =
+fun SagaMilestone.detailDestination(sagaId: Int): NavKey? =
     when (this) {
         is SagaMilestone.NewEvent -> SagaEventsKey(sagaId.toString())
         is SagaMilestone.ChapterFinished -> SagaChaptersKey(sagaId.toString())

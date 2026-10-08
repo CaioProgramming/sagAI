@@ -16,6 +16,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -28,6 +31,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneViewModel
 import com.ilustris.sagai.ui.genre.surface.GenreScreenEffects
@@ -73,6 +77,7 @@ fun MilestoneScreen(
     val actChapterCovers by viewModel.actChapterCovers.collectAsStateWithLifecycle()
     val bookGenerationState by viewModel.bookGenerationState.collectAsStateWithLifecycle()
     val showOnboarding by viewModel.showOnboarding.collectAsStateWithLifecycle()
+    var digestMilestone by remember { mutableStateOf<SagaMilestone?>(null) }
 
     SagAITheme(genre = genre) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -152,13 +157,12 @@ fun MilestoneScreen(
                             GenreStorySurface(
                                 beat =
                                     state.toStoryBeat(
-                                        sagaId = sagaId,
                                         sagaTitle = sagaData?.title,
                                         coverImage = chapterCoverImage,
                                         actCoverImages = actChapterCovers,
                                         bookGenerationState = bookGenerationState,
                                         onContinue = viewModel::onContinue,
-                                        onNavigate = onNavigate,
+                                        onOpenDigest = { digestMilestone = state.milestone },
                                         onGenerateBook = viewModel::generateBook,
                                     ),
                                 genre = genre,
@@ -188,6 +192,17 @@ fun MilestoneScreen(
                             )
                         }
                     }
+                }
+
+                digestMilestone?.let { milestone ->
+                    MilestoneDigestSheet(
+                        milestone = milestone,
+                        onSeeMore = {
+                            digestMilestone = null
+                            milestone.detailDestination(sagaId)?.let(onNavigate)
+                        },
+                        onDismiss = { digestMilestone = null },
+                    )
                 }
 
                 // Only ever true for a brand-new saga's first act, tutorials on — overlaps with

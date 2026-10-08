@@ -686,7 +686,8 @@
     <string name="milestone_close_still_generating">Still writing the next part of your story. Hang on a moment.</string>
     <string name="milestone_error_title">The story hit a snag</string>
     <string name="milestone_emotional_note_label">Emotional note</string>
-    <string name="milestone_view_details">View details</string>
+    <string name="milestone_see_more">See more</string>
+    <string name="milestone_digest_expand">Read in full</string>
     <string name="milestone_generate_book">Generate book</string>
     <string name="milestone_generating_book">Generating book…</string>
     <string name="create_character">Continue to character</string>

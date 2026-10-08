@@ -50,6 +50,7 @@ import com.ilustris.sagai.ui.genre.collage.rememberTearReveal
 import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.GenreStoryAmbientOverlay
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryDigestCard
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryBody
@@ -172,6 +173,12 @@ fun CollageStoryBeat(
                                 )
                             }
                         }
+                    }
+                }
+
+                beat.digest?.let { digest ->
+                    AssemblingPiece(rotation = -1.2f, delayMs = 1700L, canAnimate = canAnimate, seed = 63, scaleFrom = 1f) {
+                        StoryDigestCard(digest, Modifier.padding(horizontal = 16.dp))
                     }
                 }
 

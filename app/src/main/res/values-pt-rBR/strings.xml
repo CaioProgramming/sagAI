@@ -541,7 +541,8 @@
     <string name="milestone_close_still_generating">Ainda estamos escrevendo a próxima parte da sua história. Só um instante.</string>
     <string name="milestone_error_title">A história travou num detalhe</string>
     <string name="milestone_emotional_note_label">Nota emocional</string>
-    <string name="milestone_view_details">Ver detalhes</string>
+    <string name="milestone_see_more">Ver mais</string>
+    <string name="milestone_digest_expand">Ler na íntegra</string>
     <string name="milestone_generate_book">Gerar livro</string>
     <string name="milestone_generating_book">Gerando livro…</string>
     <string name="create_character">Ver personagem</string>

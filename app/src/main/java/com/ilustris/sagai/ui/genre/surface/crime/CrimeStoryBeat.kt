@@ -51,6 +51,7 @@ import com.ilustris.sagai.ui.genre.crime.PinTitle
 import com.ilustris.sagai.ui.genre.crime.PinVibeNote
 import com.ilustris.sagai.ui.genre.crime.rememberCorkboardPalette
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryDigestCard
 import com.ilustris.sagai.ui.genre.surface.StoryAside
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
@@ -114,6 +115,8 @@ fun CrimeStoryBeat(
                     )
                 }
             }
+
+            beat.digest?.let { digest -> add { StoryDigestCard(digest) } }
 
             beat.figures.filter { it.isNotBlank() }.forEach { url ->
                 add { CrimeEvidencePhoto(url) }
