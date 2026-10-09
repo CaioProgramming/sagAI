@@ -105,7 +105,10 @@ fun CharacterLevelRow(
     }
 }
 
-/** The experience card: medals, progress to the next level and the counters, with the feat log one tap away. */
+/**
+ * The experience block as in the prototype: three sections in one glass card, no title. Medals (coins and "Ver mais"),
+ * feats (level, XP bar and the latest feat with its XP) and messages. The legacy is the emblem above the name, not a row here.
+ */
 @Composable
 fun CharacterExperienceCard(
     progress: CharacterProgress,
@@ -120,113 +123,72 @@ fun CharacterExperienceCard(
     onOpenHonor: (honors: List<com.ilustris.sagai.features.progression.data.model.CharacterHonor>, index: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier =
-            modifier
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .fillMaxWidth()
-                .glassSurface(CardShape, accent)
-                .clickable(onClick = onSeeMore)
-                .padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Text(
-            stringResource(R.string.progression_experience_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = contentColor,
-        )
+    val gold = androidx.compose.ui.graphics.lerp(accent, Color.White, .5f)
+    val latest = progress.feats.maxByOrNull { it.id }
+    GlassRowsCard(accent, modifier) {
+        RowSection(first = true, onClick = onSeeMore) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                SectionLabel(stringResource(R.string.progression_medals).lowercase())
+                val medals = progress.medals
+                if (medals.isEmpty()) {
+                    Text(stringResource(R.string.progression_no_medals), style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = .6f))
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy((-4).dp), verticalAlignment = Alignment.CenterVertically) {
+                        medals.indices.reversed().take(3).forEach { index ->
+                            MedalCoin(
+                                emoji = medals[index].emoji,
+                                genre = genre,
+                                size = 40.dp,
+                                modifier = Modifier.clickable { onOpenHonor(medals, index) },
+                            )
+                        }
+                    }
+                }
+            }
+            Text(stringResource(R.string.see_more), style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp), color = contentColor.copy(alpha = .75f))
+            Chevron()
+        }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            val medals = progress.medals
-            if (medals.isEmpty()) {
-                Text(
-                    stringResource(R.string.progression_no_medals),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = contentColor.copy(alpha = .6f),
-                )
-            } else {
-                medals.indices.reversed().take(3).forEach { index ->
-                    MedalCoin(
-                        emoji = medals[index].emoji,
-                        genre = genre,
-                        size = 44.dp,
-                        modifier = Modifier.clickable { onOpenHonor(medals, index) },
+        RowSection(first = false, onClick = onSeeMore) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                SectionLabel(stringResource(R.string.progression_feats_level, progress.level))
+                if (progress.levelSpan > 0) {
+                    LinearProgressIndicator(
+                        progress = { (progress.xpIntoLevel.toFloat() / progress.levelSpan).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                        color = gold,
+                        trackColor = Color.White.copy(alpha = .14f),
+                        gapSize = 0.dp,
+                        drawStopIndicator = {},
                     )
                 }
-                if (medals.size > 3) {
-                    Text("+${medals.size - 3}", style = MaterialTheme.typography.labelLarge, color = contentColor.copy(alpha = .8f))
+                latest?.let {
+                    Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        SectionValue(it.title, Modifier.weight(1f), size = 16)
+                        Text(stringResource(R.string.character_card_xp_chip, it.xp), style = MaterialTheme.typography.labelMedium, color = gold, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
+            Chevron()
         }
 
-        if (progress.levelSpan > 0) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                LinearProgressIndicator(
-                    progress = { (progress.xpIntoLevel.toFloat() / progress.levelSpan).coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                    color = accent,
-                    trackColor = contentColor.copy(alpha = .12f),
-                )
-                Text(
-                    (if (progress.bandLabel.isNotBlank()) "${progress.bandLabel} · " else "") +
-                        stringResource(R.string.progression_xp_progress, progress.xpIntoLevel, progress.levelSpan),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = contentColor.copy(alpha = .65f),
-                )
-            }
-        } else {
-            Text(stringResource(R.string.progression_xp_max), style = MaterialTheme.typography.labelMedium, color = accent)
-        }
-
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            Counter(progress.medals.size.toString(), stringResource(R.string.progression_medals), contentColor)
-            Counter(progress.feats.size.toString(), stringResource(R.string.progression_feats), contentColor)
-            Counter(messageCount.toString(), stringResource(R.string.progression_messages), contentColor)
-        }
-
-        progress.titles.forEachIndexed { index, title ->
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { onOpenHonor(progress.titles, index) },
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                LegacyBadge3D(genre = genre, size = 40.dp, levitate = false)
-                Text(title.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = contentColor)
+        RowSection(first = false) {
+            Column {
+                SectionLabel(stringResource(R.string.progression_messages).lowercase())
+                SectionValue(messageCount.toString())
             }
         }
 
         if (pendingGenerations > 0) {
-            Text(
-                if (isRetrying) {
-                    stringResource(R.string.progression_retrying)
-                } else {
-                    stringResource(R.string.progression_pending_retry, pendingGenerations)
-                },
-                style = MaterialTheme.typography.labelMedium,
-                color = contentColor.copy(alpha = .75f),
-                modifier = Modifier.fillMaxWidth().clickable(enabled = !isRetrying, onClick = onRetry),
-            )
+            RowSection(first = false, onClick = if (isRetrying) null else onRetry) {
+                Text(
+                    if (isRetrying) stringResource(R.string.progression_retrying) else stringResource(R.string.progression_pending_retry, pendingGenerations),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = contentColor.copy(alpha = .75f),
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
-
-        Text(
-            stringResource(R.string.progression_see_more_action),
-            style = MaterialTheme.typography.labelLarge,
-            color = accent,
-            modifier = Modifier.align(Alignment.End),
-        )
-    }
-}
-
-@Composable
-private fun Counter(
-    value: String,
-    label: String,
-    contentColor: Color,
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = contentColor)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = .6f))
     }
 }
 

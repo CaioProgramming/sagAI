@@ -474,14 +474,6 @@ private fun CharacterDetailsLoaded(
                             }
                         }
 
-                        item {
-                            CharacterStats(
-                                character = characterData,
-                                genre = genre,
-                                contentColor = adaptiveTextColor,
-                            )
-                        }
-
                         progress?.let { current ->
                             item {
                                 CharacterExperienceCard(
@@ -534,12 +526,11 @@ private fun CharacterDetailsLoaded(
                                 backstory = characterResume ?: characterData.backstory,
                                 personality = characterData.profile.personality,
                                 accent = characterColor,
-                                contentColor = adaptiveTextColor,
                                 backstoryColor = backstoryColor,
                             )
                         }
 
-                        item { ProfileCard(characterData, characterColor, adaptiveTextColor) }
+                        item { ProfileCard(characterData, characterColor) }
 
                         item {
                             RelationsCard(
@@ -548,17 +539,15 @@ private fun CharacterDetailsLoaded(
                                 saga = liteSagaContent.data,
                                 genre = genre,
                                 accent = characterColor,
-                                contentColor = adaptiveTextColor,
                             )
                         }
 
-                        item { ArcsCard(characterArcs, characterColor, adaptiveTextColor) }
+                        item { ArcsCard(characterArcs, characterColor) }
 
                         item {
                             KnowledgeCard(
                                 knowledge = characterData.knowledge.orEmpty().filter { it.isNotBlank() },
                                 accent = characterColor,
-                                contentColor = adaptiveTextColor,
                             )
                         }
 
@@ -567,7 +556,6 @@ private fun CharacterDetailsLoaded(
                                 events = characterEvents,
                                 progress = progress,
                                 accent = characterColor,
-                                contentColor = adaptiveTextColor,
                                 onOpenEvent = openEvent,
                             )
                         }

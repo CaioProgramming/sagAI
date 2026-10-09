@@ -1225,6 +1225,7 @@
     <string name="character_card_change_status">Alterar situação</string>
     <string name="progression_pending_retry">%1$d atualizações de experiência não terminaram. Toque para tentar de novo.</string>
     <string name="progression_retrying">Atualizando a experiência…</string>
+    <string name="progression_feats_level">feitos · nível %1$d</string>
 </resources>
 
 

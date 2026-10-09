@@ -5,19 +5,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -30,14 +32,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
@@ -51,80 +58,97 @@ import com.ilustris.sagai.features.newsaga.ui.glassSurface
 import com.ilustris.sagai.features.progression.domain.CharacterProgress
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
 
-private val CardShape = RoundedCornerShape(24.dp)
+private val CardShape = RoundedCornerShape(26.dp)
 private const val MAX_ITEMS = 3
+private val Hairline = Color.White.copy(alpha = .14f)
 
-/** The glass surface every block of the character sheet sits on. */
+/**
+ * The sheet's glass block, as in the prototype: no title, just sections stacked with a hairline between them.
+ * Each section is a small muted label over its value, or a row with a chevron when it can be tapped.
+ */
 @Composable
-fun GlassCard(
+fun GlassRowsCard(
     accent: Color,
     modifier: Modifier = Modifier,
-    title: String? = null,
-    contentColor: Color = MaterialTheme.colorScheme.onBackground,
-    content: @Composable () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier =
             modifier
-                .padding(horizontal = 16.dp, vertical = 6.dp)
+                .padding(horizontal = 16.dp, vertical = 5.dp)
                 .fillMaxWidth()
                 .glassSurface(CardShape, accent)
-                .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        title?.let {
-            Text(it, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = contentColor)
-        }
-        content()
-    }
-}
-
-@Composable
-private fun SeeMore(
-    accent: Color,
-    onClick: () -> Unit,
-) {
-    Text(
-        stringResource(R.string.see_more),
-        style = MaterialTheme.typography.labelLarge,
-        fontWeight = FontWeight.SemiBold,
-        color = accent,
-        modifier = Modifier.clickable(onClick = onClick).padding(vertical = 4.dp),
+                .padding(horizontal = 22.dp, vertical = 8.dp),
+        content = content,
     )
 }
 
+/** One section of a [GlassRowsCard]; [first] sections have no hairline above them. */
 @Composable
-private fun LabelValue(
-    label: String,
-    value: String,
-    contentColor: Color,
+fun RowSection(
+    first: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable RowScope.() -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = contentColor.copy(alpha = .6f), modifier = Modifier.weight(.4f))
-        Text(value, style = MaterialTheme.typography.bodyMedium, color = contentColor, modifier = Modifier.weight(.6f))
+    Column {
+        if (!first) Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
+        Row(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+                    .padding(vertical = 15.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            content = content,
+        )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GlassSheet(
-    title: String,
-    onDismiss: () -> Unit,
-    content: LazyListScope.() -> Unit,
+fun Chevron(modifier: Modifier = Modifier) {
+    Icon(
+        painterResource(R.drawable.round_arrow_forward_ios_24),
+        contentDescription = null,
+        tint = Color.White.copy(alpha = .45f),
+        modifier = modifier.size(15.dp),
+    )
+}
+
+/** The small muted label above a value. */
+@Composable
+fun SectionLabel(text: String, modifier: Modifier = Modifier) {
+    Text(text, style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp), color = MaterialTheme.colorScheme.onBackground.copy(alpha = .65f), modifier = modifier)
+}
+
+@Composable
+fun SectionValue(
+    text: String,
+    modifier: Modifier = Modifier,
+    size: Int = 17,
+    maxLines: Int = Int.MAX_VALUE,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        LazyColumn(
-            modifier = Modifier.navigationBarsPadding().padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item { Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
-            content()
-            item { Spacer(Modifier.height(24.dp)) }
-        }
+    Text(text, style = MaterialTheme.typography.bodyLarge.copy(fontSize = size.sp), color = MaterialTheme.colorScheme.onBackground, maxLines = maxLines, overflow = TextOverflow.Ellipsis, modifier = modifier)
+}
+
+/** The closing "Ver mais" row of a card, with a chevron. */
+@Composable
+fun SeeMoreSection(
+    first: Boolean = false,
+    onClick: () -> Unit,
+) {
+    RowSection(first = first, onClick = onClick) {
+        Text(stringResource(R.string.see_more), style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp), color = MaterialTheme.colorScheme.onBackground.copy(alpha = .85f), modifier = Modifier.weight(1f))
+        Chevron()
     }
 }
+
+/** The gold-ish vertical gradient of the accent, lightening the first stop so it never reads dim on glass. */
+private fun accentBrush(accent: Color): Brush = Brush.verticalGradient(listOf(lerp(accent, Color.White, .45f)) + accent.darkerPalette(count = 4, factor = .08f).drop(1))
 
 /** One row of the special actions card. */
 data class SpecialAction(
@@ -133,7 +157,7 @@ data class SpecialAction(
     val onClick: () -> Unit,
 )
 
-/** The actions that used to be small round buttons: one tinted card, each row with icon, text and chevron. */
+/** What used to be small round buttons: glass rows with the icon and text painted in the accent gradient, and a chevron. */
 @Composable
 fun SpecialActionsCard(
     accent: Color,
@@ -141,92 +165,153 @@ fun SpecialActionsCard(
     modifier: Modifier = Modifier,
 ) {
     if (actions.isEmpty()) return
-    val brush = remember(accent) { Brush.verticalGradient(accent.darkerPalette(count = 4, factor = 0.1f)) }
-    Column(
-        modifier =
-            modifier
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-                .fillMaxWidth()
-                .clip(CardShape)
-                .background(brush),
-    ) {
+    val brush = remember(accent) { accentBrush(accent) }
+    GlassRowsCard(accent, modifier) {
         actions.forEachIndexed { index, action ->
-            if (index > 0) HorizontalDivider(color = Color.White.copy(alpha = .18f), modifier = Modifier.padding(horizontal = 20.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable(onClick = action.onClick).padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Icon(painterResource(action.iconRes), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                Text(action.label, style = MaterialTheme.typography.titleSmall, color = Color.White, modifier = Modifier.weight(1f))
-                Icon(painterResource(R.drawable.round_arrow_forward_ios_24), contentDescription = null, tint = Color.White.copy(alpha = .8f), modifier = Modifier.size(16.dp))
+            RowSection(first = index == 0, onClick = action.onClick) {
+                Icon(painterResource(action.iconRes), contentDescription = null, modifier = Modifier.size(24.dp).gradientFill(brush))
+                Text(action.label, style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, brush = brush), modifier = Modifier.weight(1f))
+                Chevron()
             }
         }
     }
 }
 
-/** History and personality, each clipped; the whole text is one tap away. */
+/** A dark glass bottom sheet with its title, a scrolling rows block and a close button, like the prototype's sheets. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GlassSheet(
+    title: String,
+    accent: Color,
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color(0xF01C1426), contentColor = Color.White) {
+        Column(Modifier.navigationBarsPadding().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(title, style = MaterialTheme.typography.titleMedium.copy(fontFamily = MaterialTheme.typography.headlineSmall.fontFamily), textAlign = TextAlign.Center)
+            GlassRowsCard(accent, Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) { content() }
+            Text(
+                stringResource(R.string.progression_close),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.clip(CircleShape).background(Color.White.copy(alpha = .12f)).clickable(onClick = onDismiss).padding(horizontal = 26.dp, vertical = 10.dp),
+            )
+            Spacer(Modifier.height(12.dp))
+        }
+    }
+}
+
+/** History and personality, each a label over a clipped note; "Ver mais" opens them in full. */
 @Composable
 fun AboutCard(
     backstory: String,
     personality: String,
     accent: Color,
-    contentColor: Color,
     modifier: Modifier = Modifier,
-    backstoryColor: Color = contentColor,
+    backstoryColor: Color = MaterialTheme.colorScheme.onBackground,
 ) {
     var open by rememberSaveable { mutableStateOf(false) }
-    GlassCard(accent, modifier, stringResource(R.string.character_card_about_title), contentColor) {
-        Text(stringResource(R.string.character_form_title_backstory), style = MaterialTheme.typography.labelLarge, color = accent)
-        Text(backstory, style = MaterialTheme.typography.bodyMedium, color = backstoryColor, maxLines = 5, overflow = TextOverflow.Ellipsis)
-        if (personality.isNotBlank()) {
-            Text(stringResource(R.string.personality_title), style = MaterialTheme.typography.labelLarge, color = accent)
-            Text(personality, style = MaterialTheme.typography.bodyMedium, color = contentColor, maxLines = 3, overflow = TextOverflow.Ellipsis)
+    GlassRowsCard(accent, modifier) {
+        RowSection(first = true) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                SectionLabel(stringResource(R.string.character_form_title_backstory).lowercase())
+                Text(backstory, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp), color = backstoryColor.copy(alpha = .92f), maxLines = 4, overflow = TextOverflow.Ellipsis)
+            }
         }
-        SeeMore(accent) { open = true }
+        if (personality.isNotBlank()) {
+            RowSection(first = false) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    SectionLabel(stringResource(R.string.personality_title).lowercase())
+                    Text(personality, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp), color = MaterialTheme.colorScheme.onBackground.copy(alpha = .92f), maxLines = 3, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+        SeeMoreSection { open = true }
     }
     if (open) {
-        GlassSheet(stringResource(R.string.character_card_about_title), { open = false }) {
-            item { Text(backstory, style = MaterialTheme.typography.bodyMedium) }
+        GlassSheet(stringResource(R.string.character_card_about_title), accent, { open = false }) {
+            RowSection(first = true) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    SectionLabel(stringResource(R.string.character_form_title_backstory).lowercase())
+                    SectionValue(backstory, size = 15)
+                }
+            }
             if (personality.isNotBlank()) {
-                item { Text(stringResource(R.string.personality_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
-                item { Text(personality, style = MaterialTheme.typography.bodyMedium) }
+                RowSection(first = false) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        SectionLabel(stringResource(R.string.personality_title).lowercase())
+                        SectionValue(personality, size = 15)
+                    }
+                }
             }
         }
     }
 }
 
-/** Ethnicity and the first strokes of the appearance; the stats row already sits under the name. The rest is in the sheet. */
+private fun heightText(height: Double): String = if (height < 3.0) "${"%.2f".format(height)} m" else "${height.toInt()} cm"
+
+/** Gender, age and race / ethnicity as label-over-value rows; height, weight, appearance and skills are in the sheet. */
 @Composable
 fun ProfileCard(
     character: Character,
     accent: Color,
-    contentColor: Color,
     modifier: Modifier = Modifier,
 ) {
     var open by rememberSaveable { mutableStateOf(false) }
     val traits = character.details.physicalTraits
-    val facial = traits.facialDetails
-    val body = traits.bodyFeatures
-    val highlights =
+    val raceEthnicity = listOf(traits.race, traits.ethnicity).filter { it.isNotBlank() }.joinToString(" · ")
+    val rows =
         listOfNotNull(
-            traits.ethnicity.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_ethnicity) to it },
-            facial.hair.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_hair) to it },
-            facial.eyes.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_eyes) to it },
-            body.buildAndPosture.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_details_build) to it },
-        ).take(MAX_ITEMS)
-    GlassCard(accent, modifier, stringResource(R.string.character_card_profile_title), contentColor) {
-        highlights.forEach { (label, value) -> LabelValue(label, value, contentColor) }
-        SeeMore(accent) { open = true }
+            traits.gender.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_title_gender).lowercase() to it },
+            traits.age.takeIf { it > 0 }?.let { stringResource(R.string.character_stat_age).lowercase() to it.toString() },
+            raceEthnicity.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_card_race_ethnicity) to it },
+        )
+    GlassRowsCard(accent, modifier) {
+        rows.forEachIndexed { index, (label, value) ->
+            RowSection(first = index == 0) {
+                Column { SectionLabel(label); SectionValue(value) }
+            }
+        }
+        SeeMoreSection(first = rows.isEmpty()) { open = true }
     }
     if (open) {
-        GlassSheet(stringResource(R.string.character_card_profile_title), { open = false }) {
-            item { CharacterAppearanceSection(character = character, contentColor = MaterialTheme.colorScheme.onSurface) }
-            item {
-                if (character.skills.isNotEmpty()) {
-                    CharacterSkillChips(character.skills, accent, MaterialTheme.colorScheme.onSurface)
-                } else {
-                    CharacterAbilitiesSection(character = character, contentColor = MaterialTheme.colorScheme.onSurface)
+        GlassSheet(character.name, accent, { open = false }) {
+            val facial = traits.facialDetails
+            val body = traits.bodyFeatures
+            val clothing = character.details.clothing
+            val fields =
+                listOfNotNull(
+                    traits.height.takeIf { it > 0 }?.let { stringResource(R.string.character_stat_height).lowercase() to heightText(it) },
+                    traits.weight.takeIf { it > 0 }?.let { stringResource(R.string.character_stat_weight).lowercase() to "${it.toInt()} kg" },
+                    facial.hair.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_hair).lowercase() to it },
+                    facial.eyes.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_eyes).lowercase() to it },
+                    facial.mouth.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_mouth).lowercase() to it },
+                    facial.distinctiveMarks.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_scars).lowercase() to it },
+                    facial.jawline.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_details_jawline).lowercase() to it },
+                    body.buildAndPosture.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_details_build).lowercase() to it },
+                    body.skinAppearance.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_details_skin).lowercase() to it },
+                    body.distinguishFeatures.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_details_distinctive).lowercase() to it },
+                    clothing.outfitDescription.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_title_clothing_attire).lowercase() to it },
+                    clothing.accessories.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_clothing_accessories).lowercase() to it },
+                    clothing.carriedItems.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_details_carried_items).lowercase() to it },
+                )
+            fields.forEachIndexed { index, (label, value) ->
+                RowSection(first = index == 0) { Column { SectionLabel(label); SectionValue(value) } }
+            }
+            val skills = character.skills
+            val abilities = character.details.abilities
+            if (skills.isNotEmpty()) {
+                RowSection(first = fields.isEmpty()) {
+                    Column {
+                        SectionLabel(stringResource(R.string.progression_skills_title).lowercase())
+                        SkillChipsFlow(skills, accent)
+                    }
+                }
+            } else {
+                listOf(
+                    stringResource(R.string.character_details_skills).lowercase() to abilities.skillsAndProficiencies,
+                    stringResource(R.string.character_details_talents).lowercase() to abilities.uniqueOrSignatureTalents,
+                ).filter { it.second.isNotBlank() }.forEachIndexed { index, (label, value) ->
+                    RowSection(first = fields.isEmpty() && index == 0) { Column { SectionLabel(label); SectionValue(value) } }
                 }
             }
         }
@@ -241,19 +326,18 @@ fun RelationsCard(
     saga: Saga,
     genre: Genre,
     accent: Color,
-    contentColor: Color,
     modifier: Modifier = Modifier,
 ) {
     if (relations.isEmpty()) return
     var all by rememberSaveable { mutableStateOf(false) }
     var selected by remember { mutableStateOf<RelationshipContent?>(null) }
-    GlassCard(accent, modifier, stringResource(R.string.saga_detail_relationships_section_title), contentColor) {
-        relations.take(MAX_ITEMS).forEach { RelationRow(it, character, genre, contentColor) { selected = it } }
-        if (relations.size > MAX_ITEMS) SeeMore(accent) { all = true }
+    GlassRowsCard(accent, modifier) {
+        relations.take(MAX_ITEMS).forEachIndexed { index, relation -> RelationRow(relation, character, genre, index == 0) { selected = relation } }
+        if (relations.size > MAX_ITEMS) SeeMoreSection { all = true }
     }
     if (all) {
-        GlassSheet(stringResource(R.string.saga_detail_relationships_section_title), { all = false }) {
-            relations.forEach { relation -> item { RelationRow(relation, character, genre, MaterialTheme.colorScheme.onSurface) { selected = relation } } }
+        GlassSheet(stringResource(R.string.saga_detail_relationships_section_title), accent, { all = false }) {
+            relations.forEachIndexed { index, relation -> RelationRow(relation, character, genre, index == 0) { selected = relation } }
         }
     }
     selected?.let { relation ->
@@ -267,22 +351,18 @@ private fun RelationRow(
     relation: RelationshipContent,
     character: Character,
     genre: Genre,
-    contentColor: Color,
+    first: Boolean,
     onClick: () -> Unit,
 ) {
     val other = relation.getCharacterExcluding(character)
     val latest = relation.relationshipEvents.maxByOrNull { it.timestamp }
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    RowSection(first = first, onClick = onClick) {
         CharacterAvatar(other, other.hexColor.hexToColor(), genre = genre, modifier = Modifier.size(44.dp))
         Column(Modifier.weight(1f)) {
-            Text(other.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = contentColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(latest?.title ?: relation.data.title, style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = .65f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            SectionValue(other.name, maxLines = 1)
+            SectionLabel(latest?.title ?: relation.data.title)
         }
-        Text(latest?.emoji ?: relation.data.emoji, style = MaterialTheme.typography.titleLarge)
+        Text(latest?.emoji ?: relation.data.emoji, fontSize = 26.sp)
     }
 }
 
@@ -290,18 +370,30 @@ private fun RelationRow(
 fun ArcsCard(
     arcs: List<CharacterArc>,
     accent: Color,
-    contentColor: Color,
     modifier: Modifier = Modifier,
 ) {
     if (arcs.isEmpty()) return
     var open by rememberSaveable { mutableStateOf(false) }
-    GlassCard(accent, modifier, stringResource(R.string.character_details_arcs_title), contentColor) {
-        CharacterArcTimeline(arcs = arcs.takeLast(MAX_ITEMS), contentColor = contentColor, accentColor = accent)
-        if (arcs.size > MAX_ITEMS) SeeMore(accent) { open = true }
+    GlassRowsCard(accent, modifier) {
+        arcs.takeLast(MAX_ITEMS).forEachIndexed { index, arc ->
+            RowSection(first = index == 0) {
+                Box(Modifier.size(10.dp).clip(CircleShape).background(accent))
+                SectionValue(arc.title, Modifier.weight(1f))
+            }
+        }
+        if (arcs.size > MAX_ITEMS) SeeMoreSection { open = true }
     }
     if (open) {
-        GlassSheet(stringResource(R.string.character_details_arcs_title), { open = false }) {
-            item { CharacterArcTimeline(arcs = arcs, contentColor = MaterialTheme.colorScheme.onSurface, accentColor = accent) }
+        GlassSheet(stringResource(R.string.character_details_arcs_title), accent, { open = false }) {
+            arcs.forEachIndexed { index, arc ->
+                RowSection(first = index == 0) {
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(accent))
+                    Column(Modifier.weight(1f)) {
+                        SectionValue(arc.title)
+                        SectionLabel(arc.content)
+                    }
+                }
+            }
         }
     }
 }
@@ -310,18 +402,17 @@ fun ArcsCard(
 fun KnowledgeCard(
     knowledge: List<String>,
     accent: Color,
-    contentColor: Color,
     modifier: Modifier = Modifier,
 ) {
     if (knowledge.isEmpty()) return
     var open by rememberSaveable { mutableStateOf(false) }
-    GlassCard(accent, modifier, stringResource(R.string.character_details_knowledge_title), contentColor) {
-        CharacterKnowledgeList(knowledge = knowledge.takeLast(MAX_ITEMS), contentColor = contentColor, accentColor = accent)
-        if (knowledge.size > MAX_ITEMS) SeeMore(accent) { open = true }
+    GlassRowsCard(accent, modifier) {
+        knowledge.takeLast(MAX_ITEMS).forEachIndexed { index, fact -> RowSection(first = index == 0) { SectionValue(fact, size = 16, maxLines = 3) } }
+        if (knowledge.size > MAX_ITEMS) SeeMoreSection { open = true }
     }
     if (open) {
-        GlassSheet(stringResource(R.string.character_details_knowledge_title), { open = false }) {
-            item { CharacterKnowledgeList(knowledge = knowledge, contentColor = MaterialTheme.colorScheme.onSurface, accentColor = accent) }
+        GlassSheet(stringResource(R.string.character_details_knowledge_title), accent, { open = false }) {
+            knowledge.forEachIndexed { index, fact -> RowSection(first = index == 0) { SectionValue(fact, size = 16) } }
         }
     }
 }
@@ -332,7 +423,6 @@ fun EventsCard(
     events: List<CharacterEventDetails>,
     progress: CharacterProgress?,
     accent: Color,
-    contentColor: Color,
     onOpenEvent: (Timeline?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -340,15 +430,14 @@ fun EventsCard(
     var open by rememberSaveable { mutableStateOf(false) }
     val xpByEvent = remember(progress) { progress?.feats.orEmpty().groupBy { it.timelineId }.mapValues { (_, feats) -> feats.sumOf { it.xp } } }
     val ordered = remember(events) { events.sortedByDescending { it.event.createdAt } }
-    GlassCard(accent, modifier, stringResource(R.string.saga_detail_timeline_section_title), contentColor) {
-        ordered.take(MAX_ITEMS).forEach { EventRow(it, xpByEvent, progress != null, accent, contentColor, onOpenEvent) }
-        if (ordered.size > MAX_ITEMS) SeeMore(accent) { open = true }
+    val gold = remember(accent) { lerp(accent, Color.White, .5f) }
+    GlassRowsCard(accent, modifier) {
+        ordered.take(MAX_ITEMS).forEachIndexed { index, e -> EventRow(e, xpByEvent, progress != null, gold, index == 0, onOpenEvent) }
+        if (ordered.size > MAX_ITEMS) SeeMoreSection { open = true }
     }
     if (open) {
-        GlassSheet(stringResource(R.string.saga_detail_timeline_section_title), { open = false }) {
-            ordered.forEach { event ->
-                item { EventRow(event, xpByEvent, progress != null, accent, MaterialTheme.colorScheme.onSurface, onOpenEvent) }
-            }
+        GlassSheet(stringResource(R.string.saga_detail_timeline_section_title), accent, { open = false }) {
+            ordered.forEachIndexed { index, e -> EventRow(e, xpByEvent, progress != null, gold, index == 0, onOpenEvent) }
         }
     }
 }
@@ -358,27 +447,36 @@ private fun EventRow(
     details: CharacterEventDetails,
     xpByEvent: Map<Int, Int>,
     showXp: Boolean,
-    accent: Color,
-    contentColor: Color,
+    gold: Color,
+    first: Boolean,
     onOpenEvent: (Timeline?) -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable { onOpenEvent(details.timeline) },
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    RowSection(first = first, onClick = { onOpenEvent(details.timeline) }) {
         Column(Modifier.weight(1f)) {
-            Text(details.event.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = contentColor)
-            Text(details.event.summary, style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = .7f), maxLines = 3, overflow = TextOverflow.Ellipsis)
+            SectionValue(details.event.title, size = 16)
+            SectionLabel(details.event.summary)
         }
         if (showXp) {
-            Text(
-                stringResource(R.string.character_card_xp_chip, xpByEvent[details.event.gameTimelineId] ?: 0),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = contentColor,
-                modifier = Modifier.clip(CircleShape).background(accent.copy(alpha = .25f)).padding(horizontal = 10.dp, vertical = 4.dp),
-            )
+            Text(stringResource(R.string.character_card_xp_chip, xpByEvent[details.event.gameTimelineId] ?: 0), style = MaterialTheme.typography.labelMedium, color = gold)
+        }
+        Chevron()
+    }
+}
+
+/** Skills as chips inside a sheet row. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun SkillChipsFlow(
+    skills: List<String>,
+    accent: Color,
+) {
+    androidx.compose.foundation.layout.FlowRow(
+        modifier = Modifier.padding(top = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        skills.forEach {
+            Text(it, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp), color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.clip(CircleShape).background(Color.White.copy(alpha = .12f)).padding(horizontal = 12.dp, vertical = 6.dp))
         }
     }
 }
