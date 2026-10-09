@@ -44,45 +44,42 @@ import com.ilustris.sagai.features.progression.data.model.CharacterFeat
 import com.ilustris.sagai.features.progression.data.model.CharacterHonor
 import com.ilustris.sagai.features.progression.domain.CharacterProgress
 import com.ilustris.sagai.features.progression.ui.LegacyBadge3D
+import com.ilustris.sagai.features.progression.ui.honorFill
+import com.ilustris.sagai.features.progression.ui.honorFillBottom
 import com.ilustris.sagai.features.progression.ui.MedalCoin
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 private val CardShape = RoundedCornerShape(24.dp)
 
-/** Level and band next to the occupation, plus the character's situation when it is not simply "around". */
+/** The level as a gold pill under the name (the genre's coin colors), with the character's situation beside it when it is not simply "around". */
 @Composable
 fun CharacterLevelRow(
     progress: CharacterProgress?,
     status: CharacterStatus?,
     statusNote: String?,
-    accent: Color,
     contentColor: Color,
     genre: Genre,
-    onOpenLegacy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val showStatus = status != null && status != CharacterStatus.ACTIVE
     if (progress == null && !showStatus) return
     Row(
-        modifier = modifier.padding(bottom = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (progress?.titles?.isNotEmpty() == true) {
-            LegacyBadge3D(genre = genre, size = 44.dp, modifier = Modifier.clickable(onClick = onOpenLegacy))
-        }
         progress?.let {
+            val (top, engrave) = genre.honorFill()
             Text(
-                text = stringResource(R.string.progression_level_pill, it.level) + if (it.bandLabel.isNotBlank()) " · ${it.bandLabel}" else "",
+                text = stringResource(R.string.progression_level_pill, it.level),
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = contentColor,
+                fontWeight = FontWeight.ExtraBold,
+                color = engrave,
                 modifier =
                     Modifier
                         .clip(CircleShape)
-                        .background(accent.copy(alpha = .28f))
-                        .border(1.dp, accent.copy(alpha = .6f), CircleShape)
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                        .background(Brush.verticalGradient(listOf(top, genre.honorFillBottom())))
+                        .padding(horizontal = 16.dp, vertical = 5.dp),
             )
         }
         if (showStatus) {
@@ -172,7 +169,8 @@ fun CharacterExperienceCard(
                     trackColor = contentColor.copy(alpha = .12f),
                 )
                 Text(
-                    stringResource(R.string.progression_xp_progress, progress.xpIntoLevel, progress.levelSpan),
+                    (if (progress.bandLabel.isNotBlank()) "${progress.bandLabel} · " else "") +
+                        stringResource(R.string.progression_xp_progress, progress.xpIntoLevel, progress.levelSpan),
                     style = MaterialTheme.typography.labelSmall,
                     color = contentColor.copy(alpha = .65f),
                 )

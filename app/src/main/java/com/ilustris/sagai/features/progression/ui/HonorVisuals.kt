@@ -86,6 +86,11 @@ private fun Genre.honorPalette(): HonorPalette =
 /** The lit rim color of a genre, for text and accents that should match its coins. */
 fun Genre.honorHighlight(): Color = honorPalette().outerTop
 
+/** The gold-like fill of a genre's level pill and the dark engraving color that reads on it. */
+fun Genre.honorFill(): Pair<Color, Color> = honorPalette().let { it.outerTop to it.engrave }
+
+fun Genre.honorFillBottom(): Color = honorPalette().outerBottom
+
 private const val SEAL_PATH =
     "M18.08,3.51 Q20,1.2 21.92,3.51 L24.48,6.6 Q26.4,8.91 29.36,9.42 L33.32,10.09 Q36.28,10.6 35.24,13.42 " +
         "L33.84,17.18 Q32.8,20 33.84,22.82 L35.24,26.58 Q36.28,29.4 33.32,29.91 L29.36,30.58 Q26.4,31.09 24.48,33.4 " +

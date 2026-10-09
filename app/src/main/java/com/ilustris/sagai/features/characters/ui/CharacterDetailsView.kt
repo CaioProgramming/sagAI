@@ -1,4 +1,5 @@
 package com.ilustris.sagai.features.characters.ui
+import com.ilustris.sagai.features.progression.ui.LegacyBadge3D
 import com.ilustris.sagai.features.characters.ui.components.CharacterStatusDialog
 import com.ilustris.sagai.features.progression.data.model.CharacterHonor
 import com.ilustris.sagai.features.progression.ui.HonorSheet
@@ -416,6 +417,14 @@ private fun CharacterDetailsLoaded(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
+                                progress?.takeIf { it.titles.isNotEmpty() }?.let { current ->
+                                    LegacyBadge3D(
+                                        genre = genre,
+                                        size = 96.dp,
+                                        modifier = Modifier.clickable { honorSheet = current.titles to 0 },
+                                    )
+                                }
+
                                 heroBottomCluster(
                                     title = character.fullName(),
                                     genre = genre,
@@ -431,10 +440,8 @@ private fun CharacterDetailsLoaded(
                                     progress = progress,
                                     status = characterData.status,
                                     statusNote = characterData.statusNote,
-                                    accent = characterColor,
                                     contentColor = adaptiveTextColor,
                                     genre = genre,
-                                    onOpenLegacy = { progress?.let { honorSheet = it.titles to 0 } },
                                 )
 
                                 Text(
@@ -465,6 +472,14 @@ private fun CharacterDetailsLoaded(
                                     }
                                 }
                             }
+                        }
+
+                        item {
+                            CharacterStats(
+                                character = characterData,
+                                genre = genre,
+                                contentColor = adaptiveTextColor,
+                            )
                         }
 
                         progress?.let { current ->

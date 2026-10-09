@@ -196,7 +196,7 @@ fun AboutCard(
     }
 }
 
-/** Gender, age and race/ethnicity; height, weight, appearance and abilities live in the sheet. */
+/** Ethnicity and the first strokes of the appearance; the stats row already sits under the name. The rest is in the sheet. */
 @Composable
 fun ProfileCard(
     character: Character,
@@ -206,24 +206,21 @@ fun ProfileCard(
 ) {
     var open by rememberSaveable { mutableStateOf(false) }
     val traits = character.details.physicalTraits
-    val raceEthnicity = listOf(traits.race, traits.ethnicity).filter { it.isNotBlank() }.joinToString(" / ")
+    val facial = traits.facialDetails
+    val body = traits.bodyFeatures
+    val highlights =
+        listOfNotNull(
+            traits.ethnicity.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_ethnicity) to it },
+            facial.hair.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_hair) to it },
+            facial.eyes.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_form_label_eyes) to it },
+            body.buildAndPosture.takeIf { it.isNotBlank() }?.let { stringResource(R.string.character_details_build) to it },
+        ).take(MAX_ITEMS)
     GlassCard(accent, modifier, stringResource(R.string.character_card_profile_title), contentColor) {
-        if (traits.gender.isNotBlank()) LabelValue(stringResource(R.string.character_form_title_gender), traits.gender, contentColor)
-        if (traits.age > 0) LabelValue(stringResource(R.string.character_stat_age), traits.age.toString(), contentColor)
-        if (raceEthnicity.isNotBlank()) LabelValue(stringResource(R.string.character_card_race_ethnicity), raceEthnicity, contentColor)
+        highlights.forEach { (label, value) -> LabelValue(label, value, contentColor) }
         SeeMore(accent) { open = true }
     }
     if (open) {
         GlassSheet(stringResource(R.string.character_card_profile_title), { open = false }) {
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (traits.height > 0) {
-                        val height = if (traits.height < 3.0) "${"%.2f".format(traits.height)} m" else "${traits.height.toInt()} cm"
-                        LabelValue(stringResource(R.string.character_stat_height), height, MaterialTheme.colorScheme.onSurface)
-                    }
-                    if (traits.weight > 0) LabelValue(stringResource(R.string.character_stat_weight), "${traits.weight.toInt()} kg", MaterialTheme.colorScheme.onSurface)
-                }
-            }
             item { CharacterAppearanceSection(character = character, contentColor = MaterialTheme.colorScheme.onSurface) }
             item {
                 if (character.skills.isNotEmpty()) {
