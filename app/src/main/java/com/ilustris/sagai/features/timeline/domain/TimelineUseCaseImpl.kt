@@ -86,6 +86,7 @@ class TimelineUseCaseImpl
                         prompt.mergeInstructions(
                             genreConfigService.conversationInstructions(saga.data.genre),
                         ),
+                    filterOutputFields = statusFilter(fullSaga.data.progressionEnabled),
                     requirement = ModelRequirement.HIGH,
                 )!!
 
@@ -133,6 +134,10 @@ class TimelineUseCaseImpl
             characterProgressionUseCase.evaluateEvent(saga.data.id, timeline.id)
             refreshChapterContinuityRollup(saga.data.id, timeline.chapterId)
         }
+
+        /** The status of a character is only asked for in sagas with progression. */
+        private fun statusFilter(progressionEnabled: Boolean) =
+            if (progressionEnabled) emptyList() else listOf("status", "statusNote", "statusReason")
 
         private suspend fun persistLocationUpdates(
             sagaId: Int,
@@ -209,7 +214,7 @@ class TimelineUseCaseImpl
                                     filterOutputFields =
                                         listOf(
                                             "timelineId",
-                                        ),
+                                        ) + statusFilter(fullSaga.data.progressionEnabled),
                                 ),
                         context = "Generating new lore...",
                         genre = saga.data.genre,

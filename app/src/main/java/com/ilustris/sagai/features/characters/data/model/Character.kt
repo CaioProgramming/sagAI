@@ -71,7 +71,21 @@ data class Character(
     /** What the character can do today. Replaces [Abilities] in sagas with progression. */
     @ColumnInfo(defaultValue = "[]")
     val skills: List<String> = emptyList(),
+    val status: CharacterStatus? = null,
+    /** Short nuance of the status ('jailed in the North Tower'); the reason lives in the event that caused it. */
+    val statusNote: String? = null,
+    val statusTimelineId: Int? = null,
 )
+
+/** Where a character stands in the story right now; null means ACTIVE. Written only in sagas with progression. */
+enum class CharacterStatus {
+    ACTIVE,
+
+    /** Alive and away from the scene, reachable. */
+    ABSENT,
+    MISSING,
+    DEAD,
+}
 
 data class Abilities(
     val skillsAndProficiencies: String = "",

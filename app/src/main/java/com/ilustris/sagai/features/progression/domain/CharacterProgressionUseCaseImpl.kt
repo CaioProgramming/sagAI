@@ -4,6 +4,8 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.FeatEvaluationArgs
 import com.ilustris.sagai.core.ai.prompts.PlacementArgs
+import com.ilustris.sagai.core.ai.prompts.StatusArgs
+import com.ilustris.sagai.features.progression.data.model.StatusOutput
 import com.ilustris.sagai.core.ai.prompts.HonorsArgs
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
@@ -19,6 +21,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterStatus
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
@@ -48,6 +51,7 @@ class CharacterProgressionUseCaseImpl
         override suspend fun evaluateEvent(
             sagaId: Int,
             timelineId: Int,
+            silent: Boolean,
         ): RequestResult<List<ProgressionChange>> =
             executeRequest {
                 val config = progressionConfigProvider.activeConfig() ?: return@executeRequest emptyList()
@@ -62,7 +66,7 @@ class CharacterProgressionUseCaseImpl
                 val event = chapterEvents.first { it.data.id == timelineId }
                 val participants = participantsOf(saga, event)
                 if (participants.isEmpty()) {
-                    markEvaluated(event)
+                    markEvaluated(event, silent)
                     return@executeRequest emptyList()
                 }
 
@@ -148,7 +152,7 @@ class CharacterProgressionUseCaseImpl
                 }
 
                 progressionDao.replaceFeats(timelineId, feats)
-                markEvaluated(event)
+                markEvaluated(event, silent)
                 changes
             }
 
@@ -243,7 +247,7 @@ class CharacterProgressionUseCaseImpl
                     }
                 val honors = validator.validMedals(candidates, feats)
                 progressionDao.deleteHonors(sagaId, HonorKind.MEDAL.name, chapterId)
-                progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.MEDAL, chapterId, silent) })
+                progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.MEDAL, chapterId, silent, isDead(saga, it.characterId)) })
                 markChapterHonored(chapter.data)
                 honors.map { it.toChange(saga, HonorKind.MEDAL) }
             }
@@ -300,7 +304,7 @@ class CharacterProgressionUseCaseImpl
                     }
                 val honors = validator.validLegacies(candidates, feats)
                 progressionDao.deleteHonors(sagaId, HonorKind.TITLE.name, actId)
-                progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.TITLE, actId, silent) })
+                progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.TITLE, actId, silent, isDead(saga, it.characterId)) })
                 markActLegacy(act.data)
                 honors.map { it.toChange(saga, HonorKind.TITLE) }
             }
@@ -315,6 +319,7 @@ class CharacterProgressionUseCaseImpl
             kind: HonorKind,
             scopeId: Int,
             silent: Boolean,
+            posthumous: Boolean,
         ) = CharacterHonor(
             characterId = characterId,
             sagaId = sagaId,
@@ -324,6 +329,7 @@ class CharacterProgressionUseCaseImpl
             emoji = emoji,
             description = description,
             featIds = featIds,
+            posthumous = posthumous,
             announced = silent,
         )
 
@@ -343,6 +349,11 @@ class CharacterProgressionUseCaseImpl
                         "tier" to feat.tier,
                     )
                 }.toAINormalize()
+
+        private fun isDead(
+            saga: SagaContent,
+            characterId: Int,
+        ) = saga.characters.firstOrNull { it.data.id == characterId }?.data?.status == CharacterStatus.DEAD
 
         private fun nameOf(
             saga: SagaContent,
@@ -419,6 +430,41 @@ class CharacterProgressionUseCaseImpl
                     }
                 }
                 progressionDao.updateFeats(rewritten)
+            }
+
+        override suspend fun inferStatuses(sagaId: Int): RequestResult<List<ProgressionChange>> =
+            executeRequest {
+                progressionConfigProvider.activeConfig() ?: return@executeRequest emptyList()
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest emptyList()
+                val events = saga.flatEvents().filter { it.data.content.isNotEmpty() }.takeLast(STATUS_EVENTS_WINDOW)
+                if (events.isEmpty()) return@executeRequest emptyList()
+
+                val output =
+                    gemmaClient.generate<StatusOutput>(
+                        promptSplit =
+                            ProgressionPrompts.status(
+                                promptService,
+                                StatusArgs(
+                                    characters = saga.characters.map { it.data.name }.toAINormalize(),
+                                    events = events.map { mapOf("title" to it.data.title, "summary" to it.data.content) }.toAINormalize(),
+                                ),
+                            ),
+                        requirement = ModelRequirement.MEDIUM,
+                    )!!
+
+                output.statuses.mapNotNull { entry ->
+                    val status = entry.status ?: return@mapNotNull null
+                    if (status == CharacterStatus.ACTIVE || entry.statusReason.isNullOrBlank()) return@mapNotNull null
+                    val character = characterByName(saga, entry.name) ?: return@mapNotNull null
+                    characterUseCase.updateCharacter(
+                        character.copy(
+                            status = status,
+                            statusNote = entry.statusNote?.trim()?.takeIf { it.isNotEmpty() },
+                            statusTimelineId = events.last().data.id,
+                        ),
+                    )
+                    ProgressionChange.Status(character.name, status, entry.statusNote)
+                }
             }
 
         override suspend fun ledger(sagaId: Int): List<CharacterLedger> {
@@ -500,13 +546,22 @@ class CharacterProgressionUseCaseImpl
             if (merged != character.skills) characterUseCase.updateCharacter(character.copy(skills = merged))
         }
 
-        private suspend fun markEvaluated(event: TimelineContent) {
-            if (!event.data.experienceGenerated) {
-                timelineRepository.updateTimeline(event.data.copy(experienceGenerated = true))
+        private suspend fun markEvaluated(
+            event: TimelineContent,
+            silent: Boolean,
+        ) {
+            if (!event.data.experienceGenerated || (silent && !event.data.progressionAnnounced)) {
+                timelineRepository.updateTimeline(
+                    event.data.copy(
+                        experienceGenerated = true,
+                        progressionAnnounced = event.data.progressionAnnounced || silent,
+                    ),
+                )
             }
         }
 
         private companion object {
+            const val STATUS_EVENTS_WINDOW = 15
             val HONOR_SCOPE_EXCLUSIONS =
                 listOf("id", "actId", "sagaId", "coverImage", "artwork", "currentEventId", "currentChapterId")
         }

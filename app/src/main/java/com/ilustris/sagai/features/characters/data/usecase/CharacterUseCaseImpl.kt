@@ -246,11 +246,12 @@ class CharacterUseCaseImpl
 
         /** Level placement and skills replace the abilities text in sagas with progression, and do not exist outside them. */
         private fun placementFilter(progression: com.ilustris.sagai.features.progression.domain.ProgressionConfig?) =
-            if (progression == null) {
-                listOf("baseLevel", "levelRationale", "skills")
-            } else {
-                listOf("skillsAndProficiencies", "uniqueOrSignatureTalents")
-            }
+            listOf("status", "statusNote", "statusTimelineId") +
+                if (progression == null) {
+                    listOf("baseLevel", "levelRationale", "skills")
+                } else {
+                    listOf("skillsAndProficiencies", "uniqueOrSignatureTalents")
+                }
 
         private fun assertCharacterNotAlreadyInSaga(
             sagaContent: SagaContent,
@@ -602,10 +603,16 @@ class CharacterUseCaseImpl
                     }
                 }
 
+                // Every status change needs the reason that caused it; without one the model is guessing.
+                val statusChanged =
+                    saga.data.progressionEnabled && update.status != null && !update.statusReason.isNullOrBlank()
                 updateCharacter(
                     character.copy(
                         knowledge = update.knowledgeUpdate.orEmpty().ifEmpty { character.knowledge },
                         nicknames = update.nickNames.orEmpty().ifEmpty { character.nicknames },
+                        status = if (statusChanged) update.status else character.status,
+                        statusNote = if (statusChanged) update.statusNote?.trim()?.takeIf { it.isNotEmpty() } else character.statusNote,
+                        statusTimelineId = if (statusChanged) timelineId else character.statusTimelineId,
                     ),
                 )
             }

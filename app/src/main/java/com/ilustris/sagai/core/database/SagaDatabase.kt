@@ -85,7 +85,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         CharacterFeat::class,
         CharacterHonor::class,
     ],
-    version = 40,
+    version = 41,
     exportSchema = true,
 )
 @TypeConverters(

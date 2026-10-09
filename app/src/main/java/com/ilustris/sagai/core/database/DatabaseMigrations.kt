@@ -714,6 +714,20 @@ object DatabaseMigrations {
             }
         }
 
+    /**
+     * 40 -> 41: character status (independent of progression, written only in sagas with it) and the
+     * flag that tells whether an event's level-ups were already announced. Additive; SQL copied from 41.json.
+     */
+    val MIGRATION_40_41 =
+        object : Migration(40, 41) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `Characters` ADD COLUMN `status` TEXT")
+                db.execSQL("ALTER TABLE `Characters` ADD COLUMN `statusNote` TEXT")
+                db.execSQL("ALTER TABLE `Characters` ADD COLUMN `statusTimelineId` INTEGER")
+                db.execSQL("ALTER TABLE `timelines` ADD COLUMN `progressionAnnounced` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -755,5 +769,6 @@ object DatabaseMigrations {
             MIGRATION_37_38,
             MIGRATION_38_39,
             MIGRATION_39_40,
+            MIGRATION_40_41,
         )
 }

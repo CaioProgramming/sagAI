@@ -23,7 +23,14 @@ data class HonorsArgs(
     val previousLegacies: String = "",
 )
 
+data class StatusArgs(
+    val characters: String,
+    val events: String,
+)
+
 object ProgressionPrompts {
+    const val STATUS_BLUEPRINT = "character_status_blueprint"
+
     const val HONORS_BLUEPRINT = "character_honors_blueprint"
 
     const val PLACEMENT_BLUEPRINT = "character_placement_blueprint"
@@ -44,4 +51,9 @@ object ProgressionPrompts {
         promptService: PromptService,
         args: HonorsArgs,
     ): SplitPrompt = promptService.buildSplitBlueprint(HONORS_BLUEPRINT, args)
+
+    suspend fun status(
+        promptService: PromptService,
+        args: StatusArgs,
+    ): SplitPrompt = promptService.buildSplitBlueprint(STATUS_BLUEPRINT, args)
 }

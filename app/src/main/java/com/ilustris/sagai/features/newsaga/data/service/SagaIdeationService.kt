@@ -144,6 +144,7 @@ class SagaIdeationService
                         "emojified",
                         "emotionalProfile",
                     ) +
+                        listOf("status", "statusNote", "statusTimelineId") +
                         if (progression == null) {
                             listOf("baseLevel", "levelRationale", "skills")
                         } else {

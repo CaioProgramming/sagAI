@@ -461,13 +461,18 @@ class LoreDebugViewModel
                 pending.forEach { event ->
                     step("Avaliando eventos", event.data.title.ifBlank { "Evento ${event.data.id}" })
                     progressionUseCase
-                        .evaluateEvent(sagaId, event.data.id)
+                        .evaluateEvent(sagaId, event.data.id, silent = true)
                         .onSuccess { done++; step("Avaliando eventos", event.data.title, it) }
                         .onFailure { e ->
                             done++
                             _uiState.update { it.copy(error = "Evento ${event.data.id}: ${e.message}") }
                         }
                 }
+                step("Situação dos personagens", "Quem está ausente, desaparecido ou morto")
+                progressionUseCase
+                    .inferStatuses(sagaId)
+                    .onSuccess { step("Situação dos personagens", "", it) }
+                    .onFailure { e -> _uiState.update { it.copy(error = "Situação: ${e.message}") } }
                 // History catch-up: honors are written already announced, so no islands for the past.
                 chapters.forEach { chapter ->
                     step("Medalhas do capítulo", chapter.data.title)
@@ -533,6 +538,8 @@ class LoreDebugViewModel
                 }
 
                 is ProgressionChange.Placed -> "$characterName colocado no nível $level"
+
+                is ProgressionChange.Status -> "$characterName agora está ${status.name}${note?.let { " ($it)" }.orEmpty()}"
             }
 
         private fun updateFixProgress() {

@@ -12,6 +12,7 @@ interface CharacterProgressionUseCase {
     suspend fun evaluateEvent(
         sagaId: Int,
         timelineId: Int,
+        silent: Boolean = false,
     ): RequestResult<List<ProgressionChange>>
 
     /**
@@ -57,6 +58,12 @@ interface CharacterProgressionUseCase {
     /** Debug: every character of the saga with level, XP and the feats and honors behind it. */
     suspend fun ledger(sagaId: Int): List<CharacterLedger>
 
+    /**
+     * One-shot status catch-up for a saga that predates the system: reads the latest events and marks
+     * who is absent, missing or dead. A change needs a reason, like the live flow.
+     */
+    suspend fun inferStatuses(sagaId: Int): RequestResult<List<ProgressionChange>>
+
     /** Debug reset: wipes the feats and honors of a saga and clears its generation flags. */
     suspend fun resetSaga(sagaId: Int)
 }
@@ -85,6 +92,12 @@ sealed interface ProgressionChange {
         val kind: com.ilustris.sagai.features.progression.data.model.HonorKind,
         val name: String,
         val emoji: String?,
+    ) : ProgressionChange
+
+    data class Status(
+        val characterName: String,
+        val status: com.ilustris.sagai.features.characters.data.model.CharacterStatus,
+        val note: String?,
     ) : ProgressionChange
 
     data class Placed(

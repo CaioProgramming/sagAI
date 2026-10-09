@@ -57,3 +57,15 @@ data class LegacyDraft(
     val description: String = "",
     val featRefs: List<Int> = emptyList(),
 )
+
+/** Model output of the status catch-up: only the characters who are not simply around. */
+data class StatusOutput(
+    val statuses: List<StatusEntry> = emptyList(),
+)
+
+data class StatusEntry(
+    val name: String = "",
+    val status: com.ilustris.sagai.features.characters.data.model.CharacterStatus? = null,
+    val statusNote: String? = null,
+    val statusReason: String? = null,
+)
