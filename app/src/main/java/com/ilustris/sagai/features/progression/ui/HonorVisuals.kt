@@ -252,12 +252,21 @@ fun LegacyBadge3D(
                         }
                     drawPath(sweepBand, Color.White.copy(alpha = .85f))
                 }
-                translate(13.25f, 13.25f + .9f) {
-                    with(icon) { draw(Size(13.5f, 13.5f), colorFilter = ColorFilter.tint(palette.engrave.copy(alpha = .85f))) }
+            }
+            // The icon is a vector: drawn inside the scaled face it would be rasterized at 13 px and then stretched,
+            // so it is drawn at its real pixel size and only squashed horizontally with the turn.
+            withTransform({
+                translate(z * sn * s, 0f)
+                scale(abs(c).coerceAtLeast(.001f), 1f, Offset(20f * s, 20f * s))
+            }) {
+                translate(13.25f * s, (13.25f + .9f) * s) {
+                    with(icon) { draw(Size(13.5f * s, 13.5f * s), colorFilter = ColorFilter.tint(palette.engrave.copy(alpha = .85f))) }
                 }
-                translate(13.25f, 13.25f) {
-                    with(icon) { draw(Size(13.5f, 13.5f), colorFilter = ColorFilter.tint(Cream)) }
+                translate(13.25f * s, 13.25f * s) {
+                    with(icon) { draw(Size(13.5f * s, 13.5f * s), colorFilter = ColorFilter.tint(Cream)) }
                 }
+            }
+            face(z) {
                 repeat(5) { i ->
                     val a = (i * 72f + 17f) * PI.toFloat() / 180f
                     val r = 15f + (i % 3) * 3f

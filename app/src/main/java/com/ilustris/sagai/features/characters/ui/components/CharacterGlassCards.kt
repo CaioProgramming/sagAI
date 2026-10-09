@@ -148,7 +148,7 @@ fun SeeMoreSection(
 }
 
 /** The gold-ish vertical gradient of the accent, lightening the first stop so it never reads dim on glass. */
-private fun accentBrush(accent: Color): Brush = Brush.verticalGradient(listOf(lerp(accent, Color.White, .45f)) + accent.darkerPalette(count = 4, factor = .08f).drop(1))
+private fun accentBrush(accent: Color): Brush = Brush.verticalGradient(listOf(lerp(accent, Color.White, .8f), lerp(accent, Color.White, .6f), lerp(accent, Color.White, .45f)))
 
 /** One row of the special actions card. */
 data class SpecialAction(
@@ -170,7 +170,7 @@ fun SpecialActionsCard(
         actions.forEachIndexed { index, action ->
             RowSection(first = index == 0, onClick = action.onClick) {
                 Icon(painterResource(action.iconRes), contentDescription = null, modifier = Modifier.size(24.dp).gradientFill(brush))
-                Text(action.label, style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, brush = brush), modifier = Modifier.weight(1f))
+                Text(action.label, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp, brush = brush), modifier = Modifier.weight(1f))
                 Chevron()
             }
         }

@@ -229,8 +229,7 @@ fun CharacterSkillChips(
     }
 }
 
-/** Every honor and the feats behind the level, newest first: the answer to "why is this character this strong". */
-@OptIn(ExperimentalMaterial3Api::class)
+/** Every honor and the feat behind the level, newest first, in the same glass sheet as the rest of the screen. */
 @Composable
 fun CharacterFeatLogSheet(
     progress: CharacterProgress,
@@ -238,64 +237,34 @@ fun CharacterFeatLogSheet(
     genre: Genre,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        LazyColumn(
-            modifier = Modifier.navigationBarsPadding().padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            item {
-                Text(stringResource(R.string.progression_feat_log_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                progress.rationale?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .65f), modifier = Modifier.padding(top = 4.dp))
+    val gold = androidx.compose.ui.graphics.lerp(accent, Color.White, .5f)
+    GlassSheet(stringResource(R.string.progression_feat_log_title), accent, onDismiss) {
+        var first = true
+        progress.rationale?.let {
+            RowSection(first = true) { SectionLabel(it) }
+            first = false
+        }
+        progress.honors.sortedByDescending { it.createdAt }.forEach { honor ->
+            RowSection(first = first) {
+                if (honor.kind.name == "MEDAL") MedalCoin(honor.emoji, genre, size = 40.dp) else LegacyBadge3D(genre, size = 40.dp, levitate = false)
+                Column(Modifier.weight(1f)) {
+                    SectionValue(honor.name, size = 16)
+                    SectionLabel(honor.description)
+                    if (honor.posthumous) Text(stringResource(R.string.progression_in_memory), style = MaterialTheme.typography.labelSmall, color = gold)
                 }
             }
-            items(progress.honors.sortedByDescending { it.createdAt }, key = { "h${it.id}" }) { HonorRow(it, accent, genre) }
-            items(progress.feats.sortedByDescending { it.id }, key = { "f${it.id}" }) { FeatRow(it, accent) }
-            item { Spacer(Modifier.height(24.dp)) }
+            first = false
         }
-    }
-}
-
-@Composable
-private fun HonorRow(
-    honor: CharacterHonor,
-    accent: Color,
-    genre: Genre,
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (honor.kind.name == "MEDAL") MedalCoin(honor.emoji, genre, size = 40.dp) else LegacyBadge3D(genre, size = 40.dp, levitate = false)
-        Column {
-            Text(honor.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Text(honor.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f))
-            if (honor.posthumous) {
-                Text(stringResource(R.string.progression_in_memory), style = MaterialTheme.typography.labelSmall, color = accent)
+        progress.feats.sortedByDescending { it.id }.forEach { feat ->
+            RowSection(first = first) {
+                Text("T${feat.tier}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = gold, modifier = Modifier.width(26.dp))
+                Column(Modifier.weight(1f)) {
+                    SectionValue(feat.title, size = 16)
+                    SectionLabel(feat.changed)
+                }
+                Text("+${feat.xp}", style = MaterialTheme.typography.labelMedium, color = gold)
             }
+            first = false
         }
-    }
-}
-
-@Composable
-private fun FeatRow(
-    feat: CharacterFeat,
-    accent: Color,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Text(
-            "T${feat.tier}",
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = accent,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.width(28.dp),
-        )
-        Column(Modifier.weight(1f)) {
-            Text(feat.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-            Text(feat.changed, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .65f))
-        }
-        Text("+${feat.xp}", style = MaterialTheme.typography.labelMedium, color = accent)
     }
 }
