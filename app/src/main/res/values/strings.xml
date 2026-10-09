@@ -1218,4 +1218,11 @@
     <string name="progression_status_missing">Missing</string>
     <string name="progression_status_dead">Deceased</string>
     <string name="progression_in_memory">In memory</string>
+    <string name="character_card_about_title">About</string>
+    <string name="character_card_profile_title">Profile</string>
+    <string name="character_card_actions_title">Special actions</string>
+    <string name="character_card_options">Options</string>
+    <string name="character_card_share">Share character</string>
+    <string name="character_card_race_ethnicity">race / ethnicity</string>
+    <string name="character_card_xp_chip">+%1$d XP</string>
 </resources>

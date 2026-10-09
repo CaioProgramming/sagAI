@@ -1206,6 +1206,13 @@
     <string name="progression_status_missing">Desaparecido</string>
     <string name="progression_status_dead">Falecido</string>
     <string name="progression_in_memory">In memoriam</string>
+    <string name="character_card_about_title">Sobre</string>
+    <string name="character_card_profile_title">Perfil</string>
+    <string name="character_card_actions_title">Ações especiais</string>
+    <string name="character_card_options">Opções</string>
+    <string name="character_card_share">Compartilhar personagem</string>
+    <string name="character_card_race_ethnicity">raça / etnia</string>
+    <string name="character_card_xp_chip">+%1$d XP</string>
 </resources>
 
 
