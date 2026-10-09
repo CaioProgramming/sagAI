@@ -25,7 +25,48 @@ sealed class GlobalShellEffect(
      */
     abstract val id: String
 
+    /** False for effects that are only worth showing while the app is open (no system notification in the background). */
+    open val deliversSystemNotification: Boolean = true
+
     abstract fun shouldSuppress(ctx: GlobalShellVisibilityContext): Boolean
+}
+
+enum class ProgressionEffectKind { LEVEL_UP, MEDAL, LEGACY }
+
+/** One line of a progression announcement: who, and the level or honor they got. */
+data class ProgressionRow(
+    val characterName: String,
+    val value: String,
+    val emoji: String? = null,
+)
+
+/**
+ * Tells the player that characters leveled up or earned a medal or a legacy. Transient and silent in
+ * the background: it is a pat on the back inside the app, never a system notification. The text is
+ * deterministic (names and levels), no AI call.
+ */
+data class ProgressionEffect(
+    val kind: ProgressionEffectKind,
+    val announcementKey: String,
+    val rows: List<ProgressionRow>,
+    override val sagaId: Int,
+    override val sagaTitle: String,
+    override val genre: Genre,
+    override val deepLink: String,
+) : GlobalShellEffect(
+        sagaId = sagaId,
+        sagaTitle = sagaTitle,
+        genre = genre,
+        message = rows.joinToString { "${it.characterName} · ${it.value}" },
+        deepLink = deepLink,
+        notificationStyle = NotificationStyle.DEFAULT,
+        priority = GlobalShellPriority.Transient,
+        defaultExpansion = GlobalShellExpansion.Collapsed,
+    ) {
+    override val id: String = "progression_${kind.name}_$announcementKey"
+    override val deliversSystemNotification: Boolean = false
+
+    override fun shouldSuppress(ctx: GlobalShellVisibilityContext): Boolean = false
 }
 
 data class NewMessageEffect(

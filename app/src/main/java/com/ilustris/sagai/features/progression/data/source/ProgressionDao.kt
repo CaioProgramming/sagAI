@@ -67,6 +67,9 @@ interface ProgressionDao {
     @Query("SELECT * FROM character_honors WHERE sagaId = :sagaId AND announced = 0")
     suspend fun getUnannouncedHonors(sagaId: Int): List<CharacterHonor>
 
+    @Query("UPDATE character_honors SET announced = 1 WHERE id IN (:ids)")
+    suspend fun markHonorsAnnounced(ids: List<Int>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHonors(honors: List<CharacterHonor>): List<Long>
 

@@ -106,7 +106,7 @@ class GlobalShellService
                     }
 
                     if (!inForeground) {
-                        deliverSystemNotification(effect)
+                        if (effect.deliversSystemNotification) deliverSystemNotification(effect)
                         // Keep in-app hidden while background; will re-trigger on next foreground entry if needed.
                         dismissInternal(clearPending = true)
                         return

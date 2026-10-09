@@ -80,6 +80,7 @@ data class CharacterLedger(
 /** One visible effect of a progression step, so a long run can say what it is changing. */
 sealed interface ProgressionChange {
     data class Xp(
+        val characterId: Int,
         val characterName: String,
         val xp: Int,
         val levelBefore: Int,
@@ -88,6 +89,7 @@ sealed interface ProgressionChange {
     ) : ProgressionChange
 
     data class Honor(
+        val characterId: Int,
         val characterName: String,
         val kind: com.ilustris.sagai.features.progression.data.model.HonorKind,
         val name: String,

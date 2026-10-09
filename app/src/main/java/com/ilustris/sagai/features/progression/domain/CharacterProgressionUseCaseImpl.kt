@@ -18,6 +18,10 @@ import com.ilustris.sagai.features.progression.data.model.MedalsOutput
 import com.ilustris.sagai.core.ai.prompts.ProgressionPrompts
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.globalshell.GlobalShellService
+import com.ilustris.sagai.core.globalshell.ProgressionEffect
+import com.ilustris.sagai.core.globalshell.ProgressionEffectKind
+import com.ilustris.sagai.core.globalshell.ProgressionRow
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -47,7 +51,9 @@ class CharacterProgressionUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val progressionConfigProvider: ProgressionConfigProvider,
+        private val globalShellService: GlobalShellService,
     ) : CharacterProgressionUseCase {
+
         override suspend fun evaluateEvent(
             sagaId: Int,
             timelineId: Int,
@@ -142,6 +148,7 @@ class CharacterProgressionUseCaseImpl
                         val gained = assembled.sumOf { it.xp }
                         changes +=
                             ProgressionChange.Xp(
+                                characterId = character.id,
                                 characterName = character.name,
                                 xp = gained,
                                 levelBefore = before,
@@ -152,6 +159,7 @@ class CharacterProgressionUseCaseImpl
                 }
 
                 progressionDao.replaceFeats(timelineId, feats)
+                if (!silent && !event.data.progressionAnnounced) announceLevelUps(saga, changes, config.levelUpRowsMax)
                 markEvaluated(event, silent)
                 changes
             }
@@ -247,9 +255,11 @@ class CharacterProgressionUseCaseImpl
                     }
                 val honors = validator.validMedals(candidates, feats)
                 progressionDao.deleteHonors(sagaId, HonorKind.MEDAL.name, chapterId)
-                progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.MEDAL, chapterId, silent, isDead(saga, it.characterId)) })
+                val ids = progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.MEDAL, chapterId, silent, isDead(saga, it.characterId)) })
                 markChapterHonored(chapter.data)
-                honors.map { it.toChange(saga, HonorKind.MEDAL) }
+                val changes = honors.map { it.toChange(saga, HonorKind.MEDAL) }
+                if (!silent) announceHonors(saga, ProgressionEffectKind.MEDAL, "$chapterId", changes, ids)
+                changes
             }
 
         override suspend fun evaluateActLegacy(
@@ -304,15 +314,17 @@ class CharacterProgressionUseCaseImpl
                     }
                 val honors = validator.validLegacies(candidates, feats)
                 progressionDao.deleteHonors(sagaId, HonorKind.TITLE.name, actId)
-                progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.TITLE, actId, silent, isDead(saga, it.characterId)) })
+                val ids = progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.TITLE, actId, silent, isDead(saga, it.characterId)) })
                 markActLegacy(act.data)
-                honors.map { it.toChange(saga, HonorKind.TITLE) }
+                val changes = honors.map { it.toChange(saga, HonorKind.TITLE) }
+                if (!silent) announceHonors(saga, ProgressionEffectKind.LEGACY, "$actId", changes, ids)
+                changes
             }
 
         private fun ValidHonor.toChange(
             saga: SagaContent,
             kind: HonorKind,
-        ) = ProgressionChange.Honor(nameOf(saga, characterId), kind, name, emoji)
+        ) = ProgressionChange.Honor(characterId, nameOf(saga, characterId), kind, name, emoji)
 
         private fun ValidHonor.toHonor(
             sagaId: Int,
@@ -546,16 +558,59 @@ class CharacterProgressionUseCaseImpl
             if (merged != character.skills) characterUseCase.updateCharacter(character.copy(skills = merged))
         }
 
+        private fun announceLevelUps(
+            saga: SagaContent,
+            changes: List<ProgressionChange>,
+            maxRows: Int,
+        ) {
+            val ups = changes.filterIsInstance<ProgressionChange.Xp>().filter { it.levelAfter > it.levelBefore }
+            if (ups.isEmpty()) return
+            val shown = ups.sortedByDescending { it.levelAfter }.take(maxRows)
+            globalShellService.post(
+                ProgressionEffect(
+                    kind = ProgressionEffectKind.LEVEL_UP,
+                    announcementKey = "${saga.data.id}_${ups.joinToString("_") { "${it.characterId}${it.levelAfter}" }}",
+                    rows = shown.map { ProgressionRow(it.characterName, "${it.levelAfter}") },
+                    sagaId = saga.data.id,
+                    sagaTitle = saga.data.title,
+                    genre = saga.data.genre,
+                    deepLink = "saga://character_detail/${shown.first().characterId}",
+                ),
+            )
+        }
+
+        private suspend fun announceHonors(
+            saga: SagaContent,
+            kind: ProgressionEffectKind,
+            scopeKey: String,
+            changes: List<ProgressionChange>,
+            ids: List<Long>,
+        ) {
+            val honors = changes.filterIsInstance<ProgressionChange.Honor>()
+            if (honors.isEmpty()) return
+            val first = honors.first()
+            globalShellService.post(
+                ProgressionEffect(
+                    kind = kind,
+                    announcementKey = "${saga.data.id}_$scopeKey",
+                    rows = honors.map { ProgressionRow(it.characterName, it.name, it.emoji) },
+                    sagaId = saga.data.id,
+                    sagaTitle = saga.data.title,
+                    genre = saga.data.genre,
+                    deepLink = "saga://character_detail/${first.characterId}",
+                ),
+            )
+            progressionDao.markHonorsAnnounced(ids.map { it.toInt() })
+        }
+
+        /** Evaluated and told (or deliberately kept quiet): nothing is left to announce for this event. */
         private suspend fun markEvaluated(
             event: TimelineContent,
             silent: Boolean,
         ) {
-            if (!event.data.experienceGenerated || (silent && !event.data.progressionAnnounced)) {
+            if (!event.data.experienceGenerated || !event.data.progressionAnnounced) {
                 timelineRepository.updateTimeline(
-                    event.data.copy(
-                        experienceGenerated = true,
-                        progressionAnnounced = event.data.progressionAnnounced || silent,
-                    ),
+                    event.data.copy(experienceGenerated = true, progressionAnnounced = true),
                 )
             }
         }

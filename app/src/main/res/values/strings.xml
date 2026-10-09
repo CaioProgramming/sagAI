@@ -583,6 +583,10 @@
     <string name="notification_new_message">New Message</string>
     <string name="notification_new_message_content">%s sent a new message</string>
     <string name="notification_new_chapter">New Chapter</string>
+    <string name="notification_level_up">Level up</string>
+    <string name="notification_medal">New medal</string>
+    <string name="notification_legacy">Legacy</string>
+    <string name="notification_progression_see_more">See more</string>
     <string name="notification_new_chapter_content">Chapter %s has begun!</string>
     <string name="notification_new_act">New Volume</string>
     <string name="notification_new_act_content">Volume %1$s: %2$s</string>

@@ -432,6 +432,10 @@
     <string name="notification_new_message">Nova Mensagem</string>
     <string name="notification_new_message_content">%s enviou uma nova mensagem</string>
     <string name="notification_new_chapter">Novo Capítulo</string>
+    <string name="notification_level_up">Subiu de nível</string>
+    <string name="notification_medal">Nova medalha</string>
+    <string name="notification_legacy">Legado</string>
+    <string name="notification_progression_see_more">Ver mais</string>
     <string name="notification_new_chapter_content">Capítulo %s começou!</string>
     <string name="notification_new_act">Novo volume</string>
     <string name="notification_new_act_content">Volume %1$s: %2$s</string>
