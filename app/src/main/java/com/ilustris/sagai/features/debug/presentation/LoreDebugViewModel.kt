@@ -446,6 +446,16 @@ class LoreDebugViewModel
             }
         }
 
+        fun recomputeProgressionXp() {
+            val sagaId = _uiState.value.sagaMetadata?.data?.id ?: return
+            viewModelScope.launch {
+                progressionUseCase
+                    .recomputeXp(sagaId)
+                    .onFailure { e -> _uiState.update { it.copy(error = "Recalcular XP: ${e.message}") } }
+                _uiState.update { it.copy(ledger = progressionUseCase.ledger(sagaId)) }
+            }
+        }
+
         fun showLedger() {
             val sagaId = _uiState.value.sagaMetadata?.data?.id ?: return
             viewModelScope.launch { _uiState.update { it.copy(ledger = progressionUseCase.ledger(sagaId)) } }

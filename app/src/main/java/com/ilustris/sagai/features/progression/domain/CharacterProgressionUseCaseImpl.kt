@@ -67,7 +67,8 @@ class CharacterProgressionUseCaseImpl
                 }
 
                 val math = ProgressionMath(config)
-                val otherFeats = progressionDao.getFeatsBySaga(sagaId).filter { it.timelineId != timelineId }
+                // Events are numbered in story order, so only what came before this one counts for its level.
+                val otherFeats = progressionDao.getFeatsBySaga(sagaId).filter { it.timelineId < timelineId }
                 val chapterFeats = otherFeats.filter { feat -> chapterEvents.any { it.data.id == feat.timelineId } }
                 val levels =
                     participants.associate { character ->
@@ -258,6 +259,12 @@ class CharacterProgressionUseCaseImpl
                                     honorKind = "LEGACIES",
                                     scope = act.data.toAINormalize(HONOR_SCOPE_EXCLUSIONS),
                                     feats = featsForPrompt(saga, feats),
+                                    previousLegacies =
+                                        saga.acts
+                                            .filter { it.data.id < actId }
+                                            .flatMap { progressionDao.getHonors(sagaId, HonorKind.TITLE.name, it.data.id) }
+                                            .map { mapOf("character" to nameOf(saga, it.characterId), "title" to it.name, "description" to it.description) }
+                                            .toAINormalize(),
                                     medalsOfTheAct =
                                         medals
                                             .map { mapOf("character" to nameOf(saga, it.characterId), "name" to it.name, "reason" to it.description) }
@@ -349,6 +356,45 @@ class CharacterProgressionUseCaseImpl
                     }
             return PowerContext(config).describe(inScene)
         }
+
+        override suspend fun recomputeXp(sagaId: Int): RequestResult<Unit> =
+            executeRequest {
+                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest
+                val math = ProgressionMath(config)
+                val assembler = FeatAssembler(math)
+                val stored = progressionDao.getFeatsBySaga(sagaId).groupBy { it.timelineId }
+                val earned = mutableMapOf<Int, Int>()
+                val rewritten = mutableListOf<CharacterFeat>()
+
+                saga.acts.flatMap { it.chapters }.forEach { chapter ->
+                    val chapterXp = mutableMapOf<Int, Int>()
+                    val kindCounts = mutableMapOf<Pair<Int, String>, Int>()
+                    chapter.events.forEach { event ->
+                        stored[event.data.id].orEmpty().groupBy { it.characterId }.forEach { (characterId, feats) ->
+                            val ordered = feats.sortedBy { it.ordinal }
+                            val base = saga.characters.firstOrNull { it.data.id == characterId }?.data?.baseLevel ?: 1
+                            val assembled =
+                                assembler.assemble(
+                                    drafts = ordered.map { FeatDraft(it.kind, it.title, it.changed, it.cost, it.tier, it.relationshipUpdateEventId) },
+                                    level = math.levelFor(base, earned[characterId] ?: 0),
+                                    priorKindCounts = kindCounts.filterKeys { it.first == characterId }.mapKeys { it.key.second },
+                                    chapterXpSoFar = chapterXp[characterId] ?: 0,
+                                    validEvidenceIds = ordered.mapNotNull { it.relationshipUpdateEventId }.toSet(),
+                                )
+                            // A feat the assembler would now drop keeps its old weight: this is a re-weigh, not a re-judge.
+                            val xps = if (assembled.size == ordered.size) assembled.map { it.xp } else ordered.map { it.xp }
+                            ordered.forEachIndexed { index, feat ->
+                                rewritten += feat.copy(xp = xps[index])
+                                kindCounts.merge(characterId to feat.kind, 1, Int::plus)
+                            }
+                            earned.merge(characterId, xps.sum(), Int::plus)
+                            chapterXp.merge(characterId, xps.sum(), Int::plus)
+                        }
+                    }
+                }
+                progressionDao.updateFeats(rewritten)
+            }
 
         override suspend fun ledger(sagaId: Int): List<CharacterLedger> {
             val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return emptyList()

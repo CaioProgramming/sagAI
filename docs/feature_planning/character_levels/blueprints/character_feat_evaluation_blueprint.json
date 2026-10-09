@@ -12,8 +12,9 @@
     "PRESENCE_MATTERS": "A character who is absent, imprisoned or only mentioned while the story follows others earns little. Weigh what they did in the scene, not how important they are in the saga.",
     "NOTHING_IS_AN_ANSWER": "Most events give most participants nothing. Record a tier 0 feat only for a participant who was relevant to the event, with the reason in changed ('nothing moved because...'), so the player can read why nothing paid.",
     "RELATIONSHIP_EVIDENCE": "When a feat matches one of the relationship changes recorded for this event, cite it in relationshipEvidence.",
-    "NEW_SKILLS": "newSkills are abilities the character showed for the first time or clearly learned in this event, as short noun phrases. Never repeat a skill the character already has.",
-    "NO_NUMBERS": "Never output XP or any number other than the tier. The code turns tiers into XP."
+    "NEW_SKILLS": "newSkills are capabilities the character can now use: techniques, powers, trained knowledge, crafts, as short noun phrases. A feeling, a decision, a relationship or a trait of personality is never a skill. Never repeat a skill the character already has.",
+    "NO_NUMBERS": "Never output XP or any number other than the tier. The code turns tiers into XP.",
+    "TIER_DISCIPLINE": "Most feats are tier 2. Tier 3 is a beat of the character's arc and a character earns at most one or two of them in a chapter: when you hesitate between two tiers, take the lower. If every participant gets a tier 3 in every event, the scale means nothing."
   },
   "rules": {
     "ONLY_WHAT_HAPPENED": "Only what the event shows. Never invent moments, feelings or consequences.",

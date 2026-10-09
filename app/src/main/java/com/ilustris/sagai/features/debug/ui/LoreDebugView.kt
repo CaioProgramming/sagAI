@@ -268,6 +268,11 @@ fun LoreDebugView(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
+                            OutlinedButton(
+                                onClick = { viewModel.recomputeProgressionXp() },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !uiState.isFixing,
+                            ) { Text("Recalcular XP (sem IA)") }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(
                                     onClick = { viewModel.backfillProgression() },

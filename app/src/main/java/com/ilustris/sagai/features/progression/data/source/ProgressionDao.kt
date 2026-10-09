@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import com.ilustris.sagai.features.progression.data.model.CharacterFeat
 import com.ilustris.sagai.features.progression.data.model.CharacterHonor
 import kotlinx.coroutines.flow.Flow
@@ -33,6 +34,9 @@ interface ProgressionDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFeats(feats: List<CharacterFeat>): List<Long>
+
+    @Update
+    suspend fun updateFeats(feats: List<CharacterFeat>)
 
     @Query("DELETE FROM character_feats WHERE timelineId = :timelineId")
     suspend fun deleteFeatsByTimeline(timelineId: Int)

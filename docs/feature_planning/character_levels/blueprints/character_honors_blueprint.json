@@ -13,7 +13,8 @@
     "LEGACY_TITLE": "title is a short epithet in the voice of the saga. description is one or two lines: the character's legend as the world would tell it.",
     "LEGACY_TENSE": "If the character is dead, write the description in the past tense. Otherwise speak of a mark that stays.",
     "ONE_LEGACY_PER_CHARACTER": "At most one legacy per character in this act.",
-    "PRESENCE_MATTERS": "Someone who was absent, imprisoned or only mentioned while the story followed others does not earn an honor for it."
+    "PRESENCE_MATTERS": "Someone who was absent, imprisoned or only mentioned while the story followed others does not earn an honor for it.",
+    "NO_REPEATED_LEGEND": "previousLegacies lists the legacies already granted in earlier acts. A new legacy must name a change that happened in this act and that is not the same arc again. When a character's mark is the one they already have, grant nothing."
   },
   "rules": {
     "ONLY_THE_FEATS": "Use only what the cited feats say. Never add events, names or consequences that are not in them.",

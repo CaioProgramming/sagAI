@@ -47,6 +47,13 @@ interface CharacterProgressionUseCase {
         presentNames: List<String>,
     ): String?
 
+    /**
+     * Re-weighs the XP of every stored feat with the current config (tier table, decay, caps),
+     * replaying the saga in order and without any AI call. Calibration tool: XP is frozen when a
+     * feat is written, so a changed config does not reach old feats until this runs.
+     */
+    suspend fun recomputeXp(sagaId: Int): RequestResult<Unit>
+
     /** Debug: every character of the saga with level, XP and the feats and honors behind it. */
     suspend fun ledger(sagaId: Int): List<CharacterLedger>
 

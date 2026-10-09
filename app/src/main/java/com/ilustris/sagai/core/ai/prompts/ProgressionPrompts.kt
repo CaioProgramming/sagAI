@@ -20,6 +20,7 @@ data class HonorsArgs(
     val scope: String,
     val feats: String,
     val medalsOfTheAct: String,
+    val previousLegacies: String = "",
 )
 
 object ProgressionPrompts {
