@@ -68,6 +68,10 @@ import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.components.CharacterAbilitiesSection
+import com.ilustris.sagai.features.characters.ui.components.CharacterExperienceCard
+import com.ilustris.sagai.features.characters.ui.components.CharacterFeatLogSheet
+import com.ilustris.sagai.features.characters.ui.components.CharacterLevelRow
+import com.ilustris.sagai.features.characters.ui.components.CharacterSkillChips
 import com.ilustris.sagai.features.characters.ui.components.CharacterAppearanceSection
 import com.ilustris.sagai.features.characters.ui.components.CharacterArcTimeline
 import com.ilustris.sagai.features.characters.ui.components.CharacterDetailDivider
@@ -212,6 +216,8 @@ private fun CharacterDetailsLoaded(
         val characterEvents = detailData.events
         val characterRelations = detailData.relationships
         val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
+        val progress by viewModel.progress.collectAsStateWithLifecycle()
+        var showFeatLog by remember { mutableStateOf(false) }
         val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
         var showCharacterShare by remember { mutableStateOf(false) }
 
@@ -403,6 +409,14 @@ private fun CharacterDetailsLoaded(
                                     onAccentColor = adaptiveTextColor,
                                 )
 
+                                CharacterLevelRow(
+                                    progress = progress,
+                                    status = characterData.status,
+                                    statusNote = characterData.statusNote,
+                                    accent = characterColor,
+                                    contentColor = adaptiveTextColor,
+                                )
+
                                 Text(
                                     characterData.profile.occupation,
                                     style =
@@ -471,6 +485,18 @@ private fun CharacterDetailsLoaded(
                                 genre = genre,
                                 contentColor = adaptiveTextColor,
                             )
+                        }
+
+                        progress?.let { current ->
+                            item {
+                                CharacterExperienceCard(
+                                    progress = current,
+                                    messageCount = messageCount,
+                                    accent = characterColor,
+                                    contentColor = adaptiveTextColor,
+                                    onSeeMore = { showFeatLog = true },
+                                )
+                            }
                         }
 
                         item {
@@ -613,10 +639,18 @@ private fun CharacterDetailsLoaded(
                         }
 
                         item {
-                            CharacterAbilitiesSection(
-                                character = characterData,
-                                contentColor = adaptiveTextColor,
-                            )
+                            if (characterData.skills.isNotEmpty()) {
+                                CharacterSkillChips(
+                                    skills = characterData.skills,
+                                    accent = characterColor,
+                                    contentColor = adaptiveTextColor,
+                                )
+                            } else {
+                                CharacterAbilitiesSection(
+                                    character = characterData,
+                                    contentColor = adaptiveTextColor,
+                                )
+                            }
                         }
 
                         if (characterRelations.isNotEmpty()) {
@@ -761,6 +795,14 @@ private fun CharacterDetailsLoaded(
                 character = shareCharacterContent,
                 onDismiss = { showCharacterShare = false },
             )
+
+            progress?.takeIf { showFeatLog }?.let {
+                CharacterFeatLogSheet(
+                    progress = it,
+                    accent = characterColor,
+                    onDismiss = { showFeatLog = false },
+                )
+            }
         }
     }
 }

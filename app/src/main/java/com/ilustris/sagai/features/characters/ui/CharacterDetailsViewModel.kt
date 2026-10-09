@@ -14,6 +14,8 @@ import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.progression.domain.CharacterProgress
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -33,10 +35,12 @@ class CharacterDetailsViewModel
         private val remoteConfigService: RemoteConfigService,
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
+        private val progressionUseCase: CharacterProgressionUseCase,
     ) : ViewModel() {
         val characterDetailData = MutableStateFlow<CharacterDetailData?>(null)
         val imagePalette = MutableStateFlow<ImagePalette?>(null)
         val messageCount = MutableStateFlow(0)
+        val progress = MutableStateFlow<CharacterProgress?>(null)
 
         val characterResume = MutableStateFlow<String?>(null)
         val characterArcs = MutableStateFlow<List<CharacterArc>>(emptyList())
@@ -49,6 +53,7 @@ class CharacterDetailsViewModel
         private var currentCharacterId: Int? = null
         private var detailJob: Job? = null
         private var arcsJob: Job? = null
+        private var progressJob: Job? = null
 
         fun onCharacterScreenVisible(sagaId: Int) {
             sagaImmersiveSession.push("character_detail", sagaId)
@@ -74,6 +79,8 @@ class CharacterDetailsViewModel
 
             detailJob?.cancel()
             arcsJob?.cancel()
+            progressJob?.cancel()
+            progress.value = null
             currentCharacterId = characterId
 
             characterDetailData.value = null
@@ -96,6 +103,12 @@ class CharacterDetailsViewModel
                     characterUseCase.getCharacterDetailData(characterId).collect { data ->
                         characterDetailData.value = data
                         data?.let {
+                            if (progressJob == null || progressJob?.isActive == false) {
+                                progressJob =
+                                    viewModelScope.launch(Dispatchers.IO) {
+                                        progressionUseCase.observeProgress(it.character).collect { value -> progress.value = value }
+                                    }
+                            }
                             ensureGenreTheme(it.sagaInfo.genre)
                             messageCount.value = it.messageCount
                             loadCompletedActs(it.sagaInfo.id)

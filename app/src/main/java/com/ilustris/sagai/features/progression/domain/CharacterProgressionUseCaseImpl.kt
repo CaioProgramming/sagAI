@@ -36,7 +36,11 @@ import com.ilustris.sagai.features.progression.data.model.FeatEvaluation
 import com.ilustris.sagai.features.progression.data.source.ProgressionDao
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class CharacterProgressionUseCaseImpl
@@ -477,6 +481,37 @@ class CharacterProgressionUseCaseImpl
                     )
                     ProgressionChange.Status(character.name, status, entry.statusNote)
                 }
+            }
+
+        override fun observeProgress(character: Character): Flow<CharacterProgress?> =
+            flow {
+                val config = progressionConfigProvider.activeConfig()
+                val base = character.baseLevel
+                if (config == null || base == null) {
+                    emit(null)
+                    return@flow
+                }
+                val math = ProgressionMath(config)
+                emitAll(
+                    combine(
+                        progressionDao.observeFeats(character.id),
+                        progressionDao.observeHonors(character.id),
+                    ) { feats, honors ->
+                        val earned = feats.sumOf { it.xp }
+                        val level = math.levelFor(base, earned)
+                        CharacterProgress(
+                            baseLevel = base,
+                            level = level,
+                            bandLabel = PowerContext(config).bandLabel(level),
+                            earnedXp = earned,
+                            xpIntoLevel = (math.xpToReach(base) + earned - math.xpToReach(level)).coerceAtLeast(0),
+                            levelSpan = math.levelSpan(level),
+                            rationale = character.levelRationale,
+                            feats = feats,
+                            honors = honors,
+                        )
+                    },
+                )
             }
 
         override suspend fun ledger(sagaId: Int): List<CharacterLedger> {

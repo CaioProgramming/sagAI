@@ -1202,4 +1202,20 @@
     <string name="new_saga_saving_character">Bringing the protagonist to life…</string>
     <string name="new_saga_saving_saga">Drawing the saga\'s cover…</string>
     <string name="new_saga_saving_done">Your saga is ready</string>
+    <string name="progression_level_pill">LV %1$d</string>
+    <string name="progression_experience_title">Experience</string>
+    <string name="progression_medals">Medals</string>
+    <string name="progression_feats">Feats</string>
+    <string name="progression_messages">Messages</string>
+    <string name="progression_xp_progress">%1$d / %2$d XP to the next level</string>
+    <string name="progression_xp_max">Maximum level</string>
+    <string name="progression_see_more_action">See more</string>
+    <string name="progression_feat_log_title">Feat log</string>
+    <string name="progression_legacy_title">Legacy</string>
+    <string name="progression_skills_title">Skills</string>
+    <string name="progression_no_medals">No medals yet</string>
+    <string name="progression_status_absent">Away</string>
+    <string name="progression_status_missing">Missing</string>
+    <string name="progression_status_dead">Deceased</string>
+    <string name="progression_in_memory">In memory</string>
 </resources>

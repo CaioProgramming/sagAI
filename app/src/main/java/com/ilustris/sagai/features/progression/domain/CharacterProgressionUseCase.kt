@@ -55,6 +55,9 @@ interface CharacterProgressionUseCase {
      */
     suspend fun recomputeXp(sagaId: Int): RequestResult<Unit>
 
+    /** Live progress of one character for the sheet; null when the system is off or they were never placed. */
+    fun observeProgress(character: com.ilustris.sagai.features.characters.data.model.Character): kotlinx.coroutines.flow.Flow<CharacterProgress?>
+
     /** Debug: every character of the saga with level, XP and the feats and honors behind it. */
     suspend fun ledger(sagaId: Int): List<CharacterLedger>
 
@@ -106,4 +109,21 @@ sealed interface ProgressionChange {
         val characterName: String,
         val level: Int,
     ) : ProgressionChange
+}
+
+/** Everything the character sheet shows about experience, derived from the ledger and the config. */
+data class CharacterProgress(
+    val baseLevel: Int,
+    val level: Int,
+    val bandLabel: String,
+    val earnedXp: Int,
+    /** XP earned inside the current level, and what the whole level takes; both 0 at the cap. */
+    val xpIntoLevel: Int,
+    val levelSpan: Int,
+    val rationale: String?,
+    val feats: List<com.ilustris.sagai.features.progression.data.model.CharacterFeat>,
+    val honors: List<com.ilustris.sagai.features.progression.data.model.CharacterHonor>,
+) {
+    val medals get() = honors.filter { it.kind == com.ilustris.sagai.features.progression.data.model.HonorKind.MEDAL }
+    val titles get() = honors.filter { it.kind == com.ilustris.sagai.features.progression.data.model.HonorKind.TITLE }
 }
