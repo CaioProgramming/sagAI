@@ -18,7 +18,9 @@ import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.progression.data.model.HonorKind
 import com.ilustris.sagai.features.progression.domain.CharacterLedger
+import com.ilustris.sagai.features.progression.domain.ProgressionChange
 import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
 import com.ilustris.sagai.features.progression.domain.ProgressionConfigProvider
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
@@ -73,7 +75,18 @@ data class LoreDebugUiState(
     val imageTargets: List<ImageDebugTarget> = emptyList(),
     val showImagePager: Boolean = false,
     val pagerInitialIndex: Int = 0,
-    val ledger: List<CharacterLedger>? = null,
+    val ledger: List<CharacterLedger> = emptyList(),
+    val showLedger: Boolean = false,
+    val progressionRun: ProgressionRun? = null,
+)
+
+/** What the progression run is doing right now, and what it has changed so far (newest first). */
+data class ProgressionRun(
+    val stage: String,
+    val item: String,
+    val done: Int,
+    val total: Int,
+    val feed: List<String> = emptyList(),
 )
 
 @HiltViewModel
@@ -93,9 +106,14 @@ class LoreDebugViewModel
         private val _uiState = MutableStateFlow(LoreDebugUiState())
         val uiState: StateFlow<LoreDebugUiState> = _uiState.asStateFlow()
 
+        private companion object {
+            const val FEED_LIMIT = 8
+        }
+
         fun loadSaga(sagaId: Int) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
+                _uiState.update { it.copy(ledger = progressionUseCase.ledger(sagaId)) }
                 sagaUseCase.getSagaMetadata(sagaId).collectLatest { saga ->
                     if (saga != null) {
                         _uiState.update {
@@ -387,9 +405,9 @@ class LoreDebugViewModel
         }
 
         /**
-         * Opt-in progression for a saga that predates the feature: turns it on and replays every
-         * completed event, in order, through the feat evaluation. Events already evaluated are
-         * skipped, so a run that failed halfway resumes where it stopped.
+         * Opt-in progression for a saga that predates the feature: turns it on, places the cast and
+         * replays every completed event, then the closed chapters and acts, in story order. Already
+         * evaluated events are skipped, so a run that failed halfway resumes where it stopped.
          */
         fun backfillProgression() {
             val sagaId = _uiState.value.sagaMetadata?.data?.id ?: return
@@ -402,10 +420,7 @@ class LoreDebugViewModel
                 val saga = sagaUseCase.getSagaById(sagaId).first() ?: return@launch
                 if (!saga.data.progressionEnabled) sagaUseCase.updateSaga(saga.data.copy(progressionEnabled = true))
 
-                progressionUseCase
-                    .placeCharacters(sagaId)
-                    .onFailure { e -> _uiState.update { it.copy(error = "Colocação: ${e.message}") } }
-
+                val unplaced = saga.characters.count { it.data.baseLevel == null }
                 val pending = saga.flatEvents().filter { it.isComplete(rules) && !it.data.experienceGenerated }
                 val chapters =
                     saga.flatChapters().filter {
@@ -415,59 +430,110 @@ class LoreDebugViewModel
                     saga.acts.filter {
                         it.isFull(rules.actUpdateLimit, rules) && it.data.content.isNotEmpty() && !it.data.legacyGenerated
                     }
-                _uiState.update {
-                    it.copy(
-                        isFixing = true,
-                        fixItemsCount = pending.size + chapters.size + acts.size,
-                        currentFixItem = 0,
-                        reasoning = null,
+                val total = (if (unplaced > 0) 1 else 0) + pending.size + chapters.size + acts.size
+                var done = 0
+
+                fun step(
+                    stage: String,
+                    item: String,
+                    changes: List<ProgressionChange> = emptyList(),
+                ) = _uiState.update { state ->
+                    val run = state.progressionRun
+                    state.copy(
+                        progressionRun =
+                            ProgressionRun(
+                                stage = stage,
+                                item = item,
+                                done = done,
+                                total = total,
+                                feed = (changes.map { it.describe() }.reversed() + run?.feed.orEmpty()).take(FEED_LIMIT),
+                            ),
                     )
                 }
+
+                step("Colocando o elenco", "$unplaced personagens")
+                if (unplaced > 0) {
+                    progressionUseCase
+                        .placeCharacters(sagaId)
+                        .onSuccess { done++; step("Avaliando eventos", "", it) }
+                        .onFailure { e -> _uiState.update { it.copy(error = "Colocação: ${e.message}") } }
+                }
                 pending.forEach { event ->
-                    updateFixProgress()
+                    step("Avaliando eventos", event.data.title.ifBlank { "Evento ${event.data.id}" })
                     progressionUseCase
                         .evaluateEvent(sagaId, event.data.id)
-                        .onFailure { e -> _uiState.update { it.copy(error = "Evento ${event.data.id}: ${e.message}") } }
+                        .onSuccess { done++; step("Avaliando eventos", event.data.title, it) }
+                        .onFailure { e ->
+                            done++
+                            _uiState.update { it.copy(error = "Evento ${event.data.id}: ${e.message}") }
+                        }
                 }
                 // History catch-up: honors are written already announced, so no islands for the past.
                 chapters.forEach { chapter ->
-                    updateFixProgress()
+                    step("Medalhas do capítulo", chapter.data.title)
                     progressionUseCase
                         .evaluateChapterHonors(sagaId, chapter.data.id, silent = true)
-                        .onFailure { e -> _uiState.update { it.copy(error = "Capítulo ${chapter.data.id}: ${e.message}") } }
+                        .onSuccess { done++; step("Medalhas do capítulo", chapter.data.title, it) }
+                        .onFailure { e ->
+                            done++
+                            _uiState.update { it.copy(error = "Capítulo ${chapter.data.id}: ${e.message}") }
+                        }
                 }
                 acts.forEach { act ->
-                    updateFixProgress()
+                    step("Legado do ato", act.data.title)
                     progressionUseCase
                         .evaluateActLegacy(sagaId, act.data.id, silent = true)
-                        .onFailure { e -> _uiState.update { it.copy(error = "Ato ${act.data.id}: ${e.message}") } }
+                        .onSuccess { done++; step("Legado do ato", act.data.title, it) }
+                        .onFailure { e ->
+                            done++
+                            _uiState.update { it.copy(error = "Ato ${act.data.id}: ${e.message}") }
+                        }
                 }
-                _uiState.update { it.copy(isFixing = false, currentFixItem = 0) }
+                _uiState.update { it.copy(progressionRun = null, ledger = progressionUseCase.ledger(sagaId)) }
             }
         }
 
+        /** Re-weighs the stored feats with the current config and shows who moved. */
         fun recomputeProgressionXp() {
             val sagaId = _uiState.value.sagaMetadata?.data?.id ?: return
             viewModelScope.launch {
+                _uiState.update { it.copy(progressionRun = ProgressionRun("Recalculando XP", "Aplicando a config atual aos feitos", 0, 1)) }
                 progressionUseCase
                     .recomputeXp(sagaId)
                     .onFailure { e -> _uiState.update { it.copy(error = "Recalcular XP: ${e.message}") } }
-                _uiState.update { it.copy(ledger = progressionUseCase.ledger(sagaId)) }
+                _uiState.update {
+                    it.copy(progressionRun = null, ledger = progressionUseCase.ledger(sagaId), showLedger = true)
+                }
             }
         }
 
-        fun showLedger() {
-            val sagaId = _uiState.value.sagaMetadata?.data?.id ?: return
-            viewModelScope.launch { _uiState.update { it.copy(ledger = progressionUseCase.ledger(sagaId)) } }
-        }
+        fun showLedger() = _uiState.update { it.copy(showLedger = true) }
 
-        fun hideLedger() = _uiState.update { it.copy(ledger = null) }
+        fun hideLedger() = _uiState.update { it.copy(showLedger = false) }
 
         /** Wipes the saga's feats and honors and clears the flags, to re-run after a prompt change. */
         fun resetProgression() {
             val sagaId = _uiState.value.sagaMetadata?.data?.id ?: return
-            viewModelScope.launch { progressionUseCase.resetSaga(sagaId) }
+            viewModelScope.launch {
+                progressionUseCase.resetSaga(sagaId)
+                _uiState.update { it.copy(ledger = progressionUseCase.ledger(sagaId)) }
+            }
         }
+
+        private fun ProgressionChange.describe(): String =
+            when (this) {
+                is ProgressionChange.Xp -> {
+                    val level = if (levelAfter > levelBefore) "nível $levelBefore → $levelAfter" else "nível $levelBefore"
+                    "$characterName +$xp XP · $level · ${featTitles.joinToString()}"
+                }
+
+                is ProgressionChange.Honor -> {
+                    val label = if (kind == HonorKind.MEDAL) "medalha" else "título"
+                    "${emoji.orEmpty()} $characterName ganhou o $label \"$name\"".trim()
+                }
+
+                is ProgressionChange.Placed -> "$characterName colocado no nível $level"
+            }
 
         private fun updateFixProgress() {
             _uiState.update { it.copy(currentFixItem = it.currentFixItem + 1) }

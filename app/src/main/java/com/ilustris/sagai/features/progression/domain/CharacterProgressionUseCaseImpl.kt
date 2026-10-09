@@ -48,11 +48,11 @@ class CharacterProgressionUseCaseImpl
         override suspend fun evaluateEvent(
             sagaId: Int,
             timelineId: Int,
-        ): RequestResult<Unit> =
+        ): RequestResult<List<ProgressionChange>> =
             executeRequest {
-                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest
-                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest
-                if (!saga.data.progressionEnabled) return@executeRequest
+                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest emptyList()
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest emptyList()
+                if (!saga.data.progressionEnabled) return@executeRequest emptyList()
 
                 val chapterEvents =
                     saga.acts
@@ -63,7 +63,7 @@ class CharacterProgressionUseCaseImpl
                 val participants = participantsOf(saga, event)
                 if (participants.isEmpty()) {
                     markEvaluated(event)
-                    return@executeRequest
+                    return@executeRequest emptyList()
                 }
 
                 val math = ProgressionMath(config)
@@ -102,6 +102,7 @@ class CharacterProgressionUseCaseImpl
                 val assembler = FeatAssembler(math)
                 val now = System.currentTimeMillis()
                 val feats = mutableListOf<CharacterFeat>()
+                val changes = mutableListOf<ProgressionChange>()
                 participants.forEach { character ->
                     val output = evaluation.characters.firstOrNull { it.name.trim().equals(character.name.trim(), ignoreCase = true) } ?: return@forEach
                     val mine = chapterFeats.filter { it.characterId == character.id }
@@ -131,18 +132,32 @@ class CharacterProgressionUseCaseImpl
                             )
                     }
                     mergeSkills(character, output.newSkills, config.maxSkills)
+                    if (assembled.isNotEmpty()) {
+                        val before = levels.getValue(character.id)
+                        val earnedBefore = otherFeats.filter { it.characterId == character.id }.sumOf { it.xp }
+                        val gained = assembled.sumOf { it.xp }
+                        changes +=
+                            ProgressionChange.Xp(
+                                characterName = character.name,
+                                xp = gained,
+                                levelBefore = before,
+                                levelAfter = math.levelFor(character.baseLevel ?: 1, earnedBefore + gained),
+                                featTitles = assembled.map { it.title },
+                            )
+                    }
                 }
 
                 progressionDao.replaceFeats(timelineId, feats)
                 markEvaluated(event)
+                changes
             }
 
-        override suspend fun placeCharacters(sagaId: Int): RequestResult<Unit> =
+        override suspend fun placeCharacters(sagaId: Int): RequestResult<List<ProgressionChange>> =
             executeRequest {
-                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest
-                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest
+                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest emptyList()
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest emptyList()
                 val unplaced = saga.characters.map { it.data }.filter { it.baseLevel == null }
-                if (unplaced.isEmpty()) return@executeRequest
+                if (unplaced.isEmpty()) return@executeRequest emptyList()
 
                 val placement =
                     gemmaClient.generate<CharacterPlacementOutput>(
@@ -171,28 +186,31 @@ class CharacterProgressionUseCaseImpl
                         requirement = ModelRequirement.HIGH,
                     )!!
 
+                val changes = mutableListOf<ProgressionChange>()
                 unplaced.forEach { character ->
                     val entry = placement.placements.firstOrNull { it.name.trim().equals(character.name.trim(), ignoreCase = true) } ?: return@forEach
-                    characterUseCase.updateCharacter(
+                    val placed =
                         character
                             .copy(
                                 baseLevel = entry.baseLevel,
                                 levelRationale = entry.levelRationale,
                                 skills = entry.skills,
-                            ).withPlacement(config, isProtagonist = character.id == saga.data.mainCharacterId),
-                    )
+                            ).withPlacement(config, isProtagonist = character.id == saga.data.mainCharacterId)
+                    changes += ProgressionChange.Placed(character.name, placed.baseLevel ?: entry.baseLevel)
+                    characterUseCase.updateCharacter(placed)
                 }
+                changes
             }
 
         override suspend fun evaluateChapterHonors(
             sagaId: Int,
             chapterId: Int,
             silent: Boolean,
-        ): RequestResult<Unit> =
+        ): RequestResult<List<ProgressionChange>> =
             executeRequest {
-                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest
-                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest
-                if (!saga.data.progressionEnabled) return@executeRequest
+                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest emptyList()
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest emptyList()
+                if (!saga.data.progressionEnabled) return@executeRequest emptyList()
                 val chapter = saga.acts.flatMap { it.chapters }.first { it.data.id == chapterId }
                 val validator = HonorValidator(config)
 
@@ -200,7 +218,7 @@ class CharacterProgressionUseCaseImpl
                 val feats = progressionDao.getFeatsBySaga(sagaId).filter { it.timelineId in eventIds }
                 if (!validator.hasMedalMaterial(feats)) {
                     markChapterHonored(chapter.data)
-                    return@executeRequest
+                    return@executeRequest emptyList()
                 }
 
                 val output =
@@ -227,17 +245,18 @@ class CharacterProgressionUseCaseImpl
                 progressionDao.deleteHonors(sagaId, HonorKind.MEDAL.name, chapterId)
                 progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.MEDAL, chapterId, silent) })
                 markChapterHonored(chapter.data)
+                honors.map { it.toChange(saga, HonorKind.MEDAL) }
             }
 
         override suspend fun evaluateActLegacy(
             sagaId: Int,
             actId: Int,
             silent: Boolean,
-        ): RequestResult<Unit> =
+        ): RequestResult<List<ProgressionChange>> =
             executeRequest {
-                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest
-                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest
-                if (!saga.data.progressionEnabled) return@executeRequest
+                val config = progressionConfigProvider.activeConfig() ?: return@executeRequest emptyList()
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest emptyList()
+                if (!saga.data.progressionEnabled) return@executeRequest emptyList()
                 val act = saga.acts.first { it.data.id == actId }
                 val validator = HonorValidator(config)
 
@@ -245,7 +264,7 @@ class CharacterProgressionUseCaseImpl
                 val feats = progressionDao.getFeatsBySaga(sagaId).filter { it.timelineId in eventIds }
                 if (!validator.hasLegacyMaterial(feats)) {
                     markActLegacy(act.data)
-                    return@executeRequest
+                    return@executeRequest emptyList()
                 }
 
                 val medals =
@@ -283,7 +302,13 @@ class CharacterProgressionUseCaseImpl
                 progressionDao.deleteHonors(sagaId, HonorKind.TITLE.name, actId)
                 progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.TITLE, actId, silent) })
                 markActLegacy(act.data)
+                honors.map { it.toChange(saga, HonorKind.TITLE) }
             }
+
+        private fun ValidHonor.toChange(
+            saga: SagaContent,
+            kind: HonorKind,
+        ) = ProgressionChange.Honor(nameOf(saga, characterId), kind, name, emoji)
 
         private fun ValidHonor.toHonor(
             sagaId: Int,

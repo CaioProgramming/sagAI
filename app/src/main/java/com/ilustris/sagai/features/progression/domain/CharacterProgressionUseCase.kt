@@ -12,13 +12,13 @@ interface CharacterProgressionUseCase {
     suspend fun evaluateEvent(
         sagaId: Int,
         timelineId: Int,
-    ): RequestResult<Unit>
+    ): RequestResult<List<ProgressionChange>>
 
     /**
      * Places the characters of a saga that predates the system (no `baseLevel` yet) in one call, so
      * the cast is judged as a single scale. Characters already placed are left alone.
      */
-    suspend fun placeCharacters(sagaId: Int): RequestResult<Unit>
+    suspend fun placeCharacters(sagaId: Int): RequestResult<List<ProgressionChange>>
 
     /**
      * Medals for a closed chapter. The AI judges which deeds deserve one; the code validates the
@@ -29,14 +29,14 @@ interface CharacterProgressionUseCase {
         sagaId: Int,
         chapterId: Int,
         silent: Boolean = false,
-    ): RequestResult<Unit>
+    ): RequestResult<List<ProgressionChange>>
 
     /** Legacy titles for a closed act, under the same judge-then-validate rule. */
     suspend fun evaluateActLegacy(
         sagaId: Int,
         actId: Int,
         silent: Boolean = false,
-    ): RequestResult<Unit>
+    ): RequestResult<List<ProgressionChange>>
 
     /**
      * The level-gap text for the reply prompt: who of [presentNames] (plus the protagonist) is
@@ -69,3 +69,26 @@ data class CharacterLedger(
     val feats: List<com.ilustris.sagai.features.progression.data.model.CharacterFeat>,
     val honors: List<com.ilustris.sagai.features.progression.data.model.CharacterHonor>,
 )
+
+/** One visible effect of a progression step, so a long run can say what it is changing. */
+sealed interface ProgressionChange {
+    data class Xp(
+        val characterName: String,
+        val xp: Int,
+        val levelBefore: Int,
+        val levelAfter: Int,
+        val featTitles: List<String>,
+    ) : ProgressionChange
+
+    data class Honor(
+        val characterName: String,
+        val kind: com.ilustris.sagai.features.progression.data.model.HonorKind,
+        val name: String,
+        val emoji: String?,
+    ) : ProgressionChange
+
+    data class Placed(
+        val characterName: String,
+        val level: Int,
+    ) : ProgressionChange
+}

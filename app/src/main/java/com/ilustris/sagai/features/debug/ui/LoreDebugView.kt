@@ -115,8 +115,8 @@ fun LoreDebugView(
     }
 
     val view = LocalView.current
-    DisposableEffect(uiState.isFixing) {
-        if (uiState.isFixing) {
+    DisposableEffect(uiState.isFixing, uiState.progressionRun != null) {
+        if (uiState.isFixing || uiState.progressionRun != null) {
             view.keepScreenOn = true
         }
         onDispose {
@@ -239,6 +239,17 @@ fun LoreDebugView(
                             )
                         }
 
+                        item {
+                            ProgressionSection(
+                                ledger = uiState.ledger,
+                                enabled = uiState.progressionRun == null && !uiState.isFixing,
+                                onGenerate = viewModel::backfillProgression,
+                                onRecompute = viewModel::recomputeProgressionXp,
+                                onShowLedger = viewModel::showLedger,
+                                onReset = viewModel::resetProgression,
+                            )
+                        }
+
                         items(saga.acts) {
                             StoryCard(
                                 saga = saga,
@@ -264,43 +275,20 @@ fun LoreDebugView(
                                 .padding(16.dp),
                         contentAlignment = Alignment.BottomCenter,
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        Button(
+                            onClick = { viewModel.toggleFixConfirmation() },
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                            shape = sagaShape(),
+                            enabled = !uiState.isFixing,
                         ) {
-                            OutlinedButton(
-                                onClick = { viewModel.recomputeProgressionXp() },
-                                modifier = Modifier.fillMaxWidth(),
-                                enabled = !uiState.isFixing,
-                            ) { Text("Recalcular XP (sem IA)") }
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OutlinedButton(
-                                    onClick = { viewModel.backfillProgression() },
-                                    modifier = Modifier.weight(1f),
-                                    enabled = !uiState.isFixing,
-                                ) { Text("Gerar progressão") }
-                                OutlinedButton(
-                                    onClick = { viewModel.showLedger() },
-                                    modifier = Modifier.weight(1f),
-                                ) { Text("Ver ledger") }
-                                OutlinedButton(
-                                    onClick = { viewModel.resetProgression() },
-                                    modifier = Modifier.weight(1f),
-                                    enabled = !uiState.isFixing,
-                                ) { Text("Zerar progressão") }
-                            }
-                            Button(
-                                onClick = { viewModel.toggleFixConfirmation() },
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
-                                shape = sagaShape(),
-                                enabled = !uiState.isFixing,
-                            ) {
-                                Text(
-                                    if (uiState.isFixing) "Amarrando história..." else "Consertar História",
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
+                            Text(
+                                if (uiState.isFixing) "Amarrando história..." else "Consertar História",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Bold,
+                            )
                         }
                     }
                 }
@@ -319,34 +307,11 @@ fun LoreDebugView(
             )
         }
 
-        uiState.ledger?.let { ledger ->
-            AlertDialog(
-                onDismissRequest = { viewModel.hideLedger() },
-                title = { Text("Ledger de progressão") },
-                text = {
-                    Column(
-                        modifier = Modifier.verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        val allFeats = ledger.flatMap { it.feats }
-                        Text(
-                            "Feitos: ${allFeats.size} | por tier: " +
-                                (0..5).joinToString { tier -> "T$tier=${allFeats.count { it.tier == tier }}" },
-                            fontWeight = FontWeight.Bold,
-                        )
-                        ledger.forEach { entry ->
-                            Text(
-                                "${entry.name}: base ${entry.baseLevel ?: "-"} -> nível ${entry.level ?: "-"} (${entry.earnedXp} XP)",
-                                fontWeight = FontWeight.Bold,
-                            )
-                            entry.feats.forEach { Text("• T${it.tier} ${it.kind} +${it.xp} ${it.title}", style = MaterialTheme.typography.bodySmall) }
-                            entry.honors.forEach { Text("★ ${it.kind} ${it.emoji.orEmpty()} ${it.name}", style = MaterialTheme.typography.bodySmall) }
-                        }
-                    }
-                },
-                confirmButton = { TextButton(onClick = { viewModel.hideLedger() }) { Text("Fechar") } },
-            )
+        if (uiState.showLedger) {
+            LedgerSheet(ledger = uiState.ledger, onDismiss = viewModel::hideLedger)
         }
+
+        uiState.progressionRun?.let { ProgressionRunOverlay(it, saga?.data?.genre ?: Genre.FANTASY) }
 
         if (uiState.showFixConfirmation && saga != null) {
             val rules = NarrativeRules() // Fallback if RC not ready, but VM uses actual one
