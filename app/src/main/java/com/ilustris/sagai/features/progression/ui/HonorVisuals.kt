@@ -252,8 +252,8 @@ fun LegacyBadge3D(
                         }
                     drawPath(sweepBand, Color.White.copy(alpha = .85f))
                 }
-                translate(13.25f, 13.25f + .7f) {
-                    with(icon) { draw(Size(13.5f, 13.5f), colorFilter = ColorFilter.tint(palette.engrave.copy(alpha = .55f))) }
+                translate(13.25f, 13.25f + .9f) {
+                    with(icon) { draw(Size(13.5f, 13.5f), colorFilter = ColorFilter.tint(palette.engrave.copy(alpha = .85f))) }
                 }
                 translate(13.25f, 13.25f) {
                     with(icon) { draw(Size(13.5f, 13.5f), colorFilter = ColorFilter.tint(Cream)) }

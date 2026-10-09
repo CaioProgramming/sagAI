@@ -72,14 +72,14 @@ fun CharacterLevelRow(
             val (top, engrave) = genre.honorFill()
             Text(
                 text = stringResource(R.string.progression_level_pill, it.level),
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                 fontWeight = FontWeight.ExtraBold,
                 color = engrave,
                 modifier =
                     Modifier
                         .clip(CircleShape)
                         .background(Brush.verticalGradient(listOf(top, genre.honorFillBottom())))
-                        .padding(horizontal = 16.dp, vertical = 5.dp),
+                        .padding(horizontal = 12.dp, vertical = 2.dp),
             )
         }
         if (showStatus) {

@@ -420,7 +420,7 @@ private fun CharacterDetailsLoaded(
                                 progress?.takeIf { it.titles.isNotEmpty() }?.let { current ->
                                     LegacyBadge3D(
                                         genre = genre,
-                                        size = 96.dp,
+                                        size = 60.dp,
                                         modifier = Modifier.clickable { honorSheet = current.titles to 0 },
                                     )
                                 }
