@@ -64,6 +64,19 @@ interface ProgressionDao {
     @Query("SELECT * FROM character_honors WHERE sagaId = :sagaId ORDER BY createdAt, id")
     suspend fun getHonorsBySaga(sagaId: Int): List<CharacterHonor>
 
+    /** Honors of one chapter or act with who earned them, for the story screens. */
+    @Query(
+        "SELECT h.*, c.name AS characterName FROM character_honors h JOIN Characters c ON c.id = h.characterId " +
+            "WHERE h.kind = :kind AND h.scopeId = :scopeId ORDER BY h.createdAt, h.id",
+    )
+    fun observeHonorsOfScope(
+        kind: String,
+        scopeId: Int,
+    ): Flow<List<HonorWithCharacter>>
+
+    @Query("SELECT * FROM character_feats WHERE id IN (:ids)")
+    suspend fun getFeatsByIds(ids: List<Int>): List<CharacterFeat>
+
     @Query("SELECT * FROM character_honors WHERE sagaId = :sagaId AND announced = 0")
     suspend fun getUnannouncedHonors(sagaId: Int): List<CharacterHonor>
 
@@ -91,4 +104,9 @@ interface ProgressionDao {
 data class CharacterXp(
     val characterId: Int,
     val xp: Int,
+)
+
+data class HonorWithCharacter(
+    @androidx.room.Embedded val honor: CharacterHonor,
+    val characterName: String,
 )

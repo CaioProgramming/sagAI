@@ -44,6 +44,8 @@ class CharacterDetailsViewModel
         val imagePalette = MutableStateFlow<ImagePalette?>(null)
         val messageCount = MutableStateFlow(0)
         val progress = MutableStateFlow<CharacterProgress?>(null)
+        val pendingGenerations = MutableStateFlow(0)
+        val isRetrying = MutableStateFlow(false)
 
         val characterResume = MutableStateFlow<String?>(null)
         val characterArcs = MutableStateFlow<List<CharacterArc>>(emptyList())
@@ -69,6 +71,35 @@ class CharacterDetailsViewModel
         fun ensureGenreTheme(genre: Genre) {
             if (sagaImmersiveSession.isOwnerOnTop("character_detail")) {
                 sagaThemeManager.updateTheme(genre)
+            }
+        }
+
+        fun updateStatus(
+            character: Character,
+            status: com.ilustris.sagai.features.characters.data.model.CharacterStatus,
+            note: String?,
+        ) {
+            viewModelScope.launch(Dispatchers.IO) {
+                characterUseCase.updateCharacter(
+                    character.copy(
+                        status = status.takeIf { it != com.ilustris.sagai.features.characters.data.model.CharacterStatus.ACTIVE },
+                        statusNote = note,
+                    ),
+                )
+            }
+        }
+
+        fun refreshPending(sagaId: Int) {
+            viewModelScope.launch(Dispatchers.IO) { pendingGenerations.value = progressionUseCase.pendingCount(sagaId) }
+        }
+
+        fun retryPending(sagaId: Int) {
+            if (isRetrying.value) return
+            viewModelScope.launch(Dispatchers.IO) {
+                isRetrying.value = true
+                progressionUseCase.retryPending(sagaId)
+                pendingGenerations.value = progressionUseCase.pendingCount(sagaId)
+                isRetrying.value = false
             }
         }
 
@@ -118,6 +149,7 @@ class CharacterDetailsViewModel
                             ensureGenreTheme(it.sagaInfo.genre)
                             messageCount.value = it.messageCount
                             loadCompletedActs(it.sagaInfo.id)
+                            refreshPending(it.sagaInfo.id)
                             if (characterResume.value == null) {
                                 generateResume(it)
                             }

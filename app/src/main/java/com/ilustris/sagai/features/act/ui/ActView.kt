@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.act.ui
 
+import com.ilustris.sagai.features.progression.ui.ScopeHonors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -91,6 +92,8 @@ fun ActComponent(
                     .padding(16.dp)
                     .fillMaxWidth(),
         )
+
+        ScopeHonors(com.ilustris.sagai.features.progression.data.model.HonorKind.TITLE, act.data.id, content.data.genre)
 
         if (act.data.emotionalReview?.isNotEmpty() == true) {
             Text(

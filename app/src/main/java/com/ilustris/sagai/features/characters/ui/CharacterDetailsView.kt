@@ -1,4 +1,5 @@
 package com.ilustris.sagai.features.characters.ui
+import com.ilustris.sagai.features.characters.ui.components.CharacterStatusDialog
 import com.ilustris.sagai.features.progression.data.model.CharacterHonor
 import com.ilustris.sagai.features.progression.ui.HonorSheet
 import androidx.compose.ui.draw.alpha
@@ -230,7 +231,10 @@ private fun CharacterDetailsLoaded(
         val characterRelations = detailData.relationships
         val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
         val progress by viewModel.progress.collectAsStateWithLifecycle()
+        val pendingGenerations by viewModel.pendingGenerations.collectAsStateWithLifecycle()
+        val isRetrying by viewModel.isRetrying.collectAsStateWithLifecycle()
         var showFeatLog by remember { mutableStateOf(false) }
+        var showStatusDialog by remember { mutableStateOf(false) }
         var honorSheet by remember { mutableStateOf<Pair<List<CharacterHonor>, Int>?>(null) }
         val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
         var showCharacterShare by remember { mutableStateOf(false) }
@@ -471,6 +475,9 @@ private fun CharacterDetailsLoaded(
                                     accent = characterColor,
                                     contentColor = adaptiveTextColor,
                                     genre = genre,
+                                    pendingGenerations = pendingGenerations,
+                                    isRetrying = isRetrying,
+                                    onRetry = { viewModel.retryPending(sagaInfo.id) },
                                     onSeeMore = { showFeatLog = true },
                                     onOpenHonor = { honors, index -> honorSheet = honors to index },
                                 )
@@ -603,6 +610,15 @@ private fun CharacterDetailsLoaded(
                                         showCharacterShare = true
                                     },
                                 )
+                                if (progress != null) {
+                                    IosStyleMenuItem(
+                                        text = stringResource(R.string.character_card_change_status),
+                                        onClick = {
+                                            menuOpen = false
+                                            showStatusDialog = true
+                                        },
+                                    )
+                                }
                                 if (BuildConfig.DEBUG) {
                                     IosStyleMenuItem(
                                         text = stringResource(R.string.debug_regenerate_image),
@@ -651,6 +667,18 @@ private fun CharacterDetailsLoaded(
                     accent = characterColor,
                     genre = genre,
                     onDismiss = { showFeatLog = false },
+                )
+            }
+
+            if (showStatusDialog) {
+                CharacterStatusDialog(
+                    current = characterData.status,
+                    currentNote = characterData.statusNote,
+                    onConfirm = { status, note ->
+                        viewModel.updateStatus(characterData, status, note)
+                        showStatusDialog = false
+                    },
+                    onDismiss = { showStatusDialog = false },
                 )
             }
 

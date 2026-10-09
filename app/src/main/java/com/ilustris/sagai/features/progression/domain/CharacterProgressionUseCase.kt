@@ -67,6 +67,12 @@ interface CharacterProgressionUseCase {
      */
     suspend fun inferStatuses(sagaId: Int): RequestResult<List<ProgressionChange>>
 
+    /** How many finished events, chapters and acts have no successful evaluation yet (a failed or never-run request). */
+    suspend fun pendingCount(sagaId: Int): Int
+
+    /** Runs the evaluations that failed or never ran, in story order and without announcing the past. */
+    suspend fun retryPending(sagaId: Int): RequestResult<Int>
+
     /** Debug reset: wipes the feats and honors of a saga and clears its generation flags. */
     suspend fun resetSaga(sagaId: Int)
 }

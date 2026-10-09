@@ -28,6 +28,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterStatus
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.progression.data.model.CharacterFeat
@@ -532,6 +533,36 @@ class CharacterProgressionUseCaseImpl
                 )
             }
         }
+
+        override suspend fun pendingCount(sagaId: Int): Int {
+            val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return 0
+            if (!saga.data.progressionEnabled) return 0
+            return pending(saga).let { it.events.size + it.chapters.size + it.acts.size }
+        }
+
+        override suspend fun retryPending(sagaId: Int): RequestResult<Int> =
+            executeRequest {
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest 0
+                var done = 0
+                val todo = pending(saga)
+                todo.events.forEach { if (evaluateEvent(sagaId, it.data.id, silent = true).isSuccess) done++ }
+                todo.chapters.forEach { if (evaluateChapterHonors(sagaId, it.data.id, silent = true).isSuccess) done++ }
+                todo.acts.forEach { if (evaluateActLegacy(sagaId, it.data.id, silent = true).isSuccess) done++ }
+                done
+            }
+
+        private class Pending(
+            val events: List<TimelineContent>,
+            val chapters: List<com.ilustris.sagai.features.chapter.data.model.ChapterContent>,
+            val acts: List<com.ilustris.sagai.features.act.data.model.ActContent>,
+        )
+
+        private fun pending(saga: SagaContent) =
+            Pending(
+                events = saga.flatEvents().filter { it.data.title.isNotEmpty() && it.data.content.isNotEmpty() && !it.data.experienceGenerated },
+                chapters = saga.flatChapters().filter { it.data.content.isNotEmpty() && !it.data.honorsGenerated },
+                acts = saga.acts.filter { it.data.content.isNotEmpty() && !it.data.legacyGenerated },
+            )
 
         override suspend fun resetSaga(sagaId: Int) {
             progressionDao.deleteFeatsBySaga(sagaId)

@@ -116,6 +116,9 @@ fun CharacterExperienceCard(
     accent: Color,
     contentColor: Color,
     genre: Genre,
+    pendingGenerations: Int,
+    isRetrying: Boolean,
+    onRetry: () -> Unit,
     onSeeMore: () -> Unit,
     onOpenHonor: (honors: List<com.ilustris.sagai.features.progression.data.model.CharacterHonor>, index: Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -193,6 +196,19 @@ fun CharacterExperienceCard(
                 LegacyBadge3D(genre = genre, size = 40.dp, levitate = false)
                 Text(title.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = contentColor)
             }
+        }
+
+        if (pendingGenerations > 0) {
+            Text(
+                if (isRetrying) {
+                    stringResource(R.string.progression_retrying)
+                } else {
+                    stringResource(R.string.progression_pending_retry, pendingGenerations)
+                },
+                style = MaterialTheme.typography.labelMedium,
+                color = contentColor.copy(alpha = .75f),
+                modifier = Modifier.fillMaxWidth().clickable(enabled = !isRetrying, onClick = onRetry),
+            )
         }
 
         Text(

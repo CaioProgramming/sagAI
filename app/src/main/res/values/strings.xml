@@ -1230,4 +1230,11 @@
     <string name="progression_why">Why</string>
     <string name="settings_show_progression">Levels and experience</string>
     <string name="settings_show_progression_description">Shows levels, medals and legacies of the characters. Turn off to read the story without them.</string>
+    <string name="character_status_dialog_title">Change situation</string>
+    <string name="character_status_note_label">Note (optional)</string>
+    <string name="character_status_confirm">Save</string>
+    <string name="progression_status_active">Active</string>
+    <string name="character_card_change_status">Change situation</string>
+    <string name="progression_pending_retry">%1$d experience updates did not finish. Tap to try again.</string>
+    <string name="progression_retrying">Updating experience…</string>
 </resources>
