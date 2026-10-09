@@ -1213,6 +1213,9 @@
     <string name="character_card_share">Compartilhar personagem</string>
     <string name="character_card_race_ethnicity">raça / etnia</string>
     <string name="character_card_xp_chip">+%1$d XP</string>
+    <string name="progression_medal_label">Medalha</string>
+    <string name="progression_close">Fechar</string>
+    <string name="progression_why">Por quê</string>
 </resources>
 
 

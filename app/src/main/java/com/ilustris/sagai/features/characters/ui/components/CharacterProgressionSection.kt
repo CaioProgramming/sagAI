@@ -43,6 +43,9 @@ import com.ilustris.sagai.features.newsaga.ui.glassSurface
 import com.ilustris.sagai.features.progression.data.model.CharacterFeat
 import com.ilustris.sagai.features.progression.data.model.CharacterHonor
 import com.ilustris.sagai.features.progression.domain.CharacterProgress
+import com.ilustris.sagai.features.progression.ui.LegacyBadge3D
+import com.ilustris.sagai.features.progression.ui.MedalCoin
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 private val CardShape = RoundedCornerShape(24.dp)
 
@@ -54,6 +57,8 @@ fun CharacterLevelRow(
     statusNote: String?,
     accent: Color,
     contentColor: Color,
+    genre: Genre,
+    onOpenLegacy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val showStatus = status != null && status != CharacterStatus.ACTIVE
@@ -63,6 +68,9 @@ fun CharacterLevelRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (progress?.titles?.isNotEmpty() == true) {
+            LegacyBadge3D(genre = genre, size = 44.dp, modifier = Modifier.clickable(onClick = onOpenLegacy))
+        }
         progress?.let {
             Text(
                 text = stringResource(R.string.progression_level_pill, it.level) + if (it.bandLabel.isNotBlank()) " · ${it.bandLabel}" else "",
@@ -100,27 +108,6 @@ fun CharacterLevelRow(
     }
 }
 
-/** A round medal: the emoji of the deed on the character's own color, lit from the top. */
-@Composable
-fun MedalCoin(
-    emoji: String?,
-    accent: Color,
-    modifier: Modifier = Modifier,
-    size: Dp = 44.dp,
-) {
-    Box(
-        modifier =
-            modifier
-                .size(size)
-                .clip(CircleShape)
-                .background(Brush.verticalGradient(listOf(accent, accent.copy(alpha = .55f))))
-                .border(1.5.dp, Color.White.copy(alpha = .35f), CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(emoji?.takeIf { it.isNotBlank() } ?: "🏅", fontSize = (size.value * .5f).sp)
-    }
-}
-
 /** The experience card: medals, progress to the next level and the counters, with the feat log one tap away. */
 @Composable
 fun CharacterExperienceCard(
@@ -128,7 +115,9 @@ fun CharacterExperienceCard(
     messageCount: Int,
     accent: Color,
     contentColor: Color,
+    genre: Genre,
     onSeeMore: () -> Unit,
+    onOpenHonor: (honors: List<com.ilustris.sagai.features.progression.data.model.CharacterHonor>, index: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -157,7 +146,14 @@ fun CharacterExperienceCard(
                     color = contentColor.copy(alpha = .6f),
                 )
             } else {
-                medals.takeLast(3).reversed().forEach { MedalCoin(it.emoji, accent) }
+                medals.indices.reversed().take(3).forEach { index ->
+                    MedalCoin(
+                        emoji = medals[index].emoji,
+                        genre = genre,
+                        size = 44.dp,
+                        modifier = Modifier.clickable { onOpenHonor(medals, index) },
+                    )
+                }
                 if (medals.size > 3) {
                     Text("+${medals.size - 3}", style = MaterialTheme.typography.labelLarge, color = contentColor.copy(alpha = .8f))
                 }
@@ -188,13 +184,15 @@ fun CharacterExperienceCard(
             Counter(messageCount.toString(), stringResource(R.string.progression_messages), contentColor)
         }
 
-        progress.titles.forEach {
-            Text(
-                "👑 ${it.name}",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = contentColor,
-            )
+        progress.titles.forEachIndexed { index, title ->
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { onOpenHonor(progress.titles, index) },
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                LegacyBadge3D(genre = genre, size = 40.dp, levitate = false)
+                Text(title.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = contentColor)
+            }
         }
 
         Text(
@@ -261,6 +259,7 @@ fun CharacterSkillChips(
 fun CharacterFeatLogSheet(
     progress: CharacterProgress,
     accent: Color,
+    genre: Genre,
     onDismiss: () -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -274,7 +273,7 @@ fun CharacterFeatLogSheet(
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .65f), modifier = Modifier.padding(top = 4.dp))
                 }
             }
-            items(progress.honors.sortedByDescending { it.createdAt }, key = { "h${it.id}" }) { HonorRow(it, accent) }
+            items(progress.honors.sortedByDescending { it.createdAt }, key = { "h${it.id}" }) { HonorRow(it, accent, genre) }
             items(progress.feats.sortedByDescending { it.id }, key = { "f${it.id}" }) { FeatRow(it, accent) }
             item { Spacer(Modifier.height(24.dp)) }
         }
@@ -285,9 +284,10 @@ fun CharacterFeatLogSheet(
 private fun HonorRow(
     honor: CharacterHonor,
     accent: Color,
+    genre: Genre,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        MedalCoin(if (honor.kind.name == "MEDAL") honor.emoji else "👑", accent, size = 40.dp)
+        if (honor.kind.name == "MEDAL") MedalCoin(honor.emoji, genre, size = 40.dp) else LegacyBadge3D(genre, size = 40.dp, levitate = false)
         Column {
             Text(honor.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Text(honor.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f))

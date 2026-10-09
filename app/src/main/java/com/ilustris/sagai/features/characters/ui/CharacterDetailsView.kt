@@ -1,4 +1,6 @@
 package com.ilustris.sagai.features.characters.ui
+import com.ilustris.sagai.features.progression.data.model.CharacterHonor
+import com.ilustris.sagai.features.progression.ui.HonorSheet
 import androidx.compose.ui.draw.alpha
 import com.ilustris.sagai.features.characters.ui.components.AboutCard
 import com.ilustris.sagai.features.characters.ui.components.ArcsCard
@@ -229,6 +231,7 @@ private fun CharacterDetailsLoaded(
         val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
         val progress by viewModel.progress.collectAsStateWithLifecycle()
         var showFeatLog by remember { mutableStateOf(false) }
+        var honorSheet by remember { mutableStateOf<Pair<List<CharacterHonor>, Int>?>(null) }
         val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
         var showCharacterShare by remember { mutableStateOf(false) }
 
@@ -426,6 +429,8 @@ private fun CharacterDetailsLoaded(
                                     statusNote = characterData.statusNote,
                                     accent = characterColor,
                                     contentColor = adaptiveTextColor,
+                                    genre = genre,
+                                    onOpenLegacy = { progress?.let { honorSheet = it.titles to 0 } },
                                 )
 
                                 Text(
@@ -465,7 +470,9 @@ private fun CharacterDetailsLoaded(
                                     messageCount = messageCount,
                                     accent = characterColor,
                                     contentColor = adaptiveTextColor,
+                                    genre = genre,
                                     onSeeMore = { showFeatLog = true },
+                                    onOpenHonor = { honors, index -> honorSheet = honors to index },
                                 )
                             }
                         }
@@ -642,7 +649,18 @@ private fun CharacterDetailsLoaded(
                 CharacterFeatLogSheet(
                     progress = it,
                     accent = characterColor,
+                    genre = genre,
                     onDismiss = { showFeatLog = false },
+                )
+            }
+
+            honorSheet?.let { (honors, index) ->
+                HonorSheet(
+                    honors = honors,
+                    startIndex = index,
+                    feats = progress?.feats.orEmpty(),
+                    genre = genre,
+                    onDismiss = { honorSheet = null },
                 )
             }
         }
