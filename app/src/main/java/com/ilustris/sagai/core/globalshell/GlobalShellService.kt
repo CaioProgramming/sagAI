@@ -70,6 +70,11 @@ class GlobalShellService
                 }
             }
 
+            if (effect is ProgressionEffect && !settingsUseCaseProvider.get().getShowProgression().first()) {
+                Timber.d("GlobalShellService: progression effect suppressed (setting off)")
+                return
+            }
+
             val ctx = VisibilityContext()
             if (effect.shouldSuppress(ctx)) {
                 Timber.d("GlobalShellService: suppressed by visibility policy: ${effect.id}")

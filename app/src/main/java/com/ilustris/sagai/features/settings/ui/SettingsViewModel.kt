@@ -49,6 +49,7 @@ class SettingsViewModel
         val smartSuggestionsEnabled = settingsUseCase.getSmartSuggestionsEnabled()
 
         val messageEffectsEnabled = settingsUseCase.getMessageEffectsEnabled()
+        val showProgression = settingsUseCase.getShowProgression()
         val showTutorials = settingsUseCase.getShowTutorials()
         val musicEnabled = settingsUseCase.getMusicEnabled()
         val backupEnabled = settingsUseCase.backupEnabled()
@@ -126,6 +127,12 @@ class SettingsViewModel
         fun setSmartSuggestionsEnabled(enabled: Boolean) {
             viewModelScope.launch {
                 settingsUseCase.setSmartSuggestionsEnabled(enabled)
+            }
+        }
+
+        fun setShowProgression(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsUseCase.setShowProgression(enabled)
             }
         }
 

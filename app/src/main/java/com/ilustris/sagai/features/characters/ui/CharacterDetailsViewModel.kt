@@ -16,11 +16,13 @@ import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.progression.domain.CharacterProgress
 import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
+import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -36,6 +38,7 @@ class CharacterDetailsViewModel
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val progressionUseCase: CharacterProgressionUseCase,
+        private val settingsUseCase: SettingsUseCase,
     ) : ViewModel() {
         val characterDetailData = MutableStateFlow<CharacterDetailData?>(null)
         val imagePalette = MutableStateFlow<ImagePalette?>(null)
@@ -106,7 +109,10 @@ class CharacterDetailsViewModel
                             if (progressJob == null || progressJob?.isActive == false) {
                                 progressJob =
                                     viewModelScope.launch(Dispatchers.IO) {
-                                        progressionUseCase.observeProgress(it.character).collect { value -> progress.value = value }
+                                        combine(
+                                            progressionUseCase.observeProgress(it.character),
+                                            settingsUseCase.getShowProgression(),
+                                        ) { value, show -> value.takeIf { show } }.collect { value -> progress.value = value }
                                     }
                             }
                             ensureGenreTheme(it.sagaInfo.genre)

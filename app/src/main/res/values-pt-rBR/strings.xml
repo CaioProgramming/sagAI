@@ -1216,6 +1216,8 @@
     <string name="progression_medal_label">Medalha</string>
     <string name="progression_close">Fechar</string>
     <string name="progression_why">Por quê</string>
+    <string name="settings_show_progression">Níveis e experiência</string>
+    <string name="settings_show_progression_description">Mostra níveis, medalhas e legados dos personagens. Desligue para ler a história sem eles.</string>
 </resources>
 
 

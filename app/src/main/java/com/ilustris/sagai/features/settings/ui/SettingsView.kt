@@ -106,6 +106,7 @@ fun SettingsView(
     val hasSagasWithChapters by viewModel.hasSagasWithChapters.collectAsStateWithLifecycle(null)
 
     val messageEffectsEnabled by viewModel.messageEffectsEnabled.collectAsStateWithLifecycle(true)
+    val showProgression by viewModel.showProgression.collectAsStateWithLifecycle(true)
     val showTutorials by viewModel.showTutorials.collectAsStateWithLifecycle(true)
     val musicEnabled by viewModel.musicEnabled.collectAsStateWithLifecycle(true)
 
@@ -544,6 +545,21 @@ fun SettingsView(
                         isActivated = messageEffectsEnabled,
                         onClickSwitch = {
                             viewModel.setMessageEffectsEnabled(!it)
+                        },
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                        thickness = 1.dp,
+                    )
+
+                    PreferencesContainer(
+                        stringResource(R.string.settings_show_progression),
+                        stringResource(R.string.settings_show_progression_description),
+                        isActivated = showProgression,
+                        onClickSwitch = {
+                            viewModel.setShowProgression(!it)
                         },
                     )
 

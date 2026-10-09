@@ -1228,4 +1228,6 @@
     <string name="progression_medal_label">Medal</string>
     <string name="progression_close">Close</string>
     <string name="progression_why">Why</string>
+    <string name="settings_show_progression">Levels and experience</string>
+    <string name="settings_show_progression_description">Shows levels, medals and legacies of the characters. Turn off to read the story without them.</string>
 </resources>

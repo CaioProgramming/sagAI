@@ -32,6 +32,11 @@ interface SettingsUseCase {
 
     fun getMessageEffectsEnabled(): Flow<Boolean>
 
+    /** Whether levels, medals and legacies are shown; the power directive keeps working underneath either way. */
+    fun getShowProgression(): Flow<Boolean>
+
+    suspend fun setShowProgression(enabled: Boolean)
+
     fun getShowTutorials(): Flow<Boolean>
 
     fun backupEnabled(): Flow<Boolean>
@@ -94,6 +99,7 @@ class SettingsUseCaseImpl
             const val SMART_SUGGESTIONS_ENABLED_KEY = "smart_suggestions_enabled"
             const val MESSAGE_EFFECTS_ENABLED_KEY = "message_effects_enabled"
             const val TUTORIALS_ENABLED_KEY = "tutorials_enabled"
+            const val SHOW_PROGRESSION_KEY = "show_progression"
             const val MUSIC_ENABLED_KEY = "music_enabled"
         }
 
@@ -105,6 +111,10 @@ class SettingsUseCaseImpl
         override fun getSmartSuggestionsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(SMART_SUGGESTIONS_ENABLED_KEY, true)
 
         override fun getMessageEffectsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(MESSAGE_EFFECTS_ENABLED_KEY, true)
+
+        override fun getShowProgression(): Flow<Boolean> = dataStorePreferences.getBoolean(SHOW_PROGRESSION_KEY, true)
+
+        override suspend fun setShowProgression(enabled: Boolean) = dataStorePreferences.setBoolean(SHOW_PROGRESSION_KEY, enabled)
 
         override fun getShowTutorials(): Flow<Boolean> = dataStorePreferences.getBoolean(TUTORIALS_ENABLED_KEY, true)
 
