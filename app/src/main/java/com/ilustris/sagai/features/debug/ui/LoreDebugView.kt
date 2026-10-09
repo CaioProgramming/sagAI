@@ -15,6 +15,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -273,6 +275,10 @@ fun LoreDebugView(
                                     enabled = !uiState.isFixing,
                                 ) { Text("Gerar progressão") }
                                 OutlinedButton(
+                                    onClick = { viewModel.showLedger() },
+                                    modifier = Modifier.weight(1f),
+                                ) { Text("Ver ledger") }
+                                OutlinedButton(
                                     onClick = { viewModel.resetProgression() },
                                     modifier = Modifier.weight(1f),
                                     enabled = !uiState.isFixing,
@@ -305,6 +311,35 @@ fun LoreDebugView(
                 genre = saga?.data?.genre ?: Genre.FANTASY,
                 onDismiss = viewModel::dismissImagePager,
                 onGenerate = viewModel::generateImageForTarget,
+            )
+        }
+
+        uiState.ledger?.let { ledger ->
+            AlertDialog(
+                onDismissRequest = { viewModel.hideLedger() },
+                title = { Text("Ledger de progressão") },
+                text = {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        val allFeats = ledger.flatMap { it.feats }
+                        Text(
+                            "Feitos: ${allFeats.size} | por tier: " +
+                                (0..5).joinToString { tier -> "T$tier=${allFeats.count { it.tier == tier }}" },
+                            fontWeight = FontWeight.Bold,
+                        )
+                        ledger.forEach { entry ->
+                            Text(
+                                "${entry.name}: base ${entry.baseLevel ?: "-"} -> nível ${entry.level ?: "-"} (${entry.earnedXp} XP)",
+                                fontWeight = FontWeight.Bold,
+                            )
+                            entry.feats.forEach { Text("• T${it.tier} ${it.kind} +${it.xp} ${it.title}", style = MaterialTheme.typography.bodySmall) }
+                            entry.honors.forEach { Text("★ ${it.kind} ${it.emoji.orEmpty()} ${it.name}", style = MaterialTheme.typography.bodySmall) }
+                        }
+                    }
+                },
+                confirmButton = { TextButton(onClick = { viewModel.hideLedger() }) { Text("Fechar") } },
             )
         }
 

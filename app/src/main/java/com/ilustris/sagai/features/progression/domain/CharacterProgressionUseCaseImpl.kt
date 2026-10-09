@@ -350,6 +350,25 @@ class CharacterProgressionUseCaseImpl
             return PowerContext(config).describe(inScene)
         }
 
+        override suspend fun ledger(sagaId: Int): List<CharacterLedger> {
+            val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return emptyList()
+            val math = progressionConfigProvider.activeConfig()?.let { ProgressionMath(it) }
+            val feats = progressionDao.getFeatsBySaga(sagaId)
+            val honors = progressionDao.getHonorsBySaga(sagaId)
+            return saga.characters.map { it.data }.map { character ->
+                val mine = feats.filter { it.characterId == character.id }
+                val xp = mine.sumOf { it.xp }
+                CharacterLedger(
+                    name = character.name,
+                    baseLevel = character.baseLevel,
+                    level = character.baseLevel?.let { math?.levelFor(it, xp) },
+                    earnedXp = xp,
+                    feats = mine,
+                    honors = honors.filter { it.characterId == character.id },
+                )
+            }
+        }
+
         override suspend fun resetSaga(sagaId: Int) {
             progressionDao.deleteFeatsBySaga(sagaId)
             progressionDao.deleteHonorsBySaga(sagaId)

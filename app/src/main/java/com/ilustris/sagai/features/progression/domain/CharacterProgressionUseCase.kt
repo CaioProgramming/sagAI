@@ -47,6 +47,18 @@ interface CharacterProgressionUseCase {
         presentNames: List<String>,
     ): String?
 
+    /** Debug: every character of the saga with level, XP and the feats and honors behind it. */
+    suspend fun ledger(sagaId: Int): List<CharacterLedger>
+
     /** Debug reset: wipes the feats and honors of a saga and clears its generation flags. */
     suspend fun resetSaga(sagaId: Int)
 }
+
+data class CharacterLedger(
+    val name: String,
+    val baseLevel: Int?,
+    val level: Int?,
+    val earnedXp: Int,
+    val feats: List<com.ilustris.sagai.features.progression.data.model.CharacterFeat>,
+    val honors: List<com.ilustris.sagai.features.progression.data.model.CharacterHonor>,
+)

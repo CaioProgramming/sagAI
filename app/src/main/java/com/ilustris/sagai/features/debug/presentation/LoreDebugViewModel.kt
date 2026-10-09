@@ -18,6 +18,7 @@ import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.progression.domain.CharacterLedger
 import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
 import com.ilustris.sagai.features.progression.domain.ProgressionConfigProvider
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
@@ -72,6 +73,7 @@ data class LoreDebugUiState(
     val imageTargets: List<ImageDebugTarget> = emptyList(),
     val showImagePager: Boolean = false,
     val pagerInitialIndex: Int = 0,
+    val ledger: List<CharacterLedger>? = null,
 )
 
 @HiltViewModel
@@ -443,6 +445,13 @@ class LoreDebugViewModel
                 _uiState.update { it.copy(isFixing = false, currentFixItem = 0) }
             }
         }
+
+        fun showLedger() {
+            val sagaId = _uiState.value.sagaMetadata?.data?.id ?: return
+            viewModelScope.launch { _uiState.update { it.copy(ledger = progressionUseCase.ledger(sagaId)) } }
+        }
+
+        fun hideLedger() = _uiState.update { it.copy(ledger = null) }
 
         /** Wipes the saga's feats and honors and clears the flags, to re-run after a prompt change. */
         fun resetProgression() {

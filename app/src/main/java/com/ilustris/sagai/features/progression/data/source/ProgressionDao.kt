@@ -57,6 +57,9 @@ interface ProgressionDao {
         scopeId: Int,
     ): List<CharacterHonor>
 
+    @Query("SELECT * FROM character_honors WHERE sagaId = :sagaId ORDER BY createdAt, id")
+    suspend fun getHonorsBySaga(sagaId: Int): List<CharacterHonor>
+
     @Query("SELECT * FROM character_honors WHERE sagaId = :sagaId AND announced = 0")
     suspend fun getUnannouncedHonors(sagaId: Int): List<CharacterHonor>
 
