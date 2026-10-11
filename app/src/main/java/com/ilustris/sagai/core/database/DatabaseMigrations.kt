@@ -2,6 +2,8 @@ package com.ilustris.sagai.core.database
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.google.gson.Gson
+import com.ilustris.sagai.core.ai.model.Artwork
 
 object DatabaseMigrations {
     val MIGRATION_1_2 =
@@ -728,6 +730,36 @@ object DatabaseMigrations {
             }
         }
 
+    /**
+     * 41 -> 42: `artwork` on sagas and chapters turns from the bare concept text into a JSON
+     * `Artwork` (concept, characterIds, elements). The column stays TEXT, so only the data is
+     * rewritten: each non-empty plain text becomes `{"concept": <text>}`, the character list
+     * starting empty so the cover falls back to the chapter's featured characters.
+     */
+    val MIGRATION_41_42 =
+        object : Migration(41, 42) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                listOf("sagas", "Chapter").forEach { table ->
+                    val rows =
+                        db
+                            .query(
+                                "SELECT id, artwork FROM `$table` " +
+                                    "WHERE artwork IS NOT NULL AND artwork != '' AND substr(artwork, 1, 1) != '{'",
+                            ).use { cursor ->
+                                buildList {
+                                    while (cursor.moveToNext()) add(cursor.getInt(0) to cursor.getString(1))
+                                }
+                            }
+                    rows.forEach { (id, text) ->
+                        db.execSQL(
+                            "UPDATE `$table` SET artwork = ? WHERE id = ?",
+                            arrayOf<Any>(Gson().toJson(Artwork(concept = text)), id),
+                        )
+                    }
+                }
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -770,5 +802,6 @@ object DatabaseMigrations {
             MIGRATION_38_39,
             MIGRATION_39_40,
             MIGRATION_40_41,
+            MIGRATION_41_42,
         )
 }

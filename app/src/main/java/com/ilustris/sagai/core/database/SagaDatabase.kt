@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.ilustris.sagai.core.database.converters.ArtworkConverter
 import com.ilustris.sagai.core.database.converters.BookConverters
 import com.ilustris.sagai.core.database.converters.CharacterPresenceListConverter
 import com.ilustris.sagai.core.database.converters.ChoiceCardListConverter
@@ -85,7 +86,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         CharacterFeat::class,
         CharacterHonor::class,
     ],
-    version = 41,
+    version = 42,
     exportSchema = true,
 )
 @TypeConverters(
@@ -98,6 +99,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
     TimelineConverters::class,
     ChoiceCardListConverter::class,
     FloatArrayConverter::class,
+    ArtworkConverter::class,
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
