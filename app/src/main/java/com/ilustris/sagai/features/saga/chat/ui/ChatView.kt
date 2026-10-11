@@ -111,8 +111,6 @@ import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusViewModel
 import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
-import com.ilustris.sagai.core.file.BACKUP_PERMISSION
-import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.globalshell.rememberOverlayVisibilityTracker
 import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
@@ -248,7 +246,6 @@ fun ChatView(
         val lifecycleOwner = LocalLifecycleOwner.current
         val drawerState = rememberDrawerState(DrawerValue.Closed)
         val coroutineScope = rememberCoroutineScope()
-        var showBackupSheet by remember { mutableStateOf(false) }
 
         BackHandler(enabled = !drawerState.isOpen) {
             onBack()
@@ -266,20 +263,10 @@ fun ChatView(
             }
         }
 
-        val backupLauncher =
-            PermissionService.rememberBackupLauncher { uri ->
-                onAction(ChatUiAction.EnableBackup(uri))
-                requiredPermission = null
-            }
-
         PermissionComponent(onConfirm = {
-            if (requiredPermission != BACKUP_PERMISSION) {
-                context?.let {
-                    openAppSettings(context)
-                    requiredPermission = null
-                }
-            } else {
-                backupLauncher.launch(null)
+            context?.let {
+                openAppSettings(context)
+                requiredPermission = null
             }
         }) {
             requiredPermission = null
@@ -367,10 +354,6 @@ fun ChatView(
                                         onDismiss = { showReview = false },
                                     )
                                 }
-                            }
-
-                            if (showBackupSheet) {
-                                BackupSheet(onDismiss = { showBackupSheet = false })
                             }
 
                             if (uiState.showAudioTranscript) {

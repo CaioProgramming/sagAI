@@ -1226,6 +1226,19 @@
     <string name="progression_pending_retry">%1$d atualizações de experiência não terminaram. Toque para tentar de novo.</string>
     <string name="progression_retrying">Atualizando a experiência…</string>
     <string name="progression_feats_level">feitos · nível %1$d</string>
+    <string name="archive_export_button">Criar backup completo (.sagas)</string>
+    <string name="archive_restore_button">Restaurar backup completo</string>
+    <string name="archive_export_success">Backup salvo. Guarde o arquivo em um lugar seguro 💜</string>
+    <string name="archive_export_failed">Não foi possível criar o backup. Verifique o espaço livre e tente de novo.</string>
+    <string name="archive_invalid">Este arquivo não é um backup do Sagas.</string>
+    <string name="archive_restore_failed">Não foi possível restaurar este backup. Suas sagas atuais foram mantidas.</string>
+    <string name="archive_restore_dialog_title">Restaurar este backup?</string>
+    <string name="archive_restore_dialog_message">Backup de %1$s com %2$d sagas e %3$d mensagens. Tudo o que você tem agora será substituído.</string>
+    <string name="archive_restore_dialog_confirm">Restaurar</string>
+    <string name="archive_reminder_message">Ato concluído! Quer guardar um backup completo das suas sagas?</string>
+    <string name="archive_reminder_action">Fazer backup</string>
+    <string name="home_last_backup">Último backup: %1$s</string>
+    <string name="home_last_backup_never">Você ainda não fez backup das suas sagas. Toque para fazer.</string>
 </resources>
 
 

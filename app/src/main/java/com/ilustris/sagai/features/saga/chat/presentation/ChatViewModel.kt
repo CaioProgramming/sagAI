@@ -328,10 +328,6 @@ class ChatViewModel
                     checkSaga()
                 }
 
-                is ChatUiAction.EnableBackup -> {
-                    enableBackup(action.uri)
-                }
-
                 is ChatUiAction.RequestAudioTranscript -> {
                     stateManager.updateAudioTranscriptVisibility(action.show)
                 }
@@ -668,18 +664,6 @@ class ChatViewModel
 
                 settingsUseCase.getMessageEffectsEnabled().collect {
                     stateManager.updateState { s -> s.copy(messageEffectsEnabled = it) }
-                }
-
-                settingsUseCase.backupEnabled().collect {
-                    if (it.not()) {
-                        sagaThemeManager.showSnackBar(
-                            message = context.getString(R.string.backup_disabled_notification),
-                            action =
-                                context.getString(R.string.configure) to {
-                                    enableBackup(null)
-                                },
-                        )
-                    }
                 }
             }
 
@@ -1110,7 +1094,6 @@ class ChatViewModel
                     }
                     startTime = 0L
                 }
-                sagaContentManager.backupSaga()
             }
         }
 
@@ -1487,12 +1470,6 @@ class ChatViewModel
                     delay(100)
                 }
                 Timber.tag("ChatViewModel").d("Finished enqueuing $count fake messages.")
-            }
-        }
-
-        fun enableBackup(uri: Uri?) {
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.enableBackup(uri)
             }
         }
 

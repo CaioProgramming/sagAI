@@ -1238,4 +1238,17 @@
     <string name="progression_pending_retry">%1$d experience updates did not finish. Tap to try again.</string>
     <string name="progression_retrying">Updating experience…</string>
     <string name="progression_feats_level">feats · level %1$d</string>
+    <string name="archive_export_button">Create full backup (.sagas)</string>
+    <string name="archive_restore_button">Restore full backup</string>
+    <string name="archive_export_success">Backup saved. Keep the file somewhere safe 💜</string>
+    <string name="archive_export_failed">Could not create the backup. Check the free space and try again.</string>
+    <string name="archive_invalid">This file is not a Sagas backup.</string>
+    <string name="archive_restore_failed">Could not restore this backup. Your current sagas were kept.</string>
+    <string name="archive_restore_dialog_title">Restore this backup?</string>
+    <string name="archive_restore_dialog_message">Backup from %1$s with %2$d sagas and %3$d messages. Everything you have now will be replaced.</string>
+    <string name="archive_restore_dialog_confirm">Restore</string>
+    <string name="archive_reminder_message">Act complete! Want to save a full backup of your sagas?</string>
+    <string name="archive_reminder_action">Back up</string>
+    <string name="home_last_backup">Last backup: %1$s</string>
+    <string name="home_last_backup_never">You haven\'t backed up your sagas yet. Tap to do it.</string>
 </resources>

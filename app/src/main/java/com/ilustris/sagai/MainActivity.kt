@@ -97,6 +97,9 @@ import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.components.BlurTarget
 import com.ilustris.sagai.ui.components.FeatureNeedsBillingSheet
 import com.ilustris.sagai.ui.components.SagaSnackBar
+import com.ilustris.sagai.core.database.backup.SagasArchive
+import com.ilustris.sagai.core.database.backup.SagasArchiveService
+import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.ui.components.globalshell.GlobalShellHost
 import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.ChatGenerationIslandContent
@@ -192,6 +195,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var sagaThemeManager: SagaThemeManager
+
+    @Inject
+    lateinit var archiveService: SagasArchiveService
 
     @Inject
     lateinit var sagaNavigationTracker: SagaNavigationTracker
@@ -312,6 +318,24 @@ class MainActivity : ComponentActivity() {
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
                 val globalShellState by globalShellService.uiState.collectAsState()
+
+                val archiveExportLauncher =
+                    PermissionService.rememberArchiveExportLauncher { uri ->
+                        uri ?: return@rememberArchiveExportLauncher
+                        sagaThemeManager.showSnackBar(getString(R.string.backup_loading_creating), durationMs = 0)
+                        archiveService.exportInBackground(uri) { result ->
+                            sagaThemeManager.showSnackBar(
+                                getString(
+                                    if (result.isSuccess) R.string.archive_export_success else R.string.archive_export_failed,
+                                ),
+                            )
+                        }
+                    }
+                LaunchedEffect(Unit) {
+                    archiveService.exportRequests.collect {
+                        archiveExportLauncher.launch(SagasArchive.suggestedFileName())
+                    }
+                }
 
                 LaunchedEffect(Unit) {
                     sideEffectService.sideEffects.collect { effect ->

@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.home.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -23,11 +22,9 @@ interface HomeUseCase {
 
     suspend fun checkDebugBuild(): Boolean
 
-    suspend fun recoverSaga(sagaContent: RestorableSaga): RequestResult<SagaContent>
 
     suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
 
-    suspend fun autoBackup(): RequestResult<Unit>
 
 
     fun filterVisibleSagas(

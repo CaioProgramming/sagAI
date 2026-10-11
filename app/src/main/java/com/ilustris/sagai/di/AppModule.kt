@@ -339,6 +339,15 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideSagasArchiveService(
+        @ApplicationContext context: Context,
+        database: SagaDatabase,
+        preferences: DataStorePreferences,
+    ): com.ilustris.sagai.core.database.backup.SagasArchiveService =
+        com.ilustris.sagai.core.database.backup.SagasArchiveService(context, database, preferences)
+
+    @Provides
+    @Singleton
     fun providesAgeVerificationService(
         @ApplicationContext context: Context,
     ): AgeVerificationService = AgeVerificationService(context)

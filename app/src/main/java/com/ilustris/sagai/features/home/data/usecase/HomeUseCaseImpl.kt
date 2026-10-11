@@ -8,8 +8,6 @@ import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.file.BackupService
-import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
@@ -17,7 +15,6 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.player.domain.UserIdentityUseCase
-import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
@@ -32,8 +29,6 @@ class HomeUseCaseImpl
     constructor(
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
-        private val backupService: BackupService,
-        private val sagaBackupService: SagaBackupService,
         private val remoteConfig: RemoteConfigService,
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
@@ -107,8 +102,6 @@ class HomeUseCaseImpl
 
         override suspend fun checkDebugBuild(): Boolean = BuildConfig.DEBUG && remoteConfig.getBoolean("isDebugger") == true
 
-        override suspend fun recoverSaga(sagaContent: RestorableSaga) = sagaBackupService.restoreContent(sagaContent)
-
         override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
             sagaDetailUseCase.generateStoryBriefing(saga.data.id)
 
@@ -117,15 +110,6 @@ class HomeUseCaseImpl
         ): List<com.ilustris.sagai.features.home.data.model.SagaSummary> =
             content.sortedByDescending { saga ->
                 saga.lastMessageTime ?: saga.data.createdAt
-            }
-
-        override suspend fun autoBackup(): RequestResult<Unit> =
-            executeRequest {
-                val isBackupEnabled = backupService.backupEnabled().first()
-                if (isBackupEnabled) {
-                    Timber.d("Auto-backup triggered, backing up database...")
-                    backupService.backupDatabase()
-                }
             }
 
         override fun filterVisibleSagas(

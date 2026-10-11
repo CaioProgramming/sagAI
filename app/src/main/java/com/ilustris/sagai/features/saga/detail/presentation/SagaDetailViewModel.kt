@@ -48,7 +48,6 @@ class SagaDetailViewModel
         val state: StateFlow<State> = _state.asStateFlow()
         val sagaResume = MutableStateFlow<SagaDetailResume?>(null)
         val showIntro = MutableStateFlow(false)
-        val backupEnabled = sagaDetailUseCase.getBackupEnabled()
 
         val showPremiumSheet = MutableStateFlow(false)
 

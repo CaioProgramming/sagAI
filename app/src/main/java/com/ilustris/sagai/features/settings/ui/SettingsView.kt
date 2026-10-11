@@ -28,6 +28,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import java.text.DateFormat
+import java.util.Date
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,7 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.file.backup.ui.BackupSheet
+import com.ilustris.sagai.core.database.backup.SagasArchive
 import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSettings
@@ -99,12 +101,6 @@ fun SettingsView(
     val smartSuggestionsEnabled by viewModel.smartSuggestionsEnabled.collectAsStateWithLifecycle(
         false,
     )
-    val backupEnabled by
-        viewModel.backupEnabled
-            .collectAsStateWithLifecycle(false)
-
-    val hasSagasWithChapters by viewModel.hasSagasWithChapters.collectAsStateWithLifecycle(null)
-
     val messageEffectsEnabled by viewModel.messageEffectsEnabled.collectAsStateWithLifecycle(true)
     val showProgression by viewModel.showProgression.collectAsStateWithLifecycle(true)
     val showTutorials by viewModel.showTutorials.collectAsStateWithLifecycle(true)
@@ -126,20 +122,19 @@ fun SettingsView(
     val context = LocalActivity.current
     val permissionLauncher = rememberPermissionLauncher()
 
-    var showBackupSheet by remember { mutableStateOf(false) }
-    var showBackups by remember { mutableStateOf(true) }
     var showPremiumSheet by remember { mutableStateOf(false) }
     var showIconSheet by remember { mutableStateOf(false) }
 
-    val exportLauncher =
-        PermissionService.rememberDatabaseExportLauncher { uri ->
-            uri?.let { viewModel.exportDatabase(it) }
+    val archiveExportLauncher =
+        PermissionService.rememberArchiveExportLauncher { uri ->
+            uri?.let { viewModel.exportArchive(it) }
         }
 
-    val importLauncher =
+    val archiveImportLauncher =
         PermissionService.rememberDatabaseImportLauncher { uri ->
-            uri?.let { viewModel.importDatabase(it) }
+            uri?.let { viewModel.previewArchive(it) }
         }
+    val pendingRestore by viewModel.pendingRestore.collectAsStateWithLifecycle()
     with(sharedTransitionScope) {
         LazyColumn(
             modifier =
@@ -452,79 +447,6 @@ fun SettingsView(
                     )
 
                     PreferencesContainer(
-                        stringResource(R.string.backup),
-                        stringResource(R.string.storage_permission_description),
-                        isActivated = backupEnabled,
-                        onClickSwitch = {
-                            if (backupEnabled) {
-                                viewModel.disableBackup()
-                            } else {
-                                showBackupSheet = true
-                            }
-                        },
-                    )
-
-                    if (backupEnabled) {
-                        Button(
-                            onClick = {
-                                showBackups = true
-                                showBackupSheet = true
-                            },
-                            modifier =
-                                Modifier
-                                    .align(Alignment.CenterHorizontally),
-                            colors = ButtonDefaults.textButtonColors(),
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_restore),
-                                null,
-                                modifier =
-                                    Modifier
-                                        .padding(horizontal = 8.dp)
-                                        .size(24.dp),
-                            )
-                            Text(
-                                stringResource(R.string.restore_sagas),
-                                style =
-                                    MaterialTheme.typography.labelLarge.copy(
-                                        fontWeight = FontWeight.Light,
-                                    ),
-                            )
-                        }
-                    }
-
-                    if (!backupEnabled && hasSagasWithChapters == true) {
-                        Column(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                stringResource(R.string.backup_disabled_warning_title),
-                                style =
-                                    MaterialTheme.typography.labelLarge.copy(
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                                color = MaterialColor.Red600,
-                            )
-
-                            Text(
-                                stringResource(R.string.backup_disabled_warning_message),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Light,
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
-                        thickness = 1.dp,
-                    )
-
-                    PreferencesContainer(
                         stringResource(R.string.smart_fix),
                         stringResource(R.string.smart_fix_description),
                         isActivated = smartSuggestionsEnabled,
@@ -696,18 +618,18 @@ fun SettingsView(
 
                     Button(
                         onClick = {
-                            exportLauncher.launch("sagai_database_backup.db")
+                            archiveExportLauncher.launch(SagasArchive.suggestedFileName())
                         },
                         colors =
                             ButtonDefaults.buttonColors().copy(
-                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = .2f),
+                                containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary,
                             ),
                         shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            stringResource(R.string.export_database_button),
+                            stringResource(R.string.archive_export_button),
                             textAlign = TextAlign.Start,
                             modifier =
                                 Modifier
@@ -717,15 +639,13 @@ fun SettingsView(
                     }
 
                     Button(
-                        onClick = {
-                            importLauncher.launch(PermissionService.SQLITE_MIME_TYPES)
-                        },
+                        onClick = { archiveImportLauncher.launch(arrayOf("*/*")) },
                         colors = ButtonDefaults.textButtonColors(),
                         shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            stringResource(R.string.import_database_button),
+                            stringResource(R.string.archive_restore_button),
                             textAlign = TextAlign.Start,
                             modifier =
                                 Modifier
@@ -867,18 +787,39 @@ fun SettingsView(
         )
     }
 
-    StarryLoader(isWiping, loadingMessage)
+    pendingRestore?.let { pending ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissPendingRestore,
+            title = { Text(stringResource(R.string.archive_restore_dialog_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.archive_restore_dialog_message,
+                        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(pending.manifest.createdAt)),
+                        pending.manifest.sagaCount,
+                        pending.manifest.messageCount,
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::restoreArchive) {
+                    Text(stringResource(R.string.archive_restore_dialog_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissPendingRestore) {
+                    Text(stringResource(R.string.clear_data_dialog_cancel))
+                }
+            },
+        )
+    }
+
+    val loadingProgress by viewModel.loadingProgress.collectAsStateWithLifecycle()
+    StarryLoader(isWiping, loadingMessage, progress = loadingProgress)
 
     PermissionComponent(requestedPermission, {
         openAppSettings(context)
     }, { requestedPermission = null })
-
-    if (showBackupSheet) {
-        BackupSheet(showBackups, onDismiss = {
-            showBackupSheet = false
-            showBackups = false
-        })
-    }
 
     if (showIconSheet) {
         AppIconSheet(onDismiss = { showIconSheet = false })

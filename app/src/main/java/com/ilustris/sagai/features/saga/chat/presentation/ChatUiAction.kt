@@ -104,10 +104,6 @@ sealed class ChatUiAction {
 
     data object RefreshSaga : ChatUiAction()
 
-    data class EnableBackup(
-        val uri: android.net.Uri?,
-    ) : ChatUiAction()
-
     data class RequestAudioTranscript(
         val show: Boolean,
     ) : ChatUiAction()
