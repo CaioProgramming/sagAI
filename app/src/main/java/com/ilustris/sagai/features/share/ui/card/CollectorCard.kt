@@ -90,11 +90,7 @@ fun CollectorCard(
     val shape = MaterialTheme.shapes.extraLarge
     val primary = MaterialTheme.colorScheme.primary
     val palette = genre.colorPalette()
-    val frameColors =
-        remember(palette) {
-            val lit = palette.filter { it.luminance() >= MIN_PALETTE_LUMINANCE }.ifEmpty { palette }
-            if (lit.size >= 2) lit else List(2) { lit.firstOrNull() ?: Color.White }
-        }
+    val frameColors = remember(palette) { palette.litForCard() }
     val nameTop = remember(primary) { primary.lightenTo(0.5f) }
     val nameBottom = remember(primary) { primary.lightenTo(0.3f) }
     val shade =
@@ -292,7 +288,7 @@ private fun Modifier.parallax(
     }
 
 /** Mixes toward white just far enough to reach [target] luminance, so dark genre colours stay readable. */
-private fun Color.lightenTo(target: Float): Color {
+internal fun Color.lightenTo(target: Float): Color {
     var amount = 0f
     var result = this
     while (result.luminance() < target && amount < 0.85f) {
@@ -300,4 +296,13 @@ private fun Color.lightenTo(target: Float): Color {
         result = lerp(this, Color.White, amount)
     }
     return result
+}
+
+/**
+ * The palette without its near-black backdrop tints, always with at least two colours so it can
+ * build a gradient. See [MIN_PALETTE_LUMINANCE].
+ */
+internal fun List<Color>.litForCard(): List<Color> {
+    val lit = filter { it.luminance() >= MIN_PALETTE_LUMINANCE }.ifEmpty { this }
+    return if (lit.size >= 2) lit else List(2) { lit.firstOrNull() ?: Color.White }
 }
