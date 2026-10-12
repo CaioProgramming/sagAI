@@ -113,7 +113,7 @@ fun HonorSheet(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                 ) {
                                     Text(it.title, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                                    Text("T${it.tier}", style = MaterialTheme.typography.labelMedium, color = gold)
+                                    Text("+${it.xp} XP", style = MaterialTheme.typography.labelMedium, color = gold)
                                 }
                             }
                         }

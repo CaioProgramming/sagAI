@@ -26,6 +26,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -256,15 +258,28 @@ fun CharacterFeatLogSheet(
             first = false
         }
         progress.feats.sortedByDescending { it.id }.forEach { feat ->
-            RowSection(first = first) {
-                Text("T${feat.tier}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = gold, modifier = Modifier.width(26.dp))
-                Column(Modifier.weight(1f)) {
-                    SectionValue(feat.title, size = 16)
-                    SectionLabel(feat.changed)
-                }
-                Text("+${feat.xp}", style = MaterialTheme.typography.labelMedium, color = gold)
-            }
+            FeatLogRow(feat, gold, first)
             first = false
         }
+    }
+}
+
+/** A feat of the log: the event and its XP; a tap opens what changed and what it cost (tiers are internal and never shown). */
+@Composable
+private fun FeatLogRow(
+    feat: com.ilustris.sagai.features.progression.data.model.CharacterFeat,
+    gold: Color,
+    first: Boolean,
+) {
+    var open by androidx.compose.runtime.saveable.rememberSaveable(feat.id) { androidx.compose.runtime.mutableStateOf(false) }
+    RowSection(first = first, onClick = { open = !open }) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            SectionValue(feat.title, size = 16)
+            if (open) {
+                if (feat.changed.isNotBlank()) SectionLabel(feat.changed)
+                feat.cost?.takeIf { it.isNotBlank() }?.let { SectionLabel(it) }
+            }
+        }
+        Text(stringResource(R.string.character_card_xp_chip, feat.xp), style = MaterialTheme.typography.labelMedium, color = gold, fontWeight = FontWeight.Bold)
     }
 }

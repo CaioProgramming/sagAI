@@ -11,6 +11,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import com.ilustris.sagai.features.progression.domain.CharacterBadge
 import com.ilustris.sagai.features.progression.ui.MedalCoin
+import com.ilustris.sagai.features.progression.ui.desaturated
+import com.ilustris.sagai.features.progression.ui.legacyRing
 import com.ilustris.sagai.features.progression.ui.honorFill
 import com.ilustris.sagai.features.progression.ui.honorFillBottom
 import androidx.compose.animation.AnimatedContentScope
@@ -232,20 +234,15 @@ private fun CharacterVerticalItem(
                 .padding(8.dp),
     ) {
         val (gold, onGold) = genre.honorFill()
-        // A legacy lights a gold ring around the avatar; the level rides on its corner as a small gold chip.
+        val silver = badge?.inMemory == true
+        val ringTop = if (silver) androidx.compose.ui.graphics.Color(0xFFD7D9DE) else gold
+        val ringBottom = if (silver) androidx.compose.ui.graphics.Color(0xFF6F737B) else genre.honorFillBottom()
+        // A legacy lights a ring around the avatar (gold, or silver for a memorial) and a light runs around it now and then.
         Box(
             modifier =
                 Modifier
                     .align(Alignment.CenterHorizontally)
-                    .let {
-                        if (badge?.hasLegacy == true) {
-                            it
-                                .border(3.dp, Brush.verticalGradient(listOf(gold, genre.honorFillBottom())), CircleShape)
-                                .padding(5.dp)
-                        } else {
-                            it
-                        }
-                    },
+                    .let { if (badge?.hasLegacy == true) it.legacyRing(ringTop, ringBottom, shimmer = !silver).padding(6.dp) else it },
         ) {
             CharacterAvatar(
                 character = character,
@@ -257,7 +254,7 @@ private fun CharacterVerticalItem(
                         fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                     ),
                 genre = genre,
-                modifier = iconModifier.aspectRatio(1f),
+                modifier = iconModifier.aspectRatio(1f).let { if (silver) it.desaturated(.15f) else it },
             )
             badge?.let {
                 Text(
@@ -275,6 +272,8 @@ private fun CharacterVerticalItem(
                 )
             }
         }
+        // The latest medal sits right under the avatar, before the name.
+        badge?.lastMedalEmoji?.let { MedalCoin(it, genre, size = 28.dp, modifier = Modifier.padding(top = 4.dp)) }
         Text(
             text = character.name,
             style =
@@ -284,14 +283,13 @@ private fun CharacterVerticalItem(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 4.dp),
         )
-        if (badge?.inMemory == true) {
+        if (silver) {
             Text(
                 stringResource(R.string.progression_in_memory),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f),
             )
         }
-        badge?.lastMedalEmoji?.let { MedalCoin(it, genre, size = 28.dp, modifier = Modifier.padding(top = 4.dp)) }
     }
 }
 
