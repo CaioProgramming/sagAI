@@ -1,14 +1,5 @@
 package com.ilustris.sagai.features.share.ui.card
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.VectorConverter
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
@@ -17,24 +8,23 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntSize
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.components.mascot.rememberTiltLook
-import kotlinx.coroutines.flow.collectLatest
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.exp
 import kotlin.math.sin
 
 /**
  * Where a collector card is tilted, as an [Offset] with each axis in -1..1.
  *
- * Three sources: a finger on the card, the phone's own tilt, and a slow sway that keeps the card
- * alive whenever no finger is on it (a phone held still would otherwise leave it dead flat). [read] is meant to be called inside draw or layer lambdas so tilt updates repaint
- * without recomposing; [gestures] has to sit on the card itself.
+ * [read] is meant to be called inside draw or layer lambdas so tilt updates repaint without
+ * recomposing; [gestures] has to sit on the card itself.
  */
 @Stable
 class CardTiltState internal constructor(
@@ -43,7 +33,12 @@ class CardTiltState internal constructor(
 )
 
 /**
- * @param frozen pins the card flat and the foil at rest. Used while the card is captured as an
+ * One tilt, fed by a finger on the card, the phone's own tilt, and a slow sway that keeps the card
+ * alive. All three go through the same per-frame smoothing toward a single target, so changing
+ * source (a finger landing or lifting) never makes the card jump: the target moves and the card
+ * follows, quickly while held and gently after release.
+ *
+ * @param frozen pins the card flat and the finish at rest. Used while the card is captured as an
  * image, so the shared picture never shows a mid-motion frame.
  */
 @Composable
@@ -53,45 +48,38 @@ fun rememberCardTilt(frozen: Boolean): CardTiltState {
     val frozenState = rememberUpdatedState(frozen)
     val activeState = rememberUpdatedState(animationsActive)
     val drag = remember { mutableStateOf<Offset?>(null) }
-    val animated = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
-    val sway =
-        rememberInfiniteTransition(label = "card-sway").animateFloat(
-            initialValue = 0f,
-            targetValue = (2 * PI).toFloat(),
-            animationSpec = infiniteRepeatable(tween(SWAY_PERIOD_MS, easing = LinearEasing)),
-            label = "card-sway-phase",
-        )
+    val current = remember { mutableStateOf(Offset.Zero) }
 
     LaunchedEffect(frozen) {
         if (frozen) {
-            animated.snapTo(Offset.Zero)
+            current.value = Offset.Zero
             return@LaunchedEffect
         }
-        snapshotFlow { drag.value ?: sensor.value ?: Offset.Zero }
-            .collectLatest {
-                // A held card has to feel attached to the finger; a released one eases back.
-                val held = drag.value != null
-                animated.animateTo(
-                    it,
-                    spring(
-                        dampingRatio = if (held) 0.8f else 0.75f,
-                        stiffness = if (held) Spring.StiffnessMedium else Spring.StiffnessLow,
-                    ),
-                )
-            }
+        var last = withFrameNanos { it }
+        var clock = 0f
+        while (true) {
+            val now = withFrameNanos { it }
+            val dt = ((now - last) / 1_000_000_000f).coerceIn(0f, MAX_FRAME_S)
+            last = now
+
+            val active = activeState.value
+            if (active) clock += dt
+            val sway =
+                if (active) {
+                    Offset(sin(clock * SWAY_SPEED) * SWAY_X, cos(clock * SWAY_SPEED * 0.7f) * SWAY_Y)
+                } else {
+                    Offset.Zero
+                }
+            val held = drag.value
+            val target = held ?: ((sensor.value ?: Offset.Zero) + sway)
+            val tau = if (held != null) HELD_TAU_S else RELEASE_TAU_S
+            current.value += (target - current.value) * (1f - exp(-dt / tau))
+        }
     }
 
     val read: () -> Offset =
-        remember(animated, sway, sensor, drag) {
-            read@{
-                if (frozenState.value) return@read Offset.Zero
-                val swaying = activeState.value && drag.value == null
-                if (swaying) {
-                    animated.value + Offset(sin(sway.value) * SWAY_X, cos(sway.value * 0.7f) * SWAY_Y)
-                } else {
-                    animated.value
-                }
-            }
+        remember(current, frozenState) {
+            { if (frozenState.value) Offset.Zero else current.value }
         }
 
     val gestures =
@@ -123,6 +111,15 @@ private fun Offset.toTilt(size: IntSize): Offset =
         y = (((y / size.height) - 0.5f) * 2f).coerceIn(-1f, 1f),
     )
 
-private const val SWAY_PERIOD_MS = 9_000
+/** Time constant, in seconds, of how fast the card catches up with a finger. */
+private const val HELD_TAU_S = 0.05f
+
+/** Time constant, in seconds, of how gently it drifts back once released. */
+private const val RELEASE_TAU_S = 0.3f
+
+/** A long frame (the app was paused) must not make the card leap. */
+private const val MAX_FRAME_S = 0.05f
+
+private const val SWAY_SPEED = (2 * PI / 9).toFloat()
 private const val SWAY_X = 0.55f
 private const val SWAY_Y = 0.3f

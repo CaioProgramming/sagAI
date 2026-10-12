@@ -137,12 +137,17 @@ fun CollectorCard(
                     .fillMaxSize()
                     .clip(shape)
                     .background(Color.Black)
-                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                    .tiltFringe(read, strengthDp = 5f * scale),
+                    // The shader path is one pass over the art. Without it the foil is drawn with
+                    // a blend mode, which needs the art isolated in its own layer.
+                    .then(
+                        if (HoloSurfaceSupported) Modifier else Modifier.graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
+                    ).holoSurface(frameColors, read, fringeDp = 5f * scale),
             ) {
                 art(read, scale)
                 Box(Modifier.fillMaxSize().background(shade))
-                HoloFoil(colors = frameColors, tilt = read, modifier = Modifier.fillMaxSize())
+                if (!HoloSurfaceSupported) {
+                    HoloFoil(colors = frameColors, tilt = read, modifier = Modifier.fillMaxSize())
+                }
             }
 
             Box(Modifier.fillMaxSize().border(5.dp * scale, Brush.linearGradient(frameColors), shape))
