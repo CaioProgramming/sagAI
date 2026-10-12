@@ -1479,6 +1479,11 @@ fun ChatList(
     val coroutineScope = rememberCoroutineScope()
     val genre = saga.data.genre
     val resolvedColor = MaterialTheme.colorScheme.primary
+    val levelsViewModel = androidx.hilt.navigation.compose.hiltViewModel<com.ilustris.sagai.features.saga.chat.presentation.ChatLevelsViewModel>()
+    val levels by levelsViewModel.levels.collectAsStateWithLifecycle()
+    LaunchedEffect(saga.data.id, characters.map { Triple(it.id, it.baseLevel, it.status) }) {
+        levelsViewModel.load(saga.data.id, characters)
+    }
 
     LaunchedEffect(
         saga
@@ -1612,6 +1617,7 @@ fun ChatList(
                         isLoading = false,
                         mainCharacter = mainCharacter,
                         characters = characters,
+                        levels = levels,
                         wikis = wikis,
                         genre = activeGenre ?: genre,
                         flatEvents = flatEvents,

@@ -241,6 +241,8 @@ fun ChatBubble(
     wikis: List<Wiki>,
     genre: Genre,
     flatEvents: List<Timeline>,
+    /** Current level by character id; the level shows once, right after the name. */
+    levels: Map<Int, Int> = emptyMap(),
     canAnimate: Boolean = true,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
@@ -299,11 +301,12 @@ fun ChatBubble(
     // single accent for the whole message, so they stay tail-only to avoid visual noise.
     val decorateAllBlocks = genre == Genre.HEROES
     val characterColor = avatarCharacter?.hexColor?.hexToColor() ?: resolvedColor
+    val levelSuffix = avatarCharacter?.id?.let { levels[it] }?.let { " · " + stringResource(R.string.progression_level_pill, it) }.orEmpty()
     val nameTagContent =
         avatarCharacter
             ?.name
             ?.takeIf { it.isNotBlank() && !isUser }
-            ?.let { genre.chatBubbleNameTag(it, characterColor, bubbleColor = bubbleStyle.backgroundColor) }
+            ?.let { genre.chatBubbleNameTag(it + levelSuffix, characterColor, bubbleColor = bubbleStyle.backgroundColor) }
     val narratorShape =
         genre.bubble(
             BubbleTailAlignment.BottomRight,
