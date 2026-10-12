@@ -5,7 +5,6 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.Artwork
-import com.ilustris.sagai.core.ai.model.MAX_COVER_CHARACTERS
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.ai.model.ImageType
@@ -58,7 +57,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 class ChapterUseCaseImpl
@@ -254,42 +252,34 @@ class ChapterUseCaseImpl
                 // fallback for that tap, so the guard keeps it from re-enqueuing (and re-billing)
                 // a cover the background trigger already generated.
                 if (chapter.data.coverImage.isNotBlank()) return@executeRequest chapter.data
-                // The synthesis handler and the milestone's "continue" tap both land here for the same
-                // chapter, and the first image takes minutes to save its cover, so the coverImage guard
-                // above cannot tell the second call is redundant. One generation per chapter at a time.
-                if (!coversInFlight.add(chapterId)) return@executeRequest chapter.data
-                try {
-                    val chapterWithArtwork = ensureChapterArtwork(chapter, saga)
-                    val context =
-                        buildCoverPromptContext(
-                            chapterWithArtwork.narrativeGuide,
-                            chapterWithArtwork.artwork,
-                            coverCharacters(chapterWithArtwork, saga),
-                        )
+                val chapterWithArtwork = ensureChapterArtwork(chapter, saga)
+                val context =
+                    buildCoverPromptContext(
+                        chapterWithArtwork.narrativeGuide,
+                        chapterWithArtwork.artwork,
+                        coverCharacters(chapterWithArtwork, saga),
+                    )
 
-                    imageGenerationService
-                        .enqueue(
-                            ImageGenerationRequest(
-                                genre = saga.data.genre,
-                                imageReference = null,
-                                context = context,
-                                imageType = ImageType.COVER,
-                                variationId = saga.data.variationId,
-                                label = chapterWithArtwork.title,
-                                showReveal = true,
-                            ),
-                        ) { bitmap ->
-                            val coverFile =
-                                fileHelper.saveFile(
-                                    chapterWithArtwork.title,
-                                    bitmap,
-                                    path = "${saga.data.id}/chapters/",
-                                ) ?: error("Failed to save chapter cover")
-                            persistCover(chapterWithArtwork, coverFile.path)
-                        }.getOrThrow()
-                } finally {
-                    coversInFlight.remove(chapterId)
-                }
+                imageGenerationService
+                    .enqueue(
+                        ImageGenerationRequest(
+                            genre = saga.data.genre,
+                            imageReference = null,
+                            context = context,
+                            imageType = ImageType.COVER,
+                            variationId = saga.data.variationId,
+                            label = chapterWithArtwork.title,
+                            showReveal = true,
+                        ),
+                    ) { bitmap ->
+                        val coverFile =
+                            fileHelper.saveFile(
+                                chapterWithArtwork.title,
+                                bitmap,
+                                path = "${saga.data.id}/chapters/",
+                            ) ?: error("Failed to save chapter cover")
+                        persistCover(chapterWithArtwork, coverFile.path)
+                    }.getOrThrow()
             }
 
         @OptIn(PublicPreviewAPI::class)
@@ -394,7 +384,7 @@ class ChapterUseCaseImpl
                         curated.characterIds
                             .distinct()
                             .filter { saga.findCharacter(it) != null }
-                            .take(MAX_COVER_CHARACTERS),
+                            .take(Artwork.MAX_CHARACTERS),
                 )
             val latest = chapterRepository.getChapterById(current.id) ?: current
             return chapterRepository.updateChapter(latest.copy(artwork = artwork))
@@ -458,7 +448,7 @@ class ChapterUseCaseImpl
                 .ifEmpty { chapter.featuredCharacters }
                 .distinct()
                 .mapNotNull { saga.findCharacter(it) }
-                .take(MAX_COVER_CHARACTERS)
+                .take(Artwork.MAX_CHARACTERS)
                 .ifEmpty { listOfNotNull(saga.mainCharacter) }
 
         private fun buildCoverPromptContext(
@@ -920,9 +910,6 @@ class ChapterUseCaseImpl
     }
 
 private const val PLAYER_CHOICE_CARD_COUNT = 3
-
-/** Chapters whose automatic cover generation is running, shared across use case instances. */
-private val coversInFlight = ConcurrentHashMap.newKeySet<Int>()
 
 /** Gson leaves omitted fields null despite the types, so every check here is null-safe. */
 /**

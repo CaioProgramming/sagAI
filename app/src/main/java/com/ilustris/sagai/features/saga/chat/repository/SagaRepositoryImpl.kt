@@ -4,7 +4,6 @@ import android.icu.util.Calendar
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.Artwork
-import com.ilustris.sagai.core.ai.model.MAX_COVER_CHARACTERS
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.services.ArtworkConceptService
 import com.ilustris.sagai.core.data.executeRequest
@@ -173,8 +172,8 @@ class SagaRepositoryImpl
                     characterIds =
                         curated.characterIds
                             .distinct()
-                            .filter { id -> id > 0 && characters.any { it.id == id } }
-                            .take(MAX_COVER_CHARACTERS),
+                            .filter { id -> characters.any { it.id == id } }
+                            .take(Artwork.MAX_CHARACTERS),
                 )
             return updateSaga(saga.copy(artwork = artwork))
         }
