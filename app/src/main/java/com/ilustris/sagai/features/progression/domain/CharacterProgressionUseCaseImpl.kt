@@ -515,6 +515,36 @@ class CharacterProgressionUseCaseImpl
                 )
             }
 
+        override fun observeBadges(
+            sagaId: Int,
+            characters: List<Character>,
+        ): Flow<Map<Int, CharacterBadge>> =
+            flow {
+                val config = progressionConfigProvider.activeConfig()
+                if (config == null) {
+                    emit(emptyMap())
+                    return@flow
+                }
+                val math = ProgressionMath(config)
+                emitAll(
+                    combine(progressionDao.observeFeatsBySaga(sagaId), progressionDao.observeHonorsBySaga(sagaId)) { feats, honors ->
+                        characters
+                            .filter { it.baseLevel != null }
+                            .associate { character ->
+                                val earned = feats.filter { it.characterId == character.id }.sumOf { it.xp }
+                                val mine = honors.filter { it.characterId == character.id }
+                                character.id to
+                                    CharacterBadge(
+                                        level = math.levelFor(character.baseLevel ?: 1, earned),
+                                        lastMedalEmoji = mine.lastOrNull { it.kind == HonorKind.MEDAL }?.emoji,
+                                        hasLegacy = mine.any { it.kind == HonorKind.TITLE },
+                                        inMemory = character.status == CharacterStatus.DEAD,
+                                    )
+                            }
+                    },
+                )
+            }
+
         override suspend fun ledger(sagaId: Int): List<CharacterLedger> {
             val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return emptyList()
             val math = progressionConfigProvider.activeConfig()?.let { ProgressionMath(it) }

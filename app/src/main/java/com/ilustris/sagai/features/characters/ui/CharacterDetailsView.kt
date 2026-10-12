@@ -105,8 +105,6 @@ import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttac
 import com.ilustris.sagai.ui.animations.imageStroke
 import com.ilustris.sagai.ui.animations.rememberStopMotionFrame
 import com.ilustris.sagai.ui.components.views.DepthLayout
-import com.ilustris.sagai.ui.components.views.HeroMenuAction
-import com.ilustris.sagai.ui.components.views.HeroOverflowMenu
 import com.ilustris.sagai.ui.components.views.heroBottomCluster
 import com.ilustris.sagai.ui.theme.PaletteTheme
 import com.ilustris.sagai.ui.theme.SagAITheme

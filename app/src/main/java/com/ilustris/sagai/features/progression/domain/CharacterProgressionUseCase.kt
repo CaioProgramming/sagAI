@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.progression.domain
 
 import com.ilustris.sagai.core.data.RequestResult
+import kotlinx.coroutines.flow.Flow
 
 interface CharacterProgressionUseCase {
     /**
@@ -57,6 +58,12 @@ interface CharacterProgressionUseCase {
 
     /** Live progress of one character for the sheet; null when the system is off or they were never placed. */
     fun observeProgress(character: com.ilustris.sagai.features.characters.data.model.Character): kotlinx.coroutines.flow.Flow<CharacterProgress?>
+
+    /** Level, last medal and legacy of every placed character of a saga, for the characters list. */
+    fun observeBadges(
+        sagaId: Int,
+        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
+    ): Flow<Map<Int, CharacterBadge>>
 
     /** Debug: every character of the saga with level, XP and the feats and honors behind it. */
     suspend fun ledger(sagaId: Int): List<CharacterLedger>
@@ -133,3 +140,11 @@ data class CharacterProgress(
     val medals get() = honors.filter { it.kind == com.ilustris.sagai.features.progression.data.model.HonorKind.MEDAL }
     val titles get() = honors.filter { it.kind == com.ilustris.sagai.features.progression.data.model.HonorKind.TITLE }
 }
+
+/** What the characters list shows on a character: the level, the latest medal's emoji, the legacy and the memorial mark. */
+data class CharacterBadge(
+    val level: Int,
+    val lastMedalEmoji: String?,
+    val hasLegacy: Boolean,
+    val inMemory: Boolean,
+)

@@ -1,12 +1,23 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class)
 
 package com.ilustris.sagai.features.characters.ui
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
+import com.ilustris.sagai.features.progression.domain.CharacterBadge
+import com.ilustris.sagai.features.progression.ui.MedalCoin
+import com.ilustris.sagai.features.progression.ui.honorFill
+import com.ilustris.sagai.features.progression.ui.honorFillBottom
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -31,11 +42,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -80,6 +89,7 @@ fun CharactersGalleryContent(
     saga: SagaContent,
     characters: List<CharacterContent>,
     relationships: List<RelationshipContent>,
+    badges: Map<Int, CharacterBadge> = emptyMap(),
     onOpenEvent: (Timeline) -> Unit = {},
     onOpenCharacter: (Int) -> Unit = {},
     onBackClick: () -> Unit = {},
@@ -129,6 +139,7 @@ fun CharactersGalleryContent(
                         CharacterYearbookItem(
                             character = character.data,
                             genre = genre,
+                            badge = badges[character.data.id],
                             imageModifier =
                                 Modifier
                                     .sharedElement(
@@ -189,6 +200,7 @@ fun CharacterYearbookItem(
     imageModifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.labelLarge,
     useFallback: Boolean = false,
+    badge: CharacterBadge? = null,
 ) {
     CharacterVerticalItem(
         modifier,
@@ -197,6 +209,7 @@ fun CharacterYearbookItem(
         genre,
         textStyle,
         useFallback = useFallback,
+        badge = badge,
     )
 }
 
@@ -210,6 +223,7 @@ private fun CharacterVerticalItem(
     borderSize: Dp = 2.dp,
     borderColor: Color? = null,
     useFallback: Boolean = false,
+    badge: CharacterBadge? = null,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -217,21 +231,50 @@ private fun CharacterVerticalItem(
             modifier
                 .padding(8.dp),
     ) {
-        CharacterAvatar(
-            character = character,
-            borderColor = borderColor,
-            borderSize = borderSize,
-            useFallback = useFallback,
-            textStyle =
-                MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                ),
-            genre = genre,
+        val (gold, onGold) = genre.honorFill()
+        // A legacy lights a gold ring around the avatar; the level rides on its corner as a small gold chip.
+        Box(
             modifier =
-                iconModifier
+                Modifier
                     .align(Alignment.CenterHorizontally)
-                    .aspectRatio(1f),
-        )
+                    .let {
+                        if (badge?.hasLegacy == true) {
+                            it
+                                .border(3.dp, Brush.verticalGradient(listOf(gold, genre.honorFillBottom())), CircleShape)
+                                .padding(5.dp)
+                        } else {
+                            it
+                        }
+                    },
+        ) {
+            CharacterAvatar(
+                character = character,
+                borderColor = borderColor,
+                borderSize = borderSize,
+                useFallback = useFallback,
+                textStyle =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                    ),
+                genre = genre,
+                modifier = iconModifier.aspectRatio(1f),
+            )
+            badge?.let {
+                Text(
+                    text = it.level.toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = onGold,
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 4.dp, y = (-2).dp)
+                            .clip(CircleShape)
+                            .background(Brush.verticalGradient(listOf(gold, genre.honorFillBottom())))
+                            .padding(horizontal = 7.dp, vertical = 1.dp),
+                )
+            }
+        }
         Text(
             text = character.name,
             style =
@@ -241,6 +284,14 @@ private fun CharacterVerticalItem(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 4.dp),
         )
+        if (badge?.inMemory == true) {
+            Text(
+                stringResource(R.string.progression_in_memory),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f),
+            )
+        }
+        badge?.lastMedalEmoji?.let { MedalCoin(it, genre, size = 28.dp, modifier = Modifier.padding(top = 4.dp)) }
     }
 }
 

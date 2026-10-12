@@ -15,6 +15,12 @@ interface ProgressionDao {
     @Query("SELECT * FROM character_feats WHERE characterId = :characterId ORDER BY createdAt, id")
     fun observeFeats(characterId: Int): Flow<List<CharacterFeat>>
 
+    @Query("SELECT * FROM character_feats WHERE sagaId = :sagaId")
+    fun observeFeatsBySaga(sagaId: Int): Flow<List<CharacterFeat>>
+
+    @Query("SELECT * FROM character_honors WHERE sagaId = :sagaId ORDER BY createdAt, id")
+    fun observeHonorsBySaga(sagaId: Int): Flow<List<CharacterHonor>>
+
     @Query("SELECT * FROM character_feats WHERE sagaId = :sagaId ORDER BY timelineId, id")
     suspend fun getFeatsBySaga(sagaId: Int): List<CharacterFeat>
 
