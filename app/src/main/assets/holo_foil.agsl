@@ -1,0 +1,48 @@
+// Holographic foil for the share collector cards.
+//
+// Generates light rather than filtering content: it is bound as a ShaderBrush and painted over the
+// card art with BlendMode.ColorDodge (Screen below API 29), so the result is premultiplied and only
+// ever brightens, and tints the art with the palette instead of washing it out. A band of
+// the genre's own palette sweeps diagonally across the card as the card tilts, with a fine diagonal
+// grain on top, which is what makes it read as foil and not as a gradient.
+
+uniform float2 iResolution;
+
+// Card tilt, each axis in -1..1. Moves the band; at 0,0 the foil rests mid-card.
+uniform float2 u_tilt;
+
+// Overall strength of the effect, 0..1.
+uniform float u_intensity;
+
+// Five palette stops as plain RGB in 0..1. Declared float3 and fed with setFloatUniform, the
+// convention the other shaders here use (setColorUniform refuses anything not layout(color)).
+uniform float3 u_c0;
+uniform float3 u_c1;
+uniform float3 u_c2;
+uniform float3 u_c3;
+uniform float3 u_c4;
+
+float3 ramp(float t) {
+    float x = clamp(t, 0.0, 1.0) * 4.0;
+    float3 c = mix(u_c0, u_c1, clamp(x, 0.0, 1.0));
+    c = mix(c, u_c2, clamp(x - 1.0, 0.0, 1.0));
+    c = mix(c, u_c3, clamp(x - 2.0, 0.0, 1.0));
+    c = mix(c, u_c4, clamp(x - 3.0, 0.0, 1.0));
+    return c;
+}
+
+half4 main(float2 fragCoord) {
+    float2 uv = fragCoord / iResolution;
+
+    // Diagonal coordinate that slides with the tilt.
+    float band = uv.x * 0.9 + uv.y * 0.6 + u_tilt.x * 0.55 + u_tilt.y * 0.35;
+    float w = fract(band * 1.1);
+
+    // The stripe is strongest mid-cycle and fades to nothing at the seams, so the repeat never shows.
+    float stripe = smoothstep(0.0, 0.2, w) * (1.0 - smoothstep(0.7, 1.0, w));
+
+    float grain = 0.5 + 0.5 * sin((uv.x - uv.y) * 420.0 + u_tilt.x * 5.0);
+
+    float a = (0.62 * stripe + 0.06 * grain) * u_intensity;
+    return half4(half3(ramp(w) * a), half(a));
+}
