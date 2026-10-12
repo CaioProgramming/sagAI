@@ -1259,4 +1259,6 @@
     <string name="progression_legacy_single">%1$s · legacy</string>
     <string name="progression_legacy_gained">Legacy earned</string>
     <string name="progression_legacies_gained">Legacies earned</string>
+    <string name="progression_chapter_short">Ch. %1$d</string>
+    <string name="progression_act_short">Act %1$d</string>
 </resources>

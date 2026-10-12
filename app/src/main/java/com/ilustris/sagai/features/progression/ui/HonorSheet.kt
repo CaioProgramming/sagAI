@@ -111,7 +111,9 @@ fun HonorSheet(
                                 Row(
                                     Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = .07f)).padding(horizontal = 12.dp, vertical = 8.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
+                                    TierStar(it.tier, Modifier.padding(end = 8.dp))
                                     Text(it.title, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                                     Text("+${it.xp} XP", style = MaterialTheme.typography.labelMedium, color = gold)
                                 }

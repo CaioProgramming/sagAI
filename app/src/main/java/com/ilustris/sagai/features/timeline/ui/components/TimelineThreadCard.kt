@@ -306,6 +306,7 @@ fun TimelineReplyItem(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    com.ilustris.sagai.features.progression.ui.TierStar(it.feats.maxOfOrNull { f -> f.tier } ?: 0, size = 14.dp)
                     Text(
                         stringResource(R.string.character_card_xp_chip, it.xp),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),

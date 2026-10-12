@@ -143,6 +143,9 @@ data class CharacterProgress(
     val rationale: String?,
     val feats: List<com.ilustris.sagai.features.progression.data.model.CharacterFeat>,
     val honors: List<com.ilustris.sagai.features.progression.data.model.CharacterHonor>,
+    /** Position (1-based) of each chapter and act by id, to say where an honor was earned. */
+    val chapterNumbers: Map<Int, Int> = emptyMap(),
+    val actNumbers: Map<Int, Int> = emptyMap(),
 ) {
     val medals get() = honors.filter { it.kind == com.ilustris.sagai.features.progression.data.model.HonorKind.MEDAL }
     val titles get() = honors.filter { it.kind == com.ilustris.sagai.features.progression.data.model.HonorKind.TITLE }

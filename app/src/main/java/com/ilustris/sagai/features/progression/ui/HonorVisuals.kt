@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -159,7 +160,12 @@ fun MedalCoin(
     val streaks = remember { path(StreakA) to path(StreakB) }
     val transition = rememberInfiniteTransition(label = "medal")
     val phase by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(2600, easing = LinearEasing)), label = "spark")
-    Box(modifier.size(size), contentAlignment = Alignment.Center) {
+    Box(
+        modifier
+            .size(size)
+            .drawBehind { drawCircle(Brush.radialGradient(listOf(palette.outerBottom.copy(alpha = .4f), Color.Transparent)), this.size.minDimension * .68f) },
+        contentAlignment = Alignment.Center,
+    ) {
         Canvas(Modifier.size(size)) {
             scale(this.size.width / 40f, Offset.Zero) {
                 drawOval(palette.shadow, Offset(3f, 4.4f), Size(34f, 33.6f))
@@ -275,4 +281,40 @@ fun LegacyBadge3D(
             }
         }
     }
+}
+
+/** The colour of a tier. The number itself is internal and never shown: only the star's colour tells how heavy a feat was. */
+fun tierColor(tier: Int): Color =
+    when (tier) {
+        0 -> Color(0xFF8E8E93)
+        1 -> Color(0xFF5FBF8A)
+        2 -> Color(0xFF4FA3F7)
+        3 -> Color(0xFFB57BFF)
+        4 -> Color(0xFFFFC54D)
+        else -> Color(0xFFFF6B4A)
+    }
+
+/** A feat's star, coloured by its tier; the two heaviest tiers glow. */
+@Composable
+fun TierStar(
+    tier: Int,
+    modifier: Modifier = Modifier,
+    size: Dp = 16.dp,
+) {
+    val color = tierColor(tier)
+    androidx.compose.material3.Icon(
+        painter = painterResource(com.ilustris.sagai.R.drawable.ic_spark),
+        contentDescription = null,
+        tint = color,
+        modifier =
+            modifier
+                .size(size)
+                .let {
+                    if (tier >= 4) {
+                        it.drawBehind { drawCircle(Brush.radialGradient(listOf(color.copy(alpha = .5f), Color.Transparent)), this.size.minDimension * .9f) }
+                    } else {
+                        it
+                    }
+                },
+    )
 }

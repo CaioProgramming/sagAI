@@ -1247,6 +1247,8 @@
     <string name="progression_legacy_single">%1$s · legado</string>
     <string name="progression_legacy_gained">Legado conquistado</string>
     <string name="progression_legacies_gained">Legados conquistados</string>
+    <string name="progression_chapter_short">Cap. %1$d</string>
+    <string name="progression_act_short">Ato %1$d</string>
 </resources>
 
 

@@ -49,6 +49,7 @@ import com.ilustris.sagai.features.progression.ui.LegacyBadge3D
 import com.ilustris.sagai.features.progression.ui.honorFill
 import com.ilustris.sagai.features.progression.ui.honorFillBottom
 import com.ilustris.sagai.features.progression.ui.MedalCoin
+import com.ilustris.sagai.features.progression.ui.TierStar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 private val CardShape = RoundedCornerShape(24.dp)
@@ -252,6 +253,13 @@ fun CharacterFeatLogSheet(
                 Column(Modifier.weight(1f)) {
                     SectionValue(honor.name, size = 16)
                     SectionLabel(honor.description)
+                    val where =
+                        if (honor.kind.name == "MEDAL") {
+                            progress.chapterNumbers[honor.scopeId]?.let { stringResource(R.string.progression_chapter_short, it) }
+                        } else {
+                            progress.actNumbers[honor.scopeId]?.let { stringResource(R.string.progression_act_short, it) }
+                        }
+                    where?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = gold) }
                     if (honor.posthumous) Text(stringResource(R.string.progression_in_memory), style = MaterialTheme.typography.labelSmall, color = gold)
                 }
             }
@@ -273,6 +281,7 @@ private fun FeatLogRow(
 ) {
     var open by androidx.compose.runtime.saveable.rememberSaveable(feat.id) { androidx.compose.runtime.mutableStateOf(false) }
     RowSection(first = first, onClick = { open = !open }) {
+        TierStar(feat.tier)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             SectionValue(feat.title, size = 16)
             if (open) {

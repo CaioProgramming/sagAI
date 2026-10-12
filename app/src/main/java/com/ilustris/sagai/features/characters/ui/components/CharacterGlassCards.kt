@@ -56,6 +56,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.ui.glassSurface
 import com.ilustris.sagai.features.progression.domain.CharacterProgress
+import com.ilustris.sagai.features.progression.ui.TierStar
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -429,15 +430,16 @@ fun EventsCard(
     if (events.isEmpty()) return
     var open by rememberSaveable { mutableStateOf(false) }
     val xpByEvent = remember(progress) { progress?.feats.orEmpty().groupBy { it.timelineId }.mapValues { (_, feats) -> feats.sumOf { it.xp } } }
+    val tierByEvent = remember(progress) { progress?.feats.orEmpty().groupBy { it.timelineId }.mapValues { (_, feats) -> feats.maxOf { it.tier } } }
     val ordered = remember(events) { events.sortedByDescending { it.event.createdAt } }
     val gold = remember(accent) { lerp(accent, Color.White, .5f) }
     GlassRowsCard(accent, modifier) {
-        ordered.take(MAX_ITEMS).forEachIndexed { index, e -> EventRow(e, xpByEvent, progress != null, gold, index == 0, onOpenEvent) }
+        ordered.take(MAX_ITEMS).forEachIndexed { index, e -> EventRow(e, xpByEvent, tierByEvent, progress != null, gold, index == 0, onOpenEvent) }
         if (ordered.size > MAX_ITEMS) SeeMoreSection { open = true }
     }
     if (open) {
         GlassSheet(stringResource(R.string.saga_detail_timeline_section_title), accent, { open = false }) {
-            ordered.forEachIndexed { index, e -> EventRow(e, xpByEvent, progress != null, gold, index == 0, onOpenEvent) }
+            ordered.forEachIndexed { index, e -> EventRow(e, xpByEvent, tierByEvent, progress != null, gold, index == 0, onOpenEvent) }
         }
     }
 }
@@ -446,6 +448,7 @@ fun EventsCard(
 private fun EventRow(
     details: CharacterEventDetails,
     xpByEvent: Map<Int, Int>,
+    tierByEvent: Map<Int, Int>,
     showXp: Boolean,
     gold: Color,
     first: Boolean,
@@ -457,6 +460,7 @@ private fun EventRow(
             SectionLabel(details.event.summary)
         }
         if (showXp) {
+            TierStar(tierByEvent[details.event.gameTimelineId] ?: 0, size = 14.dp)
             Text(stringResource(R.string.character_card_xp_chip, xpByEvent[details.event.gameTimelineId] ?: 0), style = MaterialTheme.typography.labelMedium, color = gold)
         }
         Chevron()

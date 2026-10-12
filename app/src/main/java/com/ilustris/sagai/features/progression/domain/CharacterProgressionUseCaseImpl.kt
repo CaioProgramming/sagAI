@@ -494,6 +494,9 @@ class CharacterProgressionUseCaseImpl
                     return@flow
                 }
                 val math = ProgressionMath(config)
+                val story = sagaHistoryUseCase.getSagaById(character.sagaId).first()
+                val chapterNumbers = story?.flatChapters().orEmpty().mapIndexed { index, chapter -> chapter.data.id to index + 1 }.toMap()
+                val actNumbers = story?.acts.orEmpty().mapIndexed { index, act -> act.data.id to index + 1 }.toMap()
                 emitAll(
                     combine(
                         progressionDao.observeFeats(character.id),
@@ -511,6 +514,8 @@ class CharacterProgressionUseCaseImpl
                             rationale = character.levelRationale,
                             feats = feats,
                             honors = honors,
+                            chapterNumbers = chapterNumbers,
+                            actNumbers = actNumbers,
                         )
                     },
                 )
