@@ -71,6 +71,13 @@ interface CharacterProgressionUseCase {
         characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
     ): Flow<Map<Int, Map<Int, EventXp>>>
 
+    /**
+     * Tells the player what was earned and not yet told: the level-ups of finished events (merged, once) and then
+     * the medals and legacies, one announcement at a time. Idempotent: nothing is told twice, and nothing is marked as
+     * told while the app is in the background, so it comes up when the player is back.
+     */
+    suspend fun announcePending(sagaId: Int)
+
     /** Debug: every character of the saga with level, XP and the feats and honors behind it. */
     suspend fun ledger(sagaId: Int): List<CharacterLedger>
 

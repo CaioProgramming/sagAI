@@ -37,6 +37,11 @@ import com.ilustris.sagai.features.progression.data.model.FeatEvaluation
 import com.ilustris.sagai.features.progression.data.source.ProgressionDao
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
@@ -58,6 +63,7 @@ class CharacterProgressionUseCaseImpl
         private val promptService: PromptService,
         private val progressionConfigProvider: ProgressionConfigProvider,
         private val globalShellService: GlobalShellService,
+        private val appLifecycleManager: com.ilustris.sagai.core.lifecycle.AppLifecycleManager,
     ) : CharacterProgressionUseCase {
 
         override suspend fun evaluateEvent(
@@ -165,8 +171,8 @@ class CharacterProgressionUseCaseImpl
                 }
 
                 progressionDao.replaceFeats(timelineId, feats)
-                if (!silent && !event.data.progressionAnnounced) announceLevelUps(saga, changes, config.levelUpRowsMax)
                 markEvaluated(event, silent)
+                if (!silent) runCatching { announcePending(sagaId) }
                 changes
             }
 
@@ -264,7 +270,7 @@ class CharacterProgressionUseCaseImpl
                 val ids = progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.MEDAL, chapterId, silent, isDead(saga, it.characterId)) })
                 markChapterHonored(chapter.data)
                 val changes = honors.map { it.toChange(saga, HonorKind.MEDAL) }
-                if (!silent) announceHonors(saga, ProgressionEffectKind.MEDAL, "$chapterId", changes, ids)
+                if (!silent) runCatching { announcePending(sagaId) }
                 changes
             }
 
@@ -323,7 +329,7 @@ class CharacterProgressionUseCaseImpl
                 val ids = progressionDao.insertHonors(honors.map { it.toHonor(sagaId, HonorKind.TITLE, actId, silent, isDead(saga, it.characterId)) })
                 markActLegacy(act.data)
                 val changes = honors.map { it.toChange(saga, HonorKind.TITLE) }
-                if (!silent) announceHonors(saga, ProgressionEffectKind.LEGACY, "$actId", changes, ids)
+                if (!silent) runCatching { announcePending(sagaId) }
                 changes
             }
 
@@ -691,44 +697,60 @@ class CharacterProgressionUseCaseImpl
             if (merged != character.skills) characterUseCase.updateCharacter(character.copy(skills = merged))
         }
 
-        private fun announceLevelUps(
-            saga: SagaContent,
-            changes: List<ProgressionChange>,
-            maxRows: Int,
-        ) {
-            val ups = changes.filterIsInstance<ProgressionChange.Xp>().filter { it.levelAfter > it.levelBefore }
-            if (ups.isEmpty()) return
-            val shown =
-                ups.sortedByDescending { it.levelAfter }.take(maxRows).mapNotNull { up ->
-                    val character = saga.characters.firstOrNull { it.data.id == up.characterId }?.data ?: return@mapNotNull null
-                    ProgressionRow(character = character, title = up.featTitles.firstOrNull().orEmpty(), level = up.levelAfter, xp = up.xp)
-                }
-            if (shown.isEmpty()) return
-            globalShellService.post(
-                ProgressionEffect(
-                    kind = ProgressionEffectKind.LEVEL_UP,
-                    announcementKey = "${saga.data.id}_${ups.joinToString("_") { "${it.characterId}${it.levelAfter}" }}",
-                    rows = shown,
-                    sagaId = saga.data.id,
-                    sagaTitle = saga.data.title,
-                    genre = saga.data.genre,
-                    deepLink = "saga://character_detail/${shown.first().character.id}",
-                    moreDeepLink = "saga://character_detail/${shown.first().character.id}",
-                ),
-            )
-        }
+        override suspend fun announcePending(sagaId: Int) {
+            if (!appLifecycleManager.isAppInForeground.value) return
+            val config = progressionConfigProvider.activeConfig() ?: return
+            val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return
+            if (!saga.data.progressionEnabled) return
+            val math = ProgressionMath(config)
 
-        private suspend fun announceHonors(
-            saga: SagaContent,
-            kind: ProgressionEffectKind,
-            scopeKey: String,
-            changes: List<ProgressionChange>,
-            ids: List<Long>,
-        ) {
-            val honors = changes.filterIsInstance<ProgressionChange.Honor>()
-            if (honors.isEmpty()) return
+            val pendingEvents = saga.flatEvents().filter { it.data.experienceGenerated && !it.data.progressionAnnounced }
+            if (pendingEvents.isNotEmpty()) {
+                val firstId = pendingEvents.first().data.id
+                val lastId = pendingEvents.last().data.id
+                val feats = progressionDao.getFeatsBySaga(sagaId)
+                val rows =
+                    saga.characters
+                        .map { it.data }
+                        .mapNotNull { character ->
+                            val base = character.baseLevel ?: return@mapNotNull null
+                            val mine = feats.filter { it.characterId == character.id }
+                            val before = math.levelFor(base, mine.filter { it.timelineId < firstId }.sumOf { it.xp })
+                            val after = math.levelFor(base, mine.filter { it.timelineId <= lastId }.sumOf { it.xp })
+                            if (after <= before) return@mapNotNull null
+                            val inRange = mine.filter { it.timelineId in firstId..lastId }
+                            ProgressionRow(character = character, title = inRange.lastOrNull()?.title.orEmpty(), level = after, xp = inRange.sumOf { it.xp })
+                        }.sortedByDescending { it.level }
+                        .take(config.levelUpRowsMax)
+                pendingEvents.forEach { timelineRepository.updateTimeline(it.data.copy(progressionAnnounced = true)) }
+                if (rows.isNotEmpty()) {
+                    globalShellService.post(
+                        ProgressionEffect(
+                            kind = ProgressionEffectKind.LEVEL_UP,
+                            announcementKey = "${sagaId}_${firstId}_$lastId",
+                            rows = rows,
+                            sagaId = sagaId,
+                            sagaTitle = saga.data.title,
+                            genre = saga.data.genre,
+                            deepLink = "saga://character_detail/${rows.first().character.id}",
+                            moreDeepLink = "saga://saga_events/$sagaId/$lastId",
+                        ),
+                    )
+                    scheduleFollowUp(sagaId)
+                    return
+                }
+            }
+
+            val groups =
+                progressionDao
+                    .getUnannouncedHonors(sagaId)
+                    .groupBy { it.kind to it.scopeId }
+                    .entries
+                    .sortedWith(compareBy({ it.key.first.ordinal }, { it.key.second }))
+            val group = groups.firstOrNull() ?: return
+            val (kind, scopeId) = group.key
             val rows =
-                honors.groupBy { it.characterId }.mapNotNull { (characterId, mine) ->
+                group.value.groupBy { it.characterId }.mapNotNull { (characterId, mine) ->
                     val character = saga.characters.firstOrNull { it.data.id == characterId }?.data ?: return@mapNotNull null
                     val latest = mine.last()
                     ProgressionRow(
@@ -740,21 +762,30 @@ class CharacterProgressionUseCaseImpl
                         memorial = character.status == CharacterStatus.DEAD,
                     )
                 }
+            progressionDao.markHonorsAnnounced(group.value.map { it.id })
             if (rows.isEmpty()) return
+            val legacy = kind == HonorKind.TITLE
             globalShellService.post(
                 ProgressionEffect(
-                    kind = kind,
-                    announcementKey = "${saga.data.id}_$scopeKey",
+                    kind = if (legacy) ProgressionEffectKind.LEGACY else ProgressionEffectKind.MEDAL,
+                    announcementKey = "${sagaId}_${kind.name}_$scopeId",
                     rows = rows,
-                    sagaId = saga.data.id,
+                    sagaId = sagaId,
                     sagaTitle = saga.data.title,
                     genre = saga.data.genre,
                     deepLink = "saga://character_detail/${rows.first().character.id}",
-                    moreDeepLink =
-                        if (kind == ProgressionEffectKind.LEGACY) "saga://saga_acts/${saga.data.id}" else "saga://saga_chapters/${saga.data.id}",
+                    moreDeepLink = if (legacy) "saga://saga_acts/$sagaId/$scopeId" else "saga://saga_chapters/$sagaId/$scopeId",
                 ),
             )
-            progressionDao.markHonorsAnnounced(ids.map { it.toInt() })
+            if (groups.size > 1) scheduleFollowUp(sagaId)
+        }
+
+        /** The island holds one announcement at a time, so the next one comes after this one has had its moment. */
+        private fun scheduleFollowUp(sagaId: Int) {
+            followUps.launch {
+                delay(FOLLOW_UP_MS)
+                runCatching { announcePending(sagaId) }
+            }
         }
 
         /** Evaluated and told (or deliberately kept quiet): nothing is left to announce for this event. */
@@ -762,14 +793,18 @@ class CharacterProgressionUseCaseImpl
             event: TimelineContent,
             silent: Boolean,
         ) {
-            if (!event.data.experienceGenerated || !event.data.progressionAnnounced) {
+            // A silent run (history catch-up) is also the last word on announcing: nothing of it is told later.
+            if (!event.data.experienceGenerated || (silent && !event.data.progressionAnnounced)) {
                 timelineRepository.updateTimeline(
-                    event.data.copy(experienceGenerated = true, progressionAnnounced = true),
+                    event.data.copy(experienceGenerated = true, progressionAnnounced = event.data.progressionAnnounced || silent),
                 )
             }
         }
 
+        private val followUps = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
         private companion object {
+            const val FOLLOW_UP_MS = 18_000L
             const val STATUS_EVENTS_WINDOW = 15
             val HONOR_SCOPE_EXCLUSIONS =
                 listOf("id", "actId", "sagaId", "coverImage", "artwork", "currentEventId", "currentChapterId")

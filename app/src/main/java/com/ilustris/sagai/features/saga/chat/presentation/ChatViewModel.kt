@@ -99,6 +99,7 @@ class ChatViewModel
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val chatGenerationService: ChatGenerationService,
         private val dataStorePreferences: DataStorePreferences,
+        private val progressionUseCase: com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -1053,7 +1054,11 @@ class ChatViewModel
         // Ambient music: SagaThemeManager + MainActivity (not tied to Activity lifecycle — Nav 3 keeps Chat in backstack)
 
         fun onChatScreenVisible(sagaId: String) {
-            sagaId.toIntOrNull()?.let { sagaImmersiveSession.push("chat", it) }
+            sagaId.toIntOrNull()?.let {
+                sagaImmersiveSession.push("chat", it)
+                // What was earned while the app was away comes up now, merged and once.
+                viewModelScope.launch { runCatching { progressionUseCase.announcePending(it) } }
+            }
         }
 
         fun onChatScreenHidden() {
