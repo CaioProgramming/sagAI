@@ -38,6 +38,8 @@ fun TimelineThreadCard(
     sagaInfo: SagaInfo,
     eventCard: TimelineCardContent,
     eventXp: Map<Int, com.ilustris.sagai.features.progression.domain.EventXp> = emptyMap(),
+    /** The event an announcement pointed at, softly lit so it is easy to find. */
+    highlighted: Boolean = false,
     onAction: (DetailAction) -> Unit = {},
 ) {
     val genre = sagaInfo.genre
@@ -48,6 +50,7 @@ fun TimelineThreadCard(
         modifier =
             Modifier
                 .fillMaxWidth()
+                .background(if (highlighted) MaterialTheme.colorScheme.primary.copy(alpha = .1f) else Color.Transparent)
                 .padding(vertical = 8.dp),
     ) {
         // Root Post

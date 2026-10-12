@@ -48,6 +48,7 @@ import com.ilustris.sagai.ui.theme.themeBrushColors
 @Composable
 fun TimeLineContent(
     sagaId: Int,
+    focusEventId: Int? = null,
     title: String,
     subtitle: String,
     onBackClick: () -> Unit = {},
@@ -84,6 +85,7 @@ fun TimeLineContent(
                 TimelineThreadList(
                     timelineContent = viewContent,
                     eventXp = eventXp,
+                    focusEventId = focusEventId,
                     modifier = Modifier.weight(1f),
                     onAction = { },
                 )

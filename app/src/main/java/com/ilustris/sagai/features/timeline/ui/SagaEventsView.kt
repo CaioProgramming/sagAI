@@ -26,6 +26,7 @@ import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
 @Composable
 fun SagaEventsView(
     sagaId: String,
+    focusEventId: Int? = null,
     onBack: () -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -57,6 +58,7 @@ fun SagaEventsView(
             if (info != null) {
                 TimeLineContent(
                     sagaId = sagaId.toInt(),
+                    focusEventId = focusEventId,
                     title = stringResource(R.string.saga_detail_section_title_timeline),
                     subtitle =
                         stringResource(

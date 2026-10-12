@@ -610,7 +610,9 @@ class CharacterProgressionUseCaseImpl
         override suspend fun pendingCount(sagaId: Int): Int {
             val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return 0
             if (!saga.data.progressionEnabled) return 0
-            return pending(saga).let { it.events.size + it.chapters.size + it.acts.size }
+            // The latest event is still being processed by the live flow, so it is not a failure yet.
+            val latest = saga.flatEvents().maxOfOrNull { it.data.id }
+            return pending(saga).let { p -> p.events.count { it.data.id != latest } + p.chapters.size + p.acts.size }
         }
 
         override suspend fun retryPending(sagaId: Int): RequestResult<Int> =
@@ -774,7 +776,7 @@ class CharacterProgressionUseCaseImpl
                     sagaTitle = saga.data.title,
                     genre = saga.data.genre,
                     deepLink = "saga://character_detail/${rows.first().character.id}",
-                    moreDeepLink = if (legacy) "saga://saga_acts/$sagaId/$scopeId" else "saga://saga_chapters/$sagaId/$scopeId",
+                    moreDeepLink = if (legacy) "saga://character_detail/${rows.first().character.id}" else "saga://saga_chapters/$sagaId/$scopeId",
                 ),
             )
             if (groups.size > 1) scheduleFollowUp(sagaId)

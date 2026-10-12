@@ -25,6 +25,7 @@ import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
 @Composable
 fun ChapterView(
     sagaId: String,
+    focusChapterId: Int? = null,
     onBack: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -58,6 +59,7 @@ fun ChapterView(
                 ChaptersGalleryContent(
                     saga = sagaContent,
                     chapters = chaptersInfo,
+                    focusChapterId = focusChapterId,
                     isGenerating = isGenerating,
                     onGenerateIcon = {
                         viewModel.generateIcon(it.id)

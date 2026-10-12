@@ -26,12 +26,30 @@ fun TimelineThreadList(
     timelineContent: TimelineViewContent,
     modifier: Modifier = Modifier,
     eventXp: Map<Int, Map<Int, com.ilustris.sagai.features.progression.domain.EventXp>> = emptyMap(),
+    focusEventId: Int? = null,
     onAction: (DetailAction) -> Unit = {},
 ) {
     timelineContent.saga.genre
 
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // Each group is a sticky header followed by its events.
+    androidx.compose.runtime.LaunchedEffect(focusEventId, timelineContent.groups.size) {
+        if (focusEventId == null) return@LaunchedEffect
+        var index = 0
+        for (group in timelineContent.groups) {
+            index += 1
+            val inGroup = group.events.indexOfFirst { it.timelineContent.data.id == focusEventId }
+            if (inGroup >= 0) {
+                listState.animateScrollToItem(index + inGroup)
+                return@LaunchedEffect
+            }
+            index += group.events.size
+        }
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(bottom = 80.dp),
     ) {
         timelineContent.groups.forEach { group ->
@@ -62,6 +80,7 @@ fun TimelineThreadList(
                     sagaInfo = timelineContent.saga,
                     eventCard = event,
                     eventXp = eventXp[event.timelineContent.data.id].orEmpty(),
+                    highlighted = event.timelineContent.data.id == focusEventId,
                     onAction = onAction,
                 )
             }

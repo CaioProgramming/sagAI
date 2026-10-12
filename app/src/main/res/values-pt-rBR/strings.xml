@@ -1249,6 +1249,10 @@
     <string name="progression_legacies_gained">Legados conquistados</string>
     <string name="progression_chapter_short">Cap. %1$d</string>
     <string name="progression_act_short">Ato %1$d</string>
+    <string name="progression_review_title">Revisar a experiência</string>
+    <string name="progression_review_body">Alguns pontos da história precisam de uma revisão para gerar a experiência deles: níveis, medalhas e legado.</string>
+    <string name="progression_review_now">Revisar agora</string>
+    <string name="progression_review_later">Depois</string>
 </resources>
 
 

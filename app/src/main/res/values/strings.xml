@@ -1261,4 +1261,8 @@
     <string name="progression_legacies_gained">Legacies earned</string>
     <string name="progression_chapter_short">Ch. %1$d</string>
     <string name="progression_act_short">Act %1$d</string>
+    <string name="progression_review_title">Review the experience</string>
+    <string name="progression_review_body">Some points of the story need a review to generate their experience: levels, medals and legacy.</string>
+    <string name="progression_review_now">Review now</string>
+    <string name="progression_review_later">Later</string>
 </resources>
