@@ -65,6 +65,12 @@ interface CharacterProgressionUseCase {
         characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
     ): Flow<Map<Int, CharacterBadge>>
 
+    /** Per event and character: the XP the event paid, the level after it, and the feats behind it, for the timeline. */
+    fun observeEventXp(
+        sagaId: Int,
+        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
+    ): Flow<Map<Int, Map<Int, EventXp>>>
+
     /** Debug: every character of the saga with level, XP and the feats and honors behind it. */
     suspend fun ledger(sagaId: Int): List<CharacterLedger>
 
@@ -148,4 +154,12 @@ data class CharacterBadge(
     val lastMedalEmoji: String?,
     val hasLegacy: Boolean,
     val inMemory: Boolean,
+)
+
+/** What one event meant for one character, as the timeline shows it: the XP, the level reached and why. */
+data class EventXp(
+    val xp: Int,
+    val levelAfter: Int,
+    val leveledUp: Boolean,
+    val feats: List<com.ilustris.sagai.features.progression.data.model.CharacterFeat>,
 )

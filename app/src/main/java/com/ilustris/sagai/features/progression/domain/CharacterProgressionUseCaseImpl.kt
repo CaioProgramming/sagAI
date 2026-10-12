@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class CharacterProgressionUseCaseImpl
@@ -511,6 +512,37 @@ class CharacterProgressionUseCaseImpl
                             feats = feats,
                             honors = honors,
                         )
+                    },
+                )
+            }
+
+        override fun observeEventXp(
+            sagaId: Int,
+            characters: List<Character>,
+        ): Flow<Map<Int, Map<Int, EventXp>>> =
+            flow {
+                val config = progressionConfigProvider.activeConfig()
+                if (config == null) {
+                    emit(emptyMap())
+                    return@flow
+                }
+                val math = ProgressionMath(config)
+                emitAll(
+                    progressionDao.observeFeatsBySaga(sagaId).map { feats ->
+                        val earned = mutableMapOf<Int, Int>()
+                        val result = mutableMapOf<Int, MutableMap<Int, EventXp>>()
+                        // Events are numbered in story order, so walking them by id replays the levels as they happened.
+                        feats.groupBy { it.timelineId }.toSortedMap().forEach { (timelineId, eventFeats) ->
+                            eventFeats.groupBy { it.characterId }.forEach { (characterId, mine) ->
+                                val base = characters.firstOrNull { it.id == characterId }?.baseLevel ?: return@forEach
+                                val before = math.levelFor(base, earned[characterId] ?: 0)
+                                val gained = mine.sumOf { it.xp }
+                                earned[characterId] = (earned[characterId] ?: 0) + gained
+                                val after = math.levelFor(base, earned.getValue(characterId))
+                                result.getOrPut(timelineId) { mutableMapOf() }[characterId] = EventXp(gained, after, after > before, mine.sortedBy { it.ordinal })
+                            }
+                        }
+                        result
                     },
                 )
             }

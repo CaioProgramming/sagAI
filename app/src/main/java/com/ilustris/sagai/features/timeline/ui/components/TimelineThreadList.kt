@@ -25,6 +25,7 @@ import com.ilustris.sagai.ui.theme.fadeGradientTop
 fun TimelineThreadList(
     timelineContent: TimelineViewContent,
     modifier: Modifier = Modifier,
+    eventXp: Map<Int, Map<Int, com.ilustris.sagai.features.progression.domain.EventXp>> = emptyMap(),
     onAction: (DetailAction) -> Unit = {},
 ) {
     timelineContent.saga.genre
@@ -60,6 +61,7 @@ fun TimelineThreadList(
                 TimelineThreadCard(
                     sagaInfo = timelineContent.saga,
                     eventCard = event,
+                    eventXp = eventXp[event.timelineContent.data.id].orEmpty(),
                     onAction = onAction,
                 )
             }
