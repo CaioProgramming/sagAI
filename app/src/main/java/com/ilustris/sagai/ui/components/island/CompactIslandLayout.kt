@@ -75,7 +75,8 @@ fun CompactIslandLayout(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            data.iconRes?.let { iconRes ->
+            data.leading?.invoke()
+            data.iconRes?.takeIf { data.leading == null }?.let { iconRes ->
                 Icon(
                     painter = painterResource(iconRes),
                     contentDescription = null,
@@ -99,6 +100,8 @@ fun CompactIslandLayout(
                             .basicMarquee(),
                 )
             }
+
+            data.trailing?.invoke()
 
             if (hasLoadingIndicator) {
                 CompactIslandIndicator(data)

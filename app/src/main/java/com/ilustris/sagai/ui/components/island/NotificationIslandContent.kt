@@ -20,8 +20,6 @@ import com.ilustris.sagai.core.globalshell.GlobalShellEffect
 import com.ilustris.sagai.core.globalshell.NewChapterEffect
 import com.ilustris.sagai.core.globalshell.NewCharacterEffect
 import com.ilustris.sagai.core.globalshell.NewMessageEffect
-import com.ilustris.sagai.core.globalshell.ProgressionEffect
-import com.ilustris.sagai.core.globalshell.ProgressionEffectKind
 import com.ilustris.sagai.core.globalshell.ReviewReadyEffect
 import com.ilustris.sagai.features.saga.chat.ui.components.ExpressiveText
 import com.ilustris.sagai.ui.theme.SagAITheme
@@ -83,28 +81,6 @@ class NotificationIslandContent(
                             onAnnotationClick = { _ -> },
                         )
 
-                    is ProgressionEffect ->
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            effect.rows.forEach { row ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Text(
-                                        text = row.characterName,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                    Text(
-                                        text = "${row.emoji.orEmpty()} ${row.value}".trim(),
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            }
-                        }
-
                     else ->
                         Text(
                             text = effect.message,
@@ -122,12 +98,7 @@ class NotificationIslandContent(
                         onDismiss()
                     },
                 ) {
-                    Text(
-                        text =
-                            stringResource(
-                                if (effect is ProgressionEffect) R.string.notification_progression_see_more else R.string.notification_open_chat,
-                            ),
-                    )
+                    Text(text = stringResource(R.string.notification_open_chat))
                 }
             }
         }
@@ -140,11 +111,5 @@ private fun labelResFor(effect: GlobalShellEffect): Int =
         is NewChapterEffect -> R.string.notification_new_chapter
         is NewCharacterEffect -> R.string.notification_new_character
         is ReviewReadyEffect -> R.string.notification_review_ready
-        is ProgressionEffect ->
-            when (effect.kind) {
-                ProgressionEffectKind.LEVEL_UP -> R.string.notification_level_up
-                ProgressionEffectKind.MEDAL -> R.string.notification_medal
-                ProgressionEffectKind.LEGACY -> R.string.notification_legacy
-            }
         else -> R.string.notification_new_message
     }

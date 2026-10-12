@@ -1239,6 +1239,14 @@
     <string name="archive_reminder_action">Fazer backup</string>
     <string name="home_last_backup">Último backup: %1$s</string>
     <string name="home_last_backup_never">Você ainda não fez backup das suas sagas. Toque para fazer.</string>
+    <string name="progression_new_level">Novo nível</string>
+    <string name="progression_level_up_caption">subiu de nível</string>
+    <string name="progression_medal_single">%1$s · nova medalha</string>
+    <string name="progression_medals_n">%1$s · %2$d medalhas</string>
+    <string name="progression_medals_gained">Medalhas conquistadas</string>
+    <string name="progression_legacy_single">%1$s · legado</string>
+    <string name="progression_legacy_gained">Legado conquistado</string>
+    <string name="progression_legacies_gained">Legados conquistados</string>
 </resources>
 
 

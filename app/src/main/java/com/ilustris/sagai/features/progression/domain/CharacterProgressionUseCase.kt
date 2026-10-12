@@ -110,6 +110,7 @@ sealed interface ProgressionChange {
         val kind: com.ilustris.sagai.features.progression.data.model.HonorKind,
         val name: String,
         val emoji: String?,
+        val description: String = "",
     ) : ProgressionChange
 
     data class Status(

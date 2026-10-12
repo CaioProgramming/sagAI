@@ -112,6 +112,8 @@ import com.ilustris.sagai.ui.components.island.IslandContent
 import com.ilustris.sagai.ui.components.island.IslandInsets
 import com.ilustris.sagai.ui.components.island.LocalIslandInsets
 import com.ilustris.sagai.ui.components.island.NotificationIslandContent
+import com.ilustris.sagai.ui.components.island.ProgressionIslandContent
+import com.ilustris.sagai.core.globalshell.ProgressionEffect
 import com.ilustris.sagai.ui.components.island.islandPadding
 import com.ilustris.sagai.ui.navigation.ApiSettingsKey
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
@@ -489,6 +491,15 @@ class MainActivity : ComponentActivity() {
 
                         visibleChatGen != null -> {
                             ChatGenerationIslandContent(visibleChatGen)
+                        }
+
+                        notificationEffect is ProgressionEffect -> {
+                            ProgressionIslandContent(
+                                effect = notificationEffect,
+                                context = this@MainActivity,
+                                onNavigate = { deepLink -> navigateDeepLink(deepLink) },
+                                onDismiss = { globalShellService.dismiss() },
+                            )
                         }
 
                         notificationEffect != null -> {

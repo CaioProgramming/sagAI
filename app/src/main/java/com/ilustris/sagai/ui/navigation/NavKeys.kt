@@ -259,6 +259,10 @@ fun String.findNavKey(): NavKey? {
             SagaChaptersKey(this.removePrefix("saga://saga_chapters/"))
         }
 
+        this.startsWith("saga://saga_acts/") -> {
+            SagaActsKey(this.removePrefix("saga://saga_acts/"))
+        }
+
         this.startsWith("saga://saga_wiki/") -> {
             SagaWikiKey(this.removePrefix("saga://saga_wiki/"))
         }

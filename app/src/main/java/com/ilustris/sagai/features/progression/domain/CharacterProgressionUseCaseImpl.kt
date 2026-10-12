@@ -329,7 +329,7 @@ class CharacterProgressionUseCaseImpl
         private fun ValidHonor.toChange(
             saga: SagaContent,
             kind: HonorKind,
-        ) = ProgressionChange.Honor(characterId, nameOf(saga, characterId), kind, name, emoji)
+        ) = ProgressionChange.Honor(characterId, nameOf(saga, characterId), kind, name, emoji, description)
 
         private fun ValidHonor.toHonor(
             sagaId: Int,
@@ -661,16 +661,22 @@ class CharacterProgressionUseCaseImpl
         ) {
             val ups = changes.filterIsInstance<ProgressionChange.Xp>().filter { it.levelAfter > it.levelBefore }
             if (ups.isEmpty()) return
-            val shown = ups.sortedByDescending { it.levelAfter }.take(maxRows)
+            val shown =
+                ups.sortedByDescending { it.levelAfter }.take(maxRows).mapNotNull { up ->
+                    val character = saga.characters.firstOrNull { it.data.id == up.characterId }?.data ?: return@mapNotNull null
+                    ProgressionRow(character = character, title = up.featTitles.firstOrNull().orEmpty(), level = up.levelAfter, xp = up.xp)
+                }
+            if (shown.isEmpty()) return
             globalShellService.post(
                 ProgressionEffect(
                     kind = ProgressionEffectKind.LEVEL_UP,
                     announcementKey = "${saga.data.id}_${ups.joinToString("_") { "${it.characterId}${it.levelAfter}" }}",
-                    rows = shown.map { ProgressionRow(it.characterName, "${it.levelAfter}") },
+                    rows = shown,
                     sagaId = saga.data.id,
                     sagaTitle = saga.data.title,
                     genre = saga.data.genre,
-                    deepLink = "saga://character_detail/${shown.first().characterId}",
+                    deepLink = "saga://character_detail/${shown.first().character.id}",
+                    moreDeepLink = "saga://character_detail/${shown.first().character.id}",
                 ),
             )
         }
@@ -684,16 +690,31 @@ class CharacterProgressionUseCaseImpl
         ) {
             val honors = changes.filterIsInstance<ProgressionChange.Honor>()
             if (honors.isEmpty()) return
-            val first = honors.first()
+            val rows =
+                honors.groupBy { it.characterId }.mapNotNull { (characterId, mine) ->
+                    val character = saga.characters.firstOrNull { it.data.id == characterId }?.data ?: return@mapNotNull null
+                    val latest = mine.last()
+                    ProgressionRow(
+                        character = character,
+                        title = latest.name,
+                        detail = latest.description,
+                        emoji = latest.emoji,
+                        extra = mine.size - 1,
+                        memorial = character.status == CharacterStatus.DEAD,
+                    )
+                }
+            if (rows.isEmpty()) return
             globalShellService.post(
                 ProgressionEffect(
                     kind = kind,
                     announcementKey = "${saga.data.id}_$scopeKey",
-                    rows = honors.map { ProgressionRow(it.characterName, it.name, it.emoji) },
+                    rows = rows,
                     sagaId = saga.data.id,
                     sagaTitle = saga.data.title,
                     genre = saga.data.genre,
-                    deepLink = "saga://character_detail/${first.characterId}",
+                    deepLink = "saga://character_detail/${rows.first().character.id}",
+                    moreDeepLink =
+                        if (kind == ProgressionEffectKind.LEGACY) "saga://saga_acts/${saga.data.id}" else "saga://saga_chapters/${saga.data.id}",
                 ),
             )
             progressionDao.markHonorsAnnounced(ids.map { it.toInt() })
