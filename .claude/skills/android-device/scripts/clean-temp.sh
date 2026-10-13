@@ -21,7 +21,7 @@ echo "tmp: ${before:-0} KB -> ${after:-0} KB"
 
 if [ -n "$days" ]; then
   echo "session transcripts older than $days days in $PROJ (memory/ is never touched):"
-  old=$(find "$PROJ" -mindepth 1 -maxdepth 1 -mtime +"$days" ! -name memory)
+  old=$(find "$PROJ" -mindepth 1 -maxdepth 1 -mtime +"$days" \( -type d -o -name "*.jsonl" \) ! -name memory)
   [ -z "$old" ] && echo "  none" && exit 0
   echo "$old" | while read -r f; do printf '  %s  %s\n' "$(du -sh "$f" | cut -f1)" "$(basename "$f")"; done
   if [ "$yes" = 1 ]; then echo "$old" | while read -r f; do rm -rf "$f"; done; echo "deleted."; else echo "dry run: add --yes to delete."; fi
