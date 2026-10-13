@@ -16,6 +16,9 @@ Run `.claude/skills/android-device/scripts/preflight.sh`. It prints memory and s
 - Check: `adb devices` (the phone shows as `adb-<serial>._adb-tls-connect._tcp` over Wi-Fi).
 - Not listed: on the phone, Developer options > Wireless debugging. Pair once with `adb pair <ip>:<pairing-port>` (code shown on the phone), then `adb connect <ip>:<port>`.
 - Restart a stuck server: `adb kill-server && adb start-server`.
+- Two adb binaries exist (`/opt/homebrew/bin/adb` and the SDK one in `~/Library/Android/sdk/platform-tools/adb`, the one Gradle uses). Use the SDK one so the server Gradle talks to is the one that is paired.
+- The wireless debugging **port changes** every time the setting is toggled, so `adb connect <ip>:<port>` needs the number currently shown on the phone. Quitting Android Studio also stops the adb server it started; after that the phone may need `adb pair` again (phone: Wireless debugging > Pair device with pairing code gives `ip:port` and a 6-digit code). Plain `failed to connect` with an open port usually means the host is no longer paired.
+- A USB cable is the fallback: `adb devices` lists it at once, no pairing needed.
 
 ## Build and install
 
