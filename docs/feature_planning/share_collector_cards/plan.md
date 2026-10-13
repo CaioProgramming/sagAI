@@ -123,3 +123,25 @@ close and share, nothing else), so the whole thing goes.
 | Holo looks different in AGSL than in CSS | prototype just the shader in Compose before building the rest |
 | Tint of the foil washes out skin tones (Heroes, Punk Rock) | intensity is a single constant; tune on device |
 | PNG baked with fallback fonts | gate export on resolved fonts |
+
+## Findings from the audit logs (2026-10-12)
+
+From `ai_audit_logs` on a debug device: 13 character, 2 history and 2 emotional share calls.
+
+- **The `template` in four share blueprints named variables the code does not send.** History's
+  template asked for `{sagaContext}` and `{actSummaries}` while the code sends `sagaMainContext` and
+  `historyContext`; emotional's asked for `{sagaEmotionalReview}` and `{emotionalHistory}` while the
+  code sends `emotionalReview` and `historyEmotionalSummary`; the same for relations and playstyle.
+  A blueprint with a `template` does not get the `# TASK CONTEXT` fallback, so those variables never
+  reached the model (history: 698 prompt tokens for 15 to 70 thousand characters of data). The
+  generic output ("Empires fall. Stars bleed.") is the symptom. Only the character blueprint matched.
+- **About 1,000 thinking tokens and 6 s per call** for a 30-token answer, on the MEDIUM tier.
+  `SharePlayUseCase` now asks for `ModelRequirement.LOW`.
+- **Character copy parrots the saga description** (three of thirteen outputs reuse "telhados
+  úmidos") and falls into one shape ("Entre X e Y, ela ..."), and "Lâmina e X" titles repeat.
+- **Missing data**: gender (the model guessed), nicknames, status, the character's arcs. The event
+  list grew without bound (388 to 1,638 characters); history sent every act summary.
+
+Changes: the five blueprints in `blueprints/share_blueprints.json` drop `template`; character, history
+and emotional get new rules for the text of their card; the code sends the missing data, caps events,
+emotions and chapter titles, and adds `journeyStats` to history and emotional.
