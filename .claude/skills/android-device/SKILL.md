@@ -48,6 +48,10 @@ If the phone is locked or Caio is using it, **do not** launch anything on it (sc
 
 `.claude/skills/android-device/scripts/clean-build.sh` removes the things that actually break builds (stale KSP output, Kotlin caches, old APKs) and keeps the Gradle caches that make the next build fast. Add `--deep` for a full `app/build` wipe when something is truly stuck; the next build then starts from scratch.
 
+## Clean the agent's temporary files
+
+`.claude/skills/android-device/scripts/clean-temp.sh` removes the pulled saga databases (500 MB and private), screenshots and temp output older than a day under `/private/tmp/claude-501`. `--sessions N` lists old session transcripts under `~/.claude/projects/...` (the biggest folder, hundreds of MB) as a dry run; `--yes` deletes them. It never touches `memory/`, and it only deletes by age, so do not run `--sessions` with a small N while a session you still need is open.
+
 ## Quit Android Studio
 
 `osascript -e 'quit app "Android Studio"'` asks it to quit and save. Then `./gradlew --stop` if the daemons are still holding memory.
