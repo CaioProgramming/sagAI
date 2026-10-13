@@ -47,6 +47,7 @@ import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.features.share.ui.launchShareActivity
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.iridescentGradient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -69,7 +70,8 @@ private const val FREEZE_SETTLE_MS = 400L
  */
 @Composable
 fun CollectorShareFrame(
-    genre: Genre,
+    // Null for a share that belongs to the player: it wears the app's own colours.
+    genre: Genre?,
     exportName: String,
     viewModel: SharePlayViewModel,
     card: @Composable (tilt: CardTiltState, captureLayer: GraphicsLayer, shareText: ShareText?) -> Unit,
@@ -135,7 +137,7 @@ fun CollectorShareFrame(
                 }
             }
 
-            StarryLoader(isLoading, brushColors = genre.colorPalette())
+            StarryLoader(isLoading, brushColors = genre?.colorPalette() ?: iridescentGradient)
         }
     }
 }
@@ -167,13 +169,13 @@ fun Modifier.drift(
  * before then would bake the default font into the picture.
  */
 @Composable
-private fun rememberGenreFontsReady(genre: Genre): Boolean {
+private fun rememberGenreFontsReady(genre: Genre?): Boolean {
     val services = rememberGenreThemeServices()
-    val fonts = services?.fontService?.fontsFor(genre)?.collectAsStateWithLifecycle()?.value
+    val fonts = genre?.let { services?.fontService?.fontsFor(it)?.collectAsStateWithLifecycle()?.value }
     var waited by remember { mutableStateOf(false) }
     LaunchedEffect(genre) {
         delay(FONT_WAIT_MS)
         waited = true
     }
-    return fonts != null || waited || services == null
+    return genre == null || fonts != null || waited || services == null
 }

@@ -44,7 +44,8 @@ fun CharacterShareView(
         CollectorCard(
             genre = genre,
             title = "${character.data.name} ${character.data.lastName.orEmpty()}".trim(),
-            subtitle = character.data.profile.occupation,
+            // The generated epithet when there is one: the occupation field can be a whole sentence.
+            subtitle = shareText?.title?.takeIf { it.isNotBlank() } ?: character.data.profile.occupation,
             number = "#${character.data.id}",
             body = shareText?.text,
             tilt = tilt,

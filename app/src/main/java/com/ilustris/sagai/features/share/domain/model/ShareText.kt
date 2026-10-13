@@ -12,4 +12,5 @@ enum class ShareType {
     RELATIONS,
     EMOTIONS,
     CHARACTER,
+    PLAYER,
 }

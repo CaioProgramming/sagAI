@@ -20,7 +20,8 @@ import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 
 @Composable
 fun ShareSheet(
-    saga: Saga,
+    // Null only for the player share, which belongs to the player and not to a saga.
+    saga: Saga?,
     isVisible: Boolean,
     shareType: ShareType,
     character: CharacterContent? = null,
@@ -30,8 +31,11 @@ fun ShareSheet(
 
     val content by viewModel.sagaContent.collectAsStateWithLifecycle()
 
-    LaunchedEffect(isVisible, saga.id, shareType, character?.data?.id) {
-        if (isVisible) {
+    LaunchedEffect(isVisible, saga?.id, shareType, character?.data?.id) {
+        if (!isVisible) return@LaunchedEffect
+        if (shareType == ShareType.PLAYER) {
+            viewModel.generatePlayerShareText()
+        } else if (saga != null) {
             viewModel.generateShareText(saga, shareType, character)
         }
     }
@@ -50,20 +54,17 @@ fun ShareSheet(
             ) {
                 when (it) {
                     ShareType.PLAYSTYLE -> {
-                        PlayStyleShareView(
-                            saga,
-                            viewModel,
-                        )
+                        saga?.let { PlayStyleShareView(it, viewModel) }
                     }
 
                     ShareType.CHARACTER -> {
-                        character?.let { char ->
-                            CharacterShareView(
-                                saga,
-                                character = char,
-                                viewModel,
-                            )
+                        if (saga != null && character != null) {
+                            CharacterShareView(saga, character = character, viewModel)
                         }
+                    }
+
+                    ShareType.PLAYER -> {
+                        PlayerShareView(viewModel)
                     }
 
                     ShareType.HISTORY -> {
@@ -73,7 +74,7 @@ fun ShareSheet(
                     }
 
                     ShareType.EMOTIONS -> {
-                        EmotionShareView(saga, viewModel)
+                        saga?.let { EmotionShareView(it, viewModel) }
                     }
 
                     ShareType.RELATIONS -> {

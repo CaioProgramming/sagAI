@@ -42,6 +42,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.theme.SagaTitle
+import com.ilustris.sagai.ui.theme.iridescentGradient
 
 /** How many lines of the body the drop cap spans. */
 private const val DROP_CAP_LINES = 3
@@ -57,7 +58,7 @@ private const val DROP_CAP_LINES = 3
  */
 @Composable
 fun EmotionNote(
-    genre: Genre,
+    genre: Genre?,
     title: String,
     body: String,
     caption: String,
@@ -67,7 +68,7 @@ fun EmotionNote(
     val density = LocalDensity.current
     val shape = MaterialTheme.shapes.extraLarge
     val primary = MaterialTheme.colorScheme.primary
-    val palette = genre.colorPalette()
+    val palette = genre?.colorPalette() ?: iridescentGradient
     val accent = remember(primary) { primary.lightenTo(0.5f) }
     val accentSoft = remember(primary) { primary.lightenTo(0.3f) }
     val backdrop =

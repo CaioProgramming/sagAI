@@ -69,6 +69,22 @@ class SharePlayViewModel
             }
         }
 
+        /** The player share has no saga: the text comes from the player's profile alone. */
+        fun generatePlayerShareText() {
+            deleteSavedFile()
+            isLoading.value = true
+            viewModelScope.launch(Dispatchers.IO) {
+                sharePlayUseCase
+                    .generatePlayerShareMessage()
+                    .onSuccess {
+                        shareText.value = it
+                        isLoading.value = false
+                    }.onFailure {
+                        isLoading.value = false
+                    }
+            }
+        }
+
         fun segmentImage(url: String) {
             viewModelScope.launch(Dispatchers.IO) {
                 val cachedBitmaps = segmentedImageCache.get(url)
