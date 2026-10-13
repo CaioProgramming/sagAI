@@ -12,9 +12,10 @@ data class Artwork(
     val elements: List<String> = emptyList(),
 ) {
     fun isBlank() = concept.isBlank()
-
-    companion object {
-        /** Most characters a cover may show; the curator picks as many as the story needs, up to this. */
-        const val MAX_CHARACTERS = 4
-    }
 }
+
+/**
+ * Most characters a cover may show; the curator picks as many as the story needs, up to this.
+ * Top level on purpose: a constant inside [Artwork] would be reflected into the output schema the model sees.
+ */
+const val MAX_COVER_CHARACTERS = 4
