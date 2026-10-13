@@ -90,6 +90,7 @@ class CharacterDetailsViewModel
         }
 
         fun refreshPending(sagaId: Int) {
+            if (!com.ilustris.sagai.BuildConfig.DEBUG) return
             viewModelScope.launch(Dispatchers.IO) { pendingGenerations.value = progressionUseCase.pendingCount(sagaId) }
         }
 

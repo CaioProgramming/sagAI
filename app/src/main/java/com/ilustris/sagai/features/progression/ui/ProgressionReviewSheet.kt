@@ -33,6 +33,8 @@ import com.ilustris.sagai.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProgressionReviewSheet(sagaId: Int) {
+    // A debug tool for now: redoing evaluations is how a saga is caught up, and it is not offered to players.
+    if (!com.ilustris.sagai.BuildConfig.DEBUG) return
     val viewModel = hiltViewModel<ProgressionReviewViewModel>()
     val pending by viewModel.pending.collectAsStateWithLifecycle()
     val running by viewModel.running.collectAsStateWithLifecycle()
