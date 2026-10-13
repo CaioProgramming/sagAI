@@ -63,6 +63,8 @@ data class ProgressionEffect(
     override val deepLink: String,
     /** Where "Ver mais" lands: the event, the chapter or the act that earned it. */
     val moreDeepLink: String = deepLink,
+    /** True only for the very first level-up the player ever sees: it carries a short explanation of the system. */
+    val showExplainer: Boolean = false,
 ) : GlobalShellEffect(
         sagaId = sagaId,
         sagaTitle = sagaTitle,

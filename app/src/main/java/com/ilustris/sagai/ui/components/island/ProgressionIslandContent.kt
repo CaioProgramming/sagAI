@@ -151,6 +151,7 @@ class ProgressionIslandContent(
             )
             Text(stringResource(R.string.progression_level_up_caption), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground.copy(alpha = .85f))
             if (single.title.isNotBlank()) FeatLine(single.title, single.xp)
+            Explainer()
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 rows.forEach { row ->
@@ -173,8 +174,22 @@ class ProgressionIslandContent(
                         Icon(painterResource(R.drawable.ic_arrow_up), null, Modifier.size(16.dp).gradientFill(genre.gradient()))
                     }
                 }
+                Explainer()
             }
         }
+    }
+
+    /** What levels are and where to read the details; shown once, with the first level-up the player ever sees. */
+    @Composable
+    private fun Explainer() {
+        if (!effect.showExplainer) return
+        Text(
+            stringResource(R.string.progression_explainer),
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .65f),
+            modifier = Modifier.padding(top = 6.dp),
+        )
     }
 
     @Composable

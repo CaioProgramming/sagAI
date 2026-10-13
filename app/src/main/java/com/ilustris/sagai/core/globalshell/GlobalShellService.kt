@@ -70,7 +70,9 @@ class GlobalShellService
         }
 
         private suspend fun handlePost(effect: GlobalShellEffect) {
-            if (effect.priority == GlobalShellPriority.Transient) {
+            // Only effects that can turn into a system notification are tied to its permission; the progression
+            // announcements live in the island and answer to the "Levels and experience" setting instead.
+            if (effect.priority == GlobalShellPriority.Transient && effect.deliversSystemNotification) {
                 if (!settingsUseCaseProvider.get().getNotificationsEnabled().first()) {
                     Timber.d("GlobalShellService: transient suppressed (notifications disabled)")
                     return

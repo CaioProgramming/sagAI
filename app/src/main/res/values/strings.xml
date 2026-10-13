@@ -1265,4 +1265,5 @@
     <string name="progression_review_body">Some points of the story need a review to generate their experience: levels, medals and legacy.</string>
     <string name="progression_review_now">Review now</string>
     <string name="progression_review_later">Later</string>
+    <string name="progression_explainer">Every character has a level that grows with what they live through: bonds, risks, losses and choices, not only fights. Medals mark the deeds of a chapter and the legacy marks who changed an act. Tap See more to read what earned each point. You can hide all of this in Settings.</string>
 </resources>

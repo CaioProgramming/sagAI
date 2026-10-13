@@ -64,6 +64,7 @@ class CharacterProgressionUseCaseImpl
         private val progressionConfigProvider: ProgressionConfigProvider,
         private val globalShellService: GlobalShellService,
         private val appLifecycleManager: com.ilustris.sagai.core.lifecycle.AppLifecycleManager,
+        private val settingsUseCase: com.ilustris.sagai.features.settings.domain.SettingsUseCase,
     ) : CharacterProgressionUseCase {
 
         override suspend fun evaluateEvent(
@@ -706,6 +707,15 @@ class CharacterProgressionUseCaseImpl
             if (!saga.data.progressionEnabled) return
             val math = ProgressionMath(config)
 
+            // With the experience hidden nothing is announced, and nothing piles up to be announced when it comes back.
+            if (!settingsUseCase.getShowProgression().first()) {
+                saga.flatEvents().filter { it.data.experienceGenerated && !it.data.progressionAnnounced }.forEach {
+                    timelineRepository.updateTimeline(it.data.copy(progressionAnnounced = true))
+                }
+                progressionDao.markHonorsAnnounced(progressionDao.getUnannouncedHonors(sagaId).map { it.id })
+                return
+            }
+
             val pendingEvents = saga.flatEvents().filter { it.data.experienceGenerated && !it.data.progressionAnnounced }
             if (pendingEvents.isNotEmpty()) {
                 val firstId = pendingEvents.first().data.id
@@ -726,8 +736,11 @@ class CharacterProgressionUseCaseImpl
                         .take(config.levelUpRowsMax)
                 pendingEvents.forEach { timelineRepository.updateTimeline(it.data.copy(progressionAnnounced = true)) }
                 if (rows.isNotEmpty()) {
+                    val explain = !settingsUseCase.getProgressionExplained().first()
+                    if (explain) settingsUseCase.setProgressionExplained()
                     globalShellService.post(
                         ProgressionEffect(
+                            showExplainer = explain,
                             kind = ProgressionEffectKind.LEVEL_UP,
                             announcementKey = "${sagaId}_${firstId}_$lastId",
                             rows = rows,

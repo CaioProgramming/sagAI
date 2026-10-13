@@ -36,6 +36,11 @@ interface SettingsUseCase {
 
     suspend fun setShowProgression(enabled: Boolean)
 
+    /** Whether the one-time explanation of levels was already shown with the first level-up. */
+    fun getProgressionExplained(): Flow<Boolean>
+
+    suspend fun setProgressionExplained()
+
     fun getShowTutorials(): Flow<Boolean>
 
     suspend fun setSmartSuggestionsEnabled(enabled: Boolean)
@@ -86,6 +91,7 @@ class SettingsUseCaseImpl
             const val MESSAGE_EFFECTS_ENABLED_KEY = "message_effects_enabled"
             const val TUTORIALS_ENABLED_KEY = "tutorials_enabled"
             const val SHOW_PROGRESSION_KEY = "show_progression"
+            const val PROGRESSION_EXPLAINED_KEY = "progression_explained"
             const val MUSIC_ENABLED_KEY = "music_enabled"
         }
 
@@ -97,6 +103,10 @@ class SettingsUseCaseImpl
         override fun getSmartSuggestionsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(SMART_SUGGESTIONS_ENABLED_KEY, true)
 
         override fun getMessageEffectsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(MESSAGE_EFFECTS_ENABLED_KEY, true)
+
+        override fun getProgressionExplained(): Flow<Boolean> = dataStorePreferences.getBoolean(PROGRESSION_EXPLAINED_KEY, false)
+
+        override suspend fun setProgressionExplained() = dataStorePreferences.setBoolean(PROGRESSION_EXPLAINED_KEY, true)
 
         override fun getShowProgression(): Flow<Boolean> = dataStorePreferences.getBoolean(SHOW_PROGRESSION_KEY, true)
 

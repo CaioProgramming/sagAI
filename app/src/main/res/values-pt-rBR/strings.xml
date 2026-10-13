@@ -1253,6 +1253,7 @@
     <string name="progression_review_body">Alguns pontos da história precisam de uma revisão para gerar a experiência deles: níveis, medalhas e legado.</string>
     <string name="progression_review_now">Revisar agora</string>
     <string name="progression_review_later">Depois</string>
+    <string name="progression_explainer">Cada personagem tem um nível que cresce com o que ele vive: vínculos, riscos, perdas e escolhas, não só lutas. Medalhas marcam os feitos de um capítulo e o legado marca quem mudou um ato. Toque em Ver mais para ler o que rendeu cada ponto. Dá para esconder tudo isso em Configurações.</string>
 </resources>
 
 
