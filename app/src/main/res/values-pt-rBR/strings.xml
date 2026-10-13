@@ -419,7 +419,6 @@
 
     <!-- Conversation Snippet Sharing -->
     <string name="restore_database_button">Restaurar banco de dados</string>
-    <string name="messages_selected">%1$d de %2$d mensagens selecionadas</string>
     <string name="share">Compartilhar</string>
     <string name="cancel">Cancelar</string>
 
@@ -560,7 +559,6 @@
     <string name="edit_message">Editar</string>
     <string name="delete_message">Apagar</string>
     <string name="copy_message">Copiar</string>
-    <string name="select_message">Selecionar</string>
     <string name="delete_message_title">Apagar mensagem?</string>
     <string name="delete_message_description">Esta ação não pode ser desfeita.</string>
     <string name="delete">Apagar</string>

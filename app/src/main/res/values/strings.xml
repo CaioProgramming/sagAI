@@ -570,7 +570,6 @@
     <string name="island_test_image_fallback_prompt">A cyberpunk warrior under neon lights, bust portrait</string>
 
     <!-- Conversation Snippet Sharing -->
-    <string name="messages_selected">%1$d of %2$d messages selected</string>
     <string name="share">Share</string>
     <string name="cancel">Cancel</string>
 
@@ -705,7 +704,6 @@
     <string name="edit_message">Edit</string>
     <string name="delete_message">Delete</string>
     <string name="copy_message">Copy</string>
-    <string name="select_message">Select</string>
     <string name="delete_message_title">Delete Message?</string>
     <string name="delete_message_description">This action cannot be undone.</string>
     <string name="delete">Delete</string>

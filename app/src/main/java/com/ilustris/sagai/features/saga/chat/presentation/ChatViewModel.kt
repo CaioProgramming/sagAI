@@ -288,28 +288,12 @@ class ChatViewModel
                     regenerateAudio(action.messageContent)
                 }
 
-                is ChatUiAction.ToggleSelectionMode -> {
-                    stateManager.toggleSelectionMode()
-                }
-
-                is ChatUiAction.ToggleMessageSelection -> {
-                    stateManager.toggleMessageSelection(action.messageId)
-                }
-
                 is ChatUiAction.MarkMessageViewed -> {
                     markMessageViewed(action.messageId)
                 }
 
-                is ChatUiAction.ClearSelection -> {
-                    stateManager.clearSelection()
-                }
-
                 is ChatUiAction.RecordSearchTerm -> {
                     recordSearchTerm(action.term)
-                }
-
-                is ChatUiAction.ShareConversation -> {
-                    stateManager.updateShareSheetVisibility(action.show)
                 }
 
                 is ChatUiAction.Back -> { // UI action
@@ -551,7 +535,7 @@ class ChatViewModel
         private fun observeAdvanceTriggerSuppression() =
             viewModelScope.launch(Dispatchers.IO) {
                 uiState
-                    .map { it.onboardingType != null || it.selectionState.isSelectionMode }
+                    .map { it.onboardingType != null }
                     .distinctUntilChanged()
                     .collect { suppressed -> sagaContentManager.setAdvanceTriggerSuppressed(suppressed) }
             }
@@ -1476,12 +1460,6 @@ class ChatViewModel
                 }
                 Timber.tag("ChatViewModel").d("Finished enqueuing $count fake messages.")
             }
-        }
-
-        fun getSelectedMessages(): List<MessageContent> {
-            val saga = uiState.value.sagaContent ?: return emptyList()
-            val selectedIds = uiState.value.selectionState.selectedMessageIds
-            return saga.flatMessages().filter { it.message.id in selectedIds }
         }
 
         // Audio Playback Methods

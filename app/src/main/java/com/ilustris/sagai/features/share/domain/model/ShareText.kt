@@ -12,6 +12,4 @@ enum class ShareType {
     RELATIONS,
     EMOTIONS,
     CHARACTER,
-    CONVERSATION,
-    REVIEW_ACTIVITY,
 }

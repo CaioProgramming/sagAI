@@ -249,8 +249,6 @@ fun ChatBubble(
     audioPlaybackState: AudioPlaybackState? = null,
     onAction: (MessageAction) -> Unit = {},
     messageEffectsEnabled: Boolean = true,
-    isSelectionMode: Boolean = false,
-    isSelected: Boolean = false,
     /** The message a search jump just landed on, outlined briefly so the reader can spot it. */
     isSearchHit: Boolean = false,
     // Lets a caller pace several unread messages one at a time instead of all typing at once —
@@ -363,18 +361,11 @@ fun ChatBubble(
 
     val finalScale = scaleAnimation * bumpScale.value
 
-    val paddingAnimation by animateDpAsState(
-        targetValue = if (isSelected) 4.dp else 0.dp,
-        animationSpec = tween(300, easing = FastOutSlowInEasing),
-        label = "paddingAnimation",
-    )
-
     val borderColorAnimation by animateColorAsState(
         targetValue =
             when {
-                isSelected -> MaterialTheme.colorScheme.onBackground
-                // Reuses the selection border rather than tinting the row behind the bubble: the
-                // outline follows the bubble's own shape, which a background band cannot.
+                // An outline rather than a tint on the row behind the bubble: the outline follows
+                // the bubble's own shape, which a background band cannot.
                 isSearchHit -> MaterialTheme.colorScheme.primary
                 else -> Color.Transparent
             },
@@ -512,15 +503,9 @@ fun ChatBubble(
                                         .combinedClickable(
                                             interactionSource = interactionSource,
                                             indication = rippleIndication,
-                                            onClick = {
-                                                if (isSelectionMode) {
-                                                    onAction(MessageAction.ToggleSelection(message.id))
-                                                }
-                                            },
+                                            onClick = {},
                                             onLongClick = {
-                                                if (!isSelectionMode) {
-                                                    onAction(MessageAction.LongPress(message.id))
-                                                }
+                                                onAction(MessageAction.LongPress(message.id))
                                             },
                                         )
                                 }
@@ -608,7 +593,7 @@ fun ChatBubble(
                                                     2.dp,
                                                     borderColorAnimation,
                                                     shape,
-                                                ).padding(paddingAnimation)
+                                                )
                                                 .clip(shape)
                                                 .padding(top = topPadding, bottom = bottomPadding)
                                                 .animateContentSize(BUBBLE_RESIZE_SPEC)
@@ -998,41 +983,6 @@ fun ChatBubble(
                             }
                         }
 
-                        AnimatedVisibility(
-                            visible = isSelectionMode,
-                            modifier =
-                                Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(16.dp),
-                            enter = scaleIn() + fadeIn(),
-                            exit = scaleOut() + fadeOut(),
-                        ) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(32.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                val color by animateColorAsState(
-                                    if (isSelected) {
-                                        resolvedColor
-                                    } else {
-                                        MaterialTheme.colorScheme.onBackground.copy(
-                                            alpha = .3f,
-                                        )
-                                    },
-                                )
-                                Icon(
-                                    painterResource(R.drawable.ic_spark),
-                                    contentDescription = "Selected",
-                                    tint = color,
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxSize(),
-                                )
-                            }
-                        }
                     }
                 }
             }

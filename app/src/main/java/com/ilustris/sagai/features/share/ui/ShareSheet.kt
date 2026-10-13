@@ -15,7 +15,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 
@@ -28,7 +27,6 @@ fun ShareSheet(
     onDismiss: () -> Unit = {},
 ) {
     val viewModel: SharePlayViewModel = hiltViewModel()
-    val chatViewModel: ChatViewModel = hiltViewModel()
 
     val content by viewModel.sagaContent.collectAsStateWithLifecycle()
 
@@ -82,13 +80,6 @@ fun ShareSheet(
                         content?.let { sagaContent ->
                             RelationsShareView(sagaContent, viewModel)
                         }
-                    }
-
-                    ShareType.CONVERSATION -> {
-                        ConversationShareView(
-                            sagaContent = saga,
-                            messages = chatViewModel.getSelectedMessages(),
-                        )
                     }
 
                     else -> {}
