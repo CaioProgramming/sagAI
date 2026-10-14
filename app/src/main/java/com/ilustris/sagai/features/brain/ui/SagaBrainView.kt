@@ -1,50 +1,48 @@
 package com.ilustris.sagai.features.brain.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.brain.domain.model.BrainMode
+import com.ilustris.sagai.features.brain.domain.model.BrainNode
+import com.ilustris.sagai.features.brain.domain.model.BrainNodeType
 import com.ilustris.sagai.features.brain.presentation.BrainViewModel
-import com.ilustris.sagai.features.brain.ui.components.BrainCanvas
-import com.ilustris.sagai.features.brain.ui.components.BrainDetailSheet
+import com.ilustris.sagai.features.brain.ui.components.BrainGlobeCanvas
+import com.ilustris.sagai.features.brain.ui.components.BrainGlobeCard
 import com.ilustris.sagai.ui.animations.ConstellationCanvas
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
@@ -101,7 +99,7 @@ fun CharacterBrainView(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun BrainScreenContent(
     sagaId: String,
@@ -117,17 +115,6 @@ private fun BrainScreenContent(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val genre = state.genre
     val accent = MaterialTheme.colorScheme.primary
-
-    val scaffoldState =
-        rememberBottomSheetScaffoldState(
-            bottomSheetState =
-                rememberStandardBottomSheetState(
-                    initialValue = SheetValue.PartiallyExpanded,
-                    skipHiddenState = true,
-                ),
-        )
-
-    BackHandler(onBack = onBack)
 
     LaunchedEffect(sagaId, characterId) {
         if (characterId != null) {
@@ -146,134 +133,121 @@ private fun BrainScreenContent(
     with(sharedTransitionScope) {
         SagAITheme(genre = genre, darkTheme = true) {
             val graph = state.graph
-            val layout = state.layout
-            var recenterNonce by remember { mutableIntStateOf(0) }
-            val isStoryMode = graph?.mode == BrainMode.STORY
-            val pagerNodes =
-                if (isStoryMode) state.storyPath else state.orbitNodes
-            val selectedNode = viewModel.selectedNode()
+            var selectedId by remember(graph) { mutableStateOf<String?>(null) }
+            val selectedNode = selectedId?.let { graph?.nodeById(it) }
 
-            val navBarBottom =
-                WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-            val collapsedPillHeight = 50.dp
-            val isSheetExpanded by remember {
-                derivedStateOf {
-                    scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded
-                }
+            BackHandler {
+                if (selectedNode != null) selectedId = null else onBack()
             }
-            val sheetScope = rememberCoroutineScope()
-            val sheetPeek by animateDpAsState(
-                if (state.isLoading) {
-                    0.dp
-                } else {
-                    collapsedPillHeight + navBarBottom + 12.dp
-                },
-                label = "brainSheetPeek",
-            )
 
-            BottomSheetScaffold(
-                scaffoldState = scaffoldState,
-                sheetPeekHeight = sheetPeek,
-                sheetDragHandle = null,
-                containerColor = MaterialTheme.colorScheme.background,
-                sheetContainerColor = Color.Transparent,
-                sheetTonalElevation = 0.dp,
-                sheetShadowElevation = 0.dp,
+            Box(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                        .navigationBarsPadding()
-                        .statusBarsPadding(),
-                sheetContent = {
-                    val animatedPadding by animateDpAsState(
-                        if (isSheetExpanded) 8.dp else 32.dp,
+                        .background(MaterialTheme.colorScheme.background),
+            ) {
+                ConstellationCanvas(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .alpha(ambientAlpha),
+                    starCount = 90 + state.chapterKnowledgeClusters.sumOf { it.satelliteCount },
+                    knowledgeColor = accent.copy(alpha = 0.85f),
+                    chapterClusters = state.chapterKnowledgeClusters,
+                )
+
+                if (graph != null) {
+                    BrainGlobeCanvas(
+                        graph = graph,
+                        selectedNodeId = selectedId,
+                        onNodeSelected = { selectedId = it },
+                        modifier = Modifier.fillMaxSize(),
                     )
-                    if (graph == null || layout == null) return@BottomSheetScaffold
-                    BrainDetailSheet(
-                        displayNode = selectedNode,
-                        pagerNodes = pagerNodes,
-                        selectedNodeId = state.selectedNodeId,
-                        sceneFocusId = viewModel.sceneFocusId(),
-                        sheetState = scaffoldState.bottomSheetState,
-                        onPagerNodeSelected =
-                            if (isStoryMode) {
-                                viewModel::selectStoryPathNode
-                            } else {
-                                viewModel::selectOrbitNode
-                            },
-                        onRecenter = {
-                            recenterNonce++
-                            viewModel.recenter()
-                        },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .background(Color.Transparent)
-                                .padding(animatedPadding)
-                                .border(
-                                    2.dp,
-                                    MaterialTheme.colorScheme.background,
-                                    MaterialTheme.shapes.large,
-                                ).background(
-                                    MaterialTheme.colorScheme.surfaceContainer,
-                                    MaterialTheme.shapes.large,
-                                ),
-                    )
-                },
-                topBar = {
+                }
+
+                Column(
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .statusBarsPadding()
+                            .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     SagaTopBar(
                         title = title,
                         genre = genre,
                         onBackClick = onBack,
                         actionContent = { Box(Modifier.fillMaxWidth()) },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         titleModifier =
                             Modifier.sharedBounds(
                                 rememberSharedContentState(key = "brain_${sagaId}_title"),
                                 animatedVisibilityScope = animatedVisibilityScope,
                             ),
                     )
-                },
-            ) { innerPadding ->
+                    if (graph != null) {
+                        val unlinked =
+                            remember(graph) {
+                                val linked = HashSet<String>()
+                                graph.edges.forEach {
+                                    linked.add(it.fromId)
+                                    linked.add(it.toId)
+                                }
+                                graph.nodes.count { it.id !in linked }
+                            }
+                        Text(
+                            text = stringResource(R.string.saga_globe_stats, graph.nodes.size, graph.edges.size, unlinked),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        )
+                    }
+                }
 
-                Box(
-                    modifier =
-                        Modifier
-                            .padding(innerPadding)
-                            .fillMaxSize(),
-                ) {
-                    ConstellationCanvas(
+                if (graph != null) {
+                    AnimatedVisibility(
+                        visible = selectedNode != null,
+                        enter = slideInVertically { it } + fadeIn(),
+                        exit = slideOutVertically { it } + fadeOut(),
                         modifier =
                             Modifier
-                                .fillMaxSize()
-                                .alpha(ambientAlpha),
-                        starCount = 90 + state.chapterKnowledgeClusters.sumOf { it.satelliteCount },
-                        knowledgeColor = accent.copy(alpha = 0.85f),
-                        chapterClusters = state.chapterKnowledgeClusters,
-                    )
-
-                    AnimatedContent(graph != null && layout != null) {
-                        if (it) {
-                            if (graph != null && layout != null) {
-                                BrainCanvas(
-                                    graph = graph,
-                                    layout = layout,
-                                    selectedNodeId = state.selectedNodeId,
-                                    visibleNodeIds = viewModel.visibleNodeIds(),
-                                    spineEdgeIds = viewModel.spineEdgeIds(),
-                                    satelliteNodeIds = viewModel.satelliteNodeIds(),
-                                    recenterNonce = recenterNonce,
-                                    modifier = Modifier.fillMaxSize(),
-                                    genrePrimary = accent,
-                                    genreSecondary = MaterialTheme.colorScheme.secondary,
-                                    onNodeSelected = viewModel::focusNode,
-                                )
-                            }
+                                .align(Alignment.BottomCenter)
+                                .navigationBarsPadding(),
+                    ) {
+                        // Keep showing the last node while the card animates out.
+                        val shown = remember { mutableStateOf<BrainNode?>(null) }
+                        if (selectedNode != null) shown.value = selectedNode
+                        shown.value?.let { node ->
+                            BrainGlobeCard(
+                                node = node,
+                                connections =
+                                    graph
+                                        .neighborsOf(node.id)
+                                        .sortedByDescending { it.importance },
+                                onClose = { selectedId = null },
+                                onConnectionClick = { selectedId = it },
+                                onOpenCharacter =
+                                    if (node.type == BrainNodeType.CHARACTER && graph.mode == BrainMode.STORY) {
+                                        { onOpenCharacterBrain(node.characterId ?: node.entityId) }
+                                    } else {
+                                        null
+                                    },
+                                modifier = Modifier.padding(12.dp),
+                            )
                         }
+                    }
+
+                    if (selectedNode == null) {
+                        Text(
+                            text = stringResource(R.string.saga_globe_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
+                            textAlign = TextAlign.Center,
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .navigationBarsPadding()
+                                    .padding(horizontal = 32.dp, vertical = 24.dp),
+                        )
                     }
                 }
             }

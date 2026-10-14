@@ -1198,4 +1198,16 @@
     <string name="new_saga_saving_character">Bringing the protagonist to life…</string>
     <string name="new_saga_saving_saga">Drawing the saga\'s cover…</string>
     <string name="new_saga_saving_done">Your saga is ready</string>
+    <string name="saga_globe_type_saga">Saga</string>
+    <string name="saga_globe_type_act">Act</string>
+    <string name="saga_globe_type_chapter">Chapter</string>
+    <string name="saga_globe_type_event">Event</string>
+    <string name="saga_globe_type_character">Character</string>
+    <string name="saga_globe_type_character_event">Character moment</string>
+    <string name="saga_globe_type_relation">Relationship</string>
+    <string name="saga_globe_type_wiki">Lore</string>
+    <string name="saga_globe_stats">%1$d points · %2$d connections · %3$d unlinked</string>
+    <string name="saga_globe_no_connections">Nothing is linked to this point yet.</string>
+    <string name="saga_globe_hint">Drag to turn the planet · Tap a point to see its connections</string>
+    <string name="saga_globe_close">Close</string>
 </resources>

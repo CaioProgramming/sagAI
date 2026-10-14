@@ -1186,6 +1186,18 @@
     <string name="new_saga_saving_character">Dando vida ao protagonista…</string>
     <string name="new_saga_saving_saga">Desenhando a capa da saga…</string>
     <string name="new_saga_saving_done">Sua saga está pronta</string>
+    <string name="saga_globe_type_saga">Saga</string>
+    <string name="saga_globe_type_act">Ato</string>
+    <string name="saga_globe_type_chapter">Capítulo</string>
+    <string name="saga_globe_type_event">Evento</string>
+    <string name="saga_globe_type_character">Personagem</string>
+    <string name="saga_globe_type_character_event">Momento do personagem</string>
+    <string name="saga_globe_type_relation">Relação</string>
+    <string name="saga_globe_type_wiki">Lore</string>
+    <string name="saga_globe_stats">%1$d pontos · %2$d conexões · %3$d sem ligação</string>
+    <string name="saga_globe_no_connections">Nada está ligado a este ponto ainda.</string>
+    <string name="saga_globe_hint">Arraste para girar o planeta · Toque em um ponto para ver as conexões</string>
+    <string name="saga_globe_close">Fechar</string>
 </resources>
 
 
