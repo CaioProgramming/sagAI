@@ -401,20 +401,14 @@ fun MorphingGenresBackground(
             GenreImage(
                 genre = currentGenre,
                 config = visualConfigs[currentGenre],
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .zoomAnimation(),
+                modifier = Modifier.fillMaxSize(),
             )
         },
         next = {
             GenreImage(
                 genre = nextGenre,
                 config = nextConfig,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .zoomAnimation(),
+                modifier = Modifier.fillMaxSize(),
             )
         },
     )
