@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInOutCubic
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -35,7 +36,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -54,17 +54,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -82,6 +81,7 @@ import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.data.model.OnboardingPage
@@ -90,14 +90,17 @@ import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.filters.GenrePortal
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -353,11 +356,13 @@ fun MorphingGenresBackground(
     val genres = remember { Genre.entries.shuffled() }
     var currentGenreIndex by remember { mutableIntStateOf(0) }
     var nextGenreIndex by remember { mutableIntStateOf(1) }
+    var portalOrigin by remember { mutableStateOf(Offset(0.5f, 0.5f)) }
 
     val currentGenre = genres[currentGenreIndex]
     val nextGenre = genres[nextGenreIndex]
+    val nextConfig = visualConfigs[nextGenre]
 
-    val wipeProgress = remember { Animatable(0f) }
+    val portalProgress = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -367,54 +372,52 @@ fun MorphingGenresBackground(
                     visualConfigs.containsKey(nextGenre)
 
             if (hasConfigs) {
-                wipeProgress.animateTo(1f, tween(1500))
+                // Each portal opens somewhere slightly different so the loop doesn't feel mechanical.
+                portalOrigin =
+                    Offset(
+                        0.5f + (Random.nextFloat() - 0.5f) * 0.4f,
+                        0.5f + (Random.nextFloat() - 0.5f) * 0.4f,
+                    )
+                portalProgress.animateTo(1f, tween(2000, easing = EaseInOutCubic))
 
                 // Swap
                 currentGenreIndex = nextGenreIndex
                 nextGenreIndex = (nextGenreIndex + 1) % genres.size
 
                 onSwitchGenre(genres[currentGenreIndex])
-                wipeProgress.snapTo(0f)
+                portalProgress.snapTo(0f)
             }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        GenreImage(
-            genre = currentGenre,
-            config = visualConfigs[currentGenre],
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .zoomAnimation(),
-        )
-
-        GenreImage(
-            genre = nextGenre,
-            config = visualConfigs[nextGenre],
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .drawWithContent {
-                        if (wipeProgress.value > 0) {
-                            drawContent()
-                        }
-                    }.graphicsLayer {
-                        clip = true
-                        shape =
-                            GenericShape { size, _ ->
-                                addRect(
-                                    Rect(
-                                        0f,
-                                        0f,
-                                        size.width * wipeProgress.value,
-                                        size.height,
-                                    ),
-                                )
-                            }
-                    }.zoomAnimation(),
-        )
-    }
+    GenrePortal(
+        progress = { portalProgress.value },
+        palette = nextGenre.colorPalette(nextConfig),
+        primary = nextConfig?.primaryColor?.hexToColor() ?: nextGenre.color,
+        modifier = Modifier.fillMaxSize(),
+        origin = portalOrigin,
+        seed = nextGenreIndex * 7.31f,
+        current = {
+            GenreImage(
+                genre = currentGenre,
+                config = visualConfigs[currentGenre],
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .zoomAnimation(),
+            )
+        },
+        next = {
+            GenreImage(
+                genre = nextGenre,
+                config = nextConfig,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .zoomAnimation(),
+            )
+        },
+    )
 }
 
 @Composable
