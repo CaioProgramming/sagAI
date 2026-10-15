@@ -4,6 +4,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,7 +31,16 @@ import kotlin.math.sin
 class CardTiltState internal constructor(
     val read: () -> Offset,
     val gestures: Modifier,
-)
+    private val scripted: MutableState<Offset?>,
+) {
+    /**
+     * Pins the tilt to [offset], whatever the finger, the sensor and the sway say, or gives it back
+     * with null. Used to turn the card by hand while a video of it is rendered.
+     */
+    fun script(offset: Offset?) {
+        scripted.value = offset
+    }
+}
 
 /**
  * One tilt, fed by a finger on the card, the phone's own tilt, and a slow sway that keeps the card
@@ -49,6 +59,7 @@ fun rememberCardTilt(frozen: Boolean): CardTiltState {
     val activeState = rememberUpdatedState(animationsActive)
     val drag = remember { mutableStateOf<Offset?>(null) }
     val current = remember { mutableStateOf(Offset.Zero) }
+    val scripted = remember { mutableStateOf<Offset?>(null) }
 
     LaunchedEffect(frozen) {
         if (frozen) {
@@ -78,8 +89,8 @@ fun rememberCardTilt(frozen: Boolean): CardTiltState {
     }
 
     val read: () -> Offset =
-        remember(current, frozenState) {
-            { if (frozenState.value) Offset.Zero else current.value }
+        remember(current, frozenState, scripted) {
+            { if (frozenState.value) Offset.Zero else scripted.value ?: current.value }
         }
 
     val gestures =
@@ -102,7 +113,7 @@ fun rememberCardTilt(frozen: Boolean): CardTiltState {
             }
         }
 
-    return remember(read, gestures) { CardTiltState(read, gestures) }
+    return remember(read, gestures, scripted) { CardTiltState(read, gestures, scripted) }
 }
 
 private fun Offset.toTilt(size: IntSize): Offset =
