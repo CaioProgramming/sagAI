@@ -1,15 +1,14 @@
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 
 package com.ilustris.sagai.features.saga.chat.ui.components
-import android.graphics.Matrix
-import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -18,42 +17,43 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,17 +67,15 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.ShaderBrush
-import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
@@ -91,6 +89,9 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.components.buildSuggestionAnnotatedString
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.ui.GlassChip
+import com.ilustris.sagai.features.newsaga.ui.glassSurface
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
@@ -104,13 +105,21 @@ import com.ilustris.sagai.ui.components.IosStyleMenuHost
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
-import com.ilustris.sagai.ui.theme.themeBrushColors
-import com.ilustris.sagai.ui.theme.themePainter
 
 private val ChatInputTextMaxHeight = 160.dp
+
+/** One cell of the input row: the visible control is smaller, the touch target is this size. */
+private val ChatInputCell = 48.dp
+private val ChatInputControlSize = 36.dp
+private const val SUGGESTION_WIDTH_FRACTION = 0.66f
+
+/** More opaque than the other glass: what the player types has to stay readable over the colored backdrop. */
+private const val ChatInputGlassAlpha = 0.7f
+
+/** The character count ring stays hidden until the message is this close to the limit. */
+private const val COUNTER_VISIBLE_FROM = 0.8f
 private val ThinkBorderDash = floatArrayOf(8f, 6f)
 
 private fun DrawScope.drawThinkTagBorders(
@@ -151,17 +160,16 @@ private fun DrawScope.drawThinkTagBorders(
     }
 }
 
+/** The glass light swells and fades while a reply is being written; null when it should sit still. */
 @Composable
-private fun generatingBorderRotation(isGenerating: Boolean): Float {
-    if (!isGenerating || !rememberLifecycleAnimationsActive()) return 0f
-    val infiniteTransition = rememberInfiniteTransition(label = "border")
-    val rotation by infiniteTransition.animateFloat(
-        0f,
-        360f,
-        infiniteRepeatable(tween(3000, easing = LinearEasing)),
-        label = "rotation",
+private fun breathingStrength(isGenerating: Boolean): State<Float>? {
+    if (!isGenerating || !rememberLifecycleAnimationsActive()) return null
+    return rememberInfiniteTransition(label = "inputBreathing").animateFloat(
+        initialValue = 0.55f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+        label = "inputBreathingValue",
     )
-    return rotation
 }
 
 private fun isIndexInsideTagMarkup(
@@ -272,7 +280,7 @@ fun ChatInputView(
     suggestions: List<Suggestion>,
     modifier: Modifier = Modifier,
     inputField: TextFieldValue,
-    sendType: SenderType,
+    @Suppress("UNUSED_PARAMETER") sendType: SenderType,
     typoFix: TypoFix?,
     selectedCharacter: Character? = null,
     isSendingPending: Boolean = false,
@@ -311,17 +319,10 @@ fun ChatInputView(
     val actualCharacter = selectedCharacter ?: content.mainCharacter
     val genre = content.data.genre
     val resolvedColor = MaterialTheme.colorScheme.primary
-    val inputBrush =
-        Brush.horizontalGradient(
-            if (isGenerating) morphingGradient() else themeBrushColors(),
-        )
-    // dropShadow reallocates its shadow layer whenever brush/color changes, so it gets a fixed
-    // brush regardless of isGenerating — the animated color motion stays on the outline/border
-    // draws below, which are cheap stroke operations with no shadow layer behind them.
-    val shadowBrush = Brush.horizontalGradient(themeBrushColors())
+    val contentColor = MaterialTheme.colorScheme.onBackground
     val textStyle =
         MaterialTheme.typography.labelMedium.copy(
-            color = MaterialTheme.colorScheme.onBackground,
+            color = contentColor,
             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
         )
     val tagBg = MaterialTheme.colorScheme.background
@@ -336,11 +337,8 @@ fun ChatInputView(
                 content.wikis,
             )
         }
-    val glowRadiusState =
-        animateFloatAsState(if (isGenerating.not()) 10f else 25f, label = "glowRadius")
     val inputShape = sagaShape()
-    val palette = themeBrushColors()
-    val rotation = generatingBorderRotation(isGenerating)
+    val breathing = breathingStrength(isGenerating)
 
     val tagMarkerLabels =
         mapOf(
@@ -428,49 +426,6 @@ fun ChatInputView(
             }
         }
         val isImeVisible = WindowInsets.isImeVisible
-        AnimatedVisibility(suggestions.isNotEmpty() && isImeVisible) {
-            LazyRow(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .heightIn(max = 60.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(suggestions) {
-                    Button(
-                        onClick = {
-                            onUpdateInput(
-                                TextFieldValue(
-                                    it.text,
-                                    TextRange(it.text.length),
-                                ),
-                            )
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        colors =
-                            ButtonDefaults.outlinedButtonColors(
-                                contentColor = resolvedColor,
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            ),
-                    ) {
-                        Icon(
-                            themePainter(),
-                            null,
-                            modifier =
-                                Modifier
-                                    .padding(4.dp)
-                                    .size(12.dp),
-                        )
-                        Text(
-                            remember(it.text) { buildSuggestionAnnotatedString(it.text) },
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-                    }
-                }
-            }
-        }
         val currentTagInside =
             remember(inputField.text, inputField.selection) {
                 getCursorInsideTag(
@@ -478,136 +433,41 @@ fun ChatInputView(
                     inputField.selection.start,
                 )
             }
-        val bubbleColorState =
-            animateColorAsState(
-                if (currentTagInside != null) resolvedColor else MaterialTheme.colorScheme.background,
-                label = "bubbleColor",
-            )
+        val isInsideTag = currentTagInside != null
+        val activeSpeechMode =
+            currentTagInside?.let { SenderType.senderForTag(it) } ?: SenderType.CHARACTER
+        val isLoading = isSendingPending || isGenerating
+        val progress = getCleanTextLength(inputField.text).toFloat() / maxContentLength
+
         Column(
-            modifier =
-                Modifier
-                    .padding(16.dp)
-                    .dropShadow(inputShape, {
-                        brush = shadowBrush
-                        radius = glowRadiusState.value
-                        spread = 10f
-                    })
-                    .fillMaxWidth()
-                    .clip(inputShape)
-                    .drawWithContent {
-                        drawContent()
-                        val outline = inputShape.createOutline(size, layoutDirection, this)
-                        if (isGenerating) {
-                            val brush =
-                                object : ShaderBrush() {
-                                    override fun createShader(size: Size): Shader {
-                                        val shader =
-                                            (sweepGradient(palette) as ShaderBrush).createShader(
-                                                size,
-                                            )
-                                        val matrix = Matrix()
-                                        matrix.setRotate(
-                                            rotation,
-                                            size.width / 2,
-                                            size.height / 2,
-                                        )
-                                        shader.setLocalMatrix(matrix)
-                                        return shader
-                                    }
-                                }
-                            drawOutline(outline, brush, style = Stroke(1.dp.toPx()))
-                        } else {
-                            drawOutline(outline, inputBrush, style = Stroke(1.dp.toPx()))
-                        }
-                    }
-                    .border(1.dp, inputBrush, inputShape)
-                    .background(bubbleColorState.value, inputShape),
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 6.dp, end = 6.dp, top = 4.dp, bottom = 12.dp),
         ) {
-            Column(
-                Modifier
-                    .padding(4.dp)
-                    .clip(inputShape)
-                    .background(
-                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
-                        inputShape,
-                    )
-                    .fillMaxWidth()
-                    .padding(8.dp),
+            InputRail(
+                queryItemsType = queryItemsType,
+                suggestions = suggestions,
+                // A suggestion replaces the whole text, so it is only offered over an empty field.
+                showSuggestions = isImeVisible && inputField.text.isBlank(),
+                genre = genre,
+                accent = resolvedColor,
+                onSuggestionClick = {
+                    onUpdateInput(TextFieldValue(it.text, TextRange(it.text.length)))
+                },
+                onCharacterClick = { handleCharacterSelection(it, inputField, onUpdateInput) },
+                onWikiClick = { handleWikiSelection(it, inputField, onUpdateInput) },
+            )
+
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom,
             ) {
-                BasicTextField(
-                    inputField,
-                    enabled = !isGenerating,
-                    maxLines = if (!isImeVisible) 1 else Int.MAX_VALUE,
-                    onValueChange = { newValue ->
-                        processInputChange(inputField, newValue, maxContentLength)?.let {
-                            onUpdateInput(it)
-                        }
-                    },
-                    textStyle = textStyle,
-                    visualTransformation = visualTransformation,
-                    cursorBrush = resolvedColor.solidGradient(),
-                    onTextLayout = { textLayoutResult = it },
-                    decorationBox = { inner ->
-                        Box(
-                            Modifier.padding(8.dp),
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
-                            Box(
-                                Modifier.drawWithContent {
-                                    drawContent()
-                                    textLayoutResult?.let { layoutResult ->
-                                        drawThinkTagBorders(
-                                            layoutResult,
-                                            thinkRanges,
-                                            resolvedColor.copy(alpha = .6f),
-                                        )
-                                    }
-                                },
-                            ) {
-                                inner()
-                                if (inputField.text.isEmpty()) {
-                                    Text(
-                                        sendType.hint(),
-                                        style = textStyle,
-                                        modifier =
-                                            Modifier
-                                                .alpha(.5f)
-                                                .fillMaxWidth(),
-                                        maxLines = 1,
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(imeAction = if (currentTagInside != null) ImeAction.Next else ImeAction.Default),
-                    keyboardActions =
-                        KeyboardActions(onNext = {
-                            if (currentTagInside != null) {
-                                onUpdateInput(escapeCursorFromTagAndClean(inputField))
-                            }
-                        }),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 40.dp, max = ChatInputTextMaxHeight)
-                            .verticalScroll(scrollState),
-                )
-
-                val activeSpeechMode =
-                    currentTagInside?.let { SenderType.senderForTag(it) } ?: SenderType.CHARACTER
-                val isLoading = isSendingPending || isGenerating
-                val cleanLength =
-                    remember(inputField.text) {
-                        getCleanTextLength(inputField.text)
-                    }
-                val progress = cleanLength.toFloat() / maxContentLength
-
-                Row(
+                Box(
                     Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .size(ChatInputCell)
+                        .clip(CircleShape)
+                        .clickable { characterMenu = true },
+                    contentAlignment = Alignment.Center,
                 ) {
                     AnimatedContent(
                         targetState =
@@ -615,9 +475,8 @@ fun ChatInputView(
                                 ?: (content.mainCharacter?.id to content.mainCharacter?.image),
                         modifier =
                             avatarModifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .clickable { characterMenu = true },
+                                .size(ChatInputControlSize)
+                                .clip(CircleShape),
                         label = "ChatInputAvatar",
                     ) {
                         val character = actualCharacter ?: content.mainCharacter
@@ -634,232 +493,121 @@ fun ChatInputView(
                             )
                         }
                     }
+                }
 
-                    val speechModeChipShape = MaterialTheme.shapes.extraLarge
-                    val isInsideTag = currentTagInside != null
-                    IosStyleMenuHost(
-                        expanded = speechModeMenu,
-                        onDismissRequest = { speechModeMenu = false },
-                        anchor = Alignment.BottomStart,
-                        menu = {
-                            speechModeOptions.forEach { (senderType, expressiveTag) ->
-                                val enabled = expressiveTag == null || !isInsideTag
-                                senderType.icon()?.let { iconRes ->
-                                    IosStyleMenuItem(
-                                        text = senderType.title(),
-                                        icon = painterResource(iconRes),
-                                        enabled = enabled,
-                                        onClick = {
-                                            speechModeMenu = false
-                                            if (expressiveTag != null) {
-                                                onUpdateInput(
-                                                    insertExpressiveTag(inputField, expressiveTag),
-                                                )
-                                            } else if (isInsideTag) {
-                                                onUpdateInput(
-                                                    escapeCursorFromTagAndClean(inputField),
-                                                )
-                                            }
-                                        },
-                                    )
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .glassSurface(
+                            inputShape,
+                            resolvedColor,
+                            strength = { breathing?.value ?: 1f },
+                            baseAlpha = ChatInputGlassAlpha,
+                        ),
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    BasicTextField(
+                        inputField,
+                        enabled = !isGenerating,
+                        maxLines = if (!isImeVisible) 1 else Int.MAX_VALUE,
+                        onValueChange = { newValue ->
+                            processInputChange(inputField, newValue, maxContentLength)?.let {
+                                onUpdateInput(it)
+                            }
+                        },
+                        textStyle = textStyle,
+                        visualTransformation = visualTransformation,
+                        cursorBrush = resolvedColor.solidGradient(),
+                        onTextLayout = { textLayoutResult = it },
+                        decorationBox = { inner ->
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = ChatInputCell)
+                                    .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                Box(
+                                    Modifier.drawWithContent {
+                                        drawContent()
+                                        textLayoutResult?.let { layoutResult ->
+                                            drawThinkTagBorders(
+                                                layoutResult,
+                                                thinkRanges,
+                                                resolvedColor.copy(alpha = .6f),
+                                            )
+                                        }
+                                    },
+                                ) {
+                                    inner()
+                                    if (inputField.text.isEmpty()) {
+                                        Text(
+                                            activeSpeechMode.hint(),
+                                            style = textStyle,
+                                            modifier =
+                                                Modifier
+                                                    .alpha(.5f)
+                                                    .fillMaxWidth(),
+                                            maxLines = 1,
+                                        )
+                                    }
                                 }
                             }
                         },
-                    ) {
-                        Row(
-                            modifier =
-                                Modifier
-                                    .clip(speechModeChipShape)
-                                    .background(
-                                        if (isInsideTag) {
-                                            resolvedColor.copy(alpha = .2f)
-                                        } else {
-                                            MaterialTheme.colorScheme.surfaceContainer
-                                        },
-                                    )
-                                    .clickable { speechModeMenu = true }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            activeSpeechMode.icon()?.let {
-                                Icon(
-                                    painterResource(it),
-                                    contentDescription = null,
-                                    tint = resolvedColor,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                            }
-                            Text(
-                                activeSpeechMode.title(),
-                                style =
-                                    MaterialTheme.typography.labelSmall,
-                            )
-                        }
-                    }
+                        keyboardOptions = KeyboardOptions(imeAction = if (isInsideTag) ImeAction.Next else ImeAction.Default),
+                        keyboardActions =
+                            KeyboardActions(onNext = {
+                                if (isInsideTag) {
+                                    onUpdateInput(escapeCursorFromTagAndClean(inputField))
+                                }
+                            }),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .heightIn(min = ChatInputCell, max = ChatInputTextMaxHeight)
+                                .verticalScroll(scrollState),
+                    )
 
-                    Spacer(Modifier.weight(1f))
-
-                    // Nothing typed and nothing generating: the button opens live mode instead.
-                    val showsLive = liveEnabled && inputField.text.isBlank() && !isLoading && !isEditing
-                    val canSend = inputField.text.isNotBlank() || isGenerating || showsLive
-
-                    Box(contentAlignment = Alignment.Center) {
-                        IconButton(
-                            onClick = {
-                                when {
-                                    isLoading -> onStopGeneration()
-                                    showsLive -> onRequestAudio()
-                                    else -> sendMessage()
+                    if (!isGenerating) {
+                        SpeechModeButton(
+                            mode = activeSpeechMode,
+                            isInsideTag = isInsideTag,
+                            // New players need the word; once the keyboard is up the icon is enough.
+                            showLabel = !isImeVisible,
+                            expanded = speechModeMenu,
+                            options = speechModeOptions,
+                            onExpandedChange = { speechModeMenu = it },
+                            onOptionSelected = { expressiveTag ->
+                                if (expressiveTag != null) {
+                                    onUpdateInput(insertExpressiveTag(inputField, expressiveTag))
+                                } else if (isInsideTag) {
+                                    onUpdateInput(escapeCursorFromTagAndClean(inputField))
                                 }
                             },
-                            enabled = canSend,
-                            colors =
-                                IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    disabledContainerColor =
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    disabledContentColor =
-                                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
-                                ),
-                            modifier =
-                                Modifier
-                                    .padding(4.dp)
-                                    .size(32.dp),
-                        ) {
-                            AnimatedContent(isLoading to showsLive) { (loading, live) ->
-                                Icon(
-                                    painterResource(
-                                        when {
-                                            loading -> R.drawable.ic_stop
-                                            live -> R.drawable.ic_mic
-                                            else -> R.drawable.ic_send
-                                        },
-                                    ),
-                                    contentDescription =
-                                        stringResource(if (live) R.string.live_open else R.string.chat_input_send),
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxSize(),
-                                )
-                            }
-                        }
-
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(32.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                trackColor = Color.Transparent,
-                                strokeWidth = 1.dp,
-                            )
-                        } else if (inputField.text.isNotEmpty()) {
-                            CircularProgressIndicator(
-                                progress = { progress.coerceIn(0f, 1f) },
-                                modifier = Modifier.size(32.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                trackColor = Color.Transparent,
-                                strokeWidth = 1.dp,
-                            )
-                        }
+                        )
                     }
                 }
-            }
-            AnimatedVisibility(queryItemsType != null) {
-                queryItemsType?.let { itemsType ->
-                    LazyRow(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp),
-                    ) {
-                        when (itemsType) {
-                            is ItemsType.Characters -> {
-                                items(itemsType.filteredCharacters) { character ->
-                                    val col = character.hexColor.hexToColor() ?: resolvedColor
-                                    Row(
-                                        Modifier
-                                            .border(1.dp, col.copy(alpha = .3f), CircleShape)
-                                            .background(col.copy(alpha = .1f), CircleShape)
-                                            .clip(CircleShape)
-                                            .clickable {
-                                                handleCharacterSelection(
-                                                    character,
-                                                    inputField,
-                                                    onUpdateInput,
-                                                )
-                                            }
-                                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        CharacterAvatar(
-                                            character,
-                                            genre = genre,
-                                            modifier = Modifier.size(20.dp),
-                                            grainRadius = 0f,
-                                            pixelation = 0f,
-                                            innerPadding = 1.dp,
-                                        )
-                                        Text(
-                                            character.name,
-                                            style =
-                                                MaterialTheme.typography.labelSmall.copy(
-                                                    color = col,
-                                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                ),
-                                        )
-                                    }
-                                }
-                            }
 
-                            is ItemsType.Wikis -> {
-                                items(itemsType.filteredWikis) { wiki ->
-                                    Row(
-                                        Modifier
-                                            .border(
-                                                1.dp,
-                                                resolvedColor.copy(alpha = .3f),
-                                                CircleShape,
-                                            )
-                                            .background(
-                                                resolvedColor.copy(alpha = .1f),
-                                                CircleShape,
-                                            )
-                                            .clip(CircleShape)
-                                            .clickable {
-                                                handleWikiSelection(
-                                                    wiki,
-                                                    inputField,
-                                                    onUpdateInput,
-                                                )
-                                            }
-                                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        Text(
-                                            wiki.emojiTag ?: "📖",
-                                            style = MaterialTheme.typography.labelSmall,
-                                        )
-                                        Text(
-                                            wiki.title,
-                                            style =
-                                                MaterialTheme.typography.labelSmall.copy(
-                                                    color = resolvedColor,
-                                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                ),
-                                        )
-                                    }
-                                }
-                            }
+                // Nothing typed and nothing generating: the button opens live mode instead.
+                val showsLive = liveEnabled && inputField.text.isBlank() && !isLoading && !isEditing
+                val canSend = inputField.text.isNotBlank() || isGenerating || showsLive
+
+                SendButton(
+                    isLoading = isLoading,
+                    showsLive = showsLive,
+                    enabled = canSend,
+                    progress = progress,
+                    onClick = {
+                        when {
+                            isLoading -> onStopGeneration()
+                            showsLive -> onRequestAudio()
+                            else -> sendMessage()
                         }
-                    }
-                }
+                    },
+                )
             }
         }
+
         if (characterMenu) {
             ModalBottomSheet(
                 onDismissRequest = { characterMenu = false },
@@ -962,6 +710,265 @@ fun ChatInputView(
                         }) { Text(stringResource(R.string.chat_input_fix)) }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * One rail above the input: the mention chips while the player is typing an `@` or `/` query,
+ * otherwise the suggestions (when [showSuggestions]). It is never both, so the input stays one
+ * row tall plus this.
+ */
+@Composable
+private fun InputRail(
+    queryItemsType: ItemsType?,
+    suggestions: List<Suggestion>,
+    showSuggestions: Boolean,
+    genre: Genre,
+    accent: Color,
+    onSuggestionClick: (Suggestion) -> Unit,
+    onCharacterClick: (Character) -> Unit,
+    onWikiClick: (Wiki) -> Unit,
+) {
+    AnimatedVisibility(queryItemsType != null || (showSuggestions && suggestions.isNotEmpty())) {
+        if (queryItemsType != null) {
+            LazyRow(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                contentPadding = PaddingValues(horizontal = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                when (queryItemsType) {
+                    is ItemsType.Characters -> {
+                        items(queryItemsType.filteredCharacters) { character ->
+                            val col = character.hexColor.hexToColor() ?: accent
+                            MentionChip(col, onClick = { onCharacterClick(character) }) {
+                                CharacterAvatar(
+                                    character,
+                                    genre = genre,
+                                    modifier = Modifier.size(20.dp),
+                                    grainRadius = 0f,
+                                    pixelation = 0f,
+                                    innerPadding = 1.dp,
+                                )
+                                Text(
+                                    character.name,
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            color = col,
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                        ),
+                                )
+                            }
+                        }
+                    }
+
+                    is ItemsType.Wikis -> {
+                        items(queryItemsType.filteredWikis) { wiki ->
+                            MentionChip(accent, onClick = { onWikiClick(wiki) }) {
+                                Text(
+                                    wiki.emojiTag ?: "📖",
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                                Text(
+                                    wiki.title,
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            color = accent,
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                        ),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val chipWidth = maxWidth * SUGGESTION_WIDTH_FRACTION
+                LazyRow(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(suggestions) { suggestion ->
+                        GlassChip(
+                            text = remember(suggestion.text) { buildSuggestionAnnotatedString(suggestion.text) },
+                            onClick = { onSuggestionClick(suggestion) },
+                            modifier = Modifier.widthIn(max = chipWidth),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MentionChip(
+    color: Color,
+    onClick: () -> Unit,
+    content: @Composable RowScope.() -> Unit,
+) {
+    Row(
+        Modifier
+            .border(1.dp, color.copy(alpha = .3f), CircleShape)
+            .background(color.copy(alpha = .1f), CircleShape)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        content = content,
+    )
+}
+
+/**
+ * The speech mode at the end of the field. With the keyboard down it is a chip that names the mode,
+ * so a new player can tell what the icon means; with the keyboard up it shrinks to the bare icon to
+ * leave the room to the text. The icon swaps to the tag's own, so it needs no color to tell modes
+ * apart: it takes the content color of the glass it sits on and stays legible in any theme.
+ */
+@Composable
+private fun SpeechModeButton(
+    mode: SenderType,
+    isInsideTag: Boolean,
+    showLabel: Boolean,
+    expanded: Boolean,
+    options: List<Pair<SenderType, ExpressiveTag?>>,
+    onExpandedChange: (Boolean) -> Unit,
+    onOptionSelected: (ExpressiveTag?) -> Unit,
+) {
+    IosStyleMenuHost(
+        expanded = expanded,
+        onDismissRequest = { onExpandedChange(false) },
+        anchor = Alignment.BottomEnd,
+        menu = {
+            options.forEach { (senderType, expressiveTag) ->
+                val enabled = expressiveTag == null || !isInsideTag
+                senderType.icon()?.let { iconRes ->
+                    IosStyleMenuItem(
+                        text = senderType.title(),
+                        icon = painterResource(iconRes),
+                        enabled = enabled,
+                        onClick = {
+                            onExpandedChange(false)
+                            onOptionSelected(expressiveTag)
+                        },
+                    )
+                }
+            }
+        },
+    ) {
+        val contentColor = MaterialTheme.colorScheme.onBackground
+        val chipFill by animateColorAsState(
+            if (showLabel) contentColor.copy(alpha = 0.1f) else Color.Transparent,
+            label = "speechModeChipFill",
+        )
+        // The chip is shorter than the field, so it sits as far from the edge as it does from top and bottom.
+        val edgeInset by animateDpAsState(if (showLabel) 8.dp else 0.dp, label = "speechModeEdgeInset")
+        Box(
+            Modifier
+                .padding(end = edgeInset)
+                .defaultMinSize(minWidth = ChatInputCell, minHeight = ChatInputCell)
+                .clip(CircleShape)
+                .clickable(role = Role.Button) { onExpandedChange(true) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(
+                Modifier
+                    .animateContentSize()
+                    .height(ChatInputControlSize - 4.dp)
+                    .clip(CircleShape)
+                    .background(chipFill)
+                    .padding(horizontal = if (showLabel) 10.dp else 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                mode.icon()?.let {
+                    Icon(
+                        painterResource(it),
+                        contentDescription = mode.title(),
+                        tint = contentColor.copy(alpha = if (isInsideTag) 1f else .72f),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                AnimatedVisibility(showLabel) {
+                    Text(
+                        mode.title(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = contentColor.copy(alpha = if (isInsideTag) 1f else .72f),
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Send, live or stop, in one 36 dp circle inside a 48 dp touch target. */
+@Composable
+private fun SendButton(
+    isLoading: Boolean,
+    showsLive: Boolean,
+    enabled: Boolean,
+    progress: Float,
+    onClick: () -> Unit,
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val onPrimary = MaterialTheme.colorScheme.onPrimary
+    Box(
+        Modifier
+            .size(ChatInputCell)
+            .clip(CircleShape)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .size(ChatInputControlSize)
+                .dropShadow(CircleShape) {
+                    color = primary
+                    radius = 24f
+                    spread = 0f
+                    alpha = if (enabled) 0.22f else 0f
+                }.background(primary.copy(alpha = if (enabled) 1f else 0.4f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            AnimatedContent(isLoading to showsLive) { (loading, live) ->
+                Icon(
+                    painterResource(
+                        when {
+                            loading -> R.drawable.ic_stop
+                            live -> R.drawable.ic_mic
+                            else -> R.drawable.ic_send
+                        },
+                    ),
+                    contentDescription =
+                        stringResource(if (live) R.string.live_open else R.string.chat_input_send),
+                    tint = onPrimary.copy(alpha = if (enabled) 1f else 0.5f),
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.fillMaxSize(),
+                    color = onPrimary,
+                    trackColor = Color.Transparent,
+                    strokeWidth = 1.dp,
+                )
+            } else if (progress >= COUNTER_VISIBLE_FROM) {
+                CircularProgressIndicator(
+                    progress = { progress.coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxSize(),
+                    color = onPrimary,
+                    trackColor = Color.Transparent,
+                    strokeWidth = 1.dp,
+                )
             }
         }
     }
