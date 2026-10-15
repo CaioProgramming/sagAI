@@ -230,8 +230,6 @@ private fun CharacterDetailsLoaded(
         val characterRelations = detailData.relationships
         val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
         val progress by viewModel.progress.collectAsStateWithLifecycle()
-        val pendingGenerations by viewModel.pendingGenerations.collectAsStateWithLifecycle()
-        val isRetrying by viewModel.isRetrying.collectAsStateWithLifecycle()
         var showFeatLog by remember { mutableStateOf(false) }
         var showStatusDialog by remember { mutableStateOf(false) }
         var honorSheet by remember { mutableStateOf<Pair<List<CharacterHonor>, Int>?>(null) }
@@ -505,9 +503,6 @@ private fun CharacterDetailsLoaded(
                                     accent = characterColor,
                                     contentColor = adaptiveTextColor,
                                     genre = genre,
-                                    pendingGenerations = pendingGenerations,
-                                    isRetrying = isRetrying,
-                                    onRetry = { viewModel.retryPending(sagaInfo.id) },
                                     onSeeMore = { showFeatLog = true },
                                     onOpenHonor = { honors, index -> honorSheet = honors to index },
                                 )
