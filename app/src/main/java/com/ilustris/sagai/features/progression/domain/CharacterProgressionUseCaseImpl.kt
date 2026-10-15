@@ -627,6 +627,30 @@ class CharacterProgressionUseCaseImpl
                 done
             }
 
+        override suspend fun catchUpPending(sagaId: Int) {
+            if (!catchingUp.add(sagaId)) return
+            try {
+                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return
+                if (!saga.data.progressionEnabled) return
+                val latest = saga.flatEvents().maxOfOrNull { it.data.id }
+                val todo = pending(saga)
+                // One request per step, in story order; the first failure ends the run.
+                var left = CATCH_UP_BATCH
+                for (event in todo.events) {
+                    if (event.data.id == latest) continue
+                    if (left-- <= 0 || evaluateEvent(sagaId, event.data.id, silent = true).isFailure) return
+                }
+                for (chapter in todo.chapters) {
+                    if (left-- <= 0 || evaluateChapterHonors(sagaId, chapter.data.id, silent = true).isFailure) return
+                }
+                for (act in todo.acts) {
+                    if (left-- <= 0 || evaluateActLegacy(sagaId, act.data.id, silent = true).isFailure) return
+                }
+            } finally {
+                catchingUp.remove(sagaId)
+            }
+        }
+
         private class Pending(
             val events: List<TimelineContent>,
             val chapters: List<com.ilustris.sagai.features.chapter.data.model.ChapterContent>,
@@ -820,6 +844,8 @@ class CharacterProgressionUseCaseImpl
 
         private companion object {
             const val FOLLOW_UP_MS = 18_000L
+            const val CATCH_UP_BATCH = 3
+            val catchingUp: MutableSet<Int> = java.util.concurrent.ConcurrentHashMap.newKeySet()
             const val STATUS_EVENTS_WINDOW = 15
             val HONOR_SCOPE_EXCLUSIONS =
                 listOf("id", "actId", "sagaId", "coverImage", "artwork", "currentEventId", "currentChapterId")
