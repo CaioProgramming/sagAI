@@ -78,10 +78,10 @@ enabled once the effect is lit.
 
 | Genre | Entry | Then |
 |---|---|---|
-| Fantasy | Existing handwriting reveal | Fire rises from the written letters |
+| Fantasy | Ignition, like the Cowboy mark: the letters appear white-hot with a small press, the fire bursts in a flare and settles. Replaces the handwriting reveal for this genre | Steady fire |
 | Crime | Existing handwriting reveal | The iridescent gradient floods the letters, glitter starts |
 | Cowboy | The brand press itself (heat starts at the first frame) | Cools, wisps leave |
-| Shinobi | Brush-stroke reveal (the handwriting reveal with a heavy ink stroke) | Smoke appears; first cut after a while |
+| Shinobi | Handwriting reveal in white ink, like Crime | The red floods the letters, smoke appears, first cut after a few seconds |
 | Horror | Materializes out of the fog with a flicker | Ghost double, breath and glitches |
 | Heroes | A slam: scale-in with the impact pulse | Glow and speed lines settle |
 | Cyberpunk | Typewriter or decode (random glyphs resolving) with glitch | Neon, scanlines and glitch bursts |
@@ -100,7 +100,8 @@ Technical notes:
   and repeated screens skip the entry and go straight to the lit state (or no effect), as `isAnimated`
   already does for `HandwrittenText`.
 - Below API 33 the entry animations still work (handwriting and typewriter are not AGSL), so the
-  fallback for Fantasy and Crime stays the handwriting reveal plus shadow and shimmer.
+  fallback for Fantasy and Crime stays the handwriting reveal plus shadow and shimmer. Fantasy loses the
+  handwriting only on API 33+, where the ignition replaces it.
 - Phase 2: let the effect follow the entry (flames growing from the strokes as they are written). It
   needs the mask and the field per frame, so it is more expensive; start with the sequential version.
 
