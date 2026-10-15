@@ -608,25 +608,6 @@ class CharacterProgressionUseCaseImpl
             }
         }
 
-        override suspend fun pendingCount(sagaId: Int): Int {
-            val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return 0
-            if (!saga.data.progressionEnabled) return 0
-            // The latest event is still being processed by the live flow, so it is not a failure yet.
-            val latest = saga.flatEvents().maxOfOrNull { it.data.id }
-            return pending(saga).let { p -> p.events.count { it.data.id != latest } + p.chapters.size + p.acts.size }
-        }
-
-        override suspend fun retryPending(sagaId: Int): RequestResult<Int> =
-            executeRequest {
-                val saga = sagaHistoryUseCase.getSagaById(sagaId).first() ?: return@executeRequest 0
-                var done = 0
-                val todo = pending(saga)
-                todo.events.forEach { if (evaluateEvent(sagaId, it.data.id, silent = true).isSuccess) done++ }
-                todo.chapters.forEach { if (evaluateChapterHonors(sagaId, it.data.id, silent = true).isSuccess) done++ }
-                todo.acts.forEach { if (evaluateActLegacy(sagaId, it.data.id, silent = true).isSuccess) done++ }
-                done
-            }
-
         override suspend fun catchUpPending(sagaId: Int) {
             if (!catchingUp.add(sagaId)) return
             try {

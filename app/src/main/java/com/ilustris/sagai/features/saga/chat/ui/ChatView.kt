@@ -256,9 +256,6 @@ fun ChatView(
             onDispose { viewModel.onChatScreenHidden() }
         }
 
-        // Offers to redo the experience evaluations that failed or never ran (levels, medals, legacy).
-        sagaId?.toIntOrNull()?.let { com.ilustris.sagai.features.progression.ui.ProgressionReviewSheet(it) }
-
         DisposableEffect(lifecycleOwner, viewModel) {
             lifecycleOwner.lifecycle.addObserver(viewModel)
             onDispose {

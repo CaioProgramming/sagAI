@@ -1236,8 +1236,6 @@
     <string name="character_status_confirm">Save</string>
     <string name="progression_status_active">Active</string>
     <string name="character_card_change_status">Change situation</string>
-    <string name="progression_pending_retry">%1$d experience updates did not finish. Tap to try again.</string>
-    <string name="progression_retrying">Updating experience…</string>
     <string name="progression_feats_level">feats · level %1$d</string>
     <string name="archive_export_button">Create full backup (.sagas)</string>
     <string name="archive_restore_button">Restore full backup</string>
@@ -1262,9 +1260,5 @@
     <string name="progression_legacies_gained">Legacies earned</string>
     <string name="progression_chapter_short">Ch. %1$d</string>
     <string name="progression_act_short">Act %1$d</string>
-    <string name="progression_review_title">Review the experience</string>
-    <string name="progression_review_body">Some points of the story need a review to generate their experience: levels, medals and legacy.</string>
-    <string name="progression_review_now">Review now</string>
-    <string name="progression_review_later">Later</string>
     <string name="progression_explainer">Every character has a level that grows with what they live through: bonds, risks, losses and choices, not only fights. Medals mark the deeds of a chapter and the legacy marks who changed an act. Tap See more to read what earned each point. You can hide all of this in Settings.</string>
 </resources>

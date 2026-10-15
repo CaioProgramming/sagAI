@@ -114,9 +114,6 @@ fun CharacterExperienceCard(
     accent: Color,
     contentColor: Color,
     genre: Genre,
-    pendingGenerations: Int,
-    isRetrying: Boolean,
-    onRetry: () -> Unit,
     onSeeMore: () -> Unit,
     onOpenHonor: (honors: List<com.ilustris.sagai.features.progression.data.model.CharacterHonor>, index: Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -174,17 +171,6 @@ fun CharacterExperienceCard(
             Column {
                 SectionLabel(stringResource(R.string.progression_messages).lowercase())
                 SectionValue(messageCount.toString())
-            }
-        }
-
-        if (pendingGenerations > 0) {
-            RowSection(first = false, onClick = if (isRetrying) null else onRetry) {
-                Text(
-                    if (isRetrying) stringResource(R.string.progression_retrying) else stringResource(R.string.progression_pending_retry, pendingGenerations),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = contentColor.copy(alpha = .75f),
-                    modifier = Modifier.weight(1f),
-                )
             }
         }
     }
