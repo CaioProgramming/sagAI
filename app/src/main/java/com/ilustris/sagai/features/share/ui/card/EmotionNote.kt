@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.share.ui.card
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -23,11 +21,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.GraphicsLayer
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -47,14 +51,28 @@ import com.ilustris.sagai.ui.theme.iridescentGradient
 /** How many lines of the body the drop cap spans. */
 private const val DROP_CAP_LINES = 3
 
+/** The note leans less than the art cards: it is a plate of text, not an object to turn over. */
+private const val NOTE_MAX_TILT_DEGREES = 9f
+
+/** Palette entries dimmer than this vanish as text on a black plate. */
+private const val MIN_FOIL_LUMINANCE = 0.12f
+
+private val NoteBlack = Color(0xFF070709)
+
 /**
- * The emotional share: no image, no 3D. A page torn from the saga's book, in the genre's own
- * colours and fonts, with the title, a divider with the Sagas spark, the text under a drop cap, and
- * the caption beside the Sagas mark.
+ * The emotional share: a black plate whose text is the holographic foil. No image. The title, the
+ * text under its drop cap, the divider with the Sagas spark and the caption beside the Sagas mark are
+ * all drawn in the genre's palette, and the gradient slides across the letters and the border as the
+ * card tilts, like foil under a light.
  *
- * It is as wide as it can be rather than tall: every size is a share of the card's width, so a
- * longer text makes a slightly smaller type instead of a taller card. It does not depend on the
- * device's light or dark theme, because the picture has to look the same wherever it is opened.
+ * It is as wide as it can be rather than tall: every size is a share of the card's width, so a longer
+ * text makes a slightly smaller type instead of a taller card. It does not depend on the device's
+ * light or dark theme, because the picture has to look the same wherever it is opened.
+ *
+ * @param genre null for a share that belongs to the player, which wears the app's own colours.
+ * @param tilt the same tilt the art cards use; at rest (while the card is exported) the foil sits
+ * mid-card.
+ * @param captureLayer records the card flat, outside the 3D rotation, for exporting it as an image.
  */
 @Composable
 fun EmotionNote(
@@ -62,25 +80,28 @@ fun EmotionNote(
     title: String,
     body: String,
     caption: String,
+    tilt: CardTiltState,
     captureLayer: GraphicsLayer,
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
+    val read = tilt.read
     val shape = MaterialTheme.shapes.extraLarge
     val primary = MaterialTheme.colorScheme.primary
     val palette = genre?.colorPalette() ?: iridescentGradient
-    val accent = remember(primary) { primary.lightenTo(0.5f) }
-    val accentSoft = remember(primary) { primary.lightenTo(0.3f) }
-    val backdrop =
-        remember(palette) {
-            val byLuminance = palette.sortedBy { it.luminance() }
-            val darkest = byLuminance.first()
-            val second = byLuminance.getOrElse(1) { darkest }
-            lerp(second, darkest, 0.55f) to darkest
-        }
-    val edge = remember(accent) { accent.copy(alpha = 0.35f) }
+    val frameColors = remember(palette) { palette.litForCard() }
+    val foilColors = remember(palette, primary) { palette.foilStops(primary) }
 
-    BoxWithConstraints(modifier.recordTo(captureLayer)) {
+    BoxWithConstraints(
+        modifier
+            .then(tilt.gestures)
+            .graphicsLayer {
+                val t = read()
+                rotationY = t.x * NOTE_MAX_TILT_DEGREES
+                rotationX = -t.y * NOTE_MAX_TILT_DEGREES
+                cameraDistance = 14f * density.density
+            },
+    ) {
         // One unit is 1% of the card's width.
         val unit = maxWidth.value / 100f
 
@@ -96,50 +117,36 @@ fun EmotionNote(
         val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
         val bodySize = sp(3.1f, 11f, 17f)
         val bodyStyle =
-            TextStyle(fontFamily = bodyFont, fontSize = bodySize, lineHeight = bodySize * 1.5f, color = Color(0xFFEFE8F3))
+            TextStyle(fontFamily = bodyFont, fontSize = bodySize, lineHeight = bodySize * 1.5f, color = Color.White)
 
         Box(
             Modifier
                 .fillMaxWidth()
+                .recordTo(captureLayer)
                 .clip(shape)
-                .background(Brush.linearGradient(listOf(backdrop.first, backdrop.second)))
+                .background(NoteBlack)
                 .drawBehind {
                     drawRect(
                         Brush.radialGradient(
-                            listOf(primary.copy(alpha = 0.28f), Color.Transparent),
-                            center = Offset(size.width * 0.2f, 0f),
+                            listOf(Color.White.copy(alpha = 0.06f), Color.Transparent),
+                            center = Offset(size.width * 0.12f, 0f),
                             radius = size.width * 0.9f,
                         ),
                     )
-                    drawRect(
-                        Brush.radialGradient(
-                            listOf(accent.copy(alpha = 0.16f), Color.Transparent),
-                            center = Offset(size.width, size.height),
-                            radius = size.width * 0.8f,
-                        ),
+                }.drawWithContent {
+                    drawContent()
+                    // Drawn over the text; the clip cuts the outer half of the stroke.
+                    drawOutline(
+                        outline = shape.createOutline(size, layoutDirection, this),
+                        brush = foilBrush(frameColors, read(), size.width, size.height),
+                        style = Stroke(width = 3.dp.toPx()),
                     )
-                    drawRect(
-                        Brush.radialGradient(
-                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.45f)),
-                            center = center,
-                            radius = size.maxDimension * 0.75f,
-                        ),
-                    )
-                }.border(1.dp, edge, shape),
+                },
         ) {
-            Text(
-                text = "“",
-                modifier = Modifier.align(Alignment.TopEnd).offset(x = dp(-3f), y = dp(-4f)),
-                style =
-                    TextStyle(
-                        fontFamily = headerFont,
-                        fontSize = sp(34f, 120f, 240f),
-                        color = accent.copy(alpha = 0.08f),
-                    ),
-            )
-
             Column(
-                Modifier.padding(horizontal = dp(7f), vertical = dp(6.5f)),
+                Modifier
+                    .padding(horizontal = dp(7f), vertical = dp(6.5f))
+                    .foilText(foilColors, read),
                 verticalArrangement = Arrangement.spacedBy(dp(3.2f)),
             ) {
                 Text(
@@ -150,11 +157,11 @@ fun EmotionNote(
                         MaterialTheme.typography.displaySmall.copy(
                             fontSize = sp(6.4f, 20f, 36f),
                             lineHeight = sp(6.4f, 20f, 36f) * 1.08f,
-                            brush = Brush.linearGradient(listOf(accent, accentSoft)),
+                            color = Color.White,
                         ),
                 )
 
-                SparkDivider(accent)
+                SparkDivider()
 
                 if (body.isNotBlank()) {
                     DropCapText(
@@ -165,7 +172,7 @@ fun EmotionNote(
                                 fontFamily = headerFont,
                                 fontSize = bodySize * 3.3f,
                                 lineHeight = bodySize * 1.5f * 1.1f,
-                                color = accent,
+                                color = Color.White,
                             ),
                     )
                 }
@@ -182,15 +189,15 @@ fun EmotionNote(
                             TextStyle(
                                 fontFamily = bodyFont,
                                 fontSize = sp(2.7f, 10f, 14f),
-                                color = accentSoft,
+                                color = Color.White.copy(alpha = 0.85f),
                             ),
                     )
-                    CompositionLocalProvider(LocalContentColor provides accent) {
+                    CompositionLocalProvider(LocalContentColor provides Color.White) {
                         SagaTitle(
                             textStyle =
                                 MaterialTheme.typography.titleMedium.copy(
                                     fontSize = sp(4.4f, 15f, 24f),
-                                    color = accent,
+                                    color = Color.White,
                                 ),
                         )
                     }
@@ -200,13 +207,63 @@ fun EmotionNote(
     }
 }
 
+/**
+ * Fills whatever is drawn in the layer's content with the foil: the content is painted white, and the
+ * gradient is laid over it keeping only the letters. [tilt] is read when drawing, so the gradient
+ * moves with the card without recomposing.
+ */
+private fun Modifier.foilText(
+    colors: List<Color>,
+    tilt: () -> Offset,
+): Modifier =
+    graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+        .drawWithContent {
+            drawContent()
+            drawRect(
+                brush = foilBrush(colors, tilt(), size.width, size.height),
+                blendMode = BlendMode.SrcIn,
+            )
+        }
+
+/** A diagonal gradient that slides sideways with the tilt and mirrors at its ends, so it never runs out. */
+private fun foilBrush(
+    colors: List<Color>,
+    tilt: Offset,
+    width: Float,
+    height: Float,
+): Brush {
+    val shift = width * tilt.x * 0.8f
+    return Brush.linearGradient(
+        colors = colors,
+        start = Offset(shift - width * 0.5f, 0f),
+        end = Offset(shift + width, height * (1f + tilt.y * 0.5f)),
+        tileMode = TileMode.Mirror,
+    )
+}
+
+/**
+ * The palette's bright entries, looped back to the first so the foil is seamless. A palette with fewer
+ * than three of them (its dark entries would vanish as text on black) is topped up with lighter
+ * tints of the genre colour.
+ */
+private fun List<Color>.foilStops(primary: Color): List<Color> {
+    val bright = filter { it.luminance() >= MIN_FOIL_LUMINANCE }
+    val stops =
+        if (bright.size >= 3) {
+            bright
+        } else {
+            bright + listOf(primary.lightenTo(0.5f), primary.lightenTo(0.3f), primary.lightenTo(0.6f))
+        }
+    return stops + stops.first()
+}
+
 /** A hairline that fades out on both sides of the Sagas spark. */
 @Composable
-private fun SparkDivider(color: Color) {
+private fun SparkDivider() {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Box(Modifier.weight(1f).height(1.dp).background(Brush.horizontalGradient(listOf(Color.Transparent, color))))
-        Icon(painterResource(R.drawable.ic_spark), contentDescription = null, tint = color, modifier = Modifier.size(width = 15.dp, height = 19.dp))
-        Box(Modifier.weight(1f).height(1.dp).background(Brush.horizontalGradient(listOf(color, Color.Transparent))))
+        Box(Modifier.weight(1f).height(1.dp).background(Brush.horizontalGradient(listOf(Color.Transparent, Color.White))))
+        Icon(painterResource(R.drawable.ic_spark), contentDescription = null, tint = Color.White, modifier = Modifier.size(width = 15.dp, height = 19.dp))
+        Box(Modifier.weight(1f).height(1.dp).background(Brush.horizontalGradient(listOf(Color.White, Color.Transparent))))
     }
 }
 
