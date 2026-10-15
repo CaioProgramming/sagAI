@@ -1041,7 +1041,10 @@ class ChatViewModel
             sagaId.toIntOrNull()?.let {
                 sagaImmersiveSession.push("chat", it)
                 // What was earned while the app was away comes up now, merged and once.
-                viewModelScope.launch { runCatching { progressionUseCase.announcePending(it) } }
+                viewModelScope.launch {
+                    runCatching { progressionUseCase.announcePending(it) }
+                    runCatching { progressionUseCase.catchUpPending(it) }
+                }
             }
         }
 

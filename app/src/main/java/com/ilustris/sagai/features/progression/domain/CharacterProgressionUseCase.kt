@@ -93,6 +93,13 @@ interface CharacterProgressionUseCase {
     /** Runs the evaluations that failed or never ran, in story order and without announcing the past. */
     suspend fun retryPending(sagaId: Int): RequestResult<Int>
 
+    /**
+     * Quietly finishes what failed or never ran, a few at a time and without announcing the past.
+     * Stops at the first failure so an outage or spent quota is not hammered, and does nothing while
+     * another catch-up of the same saga runs. The latest event is left to the live flow.
+     */
+    suspend fun catchUpPending(sagaId: Int)
+
     /** Debug reset: wipes the feats and honors of a saga and clears its generation flags. */
     suspend fun resetSaga(sagaId: Int)
 }
