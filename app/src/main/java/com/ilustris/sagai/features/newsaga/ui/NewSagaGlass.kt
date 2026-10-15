@@ -9,11 +9,15 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,24 +31,29 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.ui.theme.glassLight
 import com.ilustris.sagai.ui.theme.sagaShape
+import com.ilustris.sagai.ui.theme.themePainter
 
 /**
  * Dark glass lit by [tint], the way iOS lights a glass control: a translucent base with the
- * [glassLight] on top, so the color is never a fill, only light caught by the edges.
+ * [glassLight] on top, so the color is never a fill, only light caught by the edges. [baseAlpha] is
+ * how much of the background shows through: raise it where text sits on a busy backdrop.
  */
 @Composable
 internal fun Modifier.glassSurface(
     shape: Shape,
     tint: Color,
     strength: () -> Float = { 1f },
+    baseAlpha: Float = 0.5f,
 ): Modifier {
     val base = MaterialTheme.colorScheme.background
     return this
         .clip(shape)
-        .background(base.copy(alpha = 0.5f))
+        .background(base.copy(alpha = baseAlpha))
         .glassLight(shape, tint, strength)
 }
 
@@ -115,5 +124,46 @@ internal fun GlassButton(
                 )
             }
         }
+    }
+}
+
+/**
+ * A suggestion the player can tap: the theme's mark and up to three lines of [text] on a notch
+ * softer glass than the action buttons. It fills the width it is given, so callers cap it with
+ * `widthIn(max = ...)`. Shared by the creation flow's idea chips and the chat input's suggestions.
+ */
+@Composable
+internal fun GlassChip(
+    text: AnnotatedString,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .glassSurface(
+                    RoundedCornerShape(14.dp),
+                    MaterialTheme.colorScheme.primary,
+                    strength = { 0.75f },
+                )
+                .clickable(onClick = onClick)
+                .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            painter = themePainter(),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
     }
 }

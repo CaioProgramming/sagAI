@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.debug.ui
 
-import MessageStatus
 import android.content.ClipData
+import MessageStatus
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
@@ -75,6 +75,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -953,7 +954,7 @@ private fun ShaderParamsTuningMenu(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboard.current
-    val clipboardScope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 
     Column(
         Modifier
@@ -1020,9 +1021,7 @@ private fun ShaderParamsTuningMenu(
                     Button(
                         onClick = {
                             val json = GsonBuilder().setPrettyPrinting().create().toJson(shaderParams)
-                            clipboardScope.launch {
-                                clipboardManager.setClipEntry(ClipEntry(ClipData.newPlainText("shader params", json)))
-                            }
+                            scope.launch { clipboardManager.setClipEntry(ClipEntry(ClipData.newPlainText("shader params", json))) }
                         },
                         modifier = Modifier.weight(1f),
                     ) {
