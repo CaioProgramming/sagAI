@@ -67,6 +67,11 @@ android {
     }
 
     buildTypes {
+        // Debug builds point to the homologation Firebase project (app/src/debug/google-services.json)
+        // and install side by side with the production app.
+        debug {
+            applicationIdSuffix = ".debug"
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(
