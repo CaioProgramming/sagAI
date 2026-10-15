@@ -440,7 +440,7 @@ void main(){
   float cnt = 1. + step(.5, hash(vec2(uSeedA, 9.1))) + step(.8, hash(vec2(uSeedA, 9.2)));
   float L = asp * .5;
   vec2 mu = uv;
-  float inBand = 0., edge = 0., blade = 0., wgs = 0., side = 1.;
+  float inBand = 0., edge = 0., blade = 0., wgs = 0., side = 1., flashL = 0., scar = 0.;
   for (int i = 0; i < 3; i++){
     float fi = float(i);
     float sd = uSeedA * 13.7 + fi * 5.3;
@@ -459,13 +459,15 @@ void main(){
     float taper = smoothstep(-L, -L * .6, uc) * (1. - smoothstep(L * .6, L, uc));
     float w = .005 + .008 * (1. - exp(-max(tci, 0.) * 30.));
     blade = max(blade, (1. - smoothstep(w * .4, w, abs(dc))) * vis * taper * exp(-max(tci, 0.) * 5.) * cutOn);
-    float sep = .026 * (1. - exp(-max(tci, 0.) * 18.)) * exp(-max(tci - .32, 0.) * 3.) * cutOn;
+    // the halves open like scissors (wider in the middle); the negative is exactly the gap between them
+    float lens = clamp(1. - pow(abs(uc) / L, 2.), 0., 1.);
+    float sep = .03 * (1. - exp(-max(tci, 0.) * 22.)) * exp(-max(tci - .30, 0.) * 3.2) * cutOn * lens;
     float sgn = dc >= 0. ? 1. : -1.;
     mu -= nS / vec2(asp, 1.) * sep * sgn;
     side *= step(0., sgn * dot((mu - ctrS) * vec2(asp, 1.) - off, nS)) + (1. - cutOn);
-    float lens = clamp(1. - pow(abs(uc) / L, 2.), 0., 1.);
-    float open = smoothstep(.03, .12, tci) * (1. - smoothstep(.26, .52, tci));
-    float bw = uTextH * (.42 + .4 * hash(vec2(sd, 7.))) * open * lens * cutOn;
+    float bw = sep * 1.1;
+    flashL = max(flashL, exp(-abs(dc) / .011) * vis * taper * exp(-max(tci, 0.) * 28.) * cutOn);
+    scar = max(scar, (1. - smoothstep(.0012, .0035, abs(dc))) * taper * step(-L, uc) * step(uc, L) * smoothstep(.18, .4, tci) * exp(-max(tci - .4, 0.) * 1.6) * cutOn);
     float dcr = dc + (fbm(vec2(uc * 14., 4. + sd)) - .5) * bw * .7;
     float brush = noise(vec2(uc * 3., dc * 90.));
     float ib = (1. - smoothstep(bw - .004, bw + .004, abs(dcr) + brush * bw * .18)) * step(.003, bw) * vis;
@@ -478,8 +480,8 @@ void main(){
   float m0 = texture2D(uMask, mu).r * min(side, 1.);
 
   vec4 S = texture2D(uS, uv);
-  vec3 bg = vec3(.032, .034, .044) + vec3(.05, .055, .07) * max(1. - length(uv - vec2(.5, .62)) * 1.4, 0.);
-  vec3 outc = bg + uHalo * S.g * .10;
+  // no backdrop: only the text, the smoke and the cut
+  vec3 outc = vec3(.039, .024, .020);
 
   // subtle smoke: a few thin wisps and soft puffs, same recipe as the cowboy mark
   float sc = uHeight / .85;
@@ -507,7 +509,7 @@ void main(){
   // inside a slit the world is a negative: white paper, black ink, speed lines from the cut
   vec3 neg = mix(vec3(1., .97, .97), vec3(.02, .015, .02), max(wgs, m0));
   outc = mix(outc, neg, inBand);
-  outc += uText * edge * 1.1 + vec3(1.) * blade * 1.2;
+  outc += uText * edge * 1.1 + vec3(1.) * blade * 1.2 + vec3(1.) * flashL * .7 + uText * scar * .45;
   outc *= 1. - .35 * smoothstep(0., .55, uEvtA) * (1. - step(0., tc0)) * uOpt.y;
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .05;
   gl_FragColor = vec4(boxed(outc, uv), 1.);
