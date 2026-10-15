@@ -383,13 +383,8 @@ void main(){
   float m0 = texture2D(uMask, mu).r;
   vec4 S0 = texture2D(uS, uv);
 
-  // leather, scorched around the mark, lit by the hot metal
-  float grain = .6 * fbm(vec2(uv.x * asp * 6., uv.y * 40.)) + .4 * fbm(uv * vec2(asp * 3., 5.));
-  vec3 surf = mix(vec3(.075, .05, .038), vec3(.17, .11, .075), grain);
-  float scorch = S0.b * smoothstep(0., 1.1, age) * (1. - smoothstep(9.8, 10.8, age));
-  surf *= 1. - .6 * scorch;
-  surf *= 1. - .7 * dot(uv - .5, uv - .5);
-  vec3 outc = surf + uC2 * S0.g * heat * .30 * uIntensity + uC3 * S0.b * heat * .45 * uIntensity + vec3(1., .9, .7) * S0.b * exp(-age * 7.) * .8;
+  // no surface and no ambient light: only the mark itself, a tight bloom hugging the letters, and the smoke
+  vec3 outc = vec3(.039, .024, .020) + uC3 * S0.b * heat * .22 * uIntensity + vec3(1., .9, .7) * S0.b * exp(-age * 7.) * .5;
 
   // the mark: thick strokes hold heat longest, a crust forms in patches as it cools
   float crust = smoothstep(.45, .75, fbm(vec2(uv.x * asp * 11., uv.y * 13.) + 3.));
