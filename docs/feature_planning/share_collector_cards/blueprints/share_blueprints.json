@@ -3,23 +3,25 @@
     "title": "Share: character card",
     "role": "You write the line that sits on a character's collector card: the one a player shares because it feels exactly like that character.",
     "directives": {
-      "CARD_LINE": "text is the card's tagline: one line a stranger reads in three seconds and still feels who this character is.",
-      "EPITHET_TITLE": "title is the character's epithet in two or three words, the way their world would call them. Prefer a nickname from characterNicknames when one fits; otherwise coin one from what they do or carry.",
+      "CARD_LINE": "text is the line printed on the card: one line a stranger reads in three seconds and still feels who this character is.",
+      "FIRST_PERSON_QUOTE": "Write text in the first person, as something the character could say about themselves: the quote on their card. It shows who they are without explaining it.",
+      "EPITHET_TITLE": "title is the character's epithet, the way their world would call them. Use a nickname from characterNicknames exactly as it is when one fits; otherwise coin one from what they do or carry.",
       "ONE_CONCRETE_TRAIT": "Build the text on one specific thing: a habit, a contradiction, an object, a choice taken from characterEvents or characterArcs. A concrete image beats an abstract noun.",
       "PERSON_BEFORE_PLOT": "characterPersonality and characterArcs say who they are. characterEvents are material to draw an image from, never a list to summarize.",
       "HOOK_CAPTION": "caption is the line posted with the card: a short hook that makes a stranger curious about this character."
     },
     "rules": {
       "LENGTH_TEXT": "text is one sentence of at most 110 characters, so it fits the card without shrinking.",
-      "LENGTH_TITLE_CAPTION": "title is at most three words. caption is at most five.",
+      "LENGTH_TITLE_CAPTION": "title is at most four words. caption is at most five.",
       "SETTING_IS_BACKGROUND": "sagaMainContext is background. Never reuse its phrases or imagery as the character's line: the character is not the setting.",
       "NO_FORMULA_OPENINGS": "Do not open text with a 'Between X and Y' construction or with the character's name. Vary the sentence shape between generations.",
       "NO_STOCK_WORDS": "Do not make silence, shadow, destiny, fate, weight, echo, ashes or whisper the main noun.",
       "NO_SPOILERS": "Reveal no outcome, betrayal, death or other character's name. Hint at the person, not the plot.",
-      "GENDER_AGREEMENT": "Use characterGender for pronouns and grammatical agreement. Without it, avoid gendered words.",
-      "STATUS_TENSE": "When characterStatus is present the character is not simply active: write about them as absent or lost, without saying how or why.",
+      "GENDER_AGREEMENT": "Use characterGender for the agreement of the character's own words. Without it, avoid gendered words.",
+      "STATUS_TENSE": "When characterStatus is present the line comes from someone absent or lost: an echo, an epitaph. Never say how or why.",
       "GENRE_VOICE": "Match the saga genre's vocabulary and rhythm, never its setting phrases.",
-      "NO_GAME_TALK": "Never mention levels, XP, stats, messages or the game itself."
+      "NO_GAME_TALK": "Never mention levels, XP, stats, messages or the game itself.",
+      "WHOLE_PHRASES": "title and caption are complete, grammatical phrases. Fit the word limit by choosing other words, never by dropping an article or a preposition."
     }
   },
   "share_history_blueprint": {
@@ -38,7 +40,8 @@
       "NO_FRAGMENT_STACKS": "No stacks of short fragments such as 'Empires fall. Stars bleed.' One flowing sentence.",
       "NO_SPOILERS": "No twist, outcome or ending. Name at most the main character, and only when the line reads better with the name.",
       "GENRE_VOICE": "Match the genre's vocabulary and rhythm without falling back on its stock tropes.",
-      "JOURNEY_WEIGHT": "journeyStats may be used once, as a plain fact, only when it adds weight."
+      "JOURNEY_WEIGHT": "journeyStats may be used once, as a plain fact, only when it adds weight.",
+      "WHOLE_PHRASES": "title and caption are complete, grammatical phrases. Fit the word limit by choosing other words, never by dropping an article or a preposition."
     }
   },
   "share_emotional_blueprint": {
@@ -57,7 +60,8 @@
       "NO_NAMES_NO_TWISTS": "No character names and no plot twist. Feelings and consequences, not events.",
       "NUMBERS_ONCE": "A number from journeyStats may appear once, as a plain fact such as days or chapters. Never as a list of statistics.",
       "NO_STOCK_ENDINGS": "No 'the journey continues', 'destiny awaits' or similar closing lines.",
-      "SURREAL_NOT_VAGUE": "Slightly surreal is welcome. Vague is not."
+      "SURREAL_NOT_VAGUE": "Slightly surreal is welcome. Vague is not.",
+      "WHOLE_PHRASES": "title and caption are complete, grammatical phrases. Fit the word limit by choosing other words, never by dropping an article or a preposition."
     }
   },
   "share_playstyle_blueprint": {
@@ -103,7 +107,8 @@
       "NO_SELF_REFERENCE": "CRITICAL: Do NOT use 'I', 'We' or any self-referential term.",
       "NO_SAGA_NAMES": "No saga titles, character names or plot. The portrait is of the player, not of one story.",
       "NUMBERS_ONCE": "A number from journeyStats may appear once, as a plain fact. Never as a list of statistics.",
-      "NO_STOCK_PHRASES": "Avoid 'born storyteller', 'every story needs a hero' and similar lines."
+      "NO_STOCK_PHRASES": "Avoid 'born storyteller', 'every story needs a hero' and similar lines.",
+      "WHOLE_PHRASES": "title and caption are complete, grammatical phrases. Fit the word limit by choosing other words, never by dropping an article or a preposition."
     }
   }
 }
