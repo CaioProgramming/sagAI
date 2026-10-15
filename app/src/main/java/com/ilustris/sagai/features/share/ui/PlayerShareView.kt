@@ -15,12 +15,13 @@ import com.ilustris.sagai.features.share.ui.card.EmotionNote
  */
 @Composable
 fun PlayerShareView(viewModel: SharePlayViewModel = hiltViewModel()) {
-    CollectorShareFrame(genre = null, exportName = ShareType.PLAYER.name, viewModel = viewModel) { _, captureLayer, shareText ->
+    CollectorShareFrame(genre = null, exportName = ShareType.PLAYER.name, viewModel = viewModel) { tilt, captureLayer, shareText ->
         EmotionNote(
             genre = null,
             title = shareText?.title.orEmpty(),
             body = shareText?.text.orEmpty(),
             caption = shareText?.caption.orEmpty(),
+            tilt = tilt,
             captureLayer = captureLayer,
             modifier = Modifier.fillMaxWidth(),
         )

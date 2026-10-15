@@ -19,12 +19,13 @@ fun EmotionShareView(
 ) {
     val genre = remember(saga) { saga.genre }
 
-    CollectorShareFrame(genre, ShareType.EMOTIONS.name, viewModel) { _, captureLayer, shareText ->
+    CollectorShareFrame(genre, ShareType.EMOTIONS.name, viewModel) { tilt, captureLayer, shareText ->
         EmotionNote(
             genre = genre,
             title = shareText?.title.orEmpty(),
             body = shareText?.text.orEmpty(),
             caption = shareText?.caption.orEmpty(),
+            tilt = tilt,
             captureLayer = captureLayer,
             modifier = Modifier.fillMaxWidth(),
         )
