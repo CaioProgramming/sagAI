@@ -437,8 +437,8 @@ void main(){
 
   // katana: every cut is random (angle, place, side it starts from) and sometimes comes as 2 or 3 in a row.
   // Each cut opens a slit of negative along its path while the halves slide apart.
-  float cnt = 1. + step(.5, hash(vec2(uSeedA, 9.1))) + step(.8, hash(vec2(uSeedA, 9.2)));
-  float L = asp * .5;
+  float cnt = 1.;
+  float L = asp * .65;
   vec2 mu = uv;
   float inBand = 0., edge = 0., blade = 0., wgs = 0., side = 1., flashL = 0., scar = 0.;
   for (int i = 0; i < 3; i++){
@@ -447,20 +447,20 @@ void main(){
     float on = step(fi, cnt - .5) * uOpt.y;
     float tci = uEvtA - .55 - fi * .11 - hash(vec2(sd, 6.)) * .05;
     float cutOn = on * step(0., tci);
-    float ang = (.2 + .95 * hash(vec2(sd, 1.))) * (hash(vec2(sd, 2.)) > .5 ? 1. : -1.);
+    float ang = (.12 + .5 * hash(vec2(sd, 1.))) * (hash(vec2(sd, 2.)) > .5 ? 1. : -1.);
     vec2 dirS = vec2(cos(ang), sin(ang));
     if (hash(vec2(sd, 5.)) > .5) dirS = -dirS;
     vec2 nS = vec2(-dirS.y, dirS.x);
-    vec2 off = vec2((hash(vec2(sd, 3.)) - .5) * asp * .45, (hash(vec2(sd, 4.)) - .5) * uTextH * .9);
+    vec2 off = vec2(0., (hash(vec2(sd, 4.)) - .5) * uTextH * 1.1);
     vec2 pq = pa - off;
     float dc = dot(pq, nS), uc = dot(pq, dirS);
-    float prog = clamp(tci / .10, 0., 1.);
+    float prog = clamp(tci / .12, 0., 1.);
     float vis = step(uc, -L + 2. * L * prog) * step(-L, uc);
-    float taper = smoothstep(-L, -L * .6, uc) * (1. - smoothstep(L * .6, L, uc));
+    float taper = smoothstep(-L, -L * .85, uc) * (1. - smoothstep(L * .85, L, uc));
     float w = .005 + .008 * (1. - exp(-max(tci, 0.) * 30.));
     blade = max(blade, (1. - smoothstep(w * .4, w, abs(dc))) * vis * taper * exp(-max(tci, 0.) * 5.) * cutOn);
     // the halves open like scissors (wider in the middle); the negative is exactly the gap between them
-    float lens = clamp(1. - pow(abs(uc) / L, 2.), 0., 1.);
+    float lens = clamp(1. - pow(abs(uc) / L, 3.), 0., 1.);
     float sep = .03 * (1. - exp(-max(tci, 0.) * 22.)) * exp(-max(tci - .30, 0.) * 3.2) * cutOn * lens;
     float sgn = dc >= 0. ? 1. : -1.;
     mu -= nS / vec2(asp, 1.) * sep * sgn;
@@ -673,7 +673,7 @@ void main(){
       embers: { rate: 8, max: 30, vy: [10, 40], vx: 36, life: [2, 4.5], size: [0.8, 2.2], alpha: 0.45 },
       font: 'Hoshita (arquivo remoto). Aqui: Shippori Mincho.',
       now: 'levitate + sakuraWind (flutua com pétalas ao vento).',
-      idea: 'Fumaça discreta, só fios finos e alguns puffs. O corte de katana é o evento e é sempre diferente: ângulo, posição e lado de onde a lâmina entra mudam a cada vez, e às vezes vêm 2 ou 3 cortes em sequência. Cada corte abre uma fenda de negativo (papel branco, tinta preta, linhas de velocidade) enquanto as metades se afastam.'
+      idea: 'Fumaça discreta, só fios finos e alguns puffs. Um único corte de katana de ponta a ponta do texto, sempre diferente: o ponto de entrada em y, o ângulo e o lado de onde a lâmina vem são sorteados. As metades se abrem como uma tesoura e o vão vira negativo (papel branco, tinta preta, linhas de velocidade), com borda vermelha e uma cicatriz que some devagar.'
     },
     crime: {
       pad: { t: 0.5, b: 0.5, s: 0.4 },
