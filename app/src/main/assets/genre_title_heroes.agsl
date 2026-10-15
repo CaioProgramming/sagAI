@@ -1,0 +1,148 @@
+
+uniform shader uMask;
+uniform shader uS;
+uniform float uTime;
+uniform float uIntensity;
+uniform float uHeight;
+uniform float uTextY;
+uniform float uTextH;
+uniform float2 uRes;
+uniform float3 uC1;
+uniform float3 uC2;
+uniform float3 uC3;
+uniform float3 uC4;
+uniform float3 uHalo;
+uniform float3 uText;
+uniform float3 uOpt;
+uniform float uEvtA;
+uniform float uEvtB;
+uniform float uSeedB;
+uniform float uSeedA;
+uniform float uEntry;
+uniform float uEntryDur;
+uniform float2 uTx;
+uniform float4 uBox;
+uniform float4 uFw;
+uniform float4 uTrail[8];
+uniform float2 uTrailV[8];
+uniform float4 uPtr;
+uniform float4 uCut;
+// recent finger positions with a fading strength; returns (influence, weighted velocity x, y)
+float3 trailField(float2 uv, float asp, float rad){
+  float3 acc = float3(0.);
+  for (int i = 0; i < 8; i++){
+    float2 d = (uv - uTrail[i].xy) * float2(asp, 1.);
+    float g = exp(-dot(d, d) / (rad * rad)) * uTrail[i].z;
+    acc.x += g; acc.yz += uTrailV[i] * g;
+  }
+  return acc;
+}
+uniform float2 uBoxCfg;
+// Simulates the bounds a Compose layout gives the title: nothing may show outside the box.
+// With the soft edge on, every effect fades to the background over the margin instead of being cut.
+float boxMask(float2 uv){
+  if (uBoxCfg.x < .5) return 1.;
+  float2 px = uv * uRes, lo = uBox.xy * uRes, hi = uBox.zw * uRes;
+  float soft = uBoxCfg.y;
+  float fx = max(soft > .5 ? uFw.x : 1., 1.), ft = max(soft > .5 ? uFw.y : 1., 1.), fb = max(soft > .5 ? uFw.z : 1., 1.);
+  float m = smoothstep(lo.x, lo.x + fx, px.x) * (1. - smoothstep(hi.x - fx, hi.x, px.x));
+  return m * smoothstep(lo.y, lo.y + fb, px.y) * (1. - smoothstep(hi.y - ft, hi.y, px.y));
+}
+float3 boxed(float3 c, float2 uv){
+  if (uBoxCfg.x < .5) return c;
+  float2 px = uv * uRes, lo = uBox.xy * uRes, hi = uBox.zw * uRes;
+  float soft = uBoxCfg.y;
+  float fx = max(soft > .5 ? uFw.x : 1., 1.), ft = max(soft > .5 ? uFw.y : 1., 1.), fb = max(soft > .5 ? uFw.z : 1., 1.);
+  float m = smoothstep(lo.x, lo.x + fx, px.x) * (1. - smoothstep(hi.x - fx, hi.x, px.x));
+  m *= smoothstep(lo.y, lo.y + fb, px.y) * (1. - smoothstep(hi.y - ft, hi.y, px.y));
+  float3 o = mix(float3(0.), c, m);
+  float2 d = min(px - lo, hi - px);
+  float e = min(d.x, d.y);
+  o = mix(o, float3(.35, .75, 1.), (1. - smoothstep(0., 1.6, abs(e))) * .7 * step(-1.6, e) * step(.5, uFw.w));
+  return o;
+}
+float hash(float2 p){ p = fract(p * float2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float noise(float2 p){ float2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+  float a = hash(i), b = hash(i + float2(1., 0.)), c = hash(i + float2(0., 1.)), d = hash(i + float2(1., 1.));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y); }
+float fbm(float2 p){ float v = 0., a = .5; for (int i = 0; i < 4; i++){ v += a * noise(p); p = p * 2.03 + float2(7.1, 3.7); a *= .5; } return v; }
+
+// Child shaders are sampled in pixel space; the lab sampled normalised uv with y up.
+half4 sM(float2 p) { return uMask.eval(float2(p.x * uRes.x, (1.0 - p.y) * uRes.y)); }
+half4 sS(float2 p) { return uS.eval(float2(p.x * uRes.x, (1.0 - p.y) * uRes.y)); }
+// Emissive output: the effect is light on a transparent layer. A pixel is as opaque as it is bright,
+// or as covered by the letters, so nothing paints a backdrop and gradientFill/shimmer find no box.
+half4 finish(float3 c, float cov) {
+    c = clamp(c, 0.0, 1.0);
+    float a = clamp(max(max(c.r, max(c.g, c.b)), cov), 0.0, 1.0);
+    return half4(half3(c), half(a));
+}
+
+half4 main(float2 fragCoord){
+  float2 uv = float2(fragCoord.x / uRes.x, 1.0 - fragCoord.y / uRes.y);
+  float asp = uRes.x / uRes.y;
+  float t = uTime;
+  float2 ctr = float2(.5, uTextY);
+  // slam: starts big, lands on the spot with a small bounce
+  float sk = clamp(uEntry / .35, 0., 1.);
+  float scl = 1. + .6 * pow(1. - sk, 3.) - .04 * sin((uEntry - .35) * 30.) * exp(-(uEntry - .35) * 8.) * step(.35, uEntry);
+  float2 uvs = ctr + (uv - ctr) / scl;
+  float ea = smoothstep(0., .1, uEntry);
+  float cyc = fract(t / 1.8);
+  float punch = smoothstep(0., .25, cyc) * (1. - smoothstep(.7, .97, cyc));
+  punch = max(punch, exp(-uEvtB * 5.) * step(0., uEvtB));
+  punch = max(punch, exp(-max(uEntry - .35, 0.) * 5.) * step(.35, uEntry) * step(uEntry, 1.6));
+  float4 S = sS( uvs);
+  float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
+  float sc = uHeight / .85;
+
+  // speed lines fanning out from an ellipse around the title
+  float2 fc = mix(ctr, uPtr.xy, uPtr.w * .85);
+  float2 pe = (uv - fc) / float2(.5, .28);
+  float rad = length(pe);
+  float ang = atan(pe.y, pe.x);
+  float ln = smoothstep(.58, .92, noise(float2(ang * 26., floor(t * 7.) * 1.7)));
+  float lines = ln * smoothstep(.95, 1.35, rad) * (1. - smoothstep(1.4 * sc, 3. * sc, rad)) * (.35 + .95 * punch) * uIntensity;
+
+  // a soft glow that breathes with each punch
+  float pg = .6 + .5 * punch;
+  float3 tf = trailField(uv, asp, .15);
+  float3 bg = float3(0.) + uC2 * .22 * S.g * pg + uC3 * .35 * S.b * pg * uIntensity + uC3 * tf.x * .12 * pg;
+  float3 outc = bg + uC3 * lines * .5;
+
+  // chunky extrusion down-right, then a white outline, then the face
+  float ext = 0.;
+  for (int k = 1; k <= 10; k++){
+    float2 o = float2(.6 / asp, -.8) * .0017 * float(k) * (.7 + .3 * punch);
+    ext = max(ext, sM( uvs - o).r);
+  }
+  float m0 = sM( uvs).r * ea;
+  float ol = smoothstep(.40, .50, S.b) * (1. - m0) * ea;
+  outc = mix(outc, uC1 * 1.1, ext * ea * (1. - m0));
+  outc = mix(outc, float3(.96, .97, 1.), ol);
+
+  float3 fill = mix(uC2 * .75, uC3, smoothstep(0., 1., g));
+  fill = mix(fill, uC4, smoothstep(.55, 1., g) * .55);
+  fill = mix(fill, uHalo, (1. - smoothstep(0., .14, g)) * .55);
+  // halftone shading lives only inside the letters, bigger dots toward the bottom
+  float2 gp = uv * float2(asp, 1.) * uRes.y / 7.;
+  float2 rp = float2(gp.x + gp.y, gp.x - gp.y) * .7071;
+  float dr = (1. - g) * .5 + .06;
+  float dots = 1. - smoothstep(dr - .05, dr + .05, length(fract(rp) - .5));
+  fill = mix(fill, uC1 * 1.3, dots * (1. - smoothstep(0., .85, g)) * .6);
+  float sweep = exp(-pow((fract(uv.x * .7 + uv.y * .5 - t * .25) - .5) / .05, 2.));
+  fill += float3(1.) * sweep * .5;
+  outc = mix(outc, fill, m0);
+
+  // gold glints on the outline
+  float2 sp = uv * uRes / 10.;
+  float2 cp = floor(sp), f = fract(sp) - .5;
+  float hh = hash(cp);
+  float tw = pow(max(0., sin(t * (1.5 + hh * 3.) + hh * 40.)), 20.);
+  float star = tw * step(.93, hh) * (smoothstep(.5, 0., length(f)) + max(smoothstep(.05, 0., abs(f.x)) * smoothstep(.45, 0., abs(f.y)), smoothstep(.05, 0., abs(f.y)) * smoothstep(.45, 0., abs(f.x))));
+  outc += uHalo * star * smoothstep(.1, .6, S.b) * 1.4;
+  outc *= 1. - .6 * dot(uv - .5, uv - .5);
+  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * (.045) * smoothstep(0., .06, max(outc.r, max(outc.g, outc.b)));
+  float cov = (max(max(m0, ext * ea * (1. - m0)), ol)) * boxMask(uv);
+  return finish(boxed(outc, uv), cov);
+}

@@ -141,3 +141,38 @@ through `SrcAtop`. With it off, the scanlines and phosphor only show on the lett
   rebuilt only when the text changes.
 - Stop animating with `rememberLifecycleAnimationsActive()`; consider a static first frame for
   list items.
+
+## Implementation status (PR into `feature/1.18.0`)
+
+Done: Fantasy, Horror, Cowboy, Shinobi, Crime and Heroes titles (API 33+), in
+`ui/components/titlefx/` plus `assets/genre_title_<genre>.agsl`.
+
+- `stylisedText(..., color, interactive, playEntry)` picks `GenreTitleFx` when `Genre.usesTitleFx()`;
+  otherwise (or if the shader cannot be built) the old styled text without `genreVfx`.
+- Shaders are the lab's GLSL ported to AGSL and made **emissive**: output is premultiplied light on a
+  transparent layer (`finish()`), `boxMask()` fades everything to nothing at the composable's bounds, so
+  the title sits on any background. Background colours and the debug box from the lab are gone.
+- `GenreTitleFx` is a custom `Layout` that reserves the per-genre margin (pad t/b/s x text height),
+  measures with `TextMeasurer` (shrinks up to 8x to fit two lines), draws the white-on-black mask
+  with `CanvasDrawScope`, builds the small field bitmap on the CPU (`TitleFxField.kt`, port of
+  `buildField`) and draws through a `Paint` with the `RuntimeShader` (`mask` and `field` as
+  `BitmapShader` children). Clock: `withFrameNanos`, ~30 fps, paused with
+  `rememberLifecycleAnimationsActive()`.
+- Events and touch live in `TitleFxState` (cowboy brand every 11 s, shinobi cut every 7 s after the
+  entry, drag cut on release, heroes tap punch, 8-point finger trail). Touch is observed in the
+  `Initial` pass without consuming, so scrolling parents keep working. Only hero titles pass
+  `interactive = true`.
+- Call sites: `gradientFill` is applied only when `!genre.usesTitleFx()` (`HeroHeader.kt`,
+  `SagaDetailInitialView.kt` x2); `reactiveShimmer` is kept. The duplicate `genreVfx` in
+  `ChaptersGalleryContent.kt` is gone.
+- Palettes (`TitleFxPalette.kt`) derive from the title colour; Crime and Heroes use the remote
+  `colorPalette` when it has enough entries, like the lab did with the app's own colours.
+
+Deviations / not done yet:
+- **Not compiled or run on a device in this environment** (no Android SDK). The AGSL was only checked
+  as GLSL in WebGL; first run on a device may need fixes. Shader or asset failures are caught and fall
+  back to the simple title.
+- Cyberpunk, Space Opera and Punk Rock titles are unchanged (their VHS/CRT/ransom rework stays a later PR).
+- The entry animation does not follow `HandwrittenText`'s own writing; the shader draws its own
+  handwriting/ignition. Letter bounds are estimated (72% of the layout height) for the margins.
+- Icon `genreVfx` replacements are still phase two.
