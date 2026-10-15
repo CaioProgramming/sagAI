@@ -39,7 +39,7 @@
   .tabs button[aria-selected="true"] { color: var(--fg); border-color: var(--accent); background: #24140c; }
 
   .stage {
-    position: relative; width: 100%; aspect-ratio: 4 / 3; max-width: 100%;
+    position: relative; width: 100%; aspect-ratio: 4 / 3; touch-action: pan-y; user-select: none; -webkit-user-select: none; max-width: 100%;
     border-radius: 14px; overflow: hidden; background: #0a0605; border: 1px solid var(--line);
   }
   @media (max-width: 520px) { .stage { aspect-ratio: 4 / 4.6; } }
@@ -97,6 +97,7 @@
     <dt>Proposta</dt><dd id="a-idea"></dd>
     <dt>Fonte</dt><dd id="a-font"></dd>
     <dt>Margem</dt><dd id="a-pad"></dd>
+    <dt>Interação</dt><dd id="a-touch"></dd>
   </dl>
 
   <div class="controls">
@@ -137,6 +138,13 @@
     <div class="field">
       <div class="row"><label for="boxScale">Margem</label><output id="o-box"></output></div>
       <input type="range" id="boxScale" min="0" max="2" step="0.05" value="1">
+    </div>
+    <div class="field wide">
+      <span class="label">Interação</span>
+      <div class="opts">
+        <label><input type="checkbox" id="touchOn" checked> Responder ao toque</label>
+        <label><input type="checkbox" id="touchLock"> Travar a rolagem sobre o palco</label>
+      </div>
     </div>
     <div class="field wide" id="optWrap" hidden>
       <span class="label">Camadas</span>
@@ -232,6 +240,20 @@ uniform vec2 uRes;
 uniform vec3 uC1, uC2, uC3, uC4, uHalo, uText, uOpt;
 uniform float uEvtA, uEvtB, uSeedB, uSeedA;
 uniform vec4 uBox, uFw;
+uniform vec4 uTrail[8];
+uniform vec2 uTrailV[8];
+uniform vec4 uPtr;
+uniform vec4 uCut;
+// recent finger positions with a fading strength; returns (influence, weighted velocity x, y)
+vec3 trailField(vec2 uv, float asp, float rad){
+  vec3 acc = vec3(0.);
+  for (int i = 0; i < 8; i++){
+    vec2 d = (uv - uTrail[i].xy) * vec2(asp, 1.);
+    float g = exp(-dot(d, d) / (rad * rad)) * uTrail[i].z;
+    acc.x += g; acc.yz += uTrailV[i] * g;
+  }
+  return acc;
+}
 uniform vec2 uBoxCfg;
 varying vec2 vUv;
 // Simulates the bounds a Compose layout gives the title: nothing may show outside the box.
@@ -265,13 +287,14 @@ void main(){
   vec2 q = vec2(uv.x * asp * 2.2, uv.y * 1.4 - uTime * .5);
   float nx = fbm(q) - .5;
   float ny = fbm(q * 1.5 + vec2(3.1, -uTime * .4)) - .5;
-  vec2 su = vec2(uv.x + nx * .10 * up, uTextY + max(dy, 0.) / sc + min(dy, 0.) + ny * .05 * up);
+  vec3 tf = trailField(uv, asp, .16);
+  vec2 su = vec2(uv.x + nx * .10 * up - clamp(tf.y * .05, -.08, .08), uTextY + max(dy, 0.) / sc + min(dy, 0.) + ny * .05 * up - tf.x * .04);
   vec4 S = texture2D(uS, su);
   float xs = uv.x * asp + nx * .35 * up;
   float s1 = noise(vec2(xs * 16., uv.y * .8 - uTime * .45));
   float s2 = noise(vec2(xs * 40. + 9., uv.y * 1.4 - uTime * .8));
   float streak = smoothstep(.22, .78, .6 * s1 + .4 * s2);
-  float h = clamp(pow(S.r, .8) * (.22 + 1.0 * streak) * uIntensity, 0., 1.4);
+  float h = clamp(pow(S.r, .8) * (.22 + 1.0 * streak) * uIntensity * (1. + tf.x * .9), 0., 1.4);
   vec3 col = mix(uC1, uC2, smoothstep(.12, .45, h));
   col = mix(col, uC3, smoothstep(.42, .80, h));
   col = mix(col, uC4, smoothstep(.78, 1.1, h));
@@ -303,9 +326,14 @@ void main(){
   float bh = uTextH * (.2 + .5 * hash(vec2(tick, 4.1)));
   float inBand = gl * (1. - smoothstep(bh, bh * 1.5, abs(uv.y - yc)));
   float tear = (hash(vec2(tick, 5.5)) - .5) * .10 * inBand;
+  // magnifying lens that follows the finger
+  vec2 pp = uPtr.xy; float act = uPtr.w;
+  vec2 dl = (uv - pp) * vec2(asp, 1.);
+  float kl = (1. - smoothstep(0., .17, length(dl))) * act;
+  vec2 uvm = pp + (uv - pp) * (1. - .55 * kl);
   float w1 = fbm(vec2(uv.x * asp * 3., uv.y * 3. + t * .15)) - .5;
-  vec2 mu = uv + vec2(tear + w1 * .004, 0.);
-  float cs = .006 * gl;
+  vec2 mu = uvm + vec2(tear + w1 * .004, 0.);
+  float cs = .006 * gl + .004 * kl;
   float mR = texture2D(uMask, mu + vec2(cs, 0.)).r;
   float mB = texture2D(uMask, mu - vec2(cs, 0.)).r;
   float m0 = texture2D(uMask, mu).r;
@@ -321,7 +349,7 @@ void main(){
   float f1 = fbm(vec2(uv.x * asp * 2.0 + t * .10, uv.y * 3.5 + t * .02));
   float f2 = fbm(vec2(uv.x * asp * 3.4 - t * .17, uv.y * 5. + 7.));
   float ground = 1. - smoothstep(bot - uTextH * .6, uTextY + uTextH * 2. * (uHeight / .85), uv.y);
-  float dens = smoothstep(.25, .9, f1 * .65 + f2 * .55) * ground * uOpt.x;
+  float dens = smoothstep(.25, .9, f1 * .65 + f2 * .55) * ground * uOpt.x * (1. - kl * .85);
   float sc = uHeight / .85;
   float dyC = uv.y - uTextY;
   vec2 q = vec2(uv.x * asp * 2.4, uv.y * 1.6 - t * .35);
@@ -358,9 +386,10 @@ void main(){
   outc = mix(outc, mix(uC3, uC4, hl * .9), drip);
 
   // letters: pale, cold, never fully hidden by the fog
-  vec3 tcol = mix(uC4, uText, .35) * fl;
+  vec3 tcol = mix(uC4, uText, .35) * fl * (1. + kl * .35);
   outc = mix(outc, tcol, m0 * blink * (1. - dens * .3));
   outc += (uC3 * mB + uC2 * mR * 1.5) * gl * .6 * (1. - m0);
+  outc += uC3 * exp(-pow((length(dl) - .17) / .005, 2.)) * act * .5;
   outc *= 1. - 1.3 * dot(uv - .5, uv - .5);
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * (.06 + .5 * inBand);
   gl_FragColor = vec4(boxed(outc, uv), 1.);
@@ -382,6 +411,7 @@ void main(){
   vec2 mu = pu + vec2(nx * .006 * heat * above + sin(uv.y * 90. - t * 3.) * .0012 * heat * above, 0.);
   float m0 = texture2D(uMask, mu).r;
   vec4 S0 = texture2D(uS, uv);
+  vec3 tf = trailField(uv, asp, .15);
 
   // no surface and no ambient light: only the mark itself, a tight bloom hugging the letters, and the smoke
   vec3 outc = vec3(.039, .024, .020) + uC3 * S0.b * heat * .22 * uIntensity + vec3(1., .9, .7) * S0.b * exp(-age * 7.) * .5;
@@ -390,6 +420,7 @@ void main(){
   float crust = smoothstep(.45, .75, fbm(vec2(uv.x * asp * 11., uv.y * 13.) + 3.));
   float hp = heat * (.72 + .5 * S0.b) + (fbm(vec2(uv.x * asp * 5., uv.y * 6.)) - .5) * .3 * heat;
   hp *= 1. - crust * .55 * (1. - smoothstep(.15, 1.2, heat));
+  hp += tf.x * .7;
   hp = max(hp, 0.) * uIntensity;
   vec3 col = mix(vec3(.05, .03, .025), uC1, smoothstep(.05, .28, hp));
   col = mix(col, uC2, smoothstep(.22, .55, hp));
@@ -403,18 +434,18 @@ void main(){
   vec4 Sw = texture2D(uS, su);
   float wx = uv.x * asp * 15.;
   float cell = floor(wx);
-  float live = step(.5, hash(vec2(cell, 3.7)));
+  float live = max(step(.5, hash(vec2(cell, 3.7))), step(.15, tf.x));
   float ph = hash(vec2(cell, 1.9)) * 6.28;
   float d = (uv.y - top) / (uTextH * 1.6 * sc);
   float sway = sin(d * 7. + t * 1.6 + ph) * .28 + (noise(vec2(cell * 1.3, d * 3. - t * .5)) - .5) * .5;
-  float xl = fract(wx) - .5 - sway * smoothstep(0., .3, d);
+  float xl = fract(wx) - .5 - sway * smoothstep(0., .3, d) - tf.y * .35;
   float thin = exp(-pow(xl / (.10 + .10 * d), 2.));
   float prof = smoothstep(-.02, .06, d) * (1. - smoothstep(.15, 1., d));
   float flow = .35 + .65 * noise(vec2(cell * 2.1, d * 4. - t * .9));
-  float smokeAmt = (.2 + .8 * exp(-age / 2.8)) * uOpt.x;
+  float smokeAmt = (.2 + .8 * exp(-age / 2.8)) * uOpt.x * (1. + tf.x * 1.6);
   float wa = thin * live * prof * flow * smoothstep(.08, .4, Sw.r) * smokeAmt * .85;
-  float pn = fbm(vec2(uv.x * asp * 6., uv.y * 5. - t * .8));
-  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2, 0., 1.) * (1. - m0) * smokeAmt * .4;
+  float pn = fbm(vec2(uv.x * asp * 6. - tf.y * .5, uv.y * 5. - t * .8 - tf.z * .5));
+  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2 + tf.x * 1.2, 0., 1.) * (1. - m0) * smokeAmt * .4;
   outc = mix(outc, vec3(.62, .56, .52), max(wa, puff));
 
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .05;
@@ -448,10 +479,14 @@ void main(){
     float tci = uEvtA - .55 - fi * .11 - hash(vec2(sd, 6.)) * .05;
     float cutOn = on * step(0., tci);
     float ang = (.12 + .5 * hash(vec2(sd, 1.))) * (hash(vec2(sd, 2.)) > .5 ? 1. : -1.);
-    vec2 dirS = vec2(cos(ang), sin(ang));
-    if (hash(vec2(sd, 5.)) > .5) dirS = -dirS;
+    vec2 dirR = vec2(cos(ang), sin(ang));
+    if (hash(vec2(sd, 5.)) > .5) dirR = -dirR;
+    vec2 offR = vec2(0., (hash(vec2(sd, 4.)) - .5) * uTextH * 1.1);
+    // a drag by the user replaces the random cut: same direction, same place
+    float userOn = step(.5, uCut.w);
+    vec2 dirS = mix(dirR, vec2(cos(uCut.z), sin(uCut.z)), userOn);
     vec2 nS = vec2(-dirS.y, dirS.x);
-    vec2 off = vec2(0., (hash(vec2(sd, 4.)) - .5) * uTextH * 1.1);
+    vec2 off = mix(offR, (uCut.xy - ctrS) * vec2(asp, 1.), userOn);
     vec2 pq = pa - off;
     float dc = dot(pq, nS), uc = dot(pq, dirS);
     float prog = clamp(tci / .12, 0., 1.);
@@ -480,6 +515,7 @@ void main(){
   float m0 = texture2D(uMask, mu).r * min(side, 1.);
 
   vec4 S = texture2D(uS, uv);
+  vec3 tf = trailField(uv, asp, .15);
   // no backdrop: only the text, the smoke and the cut
   vec3 outc = vec3(.039, .024, .020);
 
@@ -489,18 +525,18 @@ void main(){
   vec4 Sw = texture2D(uS, su);
   float wx = uv.x * asp * 15.;
   float cell = floor(wx);
-  float live = step(.5, hash(vec2(cell, 3.7)));
+  float live = max(step(.5, hash(vec2(cell, 3.7))), step(.15, tf.x));
   float ph = hash(vec2(cell, 1.9)) * 6.28;
   float d = (uv.y - top) / (uTextH * 1.6 * sc);
   float sway = sin(d * 7. + t * 1.6 + ph) * .28 + (noise(vec2(cell * 1.3, d * 3. - t * .5)) - .5) * .5;
-  float xl = fract(wx) - .5 - sway * smoothstep(0., .3, d);
+  float xl = fract(wx) - .5 - sway * smoothstep(0., .3, d) - tf.y * .35;
   float thin = exp(-pow(xl / (.10 + .10 * d), 2.));
   float prof = smoothstep(-.02, .06, d) * (1. - smoothstep(.15, 1., d));
   float flow = .35 + .65 * noise(vec2(cell * 2.1, d * 4. - t * .9));
-  float smokeAmt = (.55 + .2 * sin(t * .6)) * uOpt.x;
+  float smokeAmt = (.55 + .2 * sin(t * .6)) * uOpt.x * (1. + tf.x * 1.6);
   float wa = thin * live * prof * flow * smoothstep(.08, .4, Sw.r) * smokeAmt * .85;
-  float pn = fbm(vec2(uv.x * asp * 6., uv.y * 5. - t * .8));
-  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2, 0., 1.) * (1. - m0) * smokeAmt * .4;
+  float pn = fbm(vec2(uv.x * asp * 6. - tf.y * .5, uv.y * 5. - t * .8 - tf.z * .5));
+  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2 + tf.x * 1.2, 0., 1.) * (1. - m0) * smokeAmt * .4;
   outc = mix(outc, mix(uC2, uC3, .5), max(wa, puff));
 
   float tcol0 = g;
@@ -529,12 +565,13 @@ void main(){
   float t1 = uTime * .25;
   vec2 q = vec2(uv.x * asp * 2.2, uv.y * 2.6);
   vec2 w = vec2(fbm(q + vec2(t1, 0.)) - .5, fbm(q * 1.3 + vec2(4.2, -t1)) - .5);
-  vec2 mu = uv + w * .010 * dist * vec2(1., .6);
+  vec3 tf = trailField(uv, asp, .13);
+  vec2 mu = uv + w * .010 * dist * vec2(1., .6) + tf.yz * .014 + w * tf.x * .07;
   float m0 = texture2D(uMask, mu).r;
   float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
 
   // iridescent gradient bent by noise
-  float tg = uv.x * .9 + uv.y * 4. + (fbm(q * 1.7 + w * 2.5 * dist + t1) - .5) * 1.1 * dist + t1 * .6;
+  float tg = uv.x * .9 + uv.y * 4. + (fbm(q * 1.7 + w * 2.5 * dist + t1) - .5) * 1.1 * dist + t1 * .6 + tf.x * 1.1;
   vec3 gc = ramp(fract(tg * .5));
   float band = exp(-pow((fract(uv.x * asp * .5 - uv.y * .3 - uTime * .1) - .5) / .06, 2.)) * .5;
   vec3 col = gc * (.95 + .2 * (1. - g));
@@ -566,12 +603,14 @@ void main(){
   vec2 ctr = vec2(.5, uTextY);
   float cyc = fract(t / 1.8);
   float punch = smoothstep(0., .25, cyc) * (1. - smoothstep(.7, .97, cyc));
+  punch = max(punch, exp(-uEvtB * 5.) * step(0., uEvtB));
   vec4 S = texture2D(uS, uv);
   float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
   float sc = uHeight / .85;
 
   // speed lines fanning out from an ellipse around the title
-  vec2 pe = (uv - ctr) / vec2(.5, .28);
+  vec2 fc = mix(ctr, uPtr.xy, uPtr.w * .85);
+  vec2 pe = (uv - fc) / vec2(.5, .28);
   float rad = length(pe);
   float ang = atan(pe.y, pe.x);
   float ln = smoothstep(.58, .92, noise(vec2(ang * 26., floor(t * 7.) * 1.7)));
@@ -579,7 +618,8 @@ void main(){
 
   // a soft glow that breathes with each punch
   float pg = .6 + .5 * punch;
-  vec3 bg = vec3(.008, .012, .04) + uC2 * .22 * S.g * pg + uC3 * .35 * S.b * pg * uIntensity;
+  vec3 tf = trailField(uv, asp, .15);
+  vec3 bg = vec3(.008, .012, .04) + uC2 * .22 * S.g * pg + uC3 * .35 * S.b * pg * uIntensity + uC3 * tf.x * .35 * pg;
   vec3 outc = bg + uC3 * lines * .5;
 
   // chunky extrusion down-right, then a white outline, then the face
@@ -621,6 +661,7 @@ void main(){
   // ---------- genre configs ----------
   var TABS = {
     fantasy: {
+      touch: 'As chamas se inclinam e esquentam por onde o dedo passa. Arraste sobre o texto.',
       pad: { t: 1.6, b: 0.3, s: 0.3 },
       label: 'Fantasia', text: 'Reino em Chamas', color: '#8B2635', fs: FS_FIRE, pal: palFire,
       family: 'UnifrakturCook', stack: '"UnifrakturCook", "Palatino Linotype", Georgia, serif', weight: 700, stroke: 0.04, cy: 0.76,
@@ -633,6 +674,7 @@ void main(){
       idea: 'Texto que vira labaredas, com a cor do fogo vinda da cor do texto.'
     },
     horror: {
+      touch: 'Uma lente aumenta o texto e abre a névoa. Toque e segure, ou passe o mouse.',
       pad: { t: 0.6, b: 1.4, s: 0.3 },
       label: 'Terror', text: 'Noite sem Fim', color: '#748B97', fs: FS_HORROR, pal: palHorror,
       family: 'IM Fell English SC', stack: '"IM Fell English SC", "Palatino Linotype", Georgia, serif', weight: 400, stroke: 0.06, cy: 0.58,
@@ -646,6 +688,7 @@ void main(){
       idea: 'Assombração gélida, na paleta fria do tema: névoa rasteira, sopro frio subindo das letras, dupla imagem fantasma e falhas de possessão que rasgam o texto por alguns frames. O gotejar de ectoplasma é opcional.'
     },
     cowboy: {
+      touch: 'A fumaça é empurrada pelo dedo e o ferro esquenta de novo onde ele toca. Arraste.',
       pad: { t: 1.0, b: 0.4, s: 0.3 },
       label: 'Cowboy', text: 'Velho Oeste', color: '#8B4513', fs: FS_COWBOY, pal: palCowboy,
       family: 'Rye', stack: '"Rye", "Rockwell", Georgia, serif', weight: 400, stroke: 0.04, cy: 0.62,
@@ -661,7 +704,9 @@ void main(){
       idea: 'Marca recém aplicada: o ferro encosta, o texto brilha em branco-amarelado e esfria devagar até virar uma queimadura escura no couro, que também escurece em volta. Só fios finos de fumaça saem das letras e vão sumindo conforme esfria. A cada 11 s o ferro volta.'
     },
     shinobi: {
+      touch: 'Arraste de lado a lado sobre o texto para cortar na direção do gesto.',
       pad: { t: 1.6, b: 0.4, s: 0.3 },
+      dragCut: true,
       label: 'Shinobi', text: 'Via das Sombras', color: '#8B0000', fs: FS_SHINOBI, pal: palShinobi,
       family: 'Shippori Mincho', stack: '"Shippori Mincho", "Hiragino Mincho ProN", Georgia, serif', weight: 800, stroke: 0.03, cy: 0.62,
       defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Altura da fumaça',
@@ -676,6 +721,7 @@ void main(){
       idea: 'Fumaça discreta, só fios finos e alguns puffs. Um único corte de katana de ponta a ponta do texto, sempre diferente: o ponto de entrada em y, o ângulo e o lado de onde a lâmina vem são sorteados. As metades se abrem como uma tesoura e o vão vira negativo (papel branco, tinta preta, linhas de velocidade), com borda vermelha e uma cicatriz que some devagar.'
     },
     crime: {
+      touch: 'O gradiente e as letras se deformam como líquido e voltam devagar. Arraste.',
       pad: { t: 0.5, b: 0.5, s: 0.4 },
       label: 'Crime', text: 'Madrugada', color: '#E91E63', fs: FS_CRIME, pal: palCrime,
       family: 'Syne', stack: '"Syne", "Helvetica Neue", Arial, sans-serif', weight: 800, stroke: 0.02, cy: 0.55,
@@ -688,7 +734,9 @@ void main(){
       idea: 'Gradiente iridescente distorcido recortado no texto (rosa, menta e violeta da paleta), com glitter e grão de filme dos anos 80.'
     },
     heroes: {
+      touch: 'Toque: uma pancada com linhas de velocidade saindo do ponto tocado.',
       pad: { t: 0.7, b: 0.7, s: 0.6 },
+      tapEvt: true,
       label: 'Heroes', text: 'The Vanguard', color: '#2845D6', fs: FS_HEROES, pal: palHeroes,
       family: 'Bangers', stack: '"Bangers", "Impact", "Arial Black", sans-serif', weight: 400, stroke: 0.03, cy: 0.55,
       defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Alcance das linhas',
@@ -711,7 +759,9 @@ void main(){
   var embersOn = true;
   var box = { on: true, soft: true, show: true, scale: 1 };
   var tb = { minX: 0, maxX: 1, minY: 0, maxY: 1 };
-  var ev = { la: 0, lb: 0, seed: 1, seedA: 1 };
+  var ev = { la: 0, lb: 0, seed: 1, seedA: 1, cut: { x: 0.5, y: 0.5, ang: 0, user: false } };
+  var inp = { on: true, x: 0.5, y: 0.5, vx: 0, vy: 0, down: false, hover: false, active: 0, trail: [], lastT: 0, lastX: 0.5, lastY: 0.5, start: null, fired: false };
+  var trailBuf = new Float32Array(32), trailVBuf = new Float32Array(16);
 
   // ---------- WebGL ----------
   var gl = glCanvas.getContext('webgl', { antialias: false, alpha: false });
@@ -722,7 +772,7 @@ void main(){
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error('shader error: ' + gl.getShaderInfoLog(s)); }
     return s;
   }
-  var UNIFORMS = ['uMask', 'uS', 'uTime', 'uIntensity', 'uHeight', 'uTextY', 'uTextH', 'uRes', 'uC1', 'uC2', 'uC3', 'uC4', 'uHalo', 'uText', 'uOpt', 'uEvtA', 'uEvtB', 'uSeedB', 'uSeedA', 'uBox', 'uFw', 'uBoxCfg'];
+  var UNIFORMS = ['uMask', 'uS', 'uTime', 'uIntensity', 'uHeight', 'uTextY', 'uTextH', 'uRes', 'uC1', 'uC2', 'uC3', 'uC4', 'uHalo', 'uText', 'uOpt', 'uEvtA', 'uEvtB', 'uSeedB', 'uSeedA', 'uBox', 'uFw', 'uBoxCfg', 'uTrail', 'uTrailV', 'uPtr', 'uCut'];
   var vsObj = compile(gl.VERTEX_SHADER, VS);
   ORDER.forEach(function (id) {
     var prog = gl.createProgram();
@@ -900,6 +950,13 @@ void main(){
         });
       }
     }
+    if (inp.on && inp.active > 0.3 && emberPts.length && sparks.length < cfg.max) {
+      var spd = Math.hypot(inp.vx, inp.vy);
+      var nn = Math.min(3, spd * 4 * dt * 60 * 0.05) + (Math.random() < spd * 0.4 * dt * 10 ? 1 : 0);
+      for (var si = 0; si < nn && sparks.length < cfg.max + 20; si++) {
+        sparks.push({ x: inp.x * W / dpr + (Math.random() - .5) * 14, y: (1 - inp.y) * Hh / dpr + (Math.random() - .5) * 14, vx: (Math.random() - .5) * cfg.vx + inp.vx * 30, vy: -rnd(cfg.vy[0], cfg.vy[1]) * 0.8, life: 0, max: rnd(cfg.life[0], cfg.life[1]) * 0.7, s: rnd(cfg.size[0], cfg.size[1]), ph: Math.random() * 6.28, hot: Math.random() < .5 });
+      }
+    }
     emCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     emCtx.globalCompositeOperation = 'lighter';
     for (var k = sparks.length - 1; k >= 0; k--) {
@@ -944,15 +1001,27 @@ void main(){
     gl.uniform3fv(U.uC1, pr.c1); gl.uniform3fv(U.uC2, pr.c2); gl.uniform3fv(U.uC3, pr.c3); gl.uniform3fv(U.uC4, pr.c4);
     gl.uniform3fv(U.uHalo, pr.halo); gl.uniform3fv(U.uText, pr.text);
     if (cfg.evt) {
-      if (t - ev.la > cfg.evt.a) { ev.la = t; ev.seedA++; }
+      if (t - ev.la > cfg.evt.a) { ev.la = t; ev.seedA++; ev.cut.user = false; }
       if (t - ev.lb > cfg.evt.b) { ev.lb = t; ev.seed++; }
     }
     var bp = boxPx(cfg);
     gl.uniform4f(U.uBox, bp.x0 / W, 1 - bp.yB / Hh, bp.x1 / W, 1 - bp.yT / Hh);
     gl.uniform4f(U.uFw, bp.fx, bp.ft, bp.fb, box.show ? 1 : 0);
     gl.uniform2f(U.uBoxCfg, box.on ? 1 : 0, box.soft ? 1 : 0);
+    var dtI = dt;
+    inp.active += ((inp.down || inp.hover ? 1 : 0) - inp.active) * Math.min(1, dtI * 9);
+    var vd = Math.exp(-dtI * 7); inp.vx *= vd; inp.vy *= vd;
+    var decay = Math.exp(-dtI * 1.7);
+    for (var ti = 0; ti < 8; ti++) {
+      var tp = inp.on ? inp.trail[ti] : null;
+      if (tp) { tp.s *= decay; trailBuf[ti * 4] = tp.x; trailBuf[ti * 4 + 1] = tp.y; trailBuf[ti * 4 + 2] = tp.s; trailBuf[ti * 4 + 3] = 0; trailVBuf[ti * 2] = Math.max(-4, Math.min(4, tp.vx)); trailVBuf[ti * 2 + 1] = Math.max(-4, Math.min(4, tp.vy)); }
+      else { trailBuf[ti * 4 + 2] = 0; trailVBuf[ti * 2] = 0; trailVBuf[ti * 2 + 1] = 0; }
+    }
+    gl.uniform4fv(U.uTrail, trailBuf); gl.uniform2fv(U.uTrailV, trailVBuf);
+    gl.uniform4f(U.uPtr, inp.x, inp.y, inp.down ? 1 : 0, inp.on ? inp.active : 0);
+    gl.uniform4f(U.uCut, ev.cut.x, ev.cut.y, ev.cut.ang, ev.cut.user && cfg.dragCut ? 1 : 0);
     gl.uniform3f(U.uOpt, s.opts[0] ? 1 : 0, s.opts[1] ? 1 : 0, s.opts[2] ? 1 : 0);
-    gl.uniform1f(U.uEvtA, cfg.evt ? t - ev.la : 100); gl.uniform1f(U.uEvtB, cfg.evt ? t - ev.lb : 100); gl.uniform1f(U.uSeedB, ev.seed); gl.uniform1f(U.uSeedA, ev.seedA);
+    gl.uniform1f(U.uEvtA, cfg.evt ? t - ev.la : 100); gl.uniform1f(U.uEvtB, cfg.evt || cfg.tapEvt ? t - ev.lb : 100); gl.uniform1f(U.uSeedB, ev.seed); gl.uniform1f(U.uSeedA, ev.seedA);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     stepSparks(dt * sp);
     requestAnimationFrame(frame);
@@ -1001,6 +1070,7 @@ void main(){
     document.getElementById('l-height').textContent = cfg.hLabel;
     document.getElementById('a-now').textContent = cfg.now;
     document.getElementById('a-idea').textContent = cfg.idea;
+    document.getElementById('a-touch').textContent = cfg.touch;
     var pdn = cfg.pad, f1 = function (v) { return String(v).replace('.', ',') + '×'; };
     document.getElementById('a-pad').textContent = 'Recomendada (1×): topo ' + f1(pdn.t) + ', base ' + f1(pdn.b) + ', lados ' + f1(pdn.s) + ' da altura do texto.';
     document.getElementById('a-font').textContent = cfg.custom ? 'Arquivo carregado por você.' : cfg.font;
@@ -1018,7 +1088,7 @@ void main(){
     });
     (cfg.actions || []).forEach(function (a) {
       var b = document.createElement('button'); b.type = 'button'; b.textContent = a[0];
-      b.addEventListener('click', function () { if (a[1] === 'a') { ev.la = t; ev.seedA++; } else { ev.lb = t; ev.seed++; } });
+      b.addEventListener('click', function () { if (a[1] === 'a') { ev.la = t; ev.seedA++; ev.cut.user = false; } else { ev.lb = t; ev.seed++; } });
       actsEl.appendChild(b);
     });
     ev.la = t; ev.lb = t - 0.3;
@@ -1063,6 +1133,51 @@ void main(){
     r.readAsArrayBuffer(f);
   });
   colorIn.addEventListener('input', function (e) { setColor(e.target.value, true); });
+
+  // ---------- pointer input ----------
+  function toUv(e) { var r = stage.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height]; }
+  function pushTrail(x, y, vx, vy) { inp.trail.unshift({ x: x, y: y, vx: vx, vy: vy, s: 1 }); if (inp.trail.length > 8) inp.trail.pop(); }
+  stage.addEventListener('pointerdown', function (e) {
+    if (!inp.on) return;
+    var p = toUv(e), cfg = TABS[cur];
+    inp.down = true; inp.x = p[0]; inp.y = p[1]; inp.start = p.slice(); inp.fired = false;
+    inp.lastT = performance.now(); inp.lastX = p[0]; inp.lastY = p[1];
+    pushTrail(p[0], p[1], 0, 0);
+    if (cfg.tapEvt) ev.lb = t;
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!inp.on) return;
+    var p = toUv(e), cfg = TABS[cur], now = performance.now();
+    var dt2 = Math.max(0.008, (now - inp.lastT) / 1000);
+    inp.vx = inp.vx * 0.5 + ((p[0] - inp.lastX) / dt2) * 0.5; inp.vy = inp.vy * 0.5 + ((p[1] - inp.lastY) / dt2) * 0.5;
+    inp.lastT = now; inp.lastX = p[0]; inp.lastY = p[1]; inp.x = p[0]; inp.y = p[1];
+    if (e.pointerType === 'mouse' && !inp.down) inp.hover = true;
+    if (inp.down || e.pointerType === 'mouse') {
+      var h = inp.trail[0];
+      if (!h || Math.hypot(p[0] - h.x, p[1] - h.y) > 0.025) pushTrail(p[0], p[1], inp.vx, inp.vy);
+      else { h.x = p[0]; h.y = p[1]; h.vx = inp.vx; h.vy = inp.vy; h.s = 1; }
+    }
+    // shinobi: a quick drag across the text becomes the cut, in the direction of the gesture
+    if (inp.down && cfg.dragCut && st[cur].opts[1] && !inp.fired && inp.start) {
+      var asp = W / Hh, bp = boxPx(cfg);
+      var sx = inp.start[0] * W, sy = (1 - inp.start[1]) * Hh;
+      var inside = sx > bp.x0 && sx < bp.x1 && sy > bp.yT && sy < bp.yB;
+      var dx = (p[0] - inp.start[0]) * asp, dy = p[1] - inp.start[1];
+      var len = Math.hypot(dx, dy), textW = (tb.maxX - tb.minX) / Hh;
+      if (inside && len > 0.3 * textW && Math.abs(dy) < 1.4 * Math.abs(dx)) {
+        ev.cut = { x: (p[0] + inp.start[0]) / 2, y: (p[1] + inp.start[1]) / 2, ang: Math.atan2(dy, dx), user: true };
+        ev.la = t; ev.seedA++; inp.fired = true;
+        try { if (navigator.vibrate) navigator.vibrate([10, 25, 16]); } catch (_) {}
+      }
+    }
+  });
+  function release(e) { inp.down = false; if (e.pointerType !== 'mouse') inp.hover = false; }
+  stage.addEventListener('pointerup', release);
+  stage.addEventListener('pointercancel', release);
+  stage.addEventListener('pointerleave', function (e) { inp.hover = false; if (e.pointerType === 'mouse') inp.down = false; });
+  document.getElementById('touchOn').addEventListener('change', function (e) { inp.on = e.target.checked; if (!inp.on) { inp.down = false; inp.hover = false; inp.trail.length = 0; } });
+  document.getElementById('touchLock').addEventListener('change', function (e) { stage.style.touchAction = e.target.checked ? 'none' : 'pan-y'; });
 
   new ResizeObserver(resize).observe(stage);
   setTab('fantasy');
