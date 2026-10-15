@@ -63,6 +63,45 @@ parameter, off by default, on only for hero titles (`HeroHeader`, `SagaDetailIni
 and soften it with the system reduce-motion setting. Discoverability needs a hint (for example a one-time
 sheen when the screen opens); the effect has to look good without interaction anyway.
 
+## Entry animations (to integrate)
+
+Today only two titles have an entry animation: Fantasy and Crime use `HandwrittenText` (a handwriting
+reveal of the glyph outlines, 3.8 s by default, with a shadow that fades in after `onAnimationFinished`).
+`TypewriterText` / `SimpleTypewriterText` exist but are used for body text (terminal pages, story beats,
+chat), not for titles. The new effects should keep those entries and treat them as the *birth* of the
+effect, not replace them.
+
+Proposed sequence: **entry animation, then the effect ignites** (a ramp of about 1 s). Interaction is
+enabled once the effect is lit.
+
+| Genre | Entry | Then |
+|---|---|---|
+| Fantasy | Existing handwriting reveal | Fire rises from the written letters |
+| Crime | Existing handwriting reveal | The iridescent gradient floods the letters, glitter starts |
+| Cowboy | The brand press itself (heat starts at the first frame) | Cools, wisps leave |
+| Shinobi | Brush-stroke reveal (the handwriting reveal with a heavy ink stroke) | Smoke appears; first cut after a while |
+| Horror | Materializes out of the fog with a flicker | Ghost double, breath and glitches |
+| Heroes | A slam: scale-in with the impact pulse | Glow and speed lines settle |
+| Cyberpunk | Typewriter or decode (random glyphs resolving) with glitch | Neon, scanlines and glitch bursts |
+| Space Opera | Typewriter, like the terminal boot, then phosphor power-on | Gradient, stars, sweep |
+| Punk Rock | Letters slap in one by one in stop motion | Ransom-note jitter |
+
+Technical notes:
+- The effect must not depend on how the text is drawn. Capture the composable's final frame
+  (`rememberGraphicsLayer()` + `GraphicsLayer.toImageBitmap()`, or draw the glyph path into a bitmap) once
+  the entry finishes, then build the mask and the small field from that bitmap. This keeps custom fonts
+  and `HandwrittenText` outlines exact, and works for typewriter text too. Check that the Compose version
+  in the project has `GraphicsLayer.toImageBitmap()`.
+- Reserve the margin (headroom) in layout from the first frame, so the layout does not jump when the
+  effect starts.
+- Entries play once per appearance and only when the caller asks for animation (hero titles). In lists
+  and repeated screens skip the entry and go straight to the lit state (or no effect), as `isAnimated`
+  already does for `HandwrittenText`.
+- Below API 33 the entry animations still work (handwriting and typewriter are not AGSL), so the
+  fallback for Fantasy and Crime stays the handwriting reveal plus shadow and shimmer.
+- Phase 2: let the effect follow the entry (flames growing from the strokes as they are written). It
+  needs the mask and the field per frame, so it is more expensive; start with the sequential version.
+
 ## Known gotchas in the current code
 
 - `gradientFill` also drops opacity to 0.90 and recolors outlines/extrusion (already visible on
