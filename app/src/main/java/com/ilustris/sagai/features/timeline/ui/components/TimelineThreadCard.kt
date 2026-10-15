@@ -317,7 +317,7 @@ fun TimelineReplyItem(
                     )
                     if (it.leveledUp) {
                         Text(
-                            stringResource(R.string.progression_level_pill, it.levelAfter) + " ↑",
+                            stringResource(R.string.progression_level_up_pill, it.levelAfter),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary,
                         )

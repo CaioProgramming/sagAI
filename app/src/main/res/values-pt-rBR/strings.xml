@@ -161,6 +161,8 @@
     <string name="saga_brain_open_character">Universo do personagem</string>
     <string name="saga_brain_hint">Toque em uma estrela para explorar · Deslize o card para navegar pelas conexões</string>
     <string name="saga_brain_connections_count">%d conexões</string>
+    <string name="character_action_talk">Conversar</string>
+    <string name="character_action_connections">Conexões</string>
     <string name="character_brain_open">Ver conexões</string>
     <string name="saga_detail_status_ended">Finalizado em %s</string>
     <string name="saga_detail_status_created">Criado em %s</string>
@@ -435,7 +437,6 @@
     <string name="notification_level_up">Subiu de nível</string>
     <string name="notification_medal">Nova medalha</string>
     <string name="notification_legacy">Legado</string>
-    <string name="notification_progression_see_more">Ver mais</string>
     <string name="notification_new_chapter_content">Capítulo %s começou!</string>
     <string name="notification_new_act">Novo volume</string>
     <string name="notification_new_act_content">Volume %1$s: %2$s</string>
@@ -1189,6 +1190,7 @@
     <string name="new_saga_saving_character">Dando vida ao protagonista…</string>
     <string name="new_saga_saving_saga">Desenhando a capa da saga…</string>
     <string name="new_saga_saving_done">Sua saga está pronta</string>
+    <string name="progression_level_up_pill">LV %1$d ↑</string>
     <string name="progression_level_pill">LV %1$d</string>
     <string name="progression_experience_title">Experiência</string>
     <string name="progression_medals">Medalhas</string>

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -158,21 +159,31 @@ data class SpecialAction(
     val onClick: () -> Unit,
 )
 
-/** What used to be small round buttons: glass rows with the icon and text painted in the accent gradient, and a chevron. */
+/** The special actions as compact glass buttons of the same weight, side by side; the options are the player's, none is highlighted. */
 @Composable
-fun SpecialActionsCard(
+fun SpecialActionsRow(
     accent: Color,
     actions: List<SpecialAction>,
     modifier: Modifier = Modifier,
 ) {
     if (actions.isEmpty()) return
-    val brush = remember(accent) { accentBrush(accent) }
-    GlassRowsCard(accent, modifier) {
-        actions.forEachIndexed { index, action ->
-            RowSection(first = index == 0, onClick = action.onClick) {
-                Icon(painterResource(action.iconRes), contentDescription = null, modifier = Modifier.size(24.dp).gradientFill(brush))
-                Text(action.label, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp, brush = brush), modifier = Modifier.weight(1f))
-                Chevron()
+    val shape = RoundedCornerShape(14.dp)
+    Row(modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
+        actions.forEach { action ->
+            Row(
+                modifier =
+                    Modifier
+                        .weight(1f, fill = false)
+                        .widthIn(max = 160.dp)
+                        .height(40.dp)
+                        .glassSurface(shape, accent)
+                        .clickable(onClick = action.onClick)
+                        .padding(horizontal = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(painterResource(action.iconRes), contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(action.label, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp), maxLines = 1)
             }
         }
     }
