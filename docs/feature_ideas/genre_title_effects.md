@@ -79,8 +79,12 @@ sheen when the screen opens); the effect has to look good without interaction an
 
 ## Implementation notes (for Compose)
 
-- Needs `RuntimeShader` (AGSL, API 33+). Decide the fallback below 33 (keep today's `genreVfx`
-  look, or a simplified Canvas version). **Open question:** project `minSdk` and the fallback.
+- Needs `RuntimeShader` (AGSL, API 33+). The project `minSdk` is 27, so a fallback is required.
+  **Decision:** below API 33 the title is a simple styled text: the genre font plus simple modifiers
+  (for example `Shadow`) and the `reactiveShimmer` animation on top. No `genreVfx`, no Canvas
+  re-implementation of the effects; everything else is left to AGSL. The existing code already follows
+  this pattern (`Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU` in `CrtScreen.kt`, `Filters.kt`,
+  `HeatHaze.kt`), so Cyberpunk, Space Opera and Punk Rock keep their current behavior.
 - The text mask comes from the same `TextLayoutResult` `WordArtText` already uses; a small
   precomputed field (text smeared along one direction, wide glow, tight halo) feeds the shader and is
   rebuilt only when the text changes.
