@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -131,6 +132,7 @@ fun CollectorShareFrame(
                     }
 
                     val ready = fontsReady && !frozen && !isSaving && !rendering
+                    val glow = MaterialTheme.colorScheme.primary
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(
                             enabled = ready,
@@ -156,7 +158,7 @@ fun CollectorShareFrame(
                                     val file = viewModel.newVideoFile(exportName) ?: return@launch
                                     videoProgress = 0f
                                     val rendered =
-                                        runCatching { renderCardVideo(videoLayer, tilt, file) { videoProgress = it } }
+                                        runCatching { renderCardVideo(videoLayer, tilt, file, glow) { videoProgress = it } }
                                             .onFailure { Timber.e(it, "Could not render the card video") }
                                             .isSuccess
                                     videoProgress = null
