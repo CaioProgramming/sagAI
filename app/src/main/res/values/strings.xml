@@ -191,6 +191,8 @@
     <string name="saga_brain_chapter_in_progress">Chapter %1$d – in progress</string>
     <string name="saga_brain_event_in_progress">Event %1$d – in progress</string>
     <string name="saga_brain_stage_in_progress_body">Keep playing to learn more about this stage of the story.</string>
+    <string name="character_action_talk">Talk</string>
+    <string name="character_action_connections">Connections</string>
     <string name="character_brain_open">See connections</string>
     <string name="see_your_universe">See your universe</string>
     <string name="saga_detail_status_ended">Finished on %s</string>
@@ -585,7 +587,6 @@
     <string name="notification_level_up">Level up</string>
     <string name="notification_medal">New medal</string>
     <string name="notification_legacy">Legacy</string>
-    <string name="notification_progression_see_more">See more</string>
     <string name="notification_new_chapter_content">Chapter %s has begun!</string>
     <string name="notification_new_act">New Volume</string>
     <string name="notification_new_act_content">Volume %1$s: %2$s</string>
@@ -1200,6 +1201,7 @@
     <string name="new_saga_saving_character">Bringing the protagonist to life…</string>
     <string name="new_saga_saving_saga">Drawing the saga\'s cover…</string>
     <string name="new_saga_saving_done">Your saga is ready</string>
+    <string name="progression_level_up_pill">LV %1$d ↑</string>
     <string name="progression_level_pill">LV %1$d</string>
     <string name="progression_experience_title">Experience</string>
     <string name="progression_medals">Medals</string>

@@ -11,7 +11,7 @@ import com.ilustris.sagai.features.characters.ui.components.KnowledgeCard
 import com.ilustris.sagai.features.characters.ui.components.ProfileCard
 import com.ilustris.sagai.features.characters.ui.components.RelationsCard
 import com.ilustris.sagai.features.characters.ui.components.SpecialAction
-import com.ilustris.sagai.features.characters.ui.components.SpecialActionsCard
+import com.ilustris.sagai.features.characters.ui.components.SpecialActionsRow
 import com.ilustris.sagai.ui.components.IosStyleMenuHost
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import androidx.compose.animation.AnimatedContent
@@ -472,6 +472,31 @@ private fun CharacterDetailsLoaded(
                             }
                         }
 
+                        item {
+                            SpecialActionsRow(
+                                accent = characterColor,
+                                actions =
+                                    buildList {
+                                        if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
+                                            add(
+                                                SpecialAction(
+                                                    iconRes = R.drawable.talk_bubble,
+                                                    label = stringResource(R.string.character_action_talk),
+                                                    onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },
+                                                ),
+                                            )
+                                        }
+                                        add(
+                                            SpecialAction(
+                                                iconRes = R.drawable.ic_constellation,
+                                                label = stringResource(R.string.character_action_connections),
+                                                onClick = { onOpenCharacterBrain(sagaInfo.id, characterData.id) },
+                                            ),
+                                        )
+                                    },
+                            )
+                        }
+
                         progress?.let { current ->
                             item {
                                 CharacterExperienceCard(
@@ -487,31 +512,6 @@ private fun CharacterDetailsLoaded(
                                     onOpenHonor = { honors, index -> honorSheet = honors to index },
                                 )
                             }
-                        }
-
-                        item {
-                            SpecialActionsCard(
-                                accent = characterColor,
-                                actions =
-                                    buildList {
-                                        if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
-                                            add(
-                                                SpecialAction(
-                                                    iconRes = R.drawable.talk_bubble,
-                                                    label = stringResource(R.string.talk_to_character_again, characterData.name),
-                                                    onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },
-                                                ),
-                                            )
-                                        }
-                                        add(
-                                            SpecialAction(
-                                                iconRes = R.drawable.ic_cosmos,
-                                                label = stringResource(R.string.character_brain_open),
-                                                onClick = { onOpenCharacterBrain(sagaInfo.id, characterData.id) },
-                                            ),
-                                        )
-                                    },
-                            )
                         }
 
                         item {

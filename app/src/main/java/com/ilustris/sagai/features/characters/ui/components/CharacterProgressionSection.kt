@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,7 +55,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 private val CardShape = RoundedCornerShape(24.dp)
 
-/** The level as a gold pill under the name (the genre's coin colors), with the character's situation beside it when it is not simply "around". */
+/** The level as gold text with a soft glow under the name (the genre's coin colors), with the character's situation beside it when it is not simply "around". */
 @Composable
 fun CharacterLevelRow(
     progress: CharacterProgress?,
@@ -72,17 +73,16 @@ fun CharacterLevelRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         progress?.let {
-            val (top, engrave) = genre.honorFill()
+            val (gold, _) = genre.honorFill()
             Text(
                 text = stringResource(R.string.progression_level_pill, it.level),
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
-                fontWeight = FontWeight.ExtraBold,
-                color = engrave,
-                modifier =
-                    Modifier
-                        .clip(CircleShape)
-                        .background(Brush.verticalGradient(listOf(top, genre.honorFillBottom())))
-                        .padding(horizontal = 12.dp, vertical = 2.dp),
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                        letterSpacing = 1.sp,
+                        shadow = Shadow(color = gold.copy(alpha = .75f), blurRadius = 18f),
+                    ),
+                color = gold,
             )
         }
         if (showStatus) {
@@ -95,14 +95,9 @@ fun CharacterLevelRow(
                     },
                 )
             Text(
-                text = label + (statusNote?.let { " · $it" }.orEmpty()),
-                style = MaterialTheme.typography.labelMedium,
-                color = contentColor.copy(alpha = .8f),
-                modifier =
-                    Modifier
-                        .clip(CircleShape)
-                        .background(contentColor.copy(alpha = .1f))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                text = (if (progress != null) "· " else "") + label + (statusNote?.let { ", $it" }.orEmpty()),
+                style = MaterialTheme.typography.labelLarge,
+                color = contentColor.copy(alpha = .7f),
             )
         }
     }

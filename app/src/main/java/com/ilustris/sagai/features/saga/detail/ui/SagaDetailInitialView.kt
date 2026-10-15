@@ -561,7 +561,7 @@ fun sagaHeaderComponent(
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                painterResource(R.drawable.ic_cosmos),
+                                painterResource(R.drawable.ic_constellation),
                                 contentDescription = stringResource(R.string.saga_brain_title),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier =

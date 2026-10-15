@@ -134,7 +134,7 @@ class ProgressionIslandContent(
                         onDismiss()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
-                ) { Text(stringResource(R.string.notification_progression_see_more)) }
+                ) { Text(stringResource(R.string.progression_see_more_action)) }
                 TextButton(onClick = onDismiss) {
                     Text(stringResource(R.string.progression_close), color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f))
                 }

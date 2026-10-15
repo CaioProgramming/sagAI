@@ -233,7 +233,7 @@ private fun CharacterVerticalItem(
             modifier
                 .padding(8.dp),
     ) {
-        val (gold, onGold) = genre.honorFill()
+        val (gold, _) = genre.honorFill()
         val silver = badge?.inMemory == true
         val ringTop = if (silver) androidx.compose.ui.graphics.Color(0xFFD7D9DE) else gold
         val ringBottom = if (silver) androidx.compose.ui.graphics.Color(0xFF6F737B) else genre.honorFillBottom()
@@ -261,13 +261,13 @@ private fun CharacterVerticalItem(
                     text = it.level.toString(),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = onGold,
+                    color = androidx.compose.ui.graphics.Color.White,
                     modifier =
                         Modifier
                             .align(Alignment.TopEnd)
                             .offset(x = 4.dp, y = (-2).dp)
                             .clip(CircleShape)
-                            .background(Brush.verticalGradient(listOf(gold, genre.honorFillBottom())))
+                            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = .6f))
                             .padding(horizontal = 7.dp, vertical = 1.dp),
                 )
             }
