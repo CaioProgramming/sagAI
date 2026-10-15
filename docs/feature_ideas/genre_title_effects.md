@@ -35,21 +35,24 @@ Animated, per-genre treatment for the saga title (`Genre.stylisedText`). Explore
 
 ## Interaction (prototyped)
 
-The titles can react to touch. The prototype feeds the shader the finger position, its velocity and a
+**Design rule: the touch must be nearly invisible, an Easter egg.** Nothing marks where the finger is (no ring, no spark, no visible lens rim). The effect only shows as the text itself reacting. The titles can react to touch. The prototype feeds the shader the finger position, its velocity and a
 short fading trail of recent positions.
 
 | Genre | Interaction |
 |---|---|
-| Shinobi | A quick horizontal-ish drag that starts on the text becomes the cut, in the direction and place of the gesture (still edge to edge). |
+| Shinobi | Fruit-Ninja style: while dragging, a blade trail follows the finger; on release the cut plays along the gesture (direction and place), still edge to edge. Only a mostly horizontal, long enough drag that starts on the text counts, otherwise it is a scroll. |
 | Cowboy | Smoke is pushed by the finger velocity and appears where it passes; the letters re-heat where touched. |
-| Fantasy | Flames lean in the drag direction, get hotter near the finger and shed extra sparks. |
+| Fantasy | Only the flames above the text lean and heat up near the finger (the base stays still), as if the fire senses the presence. No extra sparks. |
 | Crime | Letters and gradient deform like liquid around the trail and relax slowly. |
-| Horror | A magnifying lens follows the finger (touch and hold, or mouse hover), clearing the fog and adding a colour fringe. |
+| Horror | A very light magnification and a small clearing of the fog around the finger, no visible rim. |
 | Heroes | A tap fires a punch; speed lines radiate from the touched point. |
 
-Ideas for genres that are not in the prototype: Cyberpunk, a glitch burst (sliced text, split RGB) only
-around the finger; Space Opera, a specular glint that follows the finger (optionally a light
-gravitational-lensing warp); Punk Rock, ransom-note letters that scatter and spin away from the finger.
+The prototype also has Cyberpunk, Space Opera and Punk Rock tabs. They reproduce what the app already
+does (with stand-in fonts) so the interaction can be tried there too: Cyberpunk, slices of text jump and
+the RGB channels split only around the finger; Space Opera, the sweep of light follows the finger with a
+very light lens warp; Punk Rock, ransom-note letters drift away and tilt slightly when the finger nears.
+The Punk Rock tab renders its cut-out letters on a 2D canvas (per-letter font, case, tile colour, tilt)
+and feeds it to the shader as a colour texture.
 
 Compose notes: observe the pointer in `PointerEventPass.Initial` **without consuming**, so scroll,
 `clickable` and pagers keep working (the saga detail title is already clickable). Keep the state in a

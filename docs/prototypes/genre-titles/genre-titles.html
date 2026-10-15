@@ -230,11 +230,28 @@
     return { text: T, c1: hsl(h, 0.8, 0.16), c2: hsl(h, 0.9, 0.58), c3: c3, c4: c4, halo: hsl(h + 180, 1, 0.5), spark: [css(c4), css(c3)] };
   }
 
+  function palCyber(hex) {
+    var T = lift(hex2rgb(hex)), x = rgb2hsl(T), h = x[0];
+    if (hex.toLowerCase() === '#6e48aa') return { text: T, c1: hex2rgb('#9D50BB'), c2: hex2rgb('#00F5FF'), c3: hex2rgb('#FF2EFF'), c4: hex2rgb('#E8DCFF'), halo: hex2rgb('#E8DCFF'), spark: ['0,245,255', '255,46,255'] };
+    var c2 = hsl(h + 150, 1, 0.55), c3 = hsl(h - 40, 1, 0.6);
+    return { text: T, c1: hsl(h, 0.85, 0.6), c2: c2, c3: c3, c4: mixc(T, WHITE, 0.6), halo: mixc(T, WHITE, 0.6), spark: [css(c2), css(c3)] };
+  }
+  function palSpace(hex) {
+    var T = lift(hex2rgb(hex)), x = rgb2hsl(T), h = x[0];
+    if (hex.toLowerCase() === '#0081a7') return { text: T, c1: hex2rgb('#0081A7'), c2: hex2rgb('#48CAE4'), c3: hex2rgb('#C9B1FF'), c4: hex2rgb('#90E0EF'), halo: hex2rgb('#90E0EF'), spark: ['144,224,239', '201,177,255'] };
+    var c3 = hsl(h + 60, 0.8, 0.8);
+    return { text: T, c1: hsl(h, 0.9, 0.4), c2: hsl(h, 0.8, 0.62), c3: c3, c4: hsl(h, 0.7, 0.82), halo: hsl(h, 0.7, 0.82), spark: [css(c3), css(hsl(h, 0.8, 0.62))] };
+  }
+  function palPunk(hex) {
+    var T = lift(hex2rgb(hex));
+    return { text: T, c1: T, c2: T, c3: T, c4: T, halo: T, spark: [css(T), '255,126,0'] };
+  }
+
   // ---------- shaders ----------
   var VS = 'attribute vec2 p; varying vec2 vUv; void main(){ vUv = p * 0.5 + 0.5; gl_Position = vec4(p, 0., 1.); }';
   var COMMON = `
 precision highp float;
-uniform sampler2D uMask, uS;
+uniform sampler2D uMask, uS, uCol;
 uniform float uTime, uIntensity, uHeight, uTextY, uTextH;
 uniform vec2 uRes;
 uniform vec3 uC1, uC2, uC3, uC4, uHalo, uText, uOpt;
@@ -288,13 +305,16 @@ void main(){
   float nx = fbm(q) - .5;
   float ny = fbm(q * 1.5 + vec2(3.1, -uTime * .4)) - .5;
   vec3 tf = trailField(uv, asp, .16);
-  vec2 su = vec2(uv.x + nx * .10 * up - clamp(tf.y * .05, -.08, .08), uTextY + max(dy, 0.) / sc + min(dy, 0.) + ny * .05 * up - tf.x * .04);
+  // only the flames above the text feel the finger; the base stays put
+  float topY = uTextY + uTextH * .5;
+  float upK = smoothstep(topY, topY + uTextH * .7, uv.y);
+  vec2 su = vec2(uv.x + nx * .10 * up - clamp(tf.y * .05, -.08, .08) * upK, uTextY + max(dy, 0.) / sc + min(dy, 0.) + ny * .05 * up - tf.x * .04 * upK);
   vec4 S = texture2D(uS, su);
   float xs = uv.x * asp + nx * .35 * up;
   float s1 = noise(vec2(xs * 16., uv.y * .8 - uTime * .45));
   float s2 = noise(vec2(xs * 40. + 9., uv.y * 1.4 - uTime * .8));
   float streak = smoothstep(.22, .78, .6 * s1 + .4 * s2);
-  float h = clamp(pow(S.r, .8) * (.22 + 1.0 * streak) * uIntensity * (1. + tf.x * .9), 0., 1.4);
+  float h = clamp(pow(S.r, .8) * (.22 + 1.0 * streak) * uIntensity * (1. + tf.x * .6 * upK), 0., 1.4);
   vec3 col = mix(uC1, uC2, smoothstep(.12, .45, h));
   col = mix(col, uC3, smoothstep(.42, .80, h));
   col = mix(col, uC4, smoothstep(.78, 1.1, h));
@@ -329,11 +349,11 @@ void main(){
   // magnifying lens that follows the finger
   vec2 pp = uPtr.xy; float act = uPtr.w;
   vec2 dl = (uv - pp) * vec2(asp, 1.);
-  float kl = (1. - smoothstep(0., .17, length(dl))) * act;
-  vec2 uvm = pp + (uv - pp) * (1. - .55 * kl);
+  float kl = (1. - smoothstep(0., .13, length(dl))) * act;
+  vec2 uvm = pp + (uv - pp) * (1. - .16 * kl);
   float w1 = fbm(vec2(uv.x * asp * 3., uv.y * 3. + t * .15)) - .5;
   vec2 mu = uvm + vec2(tear + w1 * .004, 0.);
-  float cs = .006 * gl + .004 * kl;
+  float cs = .006 * gl;
   float mR = texture2D(uMask, mu + vec2(cs, 0.)).r;
   float mB = texture2D(uMask, mu - vec2(cs, 0.)).r;
   float m0 = texture2D(uMask, mu).r;
@@ -349,7 +369,7 @@ void main(){
   float f1 = fbm(vec2(uv.x * asp * 2.0 + t * .10, uv.y * 3.5 + t * .02));
   float f2 = fbm(vec2(uv.x * asp * 3.4 - t * .17, uv.y * 5. + 7.));
   float ground = 1. - smoothstep(bot - uTextH * .6, uTextY + uTextH * 2. * (uHeight / .85), uv.y);
-  float dens = smoothstep(.25, .9, f1 * .65 + f2 * .55) * ground * uOpt.x * (1. - kl * .85);
+  float dens = smoothstep(.25, .9, f1 * .65 + f2 * .55) * ground * uOpt.x * (1. - kl * .5);
   float sc = uHeight / .85;
   float dyC = uv.y - uTextY;
   vec2 q = vec2(uv.x * asp * 2.4, uv.y * 1.6 - t * .35);
@@ -386,10 +406,9 @@ void main(){
   outc = mix(outc, mix(uC3, uC4, hl * .9), drip);
 
   // letters: pale, cold, never fully hidden by the fog
-  vec3 tcol = mix(uC4, uText, .35) * fl * (1. + kl * .35);
+  vec3 tcol = mix(uC4, uText, .35) * fl * (1. + kl * .12);
   outc = mix(outc, tcol, m0 * blink * (1. - dens * .3));
   outc += (uC3 * mB + uC2 * mR * 1.5) * gl * .6 * (1. - m0);
-  outc += uC3 * exp(-pow((length(dl) - .17) / .005, 2.)) * act * .5;
   outc *= 1. - 1.3 * dot(uv - .5, uv - .5);
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * (.06 + .5 * inBand);
   gl_FragColor = vec4(boxed(outc, uv), 1.);
@@ -420,7 +439,7 @@ void main(){
   float crust = smoothstep(.45, .75, fbm(vec2(uv.x * asp * 11., uv.y * 13.) + 3.));
   float hp = heat * (.72 + .5 * S0.b) + (fbm(vec2(uv.x * asp * 5., uv.y * 6.)) - .5) * .3 * heat;
   hp *= 1. - crust * .55 * (1. - smoothstep(.15, 1.2, heat));
-  hp += tf.x * .7;
+  hp += tf.x * .3;
   hp = max(hp, 0.) * uIntensity;
   vec3 col = mix(vec3(.05, .03, .025), uC1, smoothstep(.05, .28, hp));
   col = mix(col, uC2, smoothstep(.22, .55, hp));
@@ -442,10 +461,10 @@ void main(){
   float thin = exp(-pow(xl / (.10 + .10 * d), 2.));
   float prof = smoothstep(-.02, .06, d) * (1. - smoothstep(.15, 1., d));
   float flow = .35 + .65 * noise(vec2(cell * 2.1, d * 4. - t * .9));
-  float smokeAmt = (.2 + .8 * exp(-age / 2.8)) * uOpt.x * (1. + tf.x * 1.6);
+  float smokeAmt = (.2 + .8 * exp(-age / 2.8)) * uOpt.x * (1. + tf.x * .9);
   float wa = thin * live * prof * flow * smoothstep(.08, .4, Sw.r) * smokeAmt * .85;
   float pn = fbm(vec2(uv.x * asp * 6. - tf.y * .5, uv.y * 5. - t * .8 - tf.z * .5));
-  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2 + tf.x * 1.2, 0., 1.) * (1. - m0) * smokeAmt * .4;
+  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2 + tf.x * .5, 0., 1.) * (1. - m0) * smokeAmt * .4;
   outc = mix(outc, vec3(.62, .56, .52), max(wa, puff));
 
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .05;
@@ -458,6 +477,22 @@ float wedges(vec2 pa, float seed){
   float r = length(pa);
   float v = .8 * noise(vec2(ang * 7., seed)) + .3 * noise(vec2(ang * 34. + 3., seed * 1.7));
   return smoothstep(.6, .62, v) * smoothstep(.06, .2, r);
+}
+vec2 trailBlade(vec2 uv, float asp){
+  float core = 0., glow = 0.;
+  for (int i = 0; i < 7; i++){
+    vec4 a = uTrail[i], b = uTrail[i + 1];
+    float str = min(a.z, b.z);
+    vec2 pa = (uv - a.xy) * vec2(asp, 1.);
+    vec2 ba = (b.xy - a.xy) * vec2(asp, 1.);
+    float hh = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0., 1.);
+    float d = length(pa - ba * hh);
+    float w = (.003 + .010 * (1. - float(i) / 7.)) * str;
+    float on = step(.03, str);
+    core = max(core, (1. - smoothstep(w * .5, w, d)) * on);
+    glow = max(glow, exp(-d / (w * 5. + .002)) * str * on);
+  }
+  return vec2(core, glow);
 }
 void main(){
   vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
@@ -533,7 +568,7 @@ void main(){
   float thin = exp(-pow(xl / (.10 + .10 * d), 2.));
   float prof = smoothstep(-.02, .06, d) * (1. - smoothstep(.15, 1., d));
   float flow = .35 + .65 * noise(vec2(cell * 2.1, d * 4. - t * .9));
-  float smokeAmt = (.55 + .2 * sin(t * .6)) * uOpt.x * (1. + tf.x * 1.6);
+  float smokeAmt = (.55 + .2 * sin(t * .6)) * uOpt.x * (1. + tf.x * .9);
   float wa = thin * live * prof * flow * smoothstep(.08, .4, Sw.r) * smokeAmt * .85;
   float pn = fbm(vec2(uv.x * asp * 6. - tf.y * .5, uv.y * 5. - t * .8 - tf.z * .5));
   float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2 + tf.x * 1.2, 0., 1.) * (1. - m0) * smokeAmt * .4;
@@ -545,6 +580,8 @@ void main(){
   // inside a slit the world is a negative: white paper, black ink, speed lines from the cut
   vec3 neg = mix(vec3(1., .97, .97), vec3(.02, .015, .02), max(wgs, m0));
   outc = mix(outc, neg, inBand);
+  vec2 tbl = trailBlade(uv, asp);
+  outc += vec3(1.) * tbl.x + uText * tbl.y * .6;
   outc += uText * edge * 1.1 + vec3(1.) * blade * 1.2 + vec3(1.) * flashL * .7 + uText * scar * .45;
   outc *= 1. - .35 * smoothstep(0., .55, uEvtA) * (1. - step(0., tc0)) * uOpt.y;
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .05;
@@ -619,7 +656,7 @@ void main(){
   // a soft glow that breathes with each punch
   float pg = .6 + .5 * punch;
   vec3 tf = trailField(uv, asp, .15);
-  vec3 bg = vec3(.008, .012, .04) + uC2 * .22 * S.g * pg + uC3 * .35 * S.b * pg * uIntensity + uC3 * tf.x * .35 * pg;
+  vec3 bg = vec3(.008, .012, .04) + uC2 * .22 * S.g * pg + uC3 * .35 * S.b * pg * uIntensity + uC3 * tf.x * .12 * pg;
   vec3 outc = bg + uC3 * lines * .5;
 
   // chunky extrusion down-right, then a white outline, then the face
@@ -655,6 +692,95 @@ void main(){
   outc += uHalo * star * smoothstep(.1, .6, S.b) * 1.4;
   outc *= 1. - .6 * dot(uv - .5, uv - .5);
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .045;
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+
+  var FS_CYBER = COMMON + `
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
+  float gg = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
+  vec3 tf = trailField(uv, asp, .12);
+  // signal tears: short global bursts, plus slices that jump near the finger
+  float tick = floor(t * 8.);
+  float gl = step(1. - .07 * (uHeight / .85), hash(vec2(tick, 1.1)));
+  float yc = uTextY + (hash(vec2(tick, 2.2)) - .5) * uTextH * 1.4;
+  float bh = uTextH * (.1 + .25 * hash(vec2(tick, 3.3)));
+  float inBand = gl * (1. - smoothstep(bh, bh * 1.5, abs(uv.y - yc)));
+  float row = floor(uv.y * uRes.y / 6.);
+  float fing = tf.x * (hash(vec2(row, floor(t * 12.))) - .5);
+  float shift = (hash(vec2(tick, 4.4)) - .5) * .08 * inBand + fing * .05;
+  vec2 mu = uv + vec2(shift, 0.);
+  float cs = .003 + .006 * inBand + .004 * tf.x;
+  float mR = texture2D(uMask, mu + vec2(cs, 0.)).r;
+  float mG = texture2D(uMask, mu).r;
+  float mB = texture2D(uMask, mu - vec2(cs, 0.)).r;
+  vec3 grad = mix(uC1, uC2, smoothstep(0., .5, gg));
+  grad = mix(grad, uC3, smoothstep(.5, 1., gg));
+  vec3 col = vec3(mR * grad.r, mG * grad.g, mB * grad.b) * 1.15 + vec3(mG) * .12;
+  float scan = .86 + .14 * sin(uv.y * uRes.y * 1.6);
+  float fl = .94 + .06 * noise(vec2(t * 20., 3.));
+  vec4 S = texture2D(uS, uv);
+  vec3 outc = vec3(.039, .024, .020) + uC2 * S.g * .30 * fl + mix(uC1, uC3, .5) * S.b * .55 * fl;
+  outc = vec3(mix(outc.r, col.r * scan, mR), mix(outc.g, col.g * scan, mG), mix(outc.b, col.b * scan, mB));
+  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .06;
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+  var FS_SPACE = COMMON + `
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
+  float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
+  vec2 pp = uPtr.xy;
+  // a very light lens warp around the finger
+  vec2 dl = (uv - pp) * vec2(asp, 1.);
+  float kw = exp(-dot(dl, dl) / .02) * uPtr.w;
+  vec2 mu = uv - (uv - pp) * kw * .06;
+  float m0 = texture2D(uMask, mu).r;
+  vec4 S = texture2D(uS, uv);
+  vec3 grad = mix(uC1, uC2, smoothstep(0., .55, g));
+  grad = mix(grad, uC4, smoothstep(.55, 1., g));
+  vec2 px = uv * uRes;
+  float dots = .82 + .18 * sin(px.x * 2.2) * sin(px.y * 2.2);
+  vec2 gp = uv * uRes / 11.;
+  vec2 cp = floor(gp), f = fract(gp) - .5;
+  float hh = hash(cp);
+  float tw = pow(max(0., sin(t * (1. + hh * 2.5) + hh * 40.)), 18.);
+  float star = tw * step(.82, hh) * smoothstep(.45, 0., length(f));
+  // a sweep of light that crosses the letters, handed over to the finger while it touches
+  float autoX = fract(t * (uHeight / .85) / 6.) * 1.5 - .25;
+  float sx = mix(autoX, pp.x, uPtr.w * .8);
+  float sweep = exp(-pow((uv.x - sx - uv.y * .15) / .05, 2.));
+  vec3 col = grad * dots + uC3 * star * 1.2 + vec3(1.) * sweep * .55;
+  vec3 outc = vec3(.039, .024, .020) + uC2 * S.g * .30 + uC3 * S.b * .45;
+  outc = mix(outc, col, m0);
+  outc *= .94 + .06 * sin(px.y * 3.1);
+  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .05;
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+  var FS_PUNK = COMMON + `
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
+  float tick = floor(t * 9.);
+  float gl = step(.93, hash(vec2(tick, 1.3)));
+  float yc = uTextY + (hash(vec2(tick, 2.7)) - .5) * uTextH * 1.2;
+  float bh = uTextH * (.12 + .3 * hash(vec2(tick, 4.1)));
+  float inBand = gl * (1. - smoothstep(bh, bh * 1.4, abs(uv.y - yc)));
+  float tear = (hash(vec2(tick, 5.5)) - .5) * .07 * inBand;
+  vec2 mu = uv + vec2(tear, 0.);
+  float cs = .004 + .006 * gl;
+  vec4 cR = texture2D(uCol, mu + vec2(cs, 0.));
+  vec4 cG = texture2D(uCol, mu);
+  vec4 cB = texture2D(uCol, mu - vec2(cs, 0.));
+  float sh = texture2D(uMask, uv - vec2(.004 / asp, -.007)).r;
+  vec4 S = texture2D(uS, uv);
+  vec3 outc = vec3(.039, .024, .020) + uHalo * S.b * .18;
+  outc = mix(outc, vec3(0.), sh * .65);
+  outc = vec3(mix(outc.r, cR.r, cR.a), mix(outc.g, cG.g, cG.a), mix(outc.b, cB.b, cB.a));
+  float gr = hash(floor(uv * uRes * .5) + floor(t * 6.));
+  outc *= 1. - cG.a * .22 * gr;
+  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * (.07 + .4 * inBand);
   gl_FragColor = vec4(boxed(outc, uv), 1.);
 }`;
 
@@ -704,7 +830,7 @@ void main(){
       idea: 'Marca recém aplicada: o ferro encosta, o texto brilha em branco-amarelado e esfria devagar até virar uma queimadura escura no couro, que também escurece em volta. Só fios finos de fumaça saem das letras e vão sumindo conforme esfria. A cada 11 s o ferro volta.'
     },
     shinobi: {
-      touch: 'Arraste de lado a lado sobre o texto para cortar na direção do gesto.',
+      touch: 'Arraste de lado a lado sobre o texto: o rastro da lâmina aparece e, ao soltar, o corte acontece na direção do gesto.',
       pad: { t: 1.6, b: 0.4, s: 0.3 },
       dragCut: true,
       label: 'Shinobi', text: 'Via das Sombras', color: '#8B0000', fs: FS_SHINOBI, pal: palShinobi,
@@ -747,8 +873,48 @@ void main(){
       now: 'WordArtText (extrusão 3D com contorno branco e pulso a cada 1,8 s) + levitate + lightningStorm.',
       idea: 'Mantém a extrusão e o contorno. As letras ganham um glow que respira a cada pancada, halftone só dentro do texto, linhas de velocidade, brilho metálico e faíscas douradas.'
     },
+    cyberpunk: {
+      touch: 'Rajada de glitch só ao redor do dedo: fatias do texto deslocadas e canais RGB separados. Arraste.',
+      pad: { t: 0.5, b: 0.5, s: 0.4 },
+      label: 'Cyberpunk', text: 'Neon Protocol', color: '#6E48AA', fs: FS_CYBER, pal: palCyber,
+      family: 'Orbitron', stack: '"Orbitron", "Arial Black", sans-serif', weight: 800, stroke: 0.02, cy: 0.55,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Frequência do glitch',
+      swatches: [['Roxo (primária)', '#6E48AA'], ['Ciano', '#00F5FF'], ['Magenta', '#FF2EFF'], ['Lavanda', '#E8DCFF']],
+      smear: { dir: 'up', len: 0.5 },
+      embers: null,
+      font: 'Arquivo remoto do app. Aqui: Orbitron.',
+      now: 'glitch + crtScreen(Dream) (rasgos de sinal, bloom e scanlines).',
+      idea: 'Reproduz o que já existe: gradiente neon da paleta, divisão de canais RGB, scanlines e rajadas de glitch. Aqui entra só como referência para a interação.'
+    },
+    space: {
+      touch: 'O brilho que cruza o texto passa a seguir o dedo, com uma lente leve. Arraste.',
+      pad: { t: 0.5, b: 0.5, s: 0.4 },
+      label: 'Space Opera', text: 'Nova Estelar', color: '#0081A7', fs: FS_SPACE, pal: palSpace,
+      family: 'Michroma', stack: '"Michroma", "Arial Black", sans-serif', weight: 400, stroke: 0.01, cy: 0.55,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Velocidade do brilho',
+      swatches: [['Azul (primária)', '#0081A7'], ['Ciano', '#48CAE4'], ['Gelo', '#90E0EF'], ['Lavanda', '#C9B1FF']],
+      smear: { dir: 'up', len: 0.5 },
+      embers: null,
+      font: 'Arquivo remoto do app. Aqui: Michroma.',
+      now: 'crtScreen(Element) (painel de fósforo, sem animação).',
+      idea: 'Mantém o painel de fósforo e o gradiente da paleta. Opcional: um brilho que cruza o texto a cada 6 s e estrelas piscando dentro das letras.'
+    },
+    punk: {
+      ransom: true,
+      touch: 'As letras de recorte se afastam e giram de leve quando o dedo chega perto. Arraste.',
+      pad: { t: 0.4, b: 0.4, s: 0.35 },
+      label: 'Punk Rock', text: 'Anarquia', color: '#729656', fs: FS_PUNK, pal: palPunk,
+      family: 'Syne', stack: '"Syne", "Arial Black", sans-serif', weight: 800, stroke: 0, cy: 0.55,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Intensidade do glitch',
+      swatches: [['Verde (primária)', '#729656'], ['Verde neon', '#00E676'], ['Laranja', '#FF7E00'], ['Amarelo', '#FAFF00']],
+      smear: { dir: 'up', len: 0.3 },
+      embers: null,
+      font: 'Incubus / WastedPunk (arquivos remotos). Aqui: uma mistura de fontes sorteadas por letra.',
+      now: 'RansomNoteText (letras de recorte em stop-motion a 2 fps) + chromaticAberration + glitch.',
+      idea: 'Mantém o ransom note: cada letra é um recorte com fonte, caixa e cor sorteadas, trocando a cada poucos segundos. Acrescenta grão de xerox e rasgos de glitch.'
+    },
   };
-  var ORDER = ['fantasy', 'horror', 'cowboy', 'shinobi', 'crime', 'heroes'];
+  var ORDER = ['fantasy', 'horror', 'cowboy', 'shinobi', 'crime', 'heroes', 'cyberpunk', 'space', 'punk'];
   var cur = 'fantasy';
   var st = {}, pals = {};
   ORDER.forEach(function (id) {
@@ -772,7 +938,7 @@ void main(){
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error('shader error: ' + gl.getShaderInfoLog(s)); }
     return s;
   }
-  var UNIFORMS = ['uMask', 'uS', 'uTime', 'uIntensity', 'uHeight', 'uTextY', 'uTextH', 'uRes', 'uC1', 'uC2', 'uC3', 'uC4', 'uHalo', 'uText', 'uOpt', 'uEvtA', 'uEvtB', 'uSeedB', 'uSeedA', 'uBox', 'uFw', 'uBoxCfg', 'uTrail', 'uTrailV', 'uPtr', 'uCut'];
+  var UNIFORMS = ['uMask', 'uS', 'uTime', 'uIntensity', 'uHeight', 'uTextY', 'uTextH', 'uRes', 'uC1', 'uC2', 'uC3', 'uC4', 'uHalo', 'uText', 'uOpt', 'uEvtA', 'uEvtB', 'uSeedB', 'uSeedA', 'uBox', 'uFw', 'uBoxCfg', 'uTrail', 'uTrailV', 'uPtr', 'uCut', 'uCol'];
   var vsObj = compile(gl.VERTEX_SHADER, VS);
   ORDER.forEach(function (id) {
     var prog = gl.createProgram();
@@ -804,10 +970,14 @@ void main(){
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
   gl.activeTexture(gl.TEXTURE0); var tex = makeTex();
   gl.activeTexture(gl.TEXTURE1); var texS = makeTex();
+  gl.activeTexture(gl.TEXTURE2); var texCol = makeTex();
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
   gl.activeTexture(gl.TEXTURE0);
 
   // ---------- text mask + field ----------
   var maskCanvas = document.createElement('canvas');
+  var colorCanvas = document.createElement('canvas');
+  var rs = { sc: [], pos: [], key: '', lastPaint: 0 };
   var smallCanvas = document.createElement('canvas');
   var W = 0, Hh = 0, dpr = 1, textY = 0.5, textH = 0.2, emberPts = [];
 
@@ -860,23 +1030,91 @@ void main(){
     gl.activeTexture(gl.TEXTURE0);
   }
 
+  function h1(n) { var x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }
+  var RFONTS = [['UnifrakturCook', 700], ['Rye', 400], ['Bangers', 400], ['Syne', 800], ['IM Fell English SC', 400], ['Georgia', 700]];
+  function rgbs(c) { return 'rgb(' + Math.round(c[0] * 255) + ',' + Math.round(c[1] * 255) + ',' + Math.round(c[2] * 255) + ')'; }
+  // ransom-note letters: each one a cut-out tile with its own font, case, colour and tilt
+  function paintRansom(c, cc, tNow) {
+    var cfg = TABS[cur], chars = Array.from(st[cur].text || ' '), ident = Math.floor(tNow / 5), jit = Math.floor(tNow * 2);
+    var base = 100, items = [], total = 0;
+    var tiles = [[0.95, 0.93, 0.88], [0.98, 1, 0.1], pals[cur].text, [1, 0.49, 0], [0.04, 0.04, 0.05]];
+    chars.forEach(function (ch, idx) {
+      if (ch === ' ') { items.push({ sp: true, w: base * 0.4 }); total += base * 0.4; return; }
+      var r = function (k) { return h1(idx * 7.1 + k + ident * 13.3); };
+      var fi = Math.floor(r(1) * RFONTS.length), up = r(2) > 0.5, sz = 0.9 + r(3) * 0.25, ti = Math.floor(r(4) * 5);
+      var g = up ? ch.toUpperCase() : ch.toLowerCase();
+      c.font = RFONTS[fi][1] + ' ' + (base * sz) + 'px "' + RFONTS[fi][0] + '", serif';
+      var w = c.measureText(g).width + base * 0.28;
+      items.push({ idx: idx, g: g, fi: fi, sz: sz, ti: ti, w: w }); total += w;
+    });
+    var k = Math.min((W * 0.8) / total, (Hh * 0.28) / (base * 1.25));
+    var x = W / 2 - (total * k) / 2, cy = Hh * cfg.cy;
+    items.forEach(function (it) {
+      var cx = x + (it.w * k) / 2; x += it.w * k;
+      if (it.sp) return;
+      var jr = function (q) { return h1(it.idx * 3.3 + q + jit * 5.7); };
+      var s2 = rs.sc[it.idx] || { x: 0, y: 0, r: 0 };
+      var bx = cx + (jr(2) - 0.5) * base * 0.12 * k, by = cy + (jr(3) - 0.5) * base * 0.16 * k;
+      rs.pos[it.idx] = [bx, by];
+      var rot = (jr(1) - 0.5) * 0.34 + s2.r, tw = it.w * k, th = base * 1.2 * it.sz * k;
+      for (var pass = 0; pass < 2; pass++) {
+        var ctx = pass === 0 ? c : cc;
+        ctx.save(); ctx.translate(bx + s2.x, by + s2.y); ctx.rotate(rot);
+        if (pass === 0) { ctx.fillStyle = '#fff'; ctx.fillRect(-tw / 2, -th / 2, tw, th); }
+        else {
+          ctx.fillStyle = rgbs(tiles[it.ti]); ctx.fillRect(-tw / 2, -th / 2, tw, th);
+          ctx.lineWidth = 2 * dpr; ctx.strokeStyle = '#0a0a0a'; ctx.strokeRect(-tw / 2, -th / 2, tw, th);
+          ctx.font = RFONTS[it.fi][1] + ' ' + (base * it.sz * k) + 'px "' + RFONTS[it.fi][0] + '", serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillStyle = it.ti === 4 ? '#faff00' : '#0a0a0a'; ctx.fillText(it.g, 0, base * 0.04 * k);
+        }
+        ctx.restore();
+      }
+    });
+  }
+  function ransomStep(dt) {
+    var fx = inp.x * W, fy = (1 - inp.y) * Hh, R = Hh * 0.2, act = inp.on ? inp.active : 0, moved = false;
+    rs.pos.forEach(function (p, idx) {
+      if (!p) return;
+      var s2 = rs.sc[idx] || (rs.sc[idx] = { x: 0, y: 0, r: 0 });
+      var dx = p[0] - fx, dy = p[1] - fy, d = Math.hypot(dx, dy) + 1e-3, f = Math.max(0, 1 - d / R); f = f * f * act;
+      var a = Math.min(1, dt * 8);
+      s2.x += (dx / d * f * Hh * 0.045 - s2.x) * a; s2.y += (dy / d * f * Hh * 0.045 - s2.y) * a; s2.r += ((dx > 0 ? 1 : -1) * f * 0.5 - s2.r) * a;
+      if (Math.abs(s2.x) + Math.abs(s2.y) + Math.abs(s2.r) > 0.05) moved = true;
+    });
+    return moved;
+  }
+  function repaintRansom() {
+    var c = maskCanvas.getContext('2d', { willReadFrequently: true }), cc = colorCanvas.getContext('2d');
+    c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh); cc.clearRect(0, 0, W, Hh);
+    paintRansom(c, cc, t);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, maskCanvas);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, texCol);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, colorCanvas);
+    gl.activeTexture(gl.TEXTURE0);
+  }
+
   function buildMask() {
     var cfg = TABS[cur];
     maskCanvas.width = W; maskCanvas.height = Hh;
     var c = maskCanvas.getContext('2d', { willReadFrequently: true });
     c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh);
+    if (cfg.ransom) { colorCanvas.width = W; colorCanvas.height = Hh; }
     var txt = st[cur].text || ' ';
     var font = function (px) { return cfg.weight + ' ' + px + 'px ' + cfg.stack; };
+    var fs = 100, cy = Hh * cfg.cy;
+    if (cfg.ransom) { fs = Hh * 0.12; paintRansom(c, colorCanvas.getContext('2d'), t); } else {
     var fs = 100;
     c.font = font(fs);
     var w = c.measureText(txt).width || 1;
     fs = Math.min(fs * (W * 0.82) / w, Hh * 0.28);
     c.font = font(fs);
     c.textAlign = 'center'; c.textBaseline = 'middle';
-    var cy = Hh * cfg.cy;
     c.fillStyle = '#fff';
     if (cfg.stroke > 0) { c.lineJoin = 'round'; c.lineWidth = fs * cfg.stroke; c.strokeStyle = '#fff'; c.strokeText(txt, W / 2, cy); }
     c.fillText(txt, W / 2, cy);
+    }
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -908,6 +1146,7 @@ void main(){
     textH = Math.max(0.05, (maxY - minY) / Hh);
     textY = 1 - (minY + maxY) / 2 / Hh;
     buildField(cfg);
+    if (cfg.ransom) repaintRansom();
   }
 
   function resize() {
@@ -950,13 +1189,6 @@ void main(){
         });
       }
     }
-    if (inp.on && inp.active > 0.3 && emberPts.length && sparks.length < cfg.max) {
-      var spd = Math.hypot(inp.vx, inp.vy);
-      var nn = Math.min(3, spd * 4 * dt * 60 * 0.05) + (Math.random() < spd * 0.4 * dt * 10 ? 1 : 0);
-      for (var si = 0; si < nn && sparks.length < cfg.max + 20; si++) {
-        sparks.push({ x: inp.x * W / dpr + (Math.random() - .5) * 14, y: (1 - inp.y) * Hh / dpr + (Math.random() - .5) * 14, vx: (Math.random() - .5) * cfg.vx + inp.vx * 30, vy: -rnd(cfg.vy[0], cfg.vy[1]) * 0.8, life: 0, max: rnd(cfg.life[0], cfg.life[1]) * 0.7, s: rnd(cfg.size[0], cfg.size[1]), ph: Math.random() * 6.28, hot: Math.random() < .5 });
-      }
-    }
     emCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     emCtx.globalCompositeOperation = 'lighter';
     for (var k = sparks.length - 1; k >= 0; k--) {
@@ -991,7 +1223,7 @@ void main(){
     var sp = s.speed * (reduceMotion ? 0.35 : 1);
     t += dt * sp;
     gl.useProgram(cfg.prog);
-    gl.uniform1i(U.uMask, 0); gl.uniform1i(U.uS, 1);
+    gl.uniform1i(U.uMask, 0); gl.uniform1i(U.uS, 1); gl.uniform1i(U.uCol, 2);
     gl.uniform1f(U.uTime, t);
     gl.uniform1f(U.uIntensity, s.intensity);
     gl.uniform1f(U.uHeight, s.height);
@@ -1008,10 +1240,14 @@ void main(){
     gl.uniform4f(U.uBox, bp.x0 / W, 1 - bp.yB / Hh, bp.x1 / W, 1 - bp.yT / Hh);
     gl.uniform4f(U.uFw, bp.fx, bp.ft, bp.fb, box.show ? 1 : 0);
     gl.uniform2f(U.uBoxCfg, box.on ? 1 : 0, box.soft ? 1 : 0);
+    if (cfg.ransom) {
+      var mv = ransomStep(dt), key = Math.floor(t / 5) + '_' + Math.floor(t * 2), nowMs = performance.now();
+      if (key !== rs.key || (mv && nowMs - rs.lastPaint > 33)) { rs.key = key; rs.lastPaint = nowMs; repaintRansom(); }
+    }
     var dtI = dt;
     inp.active += ((inp.down || inp.hover ? 1 : 0) - inp.active) * Math.min(1, dtI * 9);
     var vd = Math.exp(-dtI * 7); inp.vx *= vd; inp.vy *= vd;
-    var decay = Math.exp(-dtI * 1.7);
+    var decay = Math.exp(-dtI * (cfg.dragCut ? 3.2 : 1.7));
     for (var ti = 0; ti < 8; ti++) {
       var tp = inp.on ? inp.trail[ti] : null;
       if (tp) { tp.s *= decay; trailBuf[ti * 4] = tp.x; trailBuf[ti * 4 + 1] = tp.y; trailBuf[ti * 4 + 2] = tp.s; trailBuf[ti * 4 + 3] = 0; trailVBuf[ti * 2] = Math.max(-4, Math.min(4, tp.vx)); trailVBuf[ti * 2 + 1] = Math.max(-4, Math.min(4, tp.vy)); }
@@ -1045,7 +1281,7 @@ void main(){
     colorIn.value = st[cur].color;
   }
   function setColor(hex, fromInput) {
-    st[cur].color = hex; pals[cur] = TABS[cur].pal(hex);
+    st[cur].color = hex; pals[cur] = TABS[cur].pal(hex); rs.key = '';
     Array.prototype.forEach.call(swWrap.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.dataset.c === hex ? 'true' : 'false'); });
     if (!fromInput) colorIn.value = hex;
   }
@@ -1153,26 +1389,29 @@ void main(){
     inp.vx = inp.vx * 0.5 + ((p[0] - inp.lastX) / dt2) * 0.5; inp.vy = inp.vy * 0.5 + ((p[1] - inp.lastY) / dt2) * 0.5;
     inp.lastT = now; inp.lastX = p[0]; inp.lastY = p[1]; inp.x = p[0]; inp.y = p[1];
     if (e.pointerType === 'mouse' && !inp.down) inp.hover = true;
-    if (inp.down || e.pointerType === 'mouse') {
-      var h = inp.trail[0];
-      if (!h || Math.hypot(p[0] - h.x, p[1] - h.y) > 0.025) pushTrail(p[0], p[1], inp.vx, inp.vy);
+    if (inp.down || (e.pointerType === 'mouse' && !cfg.dragCut)) {
+      var h = inp.trail[0], spc = cfg.dragCut ? 0.05 : 0.025;
+      if (!h || Math.hypot(p[0] - h.x, p[1] - h.y) > spc) pushTrail(p[0], p[1], inp.vx, inp.vy);
       else { h.x = p[0]; h.y = p[1]; h.vx = inp.vx; h.vy = inp.vy; h.s = 1; }
     }
-    // shinobi: a quick drag across the text becomes the cut, in the direction of the gesture
-    if (inp.down && cfg.dragCut && st[cur].opts[1] && !inp.fired && inp.start) {
-      var asp = W / Hh, bp = boxPx(cfg);
-      var sx = inp.start[0] * W, sy = (1 - inp.start[1]) * Hh;
-      var inside = sx > bp.x0 && sx < bp.x1 && sy > bp.yT && sy < bp.yB;
-      var dx = (p[0] - inp.start[0]) * asp, dy = p[1] - inp.start[1];
-      var len = Math.hypot(dx, dy), textW = (tb.maxX - tb.minX) / Hh;
-      if (inside && len > 0.3 * textW && Math.abs(dy) < 1.4 * Math.abs(dx)) {
-        ev.cut = { x: (p[0] + inp.start[0]) / 2, y: (p[1] + inp.start[1]) / 2, ang: Math.atan2(dy, dx), user: true };
-        ev.la = t; ev.seedA++; inp.fired = true;
-        try { if (navigator.vibrate) navigator.vibrate([10, 25, 16]); } catch (_) {}
-      }
+    });
+  // shinobi: the blade trail is drawn while dragging; on release the cut plays along the gesture
+  function tryCut() {
+    var cfg = TABS[cur];
+    if (!cfg.dragCut || !st[cur].opts[1] || !inp.start || inp.fired) return;
+    var asp = W / Hh, bp = boxPx(cfg);
+    var sx = inp.start[0] * W, sy = (1 - inp.start[1]) * Hh;
+    var inside = sx > bp.x0 && sx < bp.x1 && sy > bp.yT && sy < bp.yB;
+    var dx = (inp.x - inp.start[0]) * asp, dy = inp.y - inp.start[1];
+    var len = Math.hypot(dx, dy), textW = (tb.maxX - tb.minX) / Hh;
+    if (inside && len > 0.3 * textW && Math.abs(dy) < 1.4 * Math.abs(dx)) {
+      ev.cut = { x: (inp.x + inp.start[0]) / 2, y: (inp.y + inp.start[1]) / 2, ang: Math.atan2(dy, dx), user: true };
+      ev.la = t - 0.55; ev.seedA++; inp.fired = true;
+      inp.trail.forEach(function (q) { q.s *= 0.35; });
+      try { if (navigator.vibrate) navigator.vibrate([10, 25, 16]); } catch (_) {}
     }
-  });
-  function release(e) { inp.down = false; if (e.pointerType !== 'mouse') inp.hover = false; }
+  }
+  function release(e) { if (inp.down) tryCut(); inp.down = false; if (e.pointerType !== 'mouse') inp.hover = false; }
   stage.addEventListener('pointerup', release);
   stage.addEventListener('pointercancel', release);
   stage.addEventListener('pointerleave', function (e) { inp.hover = false; if (e.pointerType === 'mouse') inp.down = false; });
