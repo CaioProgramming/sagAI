@@ -3,12 +3,15 @@ package com.ilustris.sagai.features.share.ui.card
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RadialGradient
 import android.graphics.RectF
+import android.graphics.Shader
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.view.Surface
+import androidx.core.graphics.ColorUtils
 import java.io.Closeable
 import java.io.File
 
@@ -28,13 +31,27 @@ class CardVideoEncoder(
     private val width: Int,
     private val height: Int,
     private val fps: Int,
+    glow: Int,
 ) : Closeable {
     private val codec: MediaCodec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)
     private val muxer = MediaMuxer(file.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
     private val info = MediaCodec.BufferInfo()
     private val inputSurface: Surface
     private val paint = Paint(Paint.FILTER_BITMAP_FLAG)
-    private val destination = RectF(0f, 0f, width.toFloat(), height.toFloat())
+
+    // A soft light of the genre's colour behind the card, so the dark around it reads as a choice.
+    private val glowPaint =
+        Paint().apply {
+            shader =
+                RadialGradient(
+                    width / 2f,
+                    height / 2f,
+                    height * GLOW_RADIUS,
+                    intArrayOf(ColorUtils.setAlphaComponent(glow, GLOW_ALPHA), Color.TRANSPARENT),
+                    null,
+                    Shader.TileMode.CLAMP,
+                )
+        }
     private var track = -1
     private var muxerStarted = false
     private var samples = 0
@@ -55,10 +72,15 @@ class CardVideoEncoder(
         codec.start()
     }
 
-    fun addFrame(bitmap: Bitmap) {
+    /** Draws [bitmap] into [destination], in pixels of the video, over the background. */
+    fun addFrame(
+        bitmap: Bitmap,
+        destination: RectF,
+    ) {
         val canvas = inputSurface.lockHardwareCanvas()
         try {
             canvas.drawColor(BACKGROUND)
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), glowPaint)
             canvas.drawBitmap(bitmap, null, destination, paint)
         } finally {
             inputSurface.unlockCanvasAndPost(canvas)
@@ -118,6 +140,8 @@ class CardVideoEncoder(
         const val BACKGROUND = 0xFF08080B.toInt()
         const val MICROS = 1_000_000L
         const val POLL_US = 10_000L
+        const val GLOW_ALPHA = 0x59
+        const val GLOW_RADIUS = 0.55f
         const val MAX_IDLE_POLLS = 500
     }
 }
