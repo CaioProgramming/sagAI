@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.debug.ui
 
 import MessageStatus
+import android.content.ClipData
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
@@ -58,6 +59,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,11 +70,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -139,6 +141,7 @@ import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.themeVfx
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 
@@ -950,6 +953,7 @@ private fun ShaderParamsTuningMenu(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboard.current
+    val clipboardScope = rememberCoroutineScope()
 
     Column(
         Modifier
@@ -1016,7 +1020,9 @@ private fun ShaderParamsTuningMenu(
                     Button(
                         onClick = {
                             val json = GsonBuilder().setPrettyPrinting().create().toJson(shaderParams)
-                            clipboardManager.setText(AnnotatedString(json))
+                            clipboardScope.launch {
+                                clipboardManager.setClipEntry(ClipEntry(ClipData.newPlainText("shader params", json)))
+                            }
                         },
                         modifier = Modifier.weight(1f),
                     ) {
