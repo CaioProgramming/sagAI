@@ -168,7 +168,7 @@ fun SpecialActionsRow(
 ) {
     if (actions.isEmpty()) return
     val shape = RoundedCornerShape(14.dp)
-    Row(modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
+    Row(modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
         actions.forEach { action ->
             Row(
                 modifier =
