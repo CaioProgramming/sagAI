@@ -283,6 +283,15 @@ vec3 trailField(vec2 uv, float asp, float rad){
 }
 uniform vec2 uBoxCfg;
 varying vec2 vUv;
+// A CRT screen filling the layout box: rounded corners, vignette. Returns (vignette, mask, radius^2).
+vec4 crtScreen(vec2 uv, float asp, float t){
+  vec2 px = uv * uRes, lo = uBox.xy * uRes, hi = uBox.zw * uRes;
+  vec2 c = (lo + hi) * .5, h = max((hi - lo) * .5, vec2(1.));
+  vec2 q = (px - c) / h;
+  vec2 d = abs(px - c) - (h - 18.);
+  float sd = length(max(d, vec2(0.))) + min(max(d.x, d.y), 0.) - 18.;
+  return vec4(1. - .45 * dot(q, q), 1. - smoothstep(-1.5, 1.5, sd), dot(q, q), 0.);
+}
 // Simulates the bounds a Compose layout gives the title: nothing may show outside the box.
 // With the soft edge on, every effect fades to the background over the margin instead of being cut.
 vec3 boxed(vec3 c, vec2 uv){
@@ -751,86 +760,100 @@ void main(){
   var FS_CYBER = COMMON + `
 void main(){
   vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
-  float gg = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
-  vec3 tf = trailField(uv, asp, .12);
   float ent = uEntry, wd = max(uEntryDur, .01);
-  float ign = smoothstep(wd, wd + 1.2, ent);
-  float tx = clamp((uv.x - uTx.x) / max(uTx.y - uTx.x, .01), 0., 1.);
   float pen = clamp(ent / wd, 0., 1.);
-  float tp = ent - tx * wd;
-  float written = smoothstep(0., .05, tp);
-  float filled = smoothstep(.15, .7, tp);
-  // typewriter with decode: columns flicker through noise before they settle, a block cursor leads
-  float rt = pen * 1.15 - tx;
-  float vis = step(0., rt) * mix(step(.5, hash(vec2(floor(uv.x * 70.), floor(ent * 24.)))), 1., smoothstep(.04, .14, rt));
-  float cur = step(abs(uv.x - (uTx.x + pen * (uTx.y - uTx.x))), .006) * step(abs(uv.y - uTextY), uTextH * .55) * step(ent, wd) * (.5 + .5 * sign(sin(ent * 14.)));
-  // signal tears: short global bursts, plus slices that jump near the finger
+  float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
+  vec3 tf = trailField(uv, asp, .12);
+  vec2 px = uv * uRes;
+  float row = floor(px.y / 3.);
+  float chaos = exp(-ent * 2.2);
+  // glitch bursts, plus slices that jump near the finger
   float tick = floor(t * 8.);
   float gl = step(1. - .07 * (uHeight / .85), hash(vec2(tick, 1.1)));
   float yc = uTextY + (hash(vec2(tick, 2.2)) - .5) * uTextH * 1.4;
   float bh = uTextH * (.1 + .25 * hash(vec2(tick, 3.3)));
   float inBand = gl * (1. - smoothstep(bh, bh * 1.5, abs(uv.y - yc)));
-  float row = floor(uv.y * uRes.y / 6.);
-  float fing = tf.x * (hash(vec2(row, floor(t * 12.))) - .5);
-  float shift = (hash(vec2(tick, 4.4)) - .5) * .08 * inBand + fing * .05;
+  float fing = tf.x * (hash(vec2(floor(px.y / 6.), floor(t * 12.))) - .5);
+  // VHS: per-line wobble, and a tracking bar that rolls up the screen dragging the lines sideways
+  float barY = fract(1. - t * .12);
+  float trk = exp(-pow((uv.y - barY) / .06, 2.)) * (.4 + .6 * noise(vec2(t * .5, 3.)));
+  float wob = (noise(vec2(row * .35, t * 8.)) - .5) * .003 * (1. + chaos * 6.) + trk * .06 * (noise(vec2(row * .2, t * 20.)) - .5);
+  float shift = wob + (hash(vec2(tick, 4.4)) - .5) * .08 * inBand + fing * .05;
   vec2 mu = uv + vec2(shift, 0.);
-  float cs = .003 + .006 * inBand + .004 * tf.x;
-  float mR = texture2D(uMask, mu + vec2(cs, 0.)).r * vis;
+  float cs = .004 + .006 * inBand + .004 * tf.x + .01 * chaos + .008 * trk;
+  // PLAY: the signal locks in while a beam walks down the text
+  float b = 1. - pen;
+  float vis = smoothstep(b - .05, b, g);
+  float beam = exp(-pow((g - b) / .06, 2.)) * step(ent, wd) * step(uTx.x - .02, uv.x) * step(uv.x, uTx.y + .02);
+  float mR = (texture2D(uMask, mu + vec2(cs, 0.)).r + .6 * texture2D(uMask, mu + vec2(cs + .006, 0.)).r) / 1.6 * vis;
   float mG = texture2D(uMask, mu).r * vis;
-  float mB = texture2D(uMask, mu - vec2(cs, 0.)).r * vis;
-  vec3 grad = mix(uC1, uC2, smoothstep(0., .5, gg));
-  grad = mix(grad, uC3, smoothstep(.5, 1., gg));
-  vec3 col = vec3(mR * grad.r, mG * grad.g, mB * grad.b) * 1.15 + vec3(mG) * .12;
-  float scan = .86 + .14 * sin(uv.y * uRes.y * 1.6);
+  float mB = (texture2D(uMask, mu - vec2(cs, 0.)).r + .6 * texture2D(uMask, mu - vec2(cs + .006, 0.)).r) / 1.6 * vis;
+  vec3 grad = mix(uC1, uC2, smoothstep(0., .5, g));
+  grad = mix(grad, uC3, smoothstep(.5, 1., g));
+  vec3 col = vec3(mR * grad.r, mG * grad.g, mB * grad.b) * 1.7 + vec3(mG) * .18;
+  float scan = .3 + .7 * (.5 + .5 * sin(px.y * 2.094));
   float fl = .94 + .06 * noise(vec2(t * 20., 3.));
+  vec4 scr = crtScreen(uv, asp, t);
+  float sOn = scr.y * uOpt.x;
   vec4 S = texture2D(uS, uv);
-  vec3 outc = vec3(.039, .024, .020) + uC2 * S.g * .30 * fl + mix(uC1, uC3, .5) * S.b * .55 * fl;
-  outc = vec3(mix(outc.r, col.r * scan, mR), mix(outc.g, col.g * scan, mG), mix(outc.b, col.b * scan, mB));
-  outc += uC2 * cur * 1.2;
-  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .06;
+  vec3 outc = mix(vec3(.039, .024, .020), vec3(.025, .035, .07) * scr.x + uC1 * .06 * (1. - scr.z), sOn);
+  outc += (uC2 * S.g * .45 + mix(uC1, uC3, .5) * S.b * .85) * fl * (.3 + .7 * vis);
+  outc = vec3(mix(outc.r, col.r, mR), mix(outc.g, col.g, mG), mix(outc.b, col.b, mB));
+  outc += uC2 * beam * .7;
+  float lit = clamp(S.b * 2. + max(max(mR, mG), mB), 0., 1.);
+  float scanMask = max(sOn, lit);
+  outc *= mix(1., scan, scanMask);
+  outc += (hash(px + floor(t * 30.)) - .5) * (.05 + trk * .5 + chaos * .5) * scanMask;
   gl_FragColor = vec4(boxed(outc, uv), 1.);
 }`;
 
   var FS_SPACE = COMMON + `
 void main(){
   vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
+  float ent = uEntry, wd = max(uEntryDur, .01);
+  float pen = clamp(ent / wd, 0., 1.);
   float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
   vec2 pp = uPtr.xy;
-  float ent = uEntry, wd = max(uEntryDur, .01);
-  float ign = smoothstep(wd, wd + 1.2, ent);
-  float tx = clamp((uv.x - uTx.x) / max(uTx.y - uTx.x, .01), 0., 1.);
-  float pen = clamp(ent / wd, 0., 1.);
-  float tp = ent - tx * wd;
-  float written = smoothstep(0., .05, tp);
-  float filled = smoothstep(.15, .7, tp);
-  float vis = step(0., pen * 1.15 - tx);
-  float cur = step(abs(uv.x - (uTx.x + pen * (uTx.y - uTx.x))), .006) * step(abs(uv.y - uTextY), uTextH * .55) * step(ent, wd) * (.5 + .5 * sign(sin(ent * 12.)));
-  // a very light lens warp around the finger
+  vec4 scr = crtScreen(uv, asp, t);
+  float sOn = scr.y * uOpt.x;
+  vec2 ctrS = vec2((uBox.x + uBox.z) * .5, (uBox.y + uBox.w) * .5);
+  vec2 dq = (uv - ctrS) * vec2(asp, 1.);
+  vec2 uvb = uv + (uv - ctrS) * dot(dq, dq) * .05;
   vec2 dl = (uv - pp) * vec2(asp, 1.);
   float kw = exp(-dot(dl, dl) / .02) * uPtr.w;
-  vec2 mu = uv - (uv - pp) * kw * .06;
+  vec2 mu = uvb - (uv - pp) * kw * .06;
+  // power on: a bright line opens up to the height of the text
+  float open = smoothstep(.15, 1., pen);
+  float hh = uTextH * .6 * open + .003;
+  float vis = 1. - smoothstep(hh, hh + .004, abs(uv.y - uTextY));
+  float boost = 1. + 3. * (1. - open);
   float m0 = texture2D(uMask, mu).r * vis;
   vec4 S = texture2D(uS, uv);
   vec3 grad = mix(uC1, uC2, smoothstep(0., .55, g));
   grad = mix(grad, uC4, smoothstep(.55, 1., g));
+  // phosphor triads, scanline gaps, and a refresh bar that rolls down the tube
   vec2 px = uv * uRes;
-  float dots = .82 + .18 * sin(px.x * 2.2) * sin(px.y * 2.2);
+  float sub = fract(px.x / 3.) * 3.;
+  vec3 tri = vec3(1. - smoothstep(0., 1.1, abs(sub - .5)), 1. - smoothstep(0., 1.1, abs(sub - 1.5)), 1. - smoothstep(0., 1.1, abs(sub - 2.5)));
+  tri = mix(vec3(1.), tri * 1.7, .35);
+  float scan = .35 + .65 * (.5 + .5 * sin(px.y * 2.094));
+  float beam = exp(-pow((uv.y - fract(t / 4.)) / .035, 2.)) * .45;
   vec2 gp = uv * uRes / 11.;
   vec2 cp = floor(gp), f = fract(gp) - .5;
-  float hh = hash(cp);
-  float tw = pow(max(0., sin(t * (1. + hh * 2.5) + hh * 40.)), 18.);
-  float star = tw * step(.82, hh) * smoothstep(.45, 0., length(f));
-  // a sweep of light that crosses the letters, handed over to the finger while it touches
+  float hh2 = hash(cp);
+  float tw = pow(max(0., sin(t * (1. + hh2 * 2.5) + hh2 * 40.)), 18.);
+  float star = tw * step(.82, hh2) * smoothstep(.45, 0., length(f));
   float autoX = fract(t * (uHeight / .85) / 6.) * 1.5 - .25;
   float sx = mix(autoX, pp.x, uPtr.w * .8);
   float sweep = exp(-pow((uv.x - sx - uv.y * .15) / .05, 2.));
-  vec3 col = grad * dots + uC3 * star * 1.2 + vec3(1.) * sweep * .55;
-  col *= 1. + 1.2 * exp(-max(ent - wd, 0.) * 6.) * step(wd, ent);
-  vec3 outc = vec3(.039, .024, .020) + uC2 * S.g * .30 + uC3 * S.b * .45;
+  vec3 col = grad * 1.5 * tri * scan * (1. + beam) + uC3 * star * 1.2 + vec3(1.) * sweep * .55;
+  col *= boost;
+  vec3 outc = mix(vec3(.039, .024, .020), vec3(.025, .04, .075) * scr.x + uC1 * .07 * (1. - scr.z), sOn);
+  outc += uC2 * S.g * .7 * (1. + beam) + uC3 * S.b * .9;
   outc = mix(outc, col, m0);
-  outc *= .94 + .06 * sin(px.y * 3.1);
-  outc += uC4 * cur * 1.2;
-  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .05;
+  float lit = clamp(S.b * 2. + m0, 0., 1.);
+  outc *= mix(1., scan, max(sOn, lit));
+  outc += (hash(px + floor(t * 30.)) - .5) * .06 * max(sOn, lit);
   gl_FragColor = vec4(boxed(outc, uv), 1.);
 }`;
 
@@ -955,13 +978,14 @@ void main(){
       idea: 'Mantém a extrusão e o contorno. As letras ganham um glow que respira a cada pancada, halftone só dentro do texto, linhas de velocidade, brilho metálico e faíscas douradas.'
     },
     cyberpunk: {
-      entry: { dur: 1.8, label: 'Máquina de escrever com decodificação: as colunas piscam em ruído antes de fixar, com um cursor na frente.' },
+      entry: { dur: 1.6, label: 'Play de VHS: o sinal estabiliza (o ruído e o tremor diminuem) enquanto um feixe desce pelo texto revelando as linhas.' },
       touch: 'Rajada de glitch só ao redor do dedo: fatias do texto deslocadas e canais RGB separados. Arraste.',
       pad: { t: 0.5, b: 0.5, s: 0.4 },
       label: 'Cyberpunk', text: 'Neon Protocol', color: '#6E48AA', fs: FS_CYBER, pal: palCyber,
-      family: 'Orbitron', stack: '"Orbitron", "Arial Black", sans-serif', weight: 800, stroke: 0.02, cy: 0.55,
+      family: 'Orbitron', stack: '"Orbitron", "Arial Black", sans-serif', weight: 800, stroke: 0.05, cy: 0.55,
       defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Frequência do glitch',
       swatches: [['Roxo (primária)', '#6E48AA'], ['Ciano', '#00F5FF'], ['Magenta', '#FF2EFF'], ['Lavanda', '#E8DCFF']],
+      opts: [['Mostrar a tela (retângulo CRT)', true]],
       smear: { dir: 'up', len: 0.5 },
       embers: null,
       font: 'Arquivo remoto do app. Aqui: Orbitron.',
@@ -969,13 +993,14 @@ void main(){
       idea: 'Reproduz o que já existe: gradiente neon da paleta, divisão de canais RGB, scanlines e rajadas de glitch. Aqui entra só como referência para a interação.'
     },
     space: {
-      entry: { dur: 2.2, label: 'Máquina de escrever com cursor, como no boot do terminal, e um clarão de fósforo ao terminar.' },
+      entry: { dur: 1.4, label: 'Liga a TV de tubo: uma linha brilhante se abre até a altura do texto, com um clarão de fósforo.' },
       touch: 'O brilho que cruza o texto passa a seguir o dedo, com uma lente leve. Arraste.',
       pad: { t: 0.5, b: 0.5, s: 0.4 },
       label: 'Space Opera', text: 'Nova Estelar', color: '#0081A7', fs: FS_SPACE, pal: palSpace,
-      family: 'Michroma', stack: '"Michroma", "Arial Black", sans-serif', weight: 400, stroke: 0.01, cy: 0.55,
+      family: 'Michroma', stack: '"Michroma", "Arial Black", sans-serif', weight: 400, stroke: 0.05, cy: 0.55,
       defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Velocidade do brilho',
       swatches: [['Azul (primária)', '#0081A7'], ['Ciano', '#48CAE4'], ['Gelo', '#90E0EF'], ['Lavanda', '#C9B1FF']],
+      opts: [['Mostrar a tela (retângulo CRT)', true]],
       smear: { dir: 'up', len: 0.5 },
       embers: null,
       font: 'Arquivo remoto do app. Aqui: Michroma.',

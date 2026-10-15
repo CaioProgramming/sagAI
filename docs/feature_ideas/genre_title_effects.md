@@ -31,7 +31,9 @@ Animated, per-genre treatment for the saga title (`Genre.stylisedText`). Explore
 | Shinobi | `levitate` + `sakuraWind` | No backdrop, subtle smoke wisps, and a random katana cut: the blade crosses the text and the halves open like scissors (wider in the middle). The negative (white paper, black ink, speed lines) is exactly the gap between the halves, with a red edge and a faint scar that lingers. A single cut from edge to edge of the text; the y entry point, angle and side it comes from are random. (An earlier version fired 1–3 short random cuts in a row, which read as several small animations.) | Replaced earlier ink-splat and full-frame impact-frame layers, which felt like separate animations. The slit used to be an independent lens shape, now it is tied to the gap. Inspiration: high-contrast anime impact frames. |
 | Crime | `vhs` + `dreamySparkle` | Euphoria-style iridescent gradient clipped to the letters (pink, light pink, mint, violet from the palette), glitter, 80s film grain. | `vhs` already covers an "aged tape" look, so the aged-print idea was dropped. Watch it next to Cyberpunk (both neon). |
 | Heroes | `WordArtText` extrusion + outline + `levitate` + `lightningStorm` | Keeps extrusion/outline. Adds a soft pulsing glow, halftone shading **only inside** the letters, speed lines, metallic sweep, gold glints. | A square impact ring and outside halftone were tried and rejected. |
-| Cyberpunk, Space Opera, Punk Rock | `glitch`+`crtScreen(Dream)`, `crtScreen(Element)`, ransom note + `chromaticAberration`+`glitch` | **Unchanged.** Optional: a light sweep and twinkles for Space Opera, xerox grain for Punk Rock. | They already cover the proposed ideas; they just must follow rules 3–4. |
+| Cyberpunk | `glitch` + `crtScreen(Dream)` | **A VHS tape on a CRT**: interlaced scanlines, per-line wobble, a tracking bar rolling up the screen, RGB channel bleed, static and glitch bursts. Optional CRT screen rectangle filling the layout box. | The first prototype felt too weak. Entry: the signal locks in while a beam walks down the text. |
+| Space Opera | `crtScreen(Element)` | **A phosphor monitor**: RGB triads, scanline gaps, light tube curvature, a refresh bar rolling down, twinkling stars and a sweep of light. Optional CRT screen rectangle. | Entry: a TV power-on line that opens to the text height. |
+| Punk Rock | ransom note + `chromaticAberration` + `glitch` | **Unchanged.** Optional: xerox grain. | Already covers the idea; it just must follow rules 3-4. |
 
 ## Interaction (prototyped)
 
@@ -104,6 +106,13 @@ Technical notes:
   handwriting only on API 33+, where the ignition replaces it.
 - Phase 2: let the effect follow the entry (flames growing from the strokes as they are written). It
   needs the mask and the field per frame, so it is more expensive; start with the sequential version.
+
+## Note on the CRT screen rectangle (Cyberpunk, Space Opera)
+
+The optional screen rectangle paints the layout box (rounded corners, vignette, scanlines). It is the one
+place where an effect draws a surface on purpose, which goes against rule 3 (draw only what you paint). It
+must stay a flag, and it must not be combined with `gradientFill`, which would tint the whole rectangle
+through `SrcAtop`. With it off, the scanlines and phosphor only show on the letters and their glow.
 
 ## Known gotchas in the current code
 
