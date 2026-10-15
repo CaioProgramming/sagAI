@@ -568,11 +568,11 @@ void main(){
   float thin = exp(-pow(xl / (.10 + .10 * d), 2.));
   float prof = smoothstep(-.02, .06, d) * (1. - smoothstep(.15, 1., d));
   float flow = .35 + .65 * noise(vec2(cell * 2.1, d * 4. - t * .9));
-  float smokeAmt = (.55 + .2 * sin(t * .6)) * uOpt.x * (1. + tf.x * .9);
-  float wa = thin * live * prof * flow * smoothstep(.08, .4, Sw.r) * smokeAmt * .85;
+  float smokeAmt = (.4 + .08 * sin(t * .6)) * uOpt.x * (1. + tf.x * .9);
+  float wa = thin * live * prof * flow * smoothstep(.03, .2, Sw.r) * smokeAmt * .85;
   float pn = fbm(vec2(uv.x * asp * 6. - tf.y * .5, uv.y * 5. - t * .8 - tf.z * .5));
-  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2 + tf.x * 1.2, 0., 1.) * (1. - m0) * smokeAmt * .4;
-  outc = mix(outc, mix(uC2, uC3, .5), max(wa, puff));
+  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 2.2 + tf.x * .5, 0., 1.) * (1. - m0) * smokeAmt * .7;
+  outc = mix(outc, vec3(.62, .56, .52), max(wa, puff));
 
   float tcol0 = g;
   outc = mix(outc, mix(uText * .8, uText, tcol0), m0);
@@ -840,8 +840,8 @@ void main(){
       opts: [['Fumaça', true], ['Corte de katana (abre o negativo)', true]],
       actions: [['Cortar agora', 'a']],
       evt: { a: 7 },
-      smear: { dir: 'up', len: 1.5 },
-      embers: { rate: 8, max: 30, vy: [10, 40], vx: 36, life: [2, 4.5], size: [0.8, 2.2], alpha: 0.45 },
+      smear: { dir: 'up', len: 1.1 },
+      embers: null,
       font: 'Hoshita (arquivo remoto). Aqui: Shippori Mincho.',
       now: 'levitate + sakuraWind (flutua com pétalas ao vento).',
       idea: 'Fumaça discreta, só fios finos e alguns puffs. Um único corte de katana de ponta a ponta do texto, sempre diferente: o ponto de entrada em y, o ângulo e o lado de onde a lâmina vem são sorteados. As metades se abrem como uma tesoura e o vão vira negativo (papel branco, tinta preta, linhas de velocidade), com borda vermelha e uma cicatriz que some devagar.'
