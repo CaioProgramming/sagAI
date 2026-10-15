@@ -5,8 +5,6 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -30,7 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,7 +41,7 @@ import com.ilustris.sagai.features.brain.domain.model.BrainNodeType
 import com.ilustris.sagai.features.brain.presentation.BrainViewModel
 import com.ilustris.sagai.features.brain.ui.components.BrainGlobeCanvas
 import com.ilustris.sagai.features.brain.ui.components.BrainGlobeCard
-import com.ilustris.sagai.ui.animations.ConstellationCanvas
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 
@@ -114,8 +112,6 @@ private fun BrainScreenContent(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val genre = state.genre
-    val accent = MaterialTheme.colorScheme.primary
-
     LaunchedEffect(sagaId, characterId) {
         if (characterId != null) {
             viewModel.loadCharacterBrain(sagaId.toInt(), characterId)
@@ -123,12 +119,6 @@ private fun BrainScreenContent(
             viewModel.loadStoryBrain(sagaId.toInt())
         }
     }
-
-    val ambientAlpha by animateFloatAsState(
-        targetValue = if (state.isLoading) 1f else .2f,
-        animationSpec = tween(durationMillis = 700),
-        label = "brainAmbientAlpha",
-    )
 
     with(sharedTransitionScope) {
         SagAITheme(genre = genre, darkTheme = true) {
@@ -146,14 +136,12 @@ private fun BrainScreenContent(
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background),
             ) {
-                ConstellationCanvas(
+                StarryTextPlaceholder(
                     modifier =
                         Modifier
-                            .fillMaxSize()
-                            .alpha(ambientAlpha),
-                    starCount = 90 + state.chapterKnowledgeClusters.sumOf { it.satelliteCount },
-                    knowledgeColor = accent.copy(alpha = 0.85f),
-                    chapterClusters = state.chapterKnowledgeClusters,
+                            .fillMaxSize(),
+                    starColor = Color.White.copy(alpha = 0.85f),
+                    starCount = BACKGROUND_STAR_COUNT,
                 )
 
                 if (graph != null) {
@@ -254,3 +242,6 @@ private fun BrainScreenContent(
         }
     }
 }
+
+// StarryTextPlaceholder caps the sky at 60 stars.
+private const val BACKGROUND_STAR_COUNT = 60
