@@ -1,0 +1,1553 @@
+<title>Laboratório de Títulos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Bangers&family=IM+Fell+English+SC&family=Rye&family=Shippori+Mincho:wght@800&family=Syne:wght@800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Layout: genre tabs, one dark stage, compact controls, a two-line note on what the app does today. */
+  :root {
+    --bg: #0c0807;
+    --panel: #17100e;
+    --line: #2d1f1a;
+    --fg: #f3e6dc;
+    --muted: #a08f84;
+    --accent: #ff7a1a;
+    --font-ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.5;
+    padding-block: 28px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  header h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  header p { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
+
+  .tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button {
+    font: inherit; font-weight: 500; color: var(--muted); background: transparent;
+    border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px; cursor: pointer; white-space: nowrap;
+  }
+  .tabs button[aria-selected="true"] { color: var(--fg); border-color: var(--accent); background: #24140c; }
+
+  .stage {
+    position: relative; width: 100%; aspect-ratio: 4 / 3; touch-action: pan-y; user-select: none; -webkit-user-select: none; max-width: 100%;
+    border-radius: 14px; overflow: hidden; background: #0a0605; border: 1px solid var(--line);
+  }
+  @media (max-width: 520px) { .stage { aspect-ratio: 4 / 4.6; } }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .stage .fallback { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
+
+  .about { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 0; font-size: 13.5px; }
+  .about dt { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11.5px; padding-top: 2px; }
+  .about dd { margin: 0; min-width: 0; }
+
+  .controls {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+    display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .field.wide { grid-column: 1 / -1; }
+  label, .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  output { font-variant-numeric: tabular-nums; color: var(--fg); font-size: 13px; }
+  input[type="text"] {
+    width: 100%; background: var(--bg); color: var(--fg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 12px; font: inherit;
+  }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .swatches button { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--line); padding: 0; cursor: pointer; }
+  .swatches button[aria-pressed="true"] { border-color: var(--fg); }
+  .swatches input[type="color"] { width: 38px; height: 34px; border: 0; padding: 0; background: none; cursor: pointer; }
+  input[type="file"] { color: var(--muted); font: inherit; font-size: 13px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .opts label { display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 15px; color: var(--fg); }
+  .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .acts button { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+  .check { flex-direction: row; align-items: center; gap: 10px; }
+  .check label { text-transform: none; letter-spacing: 0; font-size: 15px; color: var(--fg); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Laboratório de Títulos</h1>
+    <p>Um efeito por gênero, todos nascendo da cor do texto. Troque de aba para comparar.</p>
+  </header>
+
+  <div class="tabs" id="tabs" role="tablist" aria-label="Gênero"></div>
+
+  <div class="stage" id="stage">
+    <canvas id="gl" aria-label="Texto com efeito"></canvas>
+    <canvas id="embers" aria-hidden="true"></canvas>
+    <div class="fallback" id="fallback" hidden>Seu navegador não conseguiu iniciar o WebGL.</div>
+  </div>
+
+  <dl class="about">
+    <dt>Hoje no app</dt><dd id="a-now"></dd>
+    <dt>Proposta</dt><dd id="a-idea"></dd>
+    <dt>Fonte</dt><dd id="a-font"></dd>
+    <dt>Margem</dt><dd id="a-pad"></dd>
+    <dt>Interação</dt><dd id="a-touch"></dd>
+    <dt>Entrada</dt><dd id="a-entry"></dd>
+  </dl>
+
+  <div class="controls">
+    <div class="field wide">
+      <label for="txt">Texto</label>
+      <input type="text" id="txt" maxlength="40" autocomplete="off">
+    </div>
+    <div class="field">
+      <div class="row"><label for="intensity">Intensidade</label><output id="o-int"></output></div>
+      <input type="range" id="intensity" min="0.4" max="2" step="0.05" value="1">
+    </div>
+    <div class="field">
+      <div class="row"><label for="height" id="l-height">Extensão</label><output id="o-h"></output></div>
+      <input type="range" id="height" min="0.3" max="1.4" step="0.05" value="0.85">
+    </div>
+    <div class="field">
+      <div class="row"><label for="speed">Velocidade</label><output id="o-s"></output></div>
+      <input type="range" id="speed" min="0.3" max="2.5" step="0.05" value="1">
+    </div>
+    <div class="field">
+      <span class="label">Cor do texto</span>
+      <div class="swatches" id="swatches" role="group" aria-label="Cor do texto">
+        <input type="color" id="color" value="#ffffff" aria-label="Escolher outra cor">
+      </div>
+    </div>
+    <div class="field wide">
+      <label for="fontFile">Usar a fonte do app (.ttf ou .otf)</label>
+      <input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf">
+    </div>
+    <div class="field wide">
+      <span class="label">Limites do Compose</span>
+      <div class="opts">
+        <label><input type="checkbox" id="boxOn" checked> Limitar à caixa do texto</label>
+        <label><input type="checkbox" id="boxSoft" checked> Suavizar a borda</label>
+        <label><input type="checkbox" id="boxShow" checked> Mostrar a caixa</label>
+      </div>
+    </div>
+    <div class="field">
+      <div class="row"><label for="boxScale">Margem</label><output id="o-box"></output></div>
+      <input type="range" id="boxScale" min="0" max="2" step="0.05" value="1">
+    </div>
+    <div class="field wide">
+      <span class="label">Interação</span>
+      <div class="opts">
+        <label><input type="checkbox" id="touchOn" checked> Responder ao toque</label>
+        <label><input type="checkbox" id="touchLock"> Travar a rolagem sobre o palco</label>
+      </div>
+    </div>
+    <div class="field wide">
+      <span class="label">Entrada</span>
+      <div class="opts">
+        <label><input type="checkbox" id="entryOn" checked> Tocar a animação de entrada</label>
+      </div>
+      <div class="acts"><button type="button" id="replay">Reproduzir entrada</button></div>
+    </div>
+    <div class="field wide" id="optWrap" hidden>
+      <span class="label">Camadas</span>
+      <div class="opts" id="opts"></div>
+    </div>
+    <div class="field wide" id="actWrap" hidden>
+      <div class="acts" id="acts"></div>
+    </div>
+    <div class="field check wide" id="embWrap">
+      <input type="checkbox" id="emb" checked>
+      <label for="emb">Partículas (poucas)</label>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var glCanvas = document.getElementById('gl');
+  var emCanvas = document.getElementById('embers');
+  var emCtx = emCanvas.getContext('2d');
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- color helpers ----------
+  function hex2rgb(h) { h = h.replace('#', ''); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16) / 255; }); }
+  function rgb2hsl(c) {
+    var r = c[0], g = c[1], b = c[2], mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, h = 0, s = 0, d = mx - mn;
+    if (d > 1e-6) {
+      s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn);
+      h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      h *= 60;
+    }
+    return [h, s, l];
+  }
+  function hsl(h, s, l) {
+    h = ((h % 360) + 360) % 360 / 360;
+    function f(n) { var k = (n + h * 12) % 12, a = s * Math.min(l, 1 - l); return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); }
+    return [f(0), f(8), f(4)];
+  }
+  function mixc(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function css(c) { return Math.round(c[0] * 255) + ',' + Math.round(c[1] * 255) + ',' + Math.round(c[2] * 255); }
+  var WHITE = [1, 1, 1];
+  // dark brand colors (a wine red, a saddle brown) need lifting to read as text on the dark stage
+  function lift(T) { var x = rgb2hsl(T); return x[2] < 0.58 ? hsl(x[0], x[1], 0.62) : T; }
+
+  // Every palette starts from the single text color the user (or the genre) provides.
+  function palFire(hex) {
+    var T = lift(hex2rgb(hex)), x = rgb2hsl(T), hb = x[1] < 0.12 ? 22 : x[0], sb = Math.max(x[1], 0.75);
+    var c4 = mixc(T, WHITE, 0.22), c3 = hsl(hb, sb, 0.62), c2 = hsl(hb - 16, sb, 0.5), c1 = hsl(hb - 50, sb * 0.9, 0.24);
+    return { text: T, c1: c1, c2: c2, c3: c3, c4: c4, halo: mixc(hsl(hb + 170, 0.8, 0.68), c3, 0.35), spark: [css(c4), css(c3)] };
+  }
+  function palHorror(hex) {
+    var T = lift(hex2rgb(hex)), x = rgb2hsl(T), h = x[1] < 0.06 ? 200 : x[0], sat = Math.min(0.9, Math.max(0.3, x[1] * 1.2 + 0.25));
+    var c3 = hsl(h, sat, 0.42), c4 = hsl(h + 6, sat * 0.8, 0.8);
+    return { text: T, c1: hsl(h, sat, 0.07), c2: hsl(h, sat, 0.22), c3: c3, c4: c4, halo: hsl(h, sat, 0.4), spark: [css(c4), css(c3)] };
+  }
+  function palCowboy(hex) {
+    var T = lift(hex2rgb(hex)), x = rgb2hsl(T), h = x[1] < 0.12 ? 24 : x[0];
+    var c2 = hsl(h - 8, 1, 0.46), c3 = hsl(h + 6, 1, 0.58), c4 = mixc(hsl(h + 14, 1, 0.82), WHITE, 0.3);
+    return { text: T, c1: hsl(h - 18, 0.9, 0.2), c2: c2, c3: c3, c4: c4, halo: hsl(h - 6, 1, 0.5), spark: [css(c4), css(c3)] };
+  }
+  function palShinobi(hex) {
+    var T = lift(hex2rgb(hex)), x = rgb2hsl(T), h = x[1] < 0.18 ? 352 : x[0];
+    var c2 = mixc([0.40, 0.42, 0.48], T, 0.14), c3 = mixc([0.68, 0.70, 0.76], T, 0.16);
+    return { text: T, c1: [0.1, 0.1, 0.14], c2: c2, c3: c3, c4: T, halo: hsl(h, 0.85, 0.55), spark: [css(c3), css(c2)] };
+  }
+  function palCrime(hex) {
+    var T = lift(hex2rgb(hex)), x = rgb2hsl(T), h = x[1] < 0.12 ? 320 : x[0];
+    var c1, c2, c3, c4;
+    if (hex.toLowerCase() === '#e91e63') {   // the app's own gradient: pink, light pink, mint, violet
+      c1 = hex2rgb('#E91E63'); c2 = hex2rgb('#FF6B9D'); c3 = hex2rgb('#7FFFEE'); c4 = hex2rgb('#9B5DE5');
+    } else {
+      c1 = hsl(h - 60, 1, 0.58); c2 = hsl(h, 1, 0.62); c3 = hsl(h + 45, 1, 0.66); c4 = hsl(h + 90, 0.95, 0.7);
+    }
+    return { text: T, c1: c1, c2: c2, c3: c3, c4: c4, halo: c2, spark: [css(c4), css(c3)] };
+  }
+  function palHeroes(hex) {
+    var T = hex2rgb(hex), x = rgb2hsl(T), h = x[0];
+    if (hex.toLowerCase() === '#2845d6') {   // the app's own palette: navy, blue, cyan, ice, gold
+      return { text: T, c1: hex2rgb('#0D1A63'), c2: hex2rgb('#4169F5'), c3: hex2rgb('#00D9FF'), c4: hex2rgb('#E6E9FF'), halo: hex2rgb('#FDC500'), spark: ['230,233,255', '0,217,255'] };
+    }
+    var c3 = hsl(h - 36, 1, 0.55), c4 = mixc(hsl(h, 0.9, 0.9), WHITE, 0.4);
+    return { text: T, c1: hsl(h, 0.8, 0.16), c2: hsl(h, 0.9, 0.58), c3: c3, c4: c4, halo: hsl(h + 180, 1, 0.5), spark: [css(c4), css(c3)] };
+  }
+
+  function palCyber(hex) {
+    var T = lift(hex2rgb(hex)), x = rgb2hsl(T), h = x[0];
+    if (hex.toLowerCase() === '#6e48aa') return { text: T, c1: hex2rgb('#9D50BB'), c2: hex2rgb('#00F5FF'), c3: hex2rgb('#FF2EFF'), c4: hex2rgb('#E8DCFF'), halo: hex2rgb('#E8DCFF'), spark: ['0,245,255', '255,46,255'] };
+    var c2 = hsl(h + 150, 1, 0.55), c3 = hsl(h - 40, 1, 0.6);
+    return { text: T, c1: hsl(h, 0.85, 0.6), c2: c2, c3: c3, c4: mixc(T, WHITE, 0.6), halo: mixc(T, WHITE, 0.6), spark: [css(c2), css(c3)] };
+  }
+  function palSpace(hex) {
+    var T = lift(hex2rgb(hex)), x = rgb2hsl(T), h = x[0];
+    if (hex.toLowerCase() === '#0081a7') return { text: T, c1: hex2rgb('#0081A7'), c2: hex2rgb('#48CAE4'), c3: hex2rgb('#C9B1FF'), c4: hex2rgb('#90E0EF'), halo: hex2rgb('#90E0EF'), spark: ['144,224,239', '201,177,255'] };
+    var c3 = hsl(h + 60, 0.8, 0.8);
+    return { text: T, c1: hsl(h, 0.9, 0.4), c2: hsl(h, 0.8, 0.62), c3: c3, c4: hsl(h, 0.7, 0.82), halo: hsl(h, 0.7, 0.82), spark: [css(c3), css(hsl(h, 0.8, 0.62))] };
+  }
+  function palPunk(hex) {
+    var T = lift(hex2rgb(hex));
+    return { text: T, c1: T, c2: T, c3: T, c4: T, halo: T, spark: [css(T), '255,126,0'] };
+  }
+
+  // ---------- shaders ----------
+  var VS = 'attribute vec2 p; varying vec2 vUv; void main(){ vUv = p * 0.5 + 0.5; gl_Position = vec4(p, 0., 1.); }';
+  var COMMON = `
+precision highp float;
+uniform sampler2D uMask, uS, uCol;
+uniform float uTime, uIntensity, uHeight, uTextY, uTextH;
+uniform vec2 uRes;
+uniform vec3 uC1, uC2, uC3, uC4, uHalo, uText, uOpt;
+uniform float uEvtA, uEvtB, uSeedB, uSeedA;
+uniform float uEntry, uEntryDur;
+uniform vec2 uTx;
+uniform vec4 uBox, uFw;
+uniform vec4 uTrail[8];
+uniform vec2 uTrailV[8];
+uniform vec4 uPtr;
+uniform vec4 uCut;
+// recent finger positions with a fading strength; returns (influence, weighted velocity x, y)
+vec3 trailField(vec2 uv, float asp, float rad){
+  vec3 acc = vec3(0.);
+  for (int i = 0; i < 8; i++){
+    vec2 d = (uv - uTrail[i].xy) * vec2(asp, 1.);
+    float g = exp(-dot(d, d) / (rad * rad)) * uTrail[i].z;
+    acc.x += g; acc.yz += uTrailV[i] * g;
+  }
+  return acc;
+}
+uniform vec2 uBoxCfg;
+varying vec2 vUv;
+// A CRT screen filling the layout box: rounded corners, vignette. Returns (vignette, mask, radius^2).
+vec4 crtScreen(vec2 uv, float asp, float t){
+  vec2 px = uv * uRes, lo = uBox.xy * uRes, hi = uBox.zw * uRes;
+  vec2 c = (lo + hi) * .5, h = max((hi - lo) * .5, vec2(1.));
+  vec2 q = (px - c) / h;
+  vec2 d = abs(px - c) - (h - 18.);
+  float sd = length(max(d, vec2(0.))) + min(max(d.x, d.y), 0.) - 18.;
+  return vec4(1. - .45 * dot(q, q), 1. - smoothstep(-1.5, 1.5, sd), dot(q, q), 0.);
+}
+// Simulates the bounds a Compose layout gives the title: nothing may show outside the box.
+// With the soft edge on, every effect fades to the background over the margin instead of being cut.
+vec3 boxed(vec3 c, vec2 uv){
+  if (uBoxCfg.x < .5) return c;
+  vec2 px = uv * uRes, lo = uBox.xy * uRes, hi = uBox.zw * uRes;
+  float soft = uBoxCfg.y;
+  float fx = max(soft > .5 ? uFw.x : 1., 1.), ft = max(soft > .5 ? uFw.y : 1., 1.), fb = max(soft > .5 ? uFw.z : 1., 1.);
+  float m = smoothstep(lo.x, lo.x + fx, px.x) * (1. - smoothstep(hi.x - fx, hi.x, px.x));
+  m *= smoothstep(lo.y, lo.y + fb, px.y) * (1. - smoothstep(hi.y - ft, hi.y, px.y));
+  vec3 o = mix(vec3(.039, .024, .020), c, m);
+  vec2 d = min(px - lo, hi - px);
+  float e = min(d.x, d.y);
+  o = mix(o, vec3(.35, .75, 1.), (1. - smoothstep(0., 1.6, abs(e))) * .7 * step(-1.6, e) * step(.5, uFw.w));
+  return o;
+}
+float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+  float a = hash(i), b = hash(i + vec2(1., 0.)), c = hash(i + vec2(0., 1.)), d = hash(i + vec2(1., 1.));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y); }
+float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 4; i++){ v += a * noise(p); p = p * 2.03 + vec2(7.1, 3.7); a *= .5; } return v; }
+`;
+
+  var FS_FIRE = COMMON + `
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y;
+  float ent = uEntry, wd = max(uEntryDur, .01);
+  float ign = smoothstep(0., .45, ent);
+  float flare = exp(-ent * 1.3);
+  float tx = clamp((uv.x - uTx.x) / max(uTx.y - uTx.x, .01), 0., 1.);
+  float pen = clamp(ent / wd, 0., 1.);
+  float tp = ent - tx * wd;
+  float written = 1.;
+  float filled = 1.;
+  float dy = uv.y - uTextY;
+  float up = smoothstep(-.02, .25, dy);
+  float sc = uHeight / 0.85;
+  vec2 q = vec2(uv.x * asp * 2.2, uv.y * 1.4 - uTime * .5);
+  float nx = fbm(q) - .5;
+  float ny = fbm(q * 1.5 + vec2(3.1, -uTime * .4)) - .5;
+  vec3 tf = trailField(uv, asp, .16);
+  // only the flames above the text feel the finger; the base stays put
+  float topY = uTextY + uTextH * .5;
+  float upK = smoothstep(topY, topY + uTextH * .7, uv.y);
+  vec2 su = vec2(uv.x + nx * .10 * up - clamp(tf.y * .05, -.08, .08) * upK, uTextY + max(dy, 0.) / sc + min(dy, 0.) + ny * .05 * up - tf.x * .04 * upK);
+  vec4 S = texture2D(uS, su);
+  float xs = uv.x * asp + nx * .35 * up;
+  float s1 = noise(vec2(xs * 16., uv.y * .8 - uTime * .45));
+  float s2 = noise(vec2(xs * 40. + 9., uv.y * 1.4 - uTime * .8));
+  float streak = smoothstep(.22, .78, .6 * s1 + .4 * s2);
+  float h = clamp(pow(S.r, .8) * (.22 + 1.0 * streak) * uIntensity * (1. + tf.x * .6 * upK) * ign * (1. + .6 * flare), 0., 1.4);
+  vec3 col = mix(uC1, uC2, smoothstep(.12, .45, h));
+  col = mix(col, uC3, smoothstep(.42, .80, h));
+  col = mix(col, uC4, smoothstep(.78, 1.1, h));
+  float alpha = smoothstep(.03, .24, h);
+  vec3 bg = vec3(.039, .024, .020);
+  vec3 outc = bg + uC2 * S.g * .42 * uIntensity * ign;
+  outc = mix(outc, col, alpha);
+  outc += uHalo * S.b * .55 * uIntensity * (.3 + .7 * ign);
+  vec2 pu = vec2(.5, uTextY) + (uv - vec2(.5, uTextY)) / (1. + .045 * exp(-ent * 14.));
+  float m0r = texture2D(uMask, pu).r;
+  float m0 = mix(m0r * (1. - smoothstep(.5, .9, texture2D(uS, uv).b)), m0r, filled) * written;
+  float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
+  m0 *= 1. - smoothstep(.6, 1., g) * .7 * (1. - smoothstep(.15, .75, streak + .12)) * ign;
+  vec3 tw = mix(uText, vec3(1.), .62);
+  vec3 tcol = mix(mix(tw, uHalo, .18), tw, g);
+  tcol = mix(tcol, vec3(1., .97, .9), flare * .85);
+  outc = mix(outc, tcol, m0);
+  outc += (hash(uv * uRes + fract(uTime) * 91.7) - .5) * .07;
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+  var FS_HORROR = COMMON + `
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
+  // materializes out of the fog, flickering
+  float ent = uEntry, wd = max(uEntryDur, .01);
+  float kE = clamp(ent / wd, 0., 1.);
+  float ign = smoothstep(.7, 1., kE);
+  float mat = smoothstep(0., .2, kE * 1.5 - fbm(vec2(uv.x * asp * 4., uv.y * 6.)) * .9 + .1);
+  float fk = 1. - step(.5, hash(vec2(floor(ent * 16.), 3.1))) * (1. - smoothstep(.6, .95, kE)) * .8;
+  float bot = uTextY - uTextH * .5;
+  float g = clamp((uv.y - bot) / uTextH, 0., 1.);
+
+  // possession glitch: short bursts where a torn band slides sideways and the channels split
+  float tick = floor(t * 7.);
+  float gl = step(.9, hash(vec2(tick, 1.3))) * uOpt.y;
+  float yc = bot + hash(vec2(tick, 2.7)) * uTextH;
+  float bh = uTextH * (.2 + .5 * hash(vec2(tick, 4.1)));
+  float inBand = gl * (1. - smoothstep(bh, bh * 1.5, abs(uv.y - yc)));
+  float tear = (hash(vec2(tick, 5.5)) - .5) * .10 * inBand;
+  // magnifying lens that follows the finger
+  vec2 pp = uPtr.xy; float act = uPtr.w;
+  vec2 dl = (uv - pp) * vec2(asp, 1.);
+  float kl = (1. - smoothstep(0., .13, length(dl))) * act;
+  vec2 uvm = pp + (uv - pp) * (1. - .16 * kl);
+  float w1 = fbm(vec2(uv.x * asp * 3., uv.y * 3. + t * .15)) - .5;
+  vec2 mu = uvm + vec2(tear + w1 * .004, 0.);
+  float cs = .006 * gl;
+  float mR = texture2D(uMask, mu + vec2(cs, 0.)).r;
+  float mB = texture2D(uMask, mu - vec2(cs, 0.)).r;
+  float m0 = texture2D(uMask, mu).r * mat * fk;
+  vec2 go = vec2(.008, -.006) * (.6 + .8 * (sin(t * .9) * .5 + .5));
+  float gh = texture2D(uMask, mu - go).r * mat;
+  float blink = 1. - gl * .7 * step(.5, hash(vec2(tick, 9.1)));
+  float fl = .93 + .07 * noise(vec2(t * 14., 2.));
+  vec4 S = texture2D(uS, uv);
+
+  // cold light from above, ground fog crawling sideways, breath rising off the letters
+  float cone = max(1. - length((uv - vec2(.5, 1.15)) * vec2(asp * .8, .9)), 0.);
+  vec3 bg = vec3(.004, .008, .016) + uC2 * .5 * cone * cone;
+  float f1 = fbm(vec2(uv.x * asp * 2.0 + t * .10, uv.y * 3.5 + t * .02));
+  float f2 = fbm(vec2(uv.x * asp * 3.4 - t * .17, uv.y * 5. + 7.));
+  float ground = 1. - smoothstep(bot - uTextH * .6, uTextY + uTextH * 2. * (uHeight / .85), uv.y);
+  float dens = smoothstep(.25, .9, f1 * .65 + f2 * .55) * ground * uOpt.x * (1. - kl * .5) * smoothstep(0., .4, kE);
+  float sc = uHeight / .85;
+  float dyC = uv.y - uTextY;
+  vec2 q = vec2(uv.x * asp * 2.4, uv.y * 1.6 - t * .35);
+  float nx = fbm(q) - .5;
+  vec2 su = vec2(uv.x + nx * .09, uTextY + max(dyC, 0.) / sc + min(dyC, 0.));
+  vec4 Sw = texture2D(uS, su);
+  float s1 = noise(vec2((uv.x * asp + nx * .3) * 18., uv.y * .8 - t * .4));
+  float hb = pow(Sw.r, .9) * (.15 + .85 * smoothstep(.25, .8, s1)) * .6;
+  float wa = smoothstep(.05, .5, hb) * .38 * uOpt.x * ign;
+
+  vec3 outc = bg + uC2 * S.g * .22;
+  outc = mix(outc, mix(uC2, uC3, .35) * .9, dens * .55);
+  outc = mix(outc, mix(uC2, uC4, hb), wa);
+  outc += uC3 * gh * (1. - m0) * .22 * fl;
+  outc += uC3 * S.b * .6 * fl;
+
+  // ectoplasm drips (optional)
+  float x = uv.x * asp * 18.;
+  float cell = floor(x);
+  float xl = fract(x) - .5;
+  float xc = (cell + .5) / (asp * 18.);
+  float ph = hash(vec2(cell, 7.3));
+  float live = step(.2, hash(vec2(cell, 2.1)));
+  float cyc = fract(t * .06 + ph);
+  float grow = 1. - pow(1. - clamp(cyc * 1.6, 0., 1.), 3.);
+  float fade = 1. - smoothstep(.82, 1., cyc);
+  float len = uHeight * uTextH * 1.5 * (.25 + .75 * hash(vec2(cell, 5.5))) * grow;
+  float d = bot - uv.y;
+  float cov = max(texture2D(uMask, vec2(xc, bot + .010)).r, texture2D(uMask, vec2(xc, bot + .022)).r);
+  float wdt = mix(.13, .26, smoothstep(len * .55, len, d));
+  float sd = d < len ? abs(xl) - wdt : length(vec2(xl, (d - len) * 18.)) - wdt * 1.15;
+  float drip = (1. - smoothstep(-.03, .04, sd)) * step(0., d + .004) * cov * live * fade * uOpt.z;
+  float hl = exp(-pow((xl + .05) / .05, 2.)) * drip;
+  outc = mix(outc, mix(uC3, uC4, hl * .9), drip);
+
+  // letters: pale, cold, never fully hidden by the fog
+  vec3 tcol = mix(uC4, uText, .35) * fl * (1. + kl * .12);
+  outc = mix(outc, tcol, m0 * blink * (1. - dens * .3));
+  outc += (uC3 * mB + uC2 * mR * 1.5) * gl * .6 * (1. - m0);
+  outc *= 1. - 1.3 * dot(uv - .5, uv - .5);
+  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * (.06 + .5 * inBand);
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+  var FS_COWBOY = COMMON + `
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
+  float age = uEvtA;
+  float top = uTextY + uTextH * .5;
+  float heat = 1.25 * exp(-age / 3.4) + .10;
+  float pressK = exp(-age * 14.);
+  vec2 ctr = vec2(.5, uTextY);
+  float sc = uHeight / .85;
+  float above = smoothstep(0., .3, uv.y - top);
+  float nx = fbm(vec2(uv.x * asp * 3., uv.y * 2. - t * .3)) - .5;
+  // the iron lands: a quick press, then a faint shimmer rising off the hot letters
+  vec2 pu = ctr + (uv - ctr) / (1. + .045 * pressK);
+  vec2 mu = pu + vec2(nx * .006 * heat * above + sin(uv.y * 90. - t * 3.) * .0012 * heat * above, 0.);
+  float m0 = texture2D(uMask, mu).r;
+  vec4 S0 = texture2D(uS, uv);
+  vec3 tf = trailField(uv, asp, .15);
+
+  // no surface and no ambient light: only the mark itself, a tight bloom hugging the letters, and the smoke
+  vec3 outc = vec3(.039, .024, .020) + uC3 * S0.b * heat * .22 * uIntensity + vec3(1., .9, .7) * S0.b * exp(-age * 7.) * .5;
+
+  // the mark: thick strokes hold heat longest, a crust forms in patches as it cools
+  float crust = smoothstep(.45, .75, fbm(vec2(uv.x * asp * 11., uv.y * 13.) + 3.));
+  float hp = heat * (.72 + .5 * S0.b) + (fbm(vec2(uv.x * asp * 5., uv.y * 6.)) - .5) * .3 * heat;
+  hp *= 1. - crust * .55 * (1. - smoothstep(.15, 1.2, heat));
+  hp += tf.x * .3;
+  hp = max(hp, 0.) * uIntensity;
+  vec3 col = mix(vec3(.05, .03, .025), uC1, smoothstep(.05, .28, hp));
+  col = mix(col, uC2, smoothstep(.22, .55, hp));
+  col = mix(col, uC3, smoothstep(.5, .95, hp));
+  col = mix(col, uC4, smoothstep(.95, 1.4, hp));
+  col += uC4 * S0.b * m0 * exp(-age * 6.) * .5;
+  outc = mix(outc, col, m0);
+
+  // a few thin wisps leaving the letters, plus soft puffs around them, fading as the mark cools
+  vec2 su = vec2(uv.x, uTextY + max(uv.y - uTextY, 0.) / sc + min(uv.y - uTextY, 0.));
+  vec4 Sw = texture2D(uS, su);
+  float wx = uv.x * asp * 15.;
+  float cell = floor(wx);
+  float live = max(step(.5, hash(vec2(cell, 3.7))), step(.15, tf.x));
+  float ph = hash(vec2(cell, 1.9)) * 6.28;
+  float d = (uv.y - top) / (uTextH * 1.6 * sc);
+  float sway = sin(d * 7. + t * 1.6 + ph) * .28 + (noise(vec2(cell * 1.3, d * 3. - t * .5)) - .5) * .5;
+  float xl = fract(wx) - .5 - sway * smoothstep(0., .3, d) - tf.y * .35;
+  float thin = exp(-pow(xl / (.10 + .10 * d), 2.));
+  float prof = smoothstep(-.02, .06, d) * (1. - smoothstep(.15, 1., d));
+  float flow = .35 + .65 * noise(vec2(cell * 2.1, d * 4. - t * .9));
+  float smokeAmt = (.2 + .8 * exp(-age / 2.8)) * uOpt.x * (1. + tf.x * .9);
+  float wa = thin * live * prof * flow * smoothstep(.08, .4, Sw.r) * smokeAmt * .85;
+  float pn = fbm(vec2(uv.x * asp * 6. - tf.y * .5, uv.y * 5. - t * .8 - tf.z * .5));
+  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2 + tf.x * .5, 0., 1.) * (1. - m0) * smokeAmt * .4;
+  outc = mix(outc, vec3(.62, .56, .52), max(wa, puff));
+
+  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .05;
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+  var FS_SHINOBI = COMMON + `
+float wedges(vec2 pa, float seed){
+  float ang = atan(pa.y, pa.x);
+  float r = length(pa);
+  float v = .8 * noise(vec2(ang * 7., seed)) + .3 * noise(vec2(ang * 34. + 3., seed * 1.7));
+  return smoothstep(.6, .62, v) * smoothstep(.06, .2, r);
+}
+vec2 trailBlade(vec2 uv, float asp){
+  float core = 0., glow = 0.;
+  for (int i = 0; i < 7; i++){
+    vec4 a = uTrail[i], b = uTrail[i + 1];
+    float str = min(a.z, b.z);
+    vec2 pa = (uv - a.xy) * vec2(asp, 1.);
+    vec2 ba = (b.xy - a.xy) * vec2(asp, 1.);
+    float hh = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0., 1.);
+    float d = length(pa - ba * hh);
+    float w = (.003 + .010 * (1. - float(i) / 7.)) * str;
+    float on = step(.03, str);
+    core = max(core, (1. - smoothstep(w * .5, w, d)) * on);
+    glow = max(glow, exp(-d / (w * 5. + .002)) * str * on);
+  }
+  return vec2(core, glow);
+}
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
+  float ent = uEntry, wd = max(uEntryDur, .01);
+  float ign = smoothstep(wd, wd + 1.2, ent);
+  float tx = clamp((uv.x - uTx.x) / max(uTx.y - uTx.x, .01), 0., 1.);
+  float pen = clamp(ent / wd, 0., 1.);
+  float tp = ent - tx * wd;
+  float written = smoothstep(0., .05, tp);
+  float filled = smoothstep(.15, .7, tp);
+
+  float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
+  float top = uTextY + uTextH * .5;
+  vec2 ctrS = vec2(.5, uTextY);
+  vec2 pa = (uv - ctrS) * vec2(asp, 1.);
+
+  // katana: every cut is random (angle, place, side it starts from) and sometimes comes as 2 or 3 in a row.
+  // Each cut opens a slit of negative along its path while the halves slide apart.
+  float cnt = 1.;
+  float L = asp * .65;
+  vec2 mu = uv;
+  float inBand = 0., edge = 0., blade = 0., wgs = 0., side = 1., flashL = 0., scar = 0.;
+  for (int i = 0; i < 3; i++){
+    float fi = float(i);
+    float sd = uSeedA * 13.7 + fi * 5.3;
+    float on = step(fi, cnt - .5) * uOpt.y;
+    float tci = uEvtA - .55 - fi * .11 - hash(vec2(sd, 6.)) * .05;
+    float cutOn = on * step(0., tci);
+    float ang = (.12 + .5 * hash(vec2(sd, 1.))) * (hash(vec2(sd, 2.)) > .5 ? 1. : -1.);
+    vec2 dirR = vec2(cos(ang), sin(ang));
+    if (hash(vec2(sd, 5.)) > .5) dirR = -dirR;
+    vec2 offR = vec2(0., (hash(vec2(sd, 4.)) - .5) * uTextH * 1.1);
+    // a drag by the user replaces the random cut: same direction, same place
+    float userOn = step(.5, uCut.w);
+    vec2 dirS = mix(dirR, vec2(cos(uCut.z), sin(uCut.z)), userOn);
+    vec2 nS = vec2(-dirS.y, dirS.x);
+    vec2 off = mix(offR, (uCut.xy - ctrS) * vec2(asp, 1.), userOn);
+    vec2 pq = pa - off;
+    float dc = dot(pq, nS), uc = dot(pq, dirS);
+    float prog = clamp(tci / .12, 0., 1.);
+    float vis = step(uc, -L + 2. * L * prog) * step(-L, uc);
+    float taper = smoothstep(-L, -L * .85, uc) * (1. - smoothstep(L * .85, L, uc));
+    float w = .005 + .008 * (1. - exp(-max(tci, 0.) * 30.));
+    blade = max(blade, (1. - smoothstep(w * .4, w, abs(dc))) * vis * taper * exp(-max(tci, 0.) * 5.) * cutOn);
+    // the halves open like scissors (wider in the middle); the negative is exactly the gap between them
+    float lens = clamp(1. - pow(abs(uc) / L, 3.), 0., 1.);
+    float sep = .03 * (1. - exp(-max(tci, 0.) * 22.)) * exp(-max(tci - .30, 0.) * 3.2) * cutOn * lens;
+    float sgn = dc >= 0. ? 1. : -1.;
+    mu -= nS / vec2(asp, 1.) * sep * sgn;
+    side *= step(0., sgn * dot((mu - ctrS) * vec2(asp, 1.) - off, nS)) + (1. - cutOn);
+    float bw = sep * 1.1;
+    flashL = max(flashL, exp(-abs(dc) / .011) * vis * taper * exp(-max(tci, 0.) * 28.) * cutOn);
+    scar = max(scar, (1. - smoothstep(.0012, .0035, abs(dc))) * taper * step(-L, uc) * step(uc, L) * smoothstep(.18, .4, tci) * exp(-max(tci - .4, 0.) * 1.6) * cutOn);
+    float dcr = dc + (fbm(vec2(uc * 14., 4. + sd)) - .5) * bw * .7;
+    float brush = noise(vec2(uc * 3., dc * 90.));
+    float ib = (1. - smoothstep(bw - .004, bw + .004, abs(dcr) + brush * bw * .18)) * step(.003, bw) * vis;
+    inBand = max(inBand, ib);
+    edge = max(edge, exp(-pow((abs(dcr) - bw) / .007, 2.)) * step(.003, bw) * vis);
+    wgs = max(wgs, wedges(pq, sd) * ib);
+  }
+  float tc0 = uEvtA - .55;
+  mu.x += (noise(vec2(floor(max(tc0, 0.) * 40.), 3.)) - .5) * .008 * exp(-max(tc0, 0.) * 9.) * step(0., tc0) * uOpt.y;
+  // handwriting in white ink (outline first, fill behind the pen), like the crime title
+  float m0r = texture2D(uMask, mu).r * min(side, 1.);
+  float m0 = mix(m0r * (1. - smoothstep(.5, .9, texture2D(uS, uv).b)), m0r, filled) * written;
+
+  vec4 S = texture2D(uS, uv);
+  vec3 tf = trailField(uv, asp, .15);
+  // no backdrop: only the text, the smoke and the cut
+  vec3 outc = vec3(.039, .024, .020);
+
+  // subtle smoke: a few thin wisps and soft puffs, same recipe as the cowboy mark
+  float sc = uHeight / .85;
+  vec2 su = vec2(uv.x, uTextY + max(uv.y - uTextY, 0.) / sc + min(uv.y - uTextY, 0.));
+  vec4 Sw = texture2D(uS, su);
+  float wx = uv.x * asp * 15.;
+  float cell = floor(wx);
+  float live = max(step(.5, hash(vec2(cell, 3.7))), step(.15, tf.x));
+  float ph = hash(vec2(cell, 1.9)) * 6.28;
+  float d = (uv.y - top) / (uTextH * 1.6 * sc);
+  float sway = sin(d * 7. + t * 1.6 + ph) * .28 + (noise(vec2(cell * 1.3, d * 3. - t * .5)) - .5) * .5;
+  float xl = fract(wx) - .5 - sway * smoothstep(0., .3, d) - tf.y * .35;
+  float thin = exp(-pow(xl / (.10 + .10 * d), 2.));
+  float prof = smoothstep(-.02, .06, d) * (1. - smoothstep(.15, 1., d));
+  float flow = .35 + .65 * noise(vec2(cell * 2.1, d * 4. - t * .9));
+  float smokeAmt = (.4 + .08 * sin(t * .6)) * uOpt.x * (1. + tf.x * .9) * ign;
+  float wa = thin * live * prof * flow * smoothstep(.03, .2, Sw.r) * smokeAmt * .85;
+  float pn = fbm(vec2(uv.x * asp * 6. - tf.y * .5, uv.y * 5. - t * .8 - tf.z * .5));
+  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 2.2 + tf.x * .5, 0., 1.) * (1. - m0) * smokeAmt * .7;
+  outc = mix(outc, vec3(.62, .56, .52), max(wa, puff));
+
+  float tcol0 = g;
+  outc = mix(outc, mix(vec3(1.), mix(uText * .8, uText, tcol0), ign), m0);
+
+  // inside a slit the world is a negative: white paper, black ink, speed lines from the cut
+  vec3 neg = mix(vec3(1., .97, .97), vec3(.02, .015, .02), max(wgs, m0));
+  outc = mix(outc, neg, inBand);
+  vec2 tbl = trailBlade(uv, asp);
+  outc += vec3(1.) * tbl.x + uText * tbl.y * .6;
+  outc += uText * edge * 1.1 + vec3(1.) * blade * 1.2 + vec3(1.) * flashL * .7 + uText * scar * .45;
+  outc *= 1. - .35 * smoothstep(0., .55, uEvtA) * (1. - step(0., tc0)) * uOpt.y;
+  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .05;
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+  var FS_CRIME = COMMON + `
+vec3 ramp(float ph){
+  float s = ph * 4.;
+  vec3 c = mix(uC1, uC2, smoothstep(0., 1., clamp(s, 0., 1.)));
+  c = mix(c, uC3, smoothstep(0., 1., clamp(s - 1., 0., 1.)));
+  c = mix(c, uC4, smoothstep(0., 1., clamp(s - 2., 0., 1.)));
+  return mix(c, uC1, smoothstep(0., 1., clamp(s - 3., 0., 1.)));
+}
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y;
+  float ent = uEntry, wd = max(uEntryDur, .01);
+  float ign = smoothstep(wd, wd + 1.2, ent);
+  float tx = clamp((uv.x - uTx.x) / max(uTx.y - uTx.x, .01), 0., 1.);
+  float pen = clamp(ent / wd, 0., 1.);
+  float tp = ent - tx * wd;
+  float written = smoothstep(0., .05, tp);
+  float filled = smoothstep(.15, .7, tp);
+  float dist = uHeight / .85;
+  float t1 = uTime * .25;
+  vec2 q = vec2(uv.x * asp * 2.2, uv.y * 2.6);
+  vec2 w = vec2(fbm(q + vec2(t1, 0.)) - .5, fbm(q * 1.3 + vec2(4.2, -t1)) - .5);
+  vec3 tf = trailField(uv, asp, .13);
+  vec2 mu = uv + w * .010 * dist * vec2(1., .6) + tf.yz * .014 + w * tf.x * .07;
+  float m0r = texture2D(uMask, mu).r;
+  float m0 = mix(m0r * (1. - smoothstep(.5, .9, texture2D(uS, uv).b)), m0r, filled) * written;
+  float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
+
+  // iridescent gradient bent by noise
+  float tg = uv.x * .9 + uv.y * 4. + (fbm(q * 1.7 + w * 2.5 * dist + t1) - .5) * 1.1 * dist + t1 * .6 + tf.x * 1.1;
+  vec3 gc = ramp(fract(tg * .5));
+  float band = exp(-pow((fract(uv.x * asp * .5 - uv.y * .3 - uTime * .1) - .5) / .06, 2.)) * .5;
+  vec3 col = gc * (.95 + .2 * (1. - g));
+  col = mix(col, vec3(1.), .42 + band * .5);
+  col = mix(vec3(1.), col, ign);
+
+  vec4 S = texture2D(uS, uv);
+  vec3 bg = vec3(.05, .025, .08) + gc * .06 * fbm(q * 1.2 + t1);
+  vec3 outc = bg + (gc * S.g * .45 * uIntensity + gc * S.b * .6 * uIntensity) * ign;
+
+  // glitter: tiny stars that twinkle near the letters
+  vec2 gp = uv * uRes / 9.;
+  vec2 cellp = floor(gp);
+  vec2 f = fract(gp) - .5;
+  float hh = hash(cellp);
+  float tw = pow(max(0., sin(uTime * (1. + hh * 3.) + hh * 40.)), 24.);
+  float star = tw * step(.8, hh) * (smoothstep(.5, 0., length(f)) + max(smoothstep(.05, 0., abs(f.x)) * smoothstep(.45, 0., abs(f.y)), smoothstep(.05, 0., abs(f.y)) * smoothstep(.45, 0., abs(f.x))));
+  float near = clamp(S.b * 3. + m0, 0., 1.);
+  outc = mix(outc, col, m0);
+  outc += vec3(1., .95, 1.) * star * near * 1.6 * ign;
+  outc *= 1. - .6 * dot(uv - .5, uv - .5);
+  outc += (hash(uv * uRes + fract(uTime) * 91.7) - .5) * .09;
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+  var FS_HEROES = COMMON + `
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y;
+  float t = uTime;
+  vec2 ctr = vec2(.5, uTextY);
+  // slam: starts big, lands on the spot with a small bounce
+  float sk = clamp(uEntry / .35, 0., 1.);
+  float scl = 1. + .6 * pow(1. - sk, 3.) - .04 * sin((uEntry - .35) * 30.) * exp(-(uEntry - .35) * 8.) * step(.35, uEntry);
+  vec2 uvs = ctr + (uv - ctr) / scl;
+  float ea = smoothstep(0., .1, uEntry);
+  float cyc = fract(t / 1.8);
+  float punch = smoothstep(0., .25, cyc) * (1. - smoothstep(.7, .97, cyc));
+  punch = max(punch, exp(-uEvtB * 5.) * step(0., uEvtB));
+  punch = max(punch, exp(-max(uEntry - .35, 0.) * 5.) * step(.35, uEntry) * step(uEntry, 1.6));
+  vec4 S = texture2D(uS, uvs);
+  float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
+  float sc = uHeight / .85;
+
+  // speed lines fanning out from an ellipse around the title
+  vec2 fc = mix(ctr, uPtr.xy, uPtr.w * .85);
+  vec2 pe = (uv - fc) / vec2(.5, .28);
+  float rad = length(pe);
+  float ang = atan(pe.y, pe.x);
+  float ln = smoothstep(.58, .92, noise(vec2(ang * 26., floor(t * 7.) * 1.7)));
+  float lines = ln * smoothstep(.95, 1.35, rad) * (1. - smoothstep(1.4 * sc, 3. * sc, rad)) * (.35 + .95 * punch) * uIntensity;
+
+  // a soft glow that breathes with each punch
+  float pg = .6 + .5 * punch;
+  vec3 tf = trailField(uv, asp, .15);
+  vec3 bg = vec3(.008, .012, .04) + uC2 * .22 * S.g * pg + uC3 * .35 * S.b * pg * uIntensity + uC3 * tf.x * .12 * pg;
+  vec3 outc = bg + uC3 * lines * .5;
+
+  // chunky extrusion down-right, then a white outline, then the face
+  float ext = 0.;
+  for (int k = 1; k <= 10; k++){
+    vec2 o = vec2(.6 / asp, -.8) * .0017 * float(k) * (.7 + .3 * punch);
+    ext = max(ext, texture2D(uMask, uvs - o).r);
+  }
+  float m0 = texture2D(uMask, uvs).r * ea;
+  float ol = smoothstep(.40, .50, S.b) * (1. - m0) * ea;
+  outc = mix(outc, uC1 * 1.1, ext * ea * (1. - m0));
+  outc = mix(outc, vec3(.96, .97, 1.), ol);
+
+  vec3 fill = mix(uC2 * .75, uC3, smoothstep(0., 1., g));
+  fill = mix(fill, uC4, smoothstep(.55, 1., g) * .55);
+  fill = mix(fill, uHalo, (1. - smoothstep(0., .14, g)) * .55);
+  // halftone shading lives only inside the letters, bigger dots toward the bottom
+  vec2 gp = uv * vec2(asp, 1.) * uRes.y / 7.;
+  vec2 rp = vec2(gp.x + gp.y, gp.x - gp.y) * .7071;
+  float dr = (1. - g) * .5 + .06;
+  float dots = 1. - smoothstep(dr - .05, dr + .05, length(fract(rp) - .5));
+  fill = mix(fill, uC1 * 1.3, dots * (1. - smoothstep(0., .85, g)) * .6);
+  float sweep = exp(-pow((fract(uv.x * .7 + uv.y * .5 - t * .25) - .5) / .05, 2.));
+  fill += vec3(1.) * sweep * .5;
+  outc = mix(outc, fill, m0);
+
+  // gold glints on the outline
+  vec2 sp = uv * uRes / 10.;
+  vec2 cp = floor(sp), f = fract(sp) - .5;
+  float hh = hash(cp);
+  float tw = pow(max(0., sin(t * (1.5 + hh * 3.) + hh * 40.)), 20.);
+  float star = tw * step(.93, hh) * (smoothstep(.5, 0., length(f)) + max(smoothstep(.05, 0., abs(f.x)) * smoothstep(.45, 0., abs(f.y)), smoothstep(.05, 0., abs(f.y)) * smoothstep(.45, 0., abs(f.x))));
+  outc += uHalo * star * smoothstep(.1, .6, S.b) * 1.4;
+  outc *= 1. - .6 * dot(uv - .5, uv - .5);
+  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * .045;
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+
+  var FS_CYBER = COMMON + `
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
+  float ent = uEntry, wd = max(uEntryDur, .01);
+  float pen = clamp(ent / wd, 0., 1.);
+  float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
+  vec3 tf = trailField(uv, asp, .12);
+  vec2 px = uv * uRes;
+  float row = floor(px.y / 3.);
+  float chaos = exp(-ent * 2.2);
+  // glitch bursts, plus slices that jump near the finger
+  float tick = floor(t * 8.);
+  float gl = step(1. - .07 * (uHeight / .85), hash(vec2(tick, 1.1)));
+  float yc = uTextY + (hash(vec2(tick, 2.2)) - .5) * uTextH * 1.4;
+  float bh = uTextH * (.1 + .25 * hash(vec2(tick, 3.3)));
+  float inBand = gl * (1. - smoothstep(bh, bh * 1.5, abs(uv.y - yc)));
+  float fing = tf.x * (hash(vec2(floor(px.y / 6.), floor(t * 12.))) - .5);
+  // VHS: per-line wobble, and a tracking bar that rolls up the screen dragging the lines sideways
+  float barY = fract(1. - t * .12);
+  float trk = exp(-pow((uv.y - barY) / .06, 2.)) * (.4 + .6 * noise(vec2(t * .5, 3.)));
+  float wob = (noise(vec2(row * .35, t * 8.)) - .5) * .003 * (1. + chaos * 6.) + trk * .06 * (noise(vec2(row * .2, t * 20.)) - .5);
+  float shift = wob + (hash(vec2(tick, 4.4)) - .5) * .08 * inBand + fing * .05;
+  vec2 mu = uv + vec2(shift, 0.);
+  float cs = .004 + .006 * inBand + .004 * tf.x + .01 * chaos + .008 * trk;
+  // PLAY: the signal locks in while a beam walks down the text
+  float b = 1. - pen;
+  float vis = smoothstep(b - .05, b, g);
+  float beam = exp(-pow((g - b) / .06, 2.)) * step(ent, wd) * step(uTx.x - .02, uv.x) * step(uv.x, uTx.y + .02);
+  float mR = (texture2D(uMask, mu + vec2(cs, 0.)).r + .6 * texture2D(uMask, mu + vec2(cs + .006, 0.)).r) / 1.6 * vis;
+  float mG = texture2D(uMask, mu).r * vis;
+  float mB = (texture2D(uMask, mu - vec2(cs, 0.)).r + .6 * texture2D(uMask, mu - vec2(cs + .006, 0.)).r) / 1.6 * vis;
+  vec3 grad = mix(uC1, uC2, smoothstep(0., .5, g));
+  grad = mix(grad, uC3, smoothstep(.5, 1., g));
+  vec3 col = vec3(mR * grad.r, mG * grad.g, mB * grad.b) * 1.7 + vec3(mG) * .18;
+  float scan = .3 + .7 * (.5 + .5 * sin(px.y * 2.094));
+  float fl = .94 + .06 * noise(vec2(t * 20., 3.));
+  vec4 scr = crtScreen(uv, asp, t);
+  float sOn = scr.y * uOpt.x;
+  vec4 S = texture2D(uS, uv);
+  vec3 outc = mix(vec3(.039, .024, .020), vec3(.025, .035, .07) * scr.x + uC1 * .06 * (1. - scr.z), sOn);
+  outc += (uC2 * S.g * .45 + mix(uC1, uC3, .5) * S.b * .85) * fl * (.3 + .7 * vis);
+  outc = vec3(mix(outc.r, col.r, mR), mix(outc.g, col.g, mG), mix(outc.b, col.b, mB));
+  outc += uC2 * beam * .7;
+  float lit = clamp(S.b * 2. + max(max(mR, mG), mB), 0., 1.);
+  float scanMask = max(sOn, lit);
+  outc *= mix(1., scan, scanMask);
+  outc += (hash(px + floor(t * 30.)) - .5) * (.05 + trk * .5 + chaos * .5) * scanMask;
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+  var FS_SPACE = COMMON + `
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
+  float ent = uEntry, wd = max(uEntryDur, .01);
+  float pen = clamp(ent / wd, 0., 1.);
+  float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
+  vec2 pp = uPtr.xy;
+  vec4 scr = crtScreen(uv, asp, t);
+  float sOn = scr.y * uOpt.x;
+  vec2 ctrS = vec2((uBox.x + uBox.z) * .5, (uBox.y + uBox.w) * .5);
+  vec2 dq = (uv - ctrS) * vec2(asp, 1.);
+  vec2 uvb = uv + (uv - ctrS) * dot(dq, dq) * .05;
+  vec2 dl = (uv - pp) * vec2(asp, 1.);
+  float kw = exp(-dot(dl, dl) / .02) * uPtr.w;
+  vec2 mu = uvb - (uv - pp) * kw * .06;
+  // power on: a bright line opens up to the height of the text
+  float open = smoothstep(.15, 1., pen);
+  float hh = uTextH * .6 * open + .003;
+  float vis = 1. - smoothstep(hh, hh + .004, abs(uv.y - uTextY));
+  float boost = 1. + 3. * (1. - open);
+  float m0 = texture2D(uMask, mu).r * vis;
+  vec4 S = texture2D(uS, uv);
+  vec3 grad = mix(uC1, uC2, smoothstep(0., .55, g));
+  grad = mix(grad, uC4, smoothstep(.55, 1., g));
+  // phosphor triads, scanline gaps, and a refresh bar that rolls down the tube
+  vec2 px = uv * uRes;
+  float sub = fract(px.x / 3.) * 3.;
+  vec3 tri = vec3(1. - smoothstep(0., 1.1, abs(sub - .5)), 1. - smoothstep(0., 1.1, abs(sub - 1.5)), 1. - smoothstep(0., 1.1, abs(sub - 2.5)));
+  tri = mix(vec3(1.), tri * 1.7, .35);
+  float scan = .35 + .65 * (.5 + .5 * sin(px.y * 2.094));
+  float beam = exp(-pow((uv.y - fract(t / 4.)) / .035, 2.)) * .45;
+  vec2 gp = uv * uRes / 11.;
+  vec2 cp = floor(gp), f = fract(gp) - .5;
+  float hh2 = hash(cp);
+  float tw = pow(max(0., sin(t * (1. + hh2 * 2.5) + hh2 * 40.)), 18.);
+  float star = tw * step(.82, hh2) * smoothstep(.45, 0., length(f));
+  float autoX = fract(t * (uHeight / .85) / 6.) * 1.5 - .25;
+  float sx = mix(autoX, pp.x, uPtr.w * .8);
+  float sweep = exp(-pow((uv.x - sx - uv.y * .15) / .05, 2.));
+  vec3 col = grad * 1.5 * tri * scan * (1. + beam) + uC3 * star * 1.2 + vec3(1.) * sweep * .55;
+  col *= boost;
+  vec3 outc = mix(vec3(.039, .024, .020), vec3(.025, .04, .075) * scr.x + uC1 * .07 * (1. - scr.z), sOn);
+  outc += uC2 * S.g * .7 * (1. + beam) + uC3 * S.b * .9;
+  outc = mix(outc, col, m0);
+  float lit = clamp(S.b * 2. + m0, 0., 1.);
+  outc *= mix(1., scan, max(sOn, lit));
+  outc += (hash(px + floor(t * 30.)) - .5) * .06 * max(sOn, lit);
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+  var FS_PUNK = COMMON + `
+void main(){
+  vec2 uv = vUv; float asp = uRes.x / uRes.y; float t = uTime;
+  float tick = floor(t * 9.);
+  float gl = step(.93, hash(vec2(tick, 1.3)));
+  float yc = uTextY + (hash(vec2(tick, 2.7)) - .5) * uTextH * 1.2;
+  float bh = uTextH * (.12 + .3 * hash(vec2(tick, 4.1)));
+  float inBand = gl * (1. - smoothstep(bh, bh * 1.4, abs(uv.y - yc)));
+  float tear = (hash(vec2(tick, 5.5)) - .5) * .07 * inBand;
+  vec2 mu = uv + vec2(tear, 0.);
+  float cs = .004 + .006 * gl;
+  vec4 cR = texture2D(uCol, mu + vec2(cs, 0.));
+  vec4 cG = texture2D(uCol, mu);
+  vec4 cB = texture2D(uCol, mu - vec2(cs, 0.));
+  float sh = texture2D(uMask, uv - vec2(.004 / asp, -.007)).r;
+  vec4 S = texture2D(uS, uv);
+  vec3 outc = vec3(.039, .024, .020) + uHalo * S.b * .18;
+  outc = mix(outc, vec3(0.), sh * .65);
+  outc = vec3(mix(outc.r, cR.r, cR.a), mix(outc.g, cG.g, cG.a), mix(outc.b, cB.b, cB.a));
+  float gr = hash(floor(uv * uRes * .5) + floor(t * 6.));
+  outc *= 1. - cG.a * .22 * gr;
+  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * (.07 + .4 * inBand);
+  gl_FragColor = vec4(boxed(outc, uv), 1.);
+}`;
+
+  // ---------- genre configs ----------
+  var TABS = {
+    fantasy: {
+      entry: { dur: 1.6, label: 'O fogo nasce: as letras aparecem em brasa, o fogo irrompe num clarão e assenta, como a marcação do Cowboy.' },
+      touch: 'As chamas se inclinam e esquentam por onde o dedo passa. Arraste sobre o texto.',
+      pad: { t: 1.6, b: 0.3, s: 0.3 },
+      label: 'Fantasia', text: 'Reino em Chamas', color: '#8B2635', fs: FS_FIRE, pal: palFire,
+      family: 'UnifrakturCook', stack: '"UnifrakturCook", "Palatino Linotype", Georgia, serif', weight: 700, stroke: 0.04, cy: 0.76,
+      defs: { intensity: 1.1, height: 0.85, speed: 1 }, hLabel: 'Altura da chama',
+      swatches: [['Vinho (primária)', '#8B2635'], ['Rosa', '#D44D63'], ['Rosa claro', '#FFB4C2'], ['Ouro', '#FFD166']],
+      smear: { dir: 'up', len: 1.5 },
+      embers: { rate: 5, max: 24, vy: [34, 124], vx: 26, life: [0.9, 2.5], size: [0.7, 2.5], alpha: 0.7 },
+      font: 'BlackletterExtrabold (arquivo remoto). Aqui: UnifrakturCook.',
+      now: 'levitate + divineAura (flutua com aura divina).',
+      idea: 'Texto que vira labaredas, com a cor do fogo vinda da cor do texto.'
+    },
+    horror: {
+      entry: { dur: 2.6, label: 'O texto se materializa saindo da névoa, piscando. Depois chegam o fantasma, o sopro frio e as falhas.' },
+      touch: 'Uma lente aumenta o texto e abre a névoa. Toque e segure, ou passe o mouse.',
+      pad: { t: 0.6, b: 1.4, s: 0.3 },
+      label: 'Terror', text: 'Noite sem Fim', color: '#748B97', fs: FS_HORROR, pal: palHorror,
+      family: 'IM Fell English SC', stack: '"IM Fell English SC", "Palatino Linotype", Georgia, serif', weight: 400, stroke: 0.06, cy: 0.58,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Altura da névoa',
+      swatches: [['Névoa (primária)', '#748B97'], ['Ciano', '#4ADEFF'], ['Menta', '#6FFFE9'], ['Sangue', '#C1121F']],
+      opts: [['Névoa e sopro frio', true], ['Aparição (falhas)', true], ['Gotejar (ectoplasma)', false]],
+      smear: { dir: 'up', len: 1.2 },
+      embers: null,
+      font: 'Arquivo remoto do app. Aqui: IM Fell English SC.',
+      now: 'psychosis (tremor violento e um ooze lento de derretimento).',
+      idea: 'Assombração gélida, na paleta fria do tema: névoa rasteira, sopro frio subindo das letras, dupla imagem fantasma e falhas de possessão que rasgam o texto por alguns frames. O gotejar de ectoplasma é opcional.'
+    },
+    cowboy: {
+      entry: { dur: 0, label: 'A própria marcação: o ferro encosta e o texto já nasce em brasa. O botão repete a marcação.' },
+      touch: 'A fumaça é empurrada pelo dedo e o ferro esquenta de novo onde ele toca. Arraste.',
+      pad: { t: 1.0, b: 0.4, s: 0.3 },
+      label: 'Cowboy', text: 'Velho Oeste', color: '#8B4513', fs: FS_COWBOY, pal: palCowboy,
+      family: 'Rye', stack: '"Rye", "Rockwell", Georgia, serif', weight: 400, stroke: 0.04, cy: 0.62,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Altura da fumaça',
+      swatches: [['Couro (primária)', '#8B4513'], ['Ferrugem', '#D4612F'], ['Brasa', '#A84520'], ['Ouro pálido', '#FCE8A8']],
+      opts: [['Fumaça', true]],
+      actions: [['Marcar agora', 'a']],
+      evt: { a: 11 },
+      smear: { dir: 'up', len: 1.1 },
+      embers: null,
+      font: 'Arquivo remoto do app. Aqui: Rye.',
+      now: 'cowboyBurn (jitter em stop-motion a 15 fps, onda de calor e respiração lenta).',
+      idea: 'Marca recém aplicada: o ferro encosta, o texto brilha em branco-amarelado e esfria devagar até virar uma queimadura escura no couro, que também escurece em volta. Só fios finos de fumaça saem das letras e vão sumindo conforme esfria. A cada 11 s o ferro volta.'
+    },
+    shinobi: {
+      entry: { dur: 3.0, label: 'Escrita à mão em tinta branca, como no Crime. Ao terminar, o vermelho inunda as letras, a fumaça aparece e, uns segundos depois, o primeiro corte.' },
+      touch: 'Arraste de lado a lado sobre o texto: o rastro da lâmina aparece e, ao soltar, o corte acontece na direção do gesto.',
+      pad: { t: 1.6, b: 0.4, s: 0.3 },
+      dragCut: true,
+      label: 'Shinobi', text: 'Via das Sombras', color: '#8B0000', fs: FS_SHINOBI, pal: palShinobi,
+      family: 'Shippori Mincho', stack: '"Shippori Mincho", "Hiragino Mincho ProN", Georgia, serif', weight: 800, stroke: 0.03, cy: 0.62,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Altura da fumaça',
+      swatches: [['Carmim (primária)', '#8B0000'], ['Laranja', '#F39237'], ['Ameixa', '#7A336B'], ['Osso', '#E9E4D8']],
+      opts: [['Fumaça', true], ['Corte de katana (abre o negativo)', true]],
+      actions: [['Cortar agora', 'a']],
+      evt: { a: 7 },
+      smear: { dir: 'up', len: 1.1 },
+      embers: null,
+      font: 'Hoshita (arquivo remoto). Aqui: Shippori Mincho.',
+      now: 'levitate + sakuraWind (flutua com pétalas ao vento).',
+      idea: 'Fumaça discreta, só fios finos e alguns puffs. Um único corte de katana de ponta a ponta do texto, sempre diferente: o ponto de entrada em y, o ângulo e o lado de onde a lâmina vem são sorteados. As metades se abrem como uma tesoura e o vão vira negativo (papel branco, tinta preta, linhas de velocidade), com borda vermelha e uma cicatriz que some devagar.'
+    },
+    crime: {
+      entry: { dur: 3.0, label: 'Escrita à mão em tinta branca. Ao terminar, o gradiente inunda as letras e o glitter começa.' },
+      touch: 'O gradiente e as letras se deformam como líquido e voltam devagar. Arraste.',
+      pad: { t: 0.5, b: 0.5, s: 0.4 },
+      label: 'Crime', text: 'Madrugada', color: '#E91E63', fs: FS_CRIME, pal: palCrime,
+      family: 'Syne', stack: '"Syne", "Helvetica Neue", Arial, sans-serif', weight: 800, stroke: 0.02, cy: 0.55,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Distorção',
+      swatches: [['Rosa (primária)', '#E91E63'], ['Rosa claro', '#FF6B9D'], ['Menta', '#7FFFEE'], ['Roxo', '#9B5DE5']],
+      smear: { dir: 'up', len: 0.45 },
+      embers: null,
+      font: 'VelomiJuice (arquivo remoto). Aqui: Syne.',
+      now: 'vhs + dreamySparkle (ondulação de fita, fantasmas coloridos e brilhos).',
+      idea: 'Gradiente iridescente distorcido recortado no texto (rosa, menta e violeta da paleta), com glitter e grão de filme dos anos 80.'
+    },
+    heroes: {
+      entry: { dur: 0.8, label: 'Batida: o texto entra grande, bate no lugar com um pulso, e o glow assenta.' },
+      touch: 'Toque: uma pancada com linhas de velocidade saindo do ponto tocado.',
+      pad: { t: 0.7, b: 0.7, s: 0.6 },
+      tapEvt: true,
+      label: 'Heroes', text: 'The Vanguard', color: '#2845D6', fs: FS_HEROES, pal: palHeroes,
+      family: 'Bangers', stack: '"Bangers", "Impact", "Arial Black", sans-serif', weight: 400, stroke: 0.03, cy: 0.55,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Alcance das linhas',
+      swatches: [['Azul (primária)', '#2845D6'], ['Ciano', '#00D9FF'], ['Ouro', '#FDC500'], ['Prata', '#E6E9FF']],
+      smear: { dir: 'up', len: 0.6 },
+      embers: null,
+      font: 'Arquivo remoto do app. Aqui: Bangers.',
+      now: 'WordArtText (extrusão 3D com contorno branco e pulso a cada 1,8 s) + levitate + lightningStorm.',
+      idea: 'Mantém a extrusão e o contorno. As letras ganham um glow que respira a cada pancada, halftone só dentro do texto, linhas de velocidade, brilho metálico e faíscas douradas.'
+    },
+    cyberpunk: {
+      entry: { dur: 1.6, label: 'Play de VHS: o sinal estabiliza (o ruído e o tremor diminuem) enquanto um feixe desce pelo texto revelando as linhas.' },
+      touch: 'Rajada de glitch só ao redor do dedo: fatias do texto deslocadas e canais RGB separados. Arraste.',
+      pad: { t: 0.5, b: 0.5, s: 0.4 },
+      label: 'Cyberpunk', text: 'Neon Protocol', color: '#6E48AA', fs: FS_CYBER, pal: palCyber,
+      family: 'Orbitron', stack: '"Orbitron", "Arial Black", sans-serif', weight: 800, stroke: 0.05, cy: 0.55,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Frequência do glitch',
+      swatches: [['Roxo (primária)', '#6E48AA'], ['Ciano', '#00F5FF'], ['Magenta', '#FF2EFF'], ['Lavanda', '#E8DCFF']],
+      opts: [['Mostrar a tela (retângulo CRT)', true]],
+      smear: { dir: 'up', len: 0.5 },
+      embers: null,
+      font: 'Arquivo remoto do app. Aqui: Orbitron.',
+      now: 'glitch + crtScreen(Dream) (rasgos de sinal, bloom e scanlines).',
+      idea: 'Reproduz o que já existe: gradiente neon da paleta, divisão de canais RGB, scanlines e rajadas de glitch. Aqui entra só como referência para a interação.'
+    },
+    space: {
+      entry: { dur: 1.4, label: 'Liga a TV de tubo: uma linha brilhante se abre até a altura do texto, com um clarão de fósforo.' },
+      touch: 'O brilho que cruza o texto passa a seguir o dedo, com uma lente leve. Arraste.',
+      pad: { t: 0.5, b: 0.5, s: 0.4 },
+      label: 'Space Opera', text: 'Nova Estelar', color: '#0081A7', fs: FS_SPACE, pal: palSpace,
+      family: 'Michroma', stack: '"Michroma", "Arial Black", sans-serif', weight: 400, stroke: 0.05, cy: 0.55,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Velocidade do brilho',
+      swatches: [['Azul (primária)', '#0081A7'], ['Ciano', '#48CAE4'], ['Gelo', '#90E0EF'], ['Lavanda', '#C9B1FF']],
+      opts: [['Mostrar a tela (retângulo CRT)', true]],
+      smear: { dir: 'up', len: 0.5 },
+      embers: null,
+      font: 'Arquivo remoto do app. Aqui: Michroma.',
+      now: 'crtScreen(Element) (painel de fósforo, sem animação).',
+      idea: 'Mantém o painel de fósforo e o gradiente da paleta. Opcional: um brilho que cruza o texto a cada 6 s e estrelas piscando dentro das letras.'
+    },
+    punk: {
+      entry: { dur: 1.9, label: 'As letras de recorte batem uma a uma, em stop-motion.' },
+      ransom: true,
+      touch: 'As letras de recorte se afastam e giram de leve quando o dedo chega perto. Arraste.',
+      pad: { t: 0.4, b: 0.4, s: 0.35 },
+      label: 'Punk Rock', text: 'Anarquia', color: '#729656', fs: FS_PUNK, pal: palPunk,
+      family: 'Syne', stack: '"Syne", "Arial Black", sans-serif', weight: 800, stroke: 0, cy: 0.55,
+      defs: { intensity: 1, height: 0.85, speed: 1 }, hLabel: 'Intensidade do glitch',
+      swatches: [['Verde (primária)', '#729656'], ['Verde neon', '#00E676'], ['Laranja', '#FF7E00'], ['Amarelo', '#FAFF00']],
+      smear: { dir: 'up', len: 0.3 },
+      embers: null,
+      font: 'Incubus / WastedPunk (arquivos remotos). Aqui: uma mistura de fontes sorteadas por letra.',
+      now: 'RansomNoteText (letras de recorte em stop-motion a 2 fps) + chromaticAberration + glitch.',
+      idea: 'Mantém o ransom note: cada letra é um recorte com fonte, caixa e cor sorteadas, trocando a cada poucos segundos. Acrescenta grão de xerox e rasgos de glitch.'
+    },
+  };
+  var ORDER = ['fantasy', 'horror', 'cowboy', 'shinobi', 'crime', 'heroes', 'cyberpunk', 'space', 'punk'];
+  var cur = 'fantasy';
+  var st = {}, pals = {};
+  ORDER.forEach(function (id) {
+    var t = TABS[id];
+    st[id] = { opts: (t.opts || []).map(function (o) { return o[1]; }), text: t.text, intensity: t.defs.intensity, height: t.defs.height, speed: t.defs.speed, color: t.color };
+    pals[id] = t.pal(t.color);
+  });
+  var embersOn = true;
+  var box = { on: true, soft: true, show: true, scale: 1 };
+  var tb = { minX: 0, maxX: 1, minY: 0, maxY: 1 };
+  var entryEnabled = true;
+  var ev = { entry0: 0, la: 0, lb: 0, seed: 1, seedA: 1, cut: { x: 0.5, y: 0.5, ang: 0, user: false } };
+  var inp = { on: true, x: 0.5, y: 0.5, vx: 0, vy: 0, down: false, hover: false, active: 0, trail: [], lastT: 0, lastX: 0.5, lastY: 0.5, start: null, fired: false };
+  var trailBuf = new Float32Array(32), trailVBuf = new Float32Array(16);
+
+  // ---------- WebGL ----------
+  var gl = glCanvas.getContext('webgl', { antialias: false, alpha: false });
+  if (!gl) { document.getElementById('fallback').hidden = false; return; }
+
+  function compile(type, src) {
+    var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error('shader error: ' + gl.getShaderInfoLog(s)); }
+    return s;
+  }
+  var UNIFORMS = ['uMask', 'uS', 'uTime', 'uIntensity', 'uHeight', 'uTextY', 'uTextH', 'uRes', 'uC1', 'uC2', 'uC3', 'uC4', 'uHalo', 'uText', 'uOpt', 'uEvtA', 'uEvtB', 'uSeedB', 'uSeedA', 'uBox', 'uFw', 'uBoxCfg', 'uTrail', 'uTrailV', 'uPtr', 'uCut', 'uCol', 'uEntry', 'uEntryDur', 'uTx'];
+  var vsObj = compile(gl.VERTEX_SHADER, VS);
+  ORDER.forEach(function (id) {
+    var prog = gl.createProgram();
+    gl.attachShader(prog, vsObj);
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, TABS[id].fs));
+    gl.bindAttribLocation(prog, 0, 'p');
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.error('link error ' + id + ': ' + gl.getProgramInfoLog(prog)); }
+    var U = {};
+    UNIFORMS.forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
+    TABS[id].prog = prog; TABS[id].U = U;
+  });
+
+  var buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+  function makeTex() {
+    var t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return t;
+  }
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.activeTexture(gl.TEXTURE0); var tex = makeTex();
+  gl.activeTexture(gl.TEXTURE1); var texS = makeTex();
+  gl.activeTexture(gl.TEXTURE2); var texCol = makeTex();
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
+  gl.activeTexture(gl.TEXTURE0);
+
+  // ---------- text mask + field ----------
+  var maskCanvas = document.createElement('canvas');
+  var colorCanvas = document.createElement('canvas');
+  var rs = { sc: [], pos: [], key: '', lastPaint: 0 };
+  var smallCanvas = document.createElement('canvas');
+  var W = 0, Hh = 0, dpr = 1, textY = 0.5, textH = 0.2, emberPts = [];
+
+  function blurLine(a, out, start, step, len, r) {
+    var n = 2 * r + 1, sum = 0, i;
+    for (i = -r; i <= r; i++) sum += a[start + Math.min(len - 1, Math.max(0, i)) * step];
+    for (i = 0; i < len; i++) {
+      out[start + i * step] = sum / n;
+      sum += a[start + Math.min(len - 1, i + r + 1) * step] - a[start + Math.max(0, i - r) * step];
+    }
+  }
+  function blur2d(a, w, h, rx, ry) {
+    var t = new Float32Array(a.length), o = new Float32Array(a.length), x, y;
+    for (y = 0; y < h; y++) blurLine(a, t, y * w, 1, w, rx);
+    for (x = 0; x < w; x++) blurLine(t, o, x, w, h, ry);
+    return o;
+  }
+
+  // R = text smeared along one direction, G = wide glow, B = tight halo around the letters
+  function buildField(cfg) {
+    var SW = Math.min(320, Math.max(64, Math.round(W / 2)));
+    var SH = Math.max(32, Math.round(SW * Hh / W));
+    smallCanvas.width = SW; smallCanvas.height = SH;
+    var c = smallCanvas.getContext('2d', { willReadFrequently: true });
+    c.drawImage(maskCanvas, 0, 0, SW, SH);
+    var d = c.getImageData(0, 0, SW, SH).data, n = SW * SH, m = new Float32Array(n), sm = new Float32Array(n), x, y, i;
+    for (i = 0; i < n; i++) m[i] = d[i * 4] / 255;
+    var thS = Math.max(4, textH * SH), dec = 1 / (thS * cfg.smear.len), prev, v;
+    for (x = 0; x < SW; x++) {
+      prev = 0;
+      if (cfg.smear.dir === 'up') {
+        for (y = SH - 1; y >= 0; y--) { v = Math.max(m[y * SW + x], prev - dec); sm[y * SW + x] = v; prev = v; }
+      } else {
+        for (y = 0; y < SH; y++) { v = Math.max(m[y * SW + x], prev - dec); sm[y * SW + x] = v; prev = v; }
+      }
+    }
+    var body = blur2d(sm, SW, SH, Math.max(1, Math.round(SW * 0.01)), 1);
+    var glow = blur2d(sm, SW, SH, Math.max(2, Math.round(thS * 0.9)), Math.max(2, Math.round(thS * 0.6)));
+    var halo = blur2d(m, SW, SH, Math.max(2, Math.round(thS * 0.12)), Math.max(2, Math.round(thS * 0.12)));
+    var out = new Uint8Array(n * 4);
+    for (i = 0; i < n; i++) {
+      out[i * 4] = Math.min(255, body[i] * 255);
+      out[i * 4 + 1] = Math.min(255, glow[i] * 2.6 * 255);
+      out[i * 4 + 2] = Math.min(255, halo[i] * 2.4 * 255);
+      out[i * 4 + 3] = 255;
+    }
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, texS);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, SW, SH, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
+    gl.activeTexture(gl.TEXTURE0);
+  }
+
+  function h1(n) { var x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }
+  var RFONTS = [['UnifrakturCook', 700], ['Rye', 400], ['Bangers', 400], ['Syne', 800], ['IM Fell English SC', 400], ['Georgia', 700]];
+  function rgbs(c) { return 'rgb(' + Math.round(c[0] * 255) + ',' + Math.round(c[1] * 255) + ',' + Math.round(c[2] * 255) + ')'; }
+  // ransom-note letters: each one a cut-out tile with its own font, case, colour and tilt
+  function paintRansom(c, cc, tNow) {
+    var cfg = TABS[cur], chars = Array.from(st[cur].text || ' '), ident = Math.floor(tNow / 5), jit = Math.floor(tNow * 2), visN = entryNow() / 0.24;
+    var base = 100, items = [], total = 0;
+    var tiles = [[0.95, 0.93, 0.88], [0.98, 1, 0.1], pals[cur].text, [1, 0.49, 0], [0.04, 0.04, 0.05]];
+    chars.forEach(function (ch, idx) {
+      if (ch === ' ') { items.push({ sp: true, w: base * 0.4 }); total += base * 0.4; return; }
+      var r = function (k) { return h1(idx * 7.1 + k + ident * 13.3); };
+      var fi = Math.floor(r(1) * RFONTS.length), up = r(2) > 0.5, sz = 0.9 + r(3) * 0.25, ti = Math.floor(r(4) * 5);
+      var g = up ? ch.toUpperCase() : ch.toLowerCase();
+      c.font = RFONTS[fi][1] + ' ' + (base * sz) + 'px "' + RFONTS[fi][0] + '", serif';
+      var w = c.measureText(g).width + base * 0.28;
+      items.push({ idx: idx, g: g, fi: fi, sz: sz, ti: ti, w: w }); total += w;
+    });
+    var k = Math.min((W * 0.8) / total, (Hh * 0.28) / (base * 1.25));
+    var x = W / 2 - (total * k) / 2, cy = Hh * cfg.cy;
+    items.forEach(function (it) {
+      var cx = x + (it.w * k) / 2; x += it.w * k;
+      if (it.sp) return;
+      var jr = function (q) { return h1(it.idx * 3.3 + q + jit * 5.7); };
+      var s2 = rs.sc[it.idx] || { x: 0, y: 0, r: 0 };
+      var bx = cx + (jr(2) - 0.5) * base * 0.12 * k, by = cy + (jr(3) - 0.5) * base * 0.16 * k;
+      rs.pos[it.idx] = [bx, by];
+      if (it.idx >= visN) return;
+      var rot = (jr(1) - 0.5) * 0.34 + s2.r, tw = it.w * k, th = base * 1.2 * it.sz * k;
+      for (var pass = 0; pass < 2; pass++) {
+        var ctx = pass === 0 ? c : cc;
+        ctx.save(); ctx.translate(bx + s2.x, by + s2.y); ctx.rotate(rot);
+        if (pass === 0) { ctx.fillStyle = '#fff'; ctx.fillRect(-tw / 2, -th / 2, tw, th); }
+        else {
+          ctx.fillStyle = rgbs(tiles[it.ti]); ctx.fillRect(-tw / 2, -th / 2, tw, th);
+          ctx.lineWidth = 2 * dpr; ctx.strokeStyle = '#0a0a0a'; ctx.strokeRect(-tw / 2, -th / 2, tw, th);
+          ctx.font = RFONTS[it.fi][1] + ' ' + (base * it.sz * k) + 'px "' + RFONTS[it.fi][0] + '", serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillStyle = it.ti === 4 ? '#faff00' : '#0a0a0a'; ctx.fillText(it.g, 0, base * 0.04 * k);
+        }
+        ctx.restore();
+      }
+    });
+  }
+  function ransomStep(dt) {
+    var fx = inp.x * W, fy = (1 - inp.y) * Hh, R = Hh * 0.2, act = inp.on ? inp.active : 0, moved = false;
+    rs.pos.forEach(function (p, idx) {
+      if (!p) return;
+      var s2 = rs.sc[idx] || (rs.sc[idx] = { x: 0, y: 0, r: 0 });
+      var dx = p[0] - fx, dy = p[1] - fy, d = Math.hypot(dx, dy) + 1e-3, f = Math.max(0, 1 - d / R); f = f * f * act;
+      var a = Math.min(1, dt * 8);
+      s2.x += (dx / d * f * Hh * 0.045 - s2.x) * a; s2.y += (dy / d * f * Hh * 0.045 - s2.y) * a; s2.r += ((dx > 0 ? 1 : -1) * f * 0.5 - s2.r) * a;
+      if (Math.abs(s2.x) + Math.abs(s2.y) + Math.abs(s2.r) > 0.05) moved = true;
+    });
+    return moved;
+  }
+  function repaintRansom() {
+    var c = maskCanvas.getContext('2d', { willReadFrequently: true }), cc = colorCanvas.getContext('2d');
+    c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh); cc.clearRect(0, 0, W, Hh);
+    paintRansom(c, cc, t);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, maskCanvas);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, texCol);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, colorCanvas);
+    gl.activeTexture(gl.TEXTURE0);
+  }
+
+  function buildMask() {
+    var cfg = TABS[cur];
+    maskCanvas.width = W; maskCanvas.height = Hh;
+    var c = maskCanvas.getContext('2d', { willReadFrequently: true });
+    c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh);
+    if (cfg.ransom) { colorCanvas.width = W; colorCanvas.height = Hh; }
+    var txt = st[cur].text || ' ';
+    var font = function (px) { return cfg.weight + ' ' + px + 'px ' + cfg.stack; };
+    var fs = 100, cy = Hh * cfg.cy;
+    if (cfg.ransom) { fs = Hh * 0.12; paintRansom(c, colorCanvas.getContext('2d'), t); } else {
+    var fs = 100;
+    c.font = font(fs);
+    var w = c.measureText(txt).width || 1;
+    fs = Math.min(fs * (W * 0.82) / w, Hh * 0.28);
+    c.font = font(fs);
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#fff';
+    if (cfg.stroke > 0) { c.lineJoin = 'round'; c.lineWidth = fs * cfg.stroke; c.strokeStyle = '#fff'; c.strokeText(txt, W / 2, cy); }
+    c.fillText(txt, W / 2, cy);
+    }
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, maskCanvas);
+
+    // real letter bounds and spark spawn points, read from the lit pixels
+    var data = c.getImageData(0, 0, W, Hh).data;
+    emberPts = [];
+    var step = Math.max(3, Math.round(4 * dpr)), minY = Hh, maxY = 0, x, y;
+    for (y = 0; y < Hh; y += 2) {
+      for (x = 0; x < W; x += 3) {
+        if (data[(y * W + x) * 4] > 140) {
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+          break;
+        }
+      }
+    }
+    for (y = 0; y < Hh; y += step) {
+      for (x = 0; x < W; x += step) {
+        if (data[(y * W + x) * 4] > 160) emberPts.push([x / dpr, y / dpr]);
+      }
+    }
+    if (maxY <= minY) { minY = cy - fs * 0.4; maxY = cy + fs * 0.4; }
+    var bx0 = W, bx1 = 0;
+    emberPts.forEach(function (q) { var px = q[0] * dpr; if (px < bx0) bx0 = px; if (px > bx1) bx1 = px; });
+    if (bx1 <= bx0) { bx0 = W * 0.1; bx1 = W * 0.9; }
+    tb = { minX: bx0, maxX: bx1 + step, minY: minY, maxY: maxY };
+    textH = Math.max(0.05, (maxY - minY) / Hh);
+    textY = 1 - (minY + maxY) / 2 / Hh;
+    buildField(cfg);
+    if (cfg.ransom) repaintRansom();
+  }
+
+  function resize() {
+    var r = stage.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    var nw = Math.max(2, Math.round(r.width * dpr)), nh = Math.max(2, Math.round(r.height * dpr));
+    if (nw === W && nh === Hh) return;
+    W = nw; Hh = nh;
+    glCanvas.width = W; glCanvas.height = Hh;
+    emCanvas.width = W; emCanvas.height = Hh;
+    gl.viewport(0, 0, W, Hh);
+    buildMask();
+  }
+
+  function boxPx(cfg) {
+    var th = Math.max(8, tb.maxY - tb.minY), pd = cfg.pad, k = box.scale;
+    var pT = pd.t * th * k, pB = pd.b * th * k, pS = pd.s * th * k;
+    return { x0: Math.max(0, tb.minX - pS), x1: Math.min(W, tb.maxX + pS), yT: Math.max(0, tb.minY - pT), yB: Math.min(Hh, tb.maxY + pB), fx: pS * 0.85, ft: pT * 0.85, fb: pB * 0.85 };
+  }
+  function sstep(a, b, x) { if (b <= a) return x >= a ? 1 : 0; var u = Math.min(1, Math.max(0, (x - a) / (b - a))); return u * u * (3 - 2 * u); }
+
+  // ---------- particles ----------
+  var sparks = [];
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function stepSparks(dt) {
+    var cfg = TABS[cur].embers, pal = pals[cur], s = st[cur];
+    emCtx.setTransform(1, 0, 0, 1, 0, 0);
+    emCtx.clearRect(0, 0, W, Hh);
+    if (!cfg || !embersOn) { sparks.length = 0; return; }
+    var cssW = W / dpr;
+    if (emberPts.length && !document.hidden) {
+      var n = (reduceMotion ? cfg.rate * 0.3 : cfg.rate) * s.intensity * (cssW / 640) * dt + Math.random();
+      for (var i = 0; i < n && sparks.length < cfg.max; i++) {
+        var p = emberPts[(Math.random() * emberPts.length) | 0];
+        sparks.push({
+          x: p[0] + (Math.random() - .5) * 6, y: p[1] - Math.random() * 6,
+          vx: (Math.random() - .5) * cfg.vx, vy: -rnd(cfg.vy[0], cfg.vy[1]),
+          life: 0, max: rnd(cfg.life[0], cfg.life[1]), s: rnd(cfg.size[0], cfg.size[1]),
+          ph: Math.random() * 6.28, hot: Math.random() < .45
+        });
+      }
+    }
+    emCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    emCtx.globalCompositeOperation = 'lighter';
+    for (var k = sparks.length - 1; k >= 0; k--) {
+      var q = sparks[k];
+      q.life += dt;
+      if (q.life >= q.max || q.y < -10) { sparks.splice(k, 1); continue; }
+      q.x += (q.vx + Math.sin(q.ph + q.life * 5) * 18) * dt;
+      q.y += q.vy * dt;
+      var a = 1 - q.life / q.max;
+      if (box.on) {
+        var bq = boxPx(TABS[cur]), qx = q.x * dpr, qy = q.y * dpr;
+        var soft = box.soft ? 1 : 0, fxx = soft ? bq.fx : 1, ftt = soft ? bq.ft : 1, fbb = soft ? bq.fb : 1;
+        var mm = sstep(bq.x0, bq.x0 + fxx, qx) * (1 - sstep(bq.x1 - fxx, bq.x1, qx)) * sstep(bq.yT, bq.yT + ftt, qy) * (1 - sstep(bq.yB - fbb, bq.yB, qy));
+        a *= mm;
+        if (mm <= 0) continue;
+      }
+      var colr = q.hot ? pal.spark[0] : pal.spark[1];
+      var rad = q.s * (0.5 + a * .7) * 1.1;
+      var gr = emCtx.createRadialGradient(q.x, q.y, 0, q.x, q.y, rad * 2.4);
+      gr.addColorStop(0, 'rgba(' + colr + ',' + (cfg.alpha * a) + ')');
+      gr.addColorStop(1, 'rgba(' + colr + ',0)');
+      emCtx.fillStyle = gr;
+      emCtx.beginPath(); emCtx.arc(q.x, q.y, rad * 2.4, 0, 6.2832); emCtx.fill();
+    }
+  }
+
+  // ---------- loop ----------
+  var t = 0, last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    var cfg = TABS[cur], s = st[cur], U = cfg.U, pr = pals[cur];
+    var sp = s.speed * (reduceMotion ? 0.35 : 1);
+    t += dt * sp;
+    gl.useProgram(cfg.prog);
+    gl.uniform1i(U.uMask, 0); gl.uniform1i(U.uS, 1); gl.uniform1i(U.uCol, 2);
+    gl.uniform1f(U.uTime, t);
+    gl.uniform1f(U.uIntensity, s.intensity);
+    gl.uniform1f(U.uHeight, s.height);
+    gl.uniform1f(U.uTextY, textY);
+    gl.uniform1f(U.uTextH, textH);
+    gl.uniform2f(U.uRes, W, Hh);
+    gl.uniform3fv(U.uC1, pr.c1); gl.uniform3fv(U.uC2, pr.c2); gl.uniform3fv(U.uC3, pr.c3); gl.uniform3fv(U.uC4, pr.c4);
+    gl.uniform3fv(U.uHalo, pr.halo); gl.uniform3fv(U.uText, pr.text);
+    if (cfg.evt) {
+      if (t - ev.la > cfg.evt.a) { ev.la = t; ev.seedA++; ev.cut.user = false; }
+      if (t - ev.lb > cfg.evt.b) { ev.lb = t; ev.seed++; }
+    }
+    var bp = boxPx(cfg);
+    gl.uniform4f(U.uBox, bp.x0 / W, 1 - bp.yB / Hh, bp.x1 / W, 1 - bp.yT / Hh);
+    gl.uniform4f(U.uFw, bp.fx, bp.ft, bp.fb, box.show ? 1 : 0);
+    gl.uniform2f(U.uBoxCfg, box.on ? 1 : 0, box.soft ? 1 : 0);
+    if (cfg.ransom) {
+      var mv = ransomStep(dt), key = Math.floor(t / 5) + '_' + Math.floor(t * 2) + '_' + Math.min(60, Math.floor(entryNow() / 0.24)), nowMs = performance.now();
+      if (key !== rs.key || (mv && nowMs - rs.lastPaint > 33)) { rs.key = key; rs.lastPaint = nowMs; repaintRansom(); }
+    }
+    var tEnt = t - ev.entry0, entering = entryEnabled && cfg.entry && cfg.entry.dur > 0 && tEnt < cfg.entry.dur + 1.2;
+    inp.locked = entering;
+    var dtI = dt;
+    inp.active += (((inp.down || inp.hover) && !entering ? 1 : 0) - inp.active) * Math.min(1, dtI * 9);
+    var vd = Math.exp(-dtI * 7); inp.vx *= vd; inp.vy *= vd;
+    var decay = Math.exp(-dtI * (cfg.dragCut ? 3.2 : 1.7));
+    for (var ti = 0; ti < 8; ti++) {
+      var tp = inp.on && !entering ? inp.trail[ti] : null;
+      if (tp) { tp.s *= decay; trailBuf[ti * 4] = tp.x; trailBuf[ti * 4 + 1] = tp.y; trailBuf[ti * 4 + 2] = tp.s; trailBuf[ti * 4 + 3] = 0; trailVBuf[ti * 2] = Math.max(-4, Math.min(4, tp.vx)); trailVBuf[ti * 2 + 1] = Math.max(-4, Math.min(4, tp.vy)); }
+      else { trailBuf[ti * 4 + 2] = 0; trailVBuf[ti * 2] = 0; trailVBuf[ti * 2 + 1] = 0; }
+    }
+    gl.uniform4fv(U.uTrail, trailBuf); gl.uniform2fv(U.uTrailV, trailVBuf);
+    gl.uniform4f(U.uPtr, inp.x, inp.y, inp.down ? 1 : 0, inp.on ? inp.active : 0);
+    gl.uniform4f(U.uCut, ev.cut.x, ev.cut.y, ev.cut.ang, ev.cut.user && cfg.dragCut ? 1 : 0);
+    gl.uniform1f(U.uEntry, entryEnabled && cfg.entry ? tEnt : 100); gl.uniform1f(U.uEntryDur, cfg.entry ? cfg.entry.dur : 1); gl.uniform2f(U.uTx, tb.minX / W, tb.maxX / W);
+    gl.uniform3f(U.uOpt, s.opts[0] ? 1 : 0, s.opts[1] ? 1 : 0, s.opts[2] ? 1 : 0);
+    gl.uniform1f(U.uEvtA, cfg.evt ? t - ev.la : 100); gl.uniform1f(U.uEvtB, cfg.evt || cfg.tapEvt ? t - ev.lb : 100); gl.uniform1f(U.uSeedB, ev.seed); gl.uniform1f(U.uSeedA, ev.seedA);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    stepSparks(dt * sp);
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- UI ----------
+  var tabsEl = document.getElementById('tabs');
+  var txtIn = document.getElementById('txt');
+  var rInt = document.getElementById('intensity'), rH = document.getElementById('height'), rS = document.getElementById('speed');
+  var swWrap = document.getElementById('swatches'), colorIn = document.getElementById('color');
+  var fontIn = document.getElementById('fontFile');
+  var embWrap = document.getElementById('embWrap'), embIn = document.getElementById('emb');
+
+  function showVals() {
+    document.getElementById('o-int').textContent = Math.round(st[cur].intensity * 100) + '%';
+    document.getElementById('o-h').textContent = st[cur].height.toFixed(2) + 'x';
+    document.getElementById('o-s').textContent = st[cur].speed.toFixed(2) + 'x';
+  }
+  function markSwatches() {
+    Array.prototype.forEach.call(swWrap.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.dataset.c === st[cur].color ? 'true' : 'false'); });
+    colorIn.value = st[cur].color;
+  }
+  function setColor(hex, fromInput) {
+    st[cur].color = hex; pals[cur] = TABS[cur].pal(hex); rs.key = '';
+    Array.prototype.forEach.call(swWrap.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.dataset.c === hex ? 'true' : 'false'); });
+    if (!fromInput) colorIn.value = hex;
+  }
+  function buildSwatches() {
+    Array.prototype.slice.call(swWrap.querySelectorAll('button')).forEach(function (b) { b.remove(); });
+    TABS[cur].swatches.forEach(function (sw) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.dataset.c = sw[1]; b.title = sw[0]; b.setAttribute('aria-label', sw[0]);
+      b.style.background = sw[1];
+      b.addEventListener('click', function () { setColor(sw[1]); });
+      swWrap.insertBefore(b, colorIn);
+    });
+    markSwatches();
+  }
+
+  function setTab(id) {
+    cur = id; sparks.length = 0;
+    var cfg = TABS[id], s = st[id];
+    Array.prototype.forEach.call(tabsEl.children, function (b) { b.setAttribute('aria-selected', b.dataset.id === id ? 'true' : 'false'); });
+    txtIn.value = s.text;
+    rInt.value = s.intensity; rH.value = s.height; rS.value = s.speed;
+    document.getElementById('l-height').textContent = cfg.hLabel;
+    document.getElementById('a-now').textContent = cfg.now;
+    document.getElementById('a-idea').textContent = cfg.idea;
+    document.getElementById('a-touch').textContent = cfg.touch;
+    document.getElementById('a-entry').textContent = cfg.entry.label;
+    var pdn = cfg.pad, f1 = function (v) { return String(v).replace('.', ',') + '×'; };
+    document.getElementById('a-pad').textContent = 'Recomendada (1×): topo ' + f1(pdn.t) + ', base ' + f1(pdn.b) + ', lados ' + f1(pdn.s) + ' da altura do texto.';
+    document.getElementById('a-font').textContent = cfg.custom ? 'Arquivo carregado por você.' : cfg.font;
+    fontIn.value = '';
+    embWrap.hidden = !cfg.embers;
+    var optsEl = document.getElementById('opts'), actsEl = document.getElementById('acts');
+    optsEl.textContent = ''; actsEl.textContent = '';
+    document.getElementById('optWrap').hidden = !cfg.opts;
+    document.getElementById('actWrap').hidden = !cfg.actions;
+    (cfg.opts || []).forEach(function (o, i) {
+      var l = document.createElement('label'), c = document.createElement('input');
+      c.type = 'checkbox'; c.checked = s.opts[i]; c.id = 'opt-' + id + '-' + i;
+      c.addEventListener('change', function () { s.opts[i] = c.checked; });
+      l.appendChild(c); l.appendChild(document.createTextNode(o[0])); optsEl.appendChild(l);
+    });
+    (cfg.actions || []).forEach(function (a) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = a[0];
+      b.addEventListener('click', function () { if (a[1] === 'a') { ev.la = t; ev.seedA++; ev.cut.user = false; } else { ev.lb = t; ev.seed++; } });
+      actsEl.appendChild(b);
+    });
+    ev.la = t; ev.lb = t - 0.3; replay();
+    buildSwatches(); showVals();
+    if (W) buildMask();
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load(cfg.weight + ' 64px "' + cfg.family + '"', s.text).then(function () { if (cur === id && W) buildMask(); }, function () {});
+    }
+  }
+
+  ORDER.forEach(function (id) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.dataset.id = id; b.textContent = TABS[id].label;
+    b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', 'false');
+    b.addEventListener('click', function () { setTab(id); });
+    tabsEl.appendChild(b);
+  });
+  rInt.addEventListener('input', function () { st[cur].intensity = parseFloat(rInt.value); showVals(); });
+  rH.addEventListener('input', function () { st[cur].height = parseFloat(rH.value); showVals(); });
+  rS.addEventListener('input', function () { st[cur].speed = parseFloat(rS.value); showVals(); });
+  function showBox() { document.getElementById('o-box').textContent = box.scale.toFixed(2) + '×'; }
+  document.getElementById('boxOn').addEventListener('change', function (e) { box.on = e.target.checked; });
+  document.getElementById('boxSoft').addEventListener('change', function (e) { box.soft = e.target.checked; });
+  document.getElementById('boxShow').addEventListener('change', function (e) { box.show = e.target.checked; });
+  document.getElementById('boxScale').addEventListener('input', function (e) { box.scale = parseFloat(e.target.value); showBox(); });
+  showBox();
+  txtIn.addEventListener('input', function (e) { st[cur].text = e.target.value; if (W) buildMask(); });
+  embIn.addEventListener('change', function (e) { embersOn = e.target.checked; });
+  fontIn.addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var id = cur, r = new FileReader();
+    r.onload = function () {
+      var name = 'appfont-' + id, ff = new FontFace(name, r.result);
+      ff.load().then(function (loaded) {
+        document.fonts.add(loaded);
+        var c = TABS[id];
+        if (!c.baseStack) c.baseStack = c.stack;
+        c.family = name; c.stack = '"' + name + '", ' + c.baseStack; c.weight = 400; c.custom = true;
+        if (cur === id) { document.getElementById('a-font').textContent = 'Arquivo carregado por você.'; if (W) buildMask(); }
+      }, function () { document.getElementById('a-font').textContent = 'Não consegui ler esse arquivo de fonte.'; });
+    };
+    r.readAsArrayBuffer(f);
+  });
+  colorIn.addEventListener('input', function (e) { setColor(e.target.value, true); });
+
+  // ---------- pointer input ----------
+  function entryNow() { var cfg = TABS[cur]; return entryEnabled && cfg.entry ? t - ev.entry0 : 100; }
+  function replay() {
+    var cfg = TABS[cur];
+    ev.entry0 = t; ev.cut.user = false; rs.key = ''; inp.trail.length = 0;
+    if (cfg.dragCut) ev.la = t + (cfg.entry ? cfg.entry.dur : 0) + 1.0;   // shinobi: the first cut comes after the entry
+    else if (cfg.evt) ev.la = t;                                          // cowboy: the iron lands now
+  }
+  function toUv(e) { var r = stage.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height]; }
+  function pushTrail(x, y, vx, vy) { inp.trail.unshift({ x: x, y: y, vx: vx, vy: vy, s: 1 }); if (inp.trail.length > 8) inp.trail.pop(); }
+  stage.addEventListener('pointerdown', function (e) {
+    if (!inp.on || inp.locked) return;
+    var p = toUv(e), cfg = TABS[cur];
+    inp.down = true; inp.x = p[0]; inp.y = p[1]; inp.start = p.slice(); inp.fired = false;
+    inp.lastT = performance.now(); inp.lastX = p[0]; inp.lastY = p[1];
+    pushTrail(p[0], p[1], 0, 0);
+    if (cfg.tapEvt) ev.lb = t;
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!inp.on) return;
+    var p = toUv(e), cfg = TABS[cur], now = performance.now();
+    var dt2 = Math.max(0.008, (now - inp.lastT) / 1000);
+    inp.vx = inp.vx * 0.5 + ((p[0] - inp.lastX) / dt2) * 0.5; inp.vy = inp.vy * 0.5 + ((p[1] - inp.lastY) / dt2) * 0.5;
+    inp.lastT = now; inp.lastX = p[0]; inp.lastY = p[1]; inp.x = p[0]; inp.y = p[1];
+    if (e.pointerType === 'mouse' && !inp.down) inp.hover = true;
+    if (inp.down || (e.pointerType === 'mouse' && !cfg.dragCut)) {
+      var h = inp.trail[0], spc = cfg.dragCut ? 0.05 : 0.025;
+      if (!h || Math.hypot(p[0] - h.x, p[1] - h.y) > spc) pushTrail(p[0], p[1], inp.vx, inp.vy);
+      else { h.x = p[0]; h.y = p[1]; h.vx = inp.vx; h.vy = inp.vy; h.s = 1; }
+    }
+    });
+  // shinobi: the blade trail is drawn while dragging; on release the cut plays along the gesture
+  function tryCut() {
+    var cfg = TABS[cur];
+    if (!cfg.dragCut || !st[cur].opts[1] || !inp.start || inp.fired) return;
+    var asp = W / Hh, bp = boxPx(cfg);
+    var sx = inp.start[0] * W, sy = (1 - inp.start[1]) * Hh;
+    var inside = sx > bp.x0 && sx < bp.x1 && sy > bp.yT && sy < bp.yB;
+    var dx = (inp.x - inp.start[0]) * asp, dy = inp.y - inp.start[1];
+    var len = Math.hypot(dx, dy), textW = (tb.maxX - tb.minX) / Hh;
+    if (inside && len > 0.3 * textW && Math.abs(dy) < 1.4 * Math.abs(dx)) {
+      ev.cut = { x: (inp.x + inp.start[0]) / 2, y: (inp.y + inp.start[1]) / 2, ang: Math.atan2(dy, dx), user: true };
+      ev.la = t - 0.55; ev.seedA++; inp.fired = true;
+      inp.trail.forEach(function (q) { q.s *= 0.35; });
+      try { if (navigator.vibrate) navigator.vibrate([10, 25, 16]); } catch (_) {}
+    }
+  }
+  function release(e) { if (inp.down) tryCut(); inp.down = false; if (e.pointerType !== 'mouse') inp.hover = false; }
+  stage.addEventListener('pointerup', release);
+  stage.addEventListener('pointercancel', release);
+  stage.addEventListener('pointerleave', function (e) { inp.hover = false; if (e.pointerType === 'mouse') inp.down = false; });
+  document.getElementById('entryOn').addEventListener('change', function (e) { entryEnabled = e.target.checked; replay(); });
+  document.getElementById('replay').addEventListener('click', function () { replay(); });
+  document.getElementById('touchOn').addEventListener('change', function (e) { inp.on = e.target.checked; if (!inp.on) { inp.down = false; inp.hover = false; inp.trail.length = 0; } });
+  document.getElementById('touchLock').addEventListener('change', function (e) { stage.style.touchAction = e.target.checked ? 'none' : 'pan-y'; });
+
+  new ResizeObserver(resize).observe(stage);
+  setTab('fantasy');
+  resize();
+  requestAnimationFrame(frame);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { if (W) buildMask(); });
+  }
+})();
+</script>
