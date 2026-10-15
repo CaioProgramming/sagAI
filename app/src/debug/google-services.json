@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "504234581198",
-    "project_id": "sagai-ilustris",
-    "storage_bucket": "sagai-ilustris.firebasestorage.app"
+    "project_number": "793218007474",
+    "project_id": "sagai-hmg",
+    "storage_bucket": "sagai-hmg.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:504234581198:android:bfe3d233c1ca9bf87bc49f",
+        "mobilesdk_app_id": "1:793218007474:android:0ebc95a001685f9f5b64ab",
         "android_client_info": {
           "package_name": "com.ilustris.sagai.debug"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB6JcEtZE0fnDea-vsBcwWoSN0UvT7awQg"
+          "current_key": "AIzaSyBipd8eLyDAolhY_GJ4pbgucUFb-VoqBcU"
         }
       ],
       "services": {
