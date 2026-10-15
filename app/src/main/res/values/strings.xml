@@ -573,6 +573,7 @@
 
     <!-- Conversation Snippet Sharing -->
     <string name="share">Share</string>
+    <string name="share_video">Video</string>
     <string name="cancel">Cancel</string>
 
 

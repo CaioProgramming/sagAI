@@ -7,6 +7,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -50,12 +52,16 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.iridescentGradient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /** How long the share waits for the genre's fonts before giving up and using the default ones. */
 private const val FONT_WAIT_MS = 4_000L
 
 /** Lets the frozen, flat card draw once before it is captured. */
 private const val FREEZE_SETTLE_MS = 400L
+
+/** Room around the card in the video, so the 3D rotation never clips at its corners. */
+private val VIDEO_MARGIN = 12.dp
 
 /**
  * Everything the collector shares have in common: the genre theme, the loading state, the tilt, the
@@ -84,9 +90,13 @@ fun CollectorShareFrame(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val captureLayer = rememberGraphicsLayer()
+    // Records the card with its 3D rotation, for the video; the flat capture above is for the image.
+    val videoLayer = rememberGraphicsLayer()
 
     var frozen by remember { mutableStateOf(false) }
     var exportRequested by remember { mutableStateOf(false) }
+    var videoProgress by remember { mutableStateOf<Float?>(null) }
+    val rendering = videoProgress != null
     val tilt = rememberCardTilt(frozen)
 
     DisposableEffect(lifecycleOwner, viewModel) {
@@ -116,23 +126,47 @@ fun CollectorShareFrame(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
-                    card(tilt, captureLayer, shareText)
+                    Box(Modifier.fillMaxWidth().recordTo(videoLayer).padding(VIDEO_MARGIN)) {
+                        card(tilt, captureLayer, shareText)
+                    }
 
-                    Button(
-                        enabled = fontsReady && !frozen && !isSaving,
-                        onClick = {
-                            scope.launch {
-                                exportRequested = true
-                                frozen = true
-                                delay(FREEZE_SETTLE_MS)
-                                val bitmap = captureLayer.toImageBitmap().asAndroidBitmap()
-                                viewModel.saveBitmap(bitmap, exportName)
-                            }
-                        },
-                    ) {
-                        Icon(painterResource(R.drawable.ic_share), contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.share))
+                    val ready = fontsReady && !frozen && !isSaving && !rendering
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(
+                            enabled = ready,
+                            onClick = {
+                                scope.launch {
+                                    exportRequested = true
+                                    frozen = true
+                                    delay(FREEZE_SETTLE_MS)
+                                    val bitmap = captureLayer.toImageBitmap().asAndroidBitmap()
+                                    viewModel.saveBitmap(bitmap, exportName)
+                                }
+                            },
+                        ) {
+                            Icon(painterResource(R.drawable.ic_share), contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.share))
+                        }
+
+                        OutlinedButton(
+                            enabled = ready,
+                            onClick = {
+                                scope.launch {
+                                    val file = viewModel.newVideoFile(exportName) ?: return@launch
+                                    videoProgress = 0f
+                                    val rendered =
+                                        runCatching { renderCardVideo(videoLayer, tilt, file) { videoProgress = it } }
+                                            .onFailure { Timber.e(it, "Could not render the card video") }
+                                            .isSuccess
+                                    videoProgress = null
+                                    val uri = if (rendered) viewModel.shareUriFor(file) else null
+                                    if (uri != null) launchShareActivity(uri, context, mimeType = "video/mp4") else file.delete()
+                                }
+                            },
+                        ) {
+                            Text(videoProgress?.let { "${(it * 100).toInt()}%" } ?: stringResource(R.string.share_video))
+                        }
                     }
                 }
             }

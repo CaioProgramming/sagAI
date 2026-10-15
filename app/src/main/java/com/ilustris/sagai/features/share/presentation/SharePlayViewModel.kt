@@ -101,6 +101,10 @@ class SharePlayViewModel
             }
         }
 
+        suspend fun newVideoFile(name: String): File? = sharePlayUseCase.prepareVideoFile(name).getSuccess()
+
+        suspend fun shareUriFor(file: File): Uri? = sharePlayUseCase.loadWithFileProvider(file).getSuccess()
+
         fun deleteSavedFile() {
             viewModelScope.launch(Dispatchers.IO) {
                 sharePlayUseCase.clearShareFolder()

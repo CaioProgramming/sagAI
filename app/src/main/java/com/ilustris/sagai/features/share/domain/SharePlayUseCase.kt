@@ -34,6 +34,9 @@ interface SharePlayUseCase {
 
     suspend fun clearShareFolder(): RequestResult<Unit>
 
+    /** An empty MP4 in the share folder, which is cleared first like for an image. */
+    suspend fun prepareVideoFile(fileName: String): RequestResult<File>
+
     suspend fun generateShareMessage(
         saga: Saga,
         shareType: ShareType,
@@ -79,6 +82,12 @@ class SharePlayUseCaseImpl
                     "${context.packageName}.fileprovider",
                     file,
                 )
+            }
+
+        override suspend fun prepareVideoFile(fileName: String): RequestResult<File> =
+            executeRequest {
+                clearShareFolder()
+                File(fileHelper.getFileCacheDir("shares"), "$fileName${System.currentTimeMillis()}.mp4")
             }
 
         override suspend fun clearShareFolder(): RequestResult<Unit> =
