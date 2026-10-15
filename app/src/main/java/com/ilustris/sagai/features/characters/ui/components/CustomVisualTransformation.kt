@@ -366,6 +366,22 @@ private fun transformExpressiveTags(
 
     val finalTransformedText = transformedBuilder.toString()
 
+    // Where a tap on screen lands in the original text. The tag markup takes no room (or a marker's
+    // worth, for the opening one), so several original offsets share one screen position. The
+    // earliest wins: the end of a tag's content stays inside the tag, the way typing continues the
+    // style of the character before it, and a tap on a marker lands at the start of the content,
+    // never in the middle of `<action>`.
+    val transformedToOriginalTable = IntArray(finalTransformedText.length + 1) { -1 }
+    originalToTransformed.forEachIndexed { original, transformed ->
+        if (transformedToOriginalTable[transformed] == -1) transformedToOriginalTable[transformed] = original
+    }
+    for (position in transformedToOriginalTable.lastIndex downTo 0) {
+        if (transformedToOriginalTable[position] == -1) {
+            transformedToOriginalTable[position] =
+                if (position == transformedToOriginalTable.lastIndex) text.length else transformedToOriginalTable[position + 1]
+        }
+    }
+
     val offsetMapping =
         object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int =
@@ -376,44 +392,10 @@ private fun transformExpressiveTags(
                 }
 
             override fun transformedToOriginal(offset: Int): Int =
-                when {
-                    offset <= 0 -> {
-                        0
-                    }
-
-                    offset >= finalTransformedText.length -> {
-                        text.length
-                    }
-
-                    else -> {
-                        findOriginalOffsetForTransformed(
-                            offset,
-                        originalToTransformed,
-                        text.length,
-                        )
-                    }
-                }
+                transformedToOriginalTable[offset.coerceIn(0, finalTransformedText.length)]
         }
 
     return Pair(annotatedString, offsetMapping)
-}
-
-private fun findOriginalOffsetForTransformed(
-    transformedOffset: Int,
-    originalToTransformed: List<Int>,
-    originalLength: Int,
-): Int {
-    var low = 0
-    var high = originalToTransformed.size - 1
-    while (low < high) {
-        val mid = (low + high + 1) / 2
-        if (originalToTransformed[mid] <= transformedOffset) {
-            low = mid
-        } else {
-            high = mid - 1
-        }
-    }
-    return low.coerceIn(0, originalLength)
 }
 
 /**
