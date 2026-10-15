@@ -65,6 +65,8 @@ sheen when the screen opens); the effect has to look good without interaction an
 
 ## Entry animations (to integrate)
 
+*Prototyped in the lab: each tab plays its entry when opened, with a "Reproduzir entrada" button and a switch to turn it off. The pointer interaction only turns on after the entry and the ignition finish. In the prototype the handwriting reveal is approximated by a pen sweeping left to right (outline first, fill behind it); in the app it is the real `HandwrittenText`.*
+
 Today only two titles have an entry animation: Fantasy and Crime use `HandwrittenText` (a handwriting
 reveal of the glyph outlines, 3.8 s by default, with a shadow that fades in after `onAnimationFinished`).
 `TypewriterText` / `SimpleTypewriterText` exist but are used for body text (terminal pages, story beats,
