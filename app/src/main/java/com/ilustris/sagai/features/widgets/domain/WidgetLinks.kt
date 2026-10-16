@@ -2,11 +2,12 @@ package com.ilustris.sagai.features.widgets.domain
 
 /**
  * Deep links the widgets open. They are the same strings `String.findNavKey()` parses, so a tap
- * lands on the same screen a notification would.
+ * lands on the same screen a notification would. `findNavKey` drops the last path segment, so the
+ * screens without an id carry a trailing `/open`.
  */
 object WidgetLinks {
-    const val HOME = "saga://home"
-    const val NEW_SAGA = "saga://new_saga"
+    const val HOME = "saga://home/open"
+    const val NEW_SAGA = "saga://new_saga/open"
 
     fun chat(sagaId: Int) = "saga://chat/$sagaId"
 
