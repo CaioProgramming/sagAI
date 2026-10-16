@@ -5,6 +5,7 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
+import com.ilustris.sagai.core.ai.model.Artwork
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.emotional.data.model.EmotionalProfile
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -57,5 +58,8 @@ data class Saga(
     @ColumnInfo(defaultValue = "")
     val playerCompass: String? = null,
     @ColumnInfo(defaultValue = "")
-    val artwork: String? = null,
+    val artwork: Artwork? = null,
+    /** True only for sagas created with the progression system (or opted in by the debug backfill); old sagas stay false and untouched. */
+    @ColumnInfo(defaultValue = "0")
+    val progressionEnabled: Boolean = false,
 )

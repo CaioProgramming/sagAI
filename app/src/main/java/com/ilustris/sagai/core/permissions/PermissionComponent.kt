@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.file.BACKUP_PERMISSION
 
 data class PermissionInfo(
     @StringRes val title: Int,
@@ -34,13 +33,6 @@ data class PermissionInfo(
 private fun getPermissionInfo(permission: String): PermissionInfo =
     remember(permission) {
         when (permission) {
-            BACKUP_PERMISSION ->
-                PermissionInfo(
-                    title = R.string.storage_permission_title,
-                    description = R.string.storage_permission_description,
-                    emoji = "💾",
-                )
-
             Manifest.permission.POST_NOTIFICATIONS ->
                 PermissionInfo(
                     title = R.string.notifications_permission_title,

@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
 import MessageStatus
 import androidx.room.withTransaction
 import com.ilustris.sagai.core.ai.GemmaClient
@@ -91,6 +92,7 @@ class MessageUseCaseImpl
         private val sagaContentManager: SagaContentManager,
         private val globalShellService: GlobalShellService,
         private val database: SagaDatabase,
+        private val progressionUseCase: CharacterProgressionUseCase,
         private val semanticRetrievalService: com.ilustris.sagai.core.ai.rag.SemanticRetrievalService,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
@@ -271,6 +273,11 @@ class MessageUseCaseImpl
                             narrativeRules = narrativeRules,
                             characterArcsById = characterArcsById,
                             semanticRetrievalService = semanticRetrievalService,
+                            powerContext =
+                                progressionUseCase.powerContext(
+                                    sagaContent,
+                                    sceneSummary?.charactersPresent?.map { it.name }.orEmpty(),
+                                ),
                             maxMessageLimit =
                                 (if (inputMode == InputMode.VOICE) remoteConfigService.getLong(ChatPrompts.LIVE_REPLY_LIMIT_KEY) else null)
                                     ?.toInt()

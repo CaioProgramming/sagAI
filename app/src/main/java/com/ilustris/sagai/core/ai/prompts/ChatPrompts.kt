@@ -187,7 +187,18 @@ object ChatPrompts {
             "events",
             "relationships",
             "artwork",
+            // The raw start level would contradict the derived one the power context states.
+            "baseLevel",
+            "levelRationale",
+            "statusTimelineId",
         )
+
+    /** ' [DEAD: note]' for a character who is not simply around, so the reply never writes them in as if they were. */
+    private fun statusLabel(character: com.ilustris.sagai.features.characters.data.model.Character): String {
+        val status = character.status ?: return ""
+        if (status == com.ilustris.sagai.features.characters.data.model.CharacterStatus.ACTIVE) return ""
+        return " [${status.name}${character.statusNote?.let { ": $it" }.orEmpty()}]"
+    }
 
     @Suppress("ktlint:standard:max-line-length")
     suspend fun replyMessagePrompt(
@@ -204,6 +215,8 @@ object ChatPrompts {
          * recency- or string-based fallback, so this stays fully optional.
          */
         semanticRetrievalService: SemanticRetrievalService? = null,
+        /** Level gaps of the characters in the scene; null when the saga has no progression. */
+        powerContext: String? = null,
     ): SplitPrompt {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
@@ -286,9 +299,13 @@ object ChatPrompts {
                     put("narrativeContinuity", narrativeContinuity)
                 }
 
+                powerContext?.takeIf { it.isNotBlank() }?.let { put("powerContext", it) }
+
                 put(
                     "storyCharacters",
-                    saga.characters.joinToString { "${it.data.fullName()} - ${it.data.profile.occupation}" },
+                    saga.characters.joinToString {
+                        "${it.data.fullName()} - ${it.data.profile.occupation}" + statusLabel(it.data)
+                    },
                 )
 
                 sceneSummary?.charactersPresent?.takeIf { it.isNotEmpty() }?.let {

@@ -477,4 +477,3 @@ class BackupService(
 }
 
 const val BACKUP_PREFRENCE_KEY = "BACKUP_PATH"
-const val BACKUP_PERMISSION = "BACKUP_SERVICE"

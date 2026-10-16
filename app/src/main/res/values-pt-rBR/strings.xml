@@ -161,6 +161,8 @@
     <string name="saga_brain_open_character">Universo do personagem</string>
     <string name="saga_brain_hint">Toque em uma estrela para explorar · Deslize o card para navegar pelas conexões</string>
     <string name="saga_brain_connections_count">%d conexões</string>
+    <string name="character_action_talk">Conversar</string>
+    <string name="character_action_connections">Conexões</string>
     <string name="character_brain_open">Ver conexões</string>
     <string name="saga_detail_status_ended">Finalizado em %s</string>
     <string name="saga_detail_status_created">Criado em %s</string>
@@ -419,8 +421,8 @@
 
     <!-- Conversation Snippet Sharing -->
     <string name="restore_database_button">Restaurar banco de dados</string>
-    <string name="messages_selected">%1$d de %2$d mensagens selecionadas</string>
     <string name="share">Compartilhar</string>
+    <string name="share_video">Vídeo</string>
     <string name="cancel">Cancelar</string>
 
 
@@ -432,6 +434,9 @@
     <string name="notification_new_message">Nova Mensagem</string>
     <string name="notification_new_message_content">%s enviou uma nova mensagem</string>
     <string name="notification_new_chapter">Novo Capítulo</string>
+    <string name="notification_level_up">Subiu de nível</string>
+    <string name="notification_medal">Nova medalha</string>
+    <string name="notification_legacy">Legado</string>
     <string name="notification_new_chapter_content">Capítulo %s começou!</string>
     <string name="notification_new_act">Novo volume</string>
     <string name="notification_new_act_content">Volume %1$s: %2$s</string>
@@ -556,7 +561,6 @@
     <string name="edit_message">Editar</string>
     <string name="delete_message">Apagar</string>
     <string name="copy_message">Copiar</string>
-    <string name="select_message">Selecionar</string>
     <string name="delete_message_title">Apagar mensagem?</string>
     <string name="delete_message_description">Esta ação não pode ser desfeita.</string>
     <string name="delete">Apagar</string>
@@ -1186,6 +1190,65 @@
     <string name="new_saga_saving_character">Dando vida ao protagonista…</string>
     <string name="new_saga_saving_saga">Desenhando a capa da saga…</string>
     <string name="new_saga_saving_done">Sua saga está pronta</string>
+    <string name="progression_level_up_pill">LV %1$d ↑</string>
+    <string name="progression_level_pill">LV %1$d</string>
+    <string name="progression_experience_title">Experiência</string>
+    <string name="progression_medals">Medalhas</string>
+    <string name="progression_feats">Feitos</string>
+    <string name="progression_messages">Mensagens</string>
+    <string name="progression_xp_progress">%1$d / %2$d XP para o próximo nível</string>
+    <string name="progression_xp_max">Nível máximo</string>
+    <string name="progression_see_more_action">Ver mais</string>
+    <string name="progression_feat_log_title">Registro de feitos</string>
+    <string name="progression_legacy_title">Legado</string>
+    <string name="progression_skills_title">Habilidades</string>
+    <string name="progression_no_medals">Nenhuma medalha ainda</string>
+    <string name="progression_status_absent">Ausente</string>
+    <string name="progression_status_missing">Desaparecido</string>
+    <string name="progression_status_dead">Falecido</string>
+    <string name="progression_in_memory">In memoriam</string>
+    <string name="character_card_about_title">Sobre</string>
+    <string name="character_card_profile_title">Perfil</string>
+    <string name="character_card_actions_title">Ações especiais</string>
+    <string name="character_card_options">Opções</string>
+    <string name="character_card_share">Compartilhar personagem</string>
+    <string name="character_card_race_ethnicity">raça / etnia</string>
+    <string name="character_card_xp_chip">+%1$d XP</string>
+    <string name="progression_medal_label">Medalha</string>
+    <string name="progression_close">Fechar</string>
+    <string name="progression_why">Por quê</string>
+    <string name="settings_show_progression">Níveis e experiência</string>
+    <string name="settings_show_progression_description">Mostra níveis, medalhas e legados dos personagens. Desligue para ler a história sem eles.</string>
+    <string name="character_status_dialog_title">Alterar situação</string>
+    <string name="character_status_note_label">Observação (opcional)</string>
+    <string name="character_status_confirm">Salvar</string>
+    <string name="progression_status_active">Ativo</string>
+    <string name="character_card_change_status">Alterar situação</string>
+    <string name="progression_feats_level">feitos · nível %1$d</string>
+    <string name="archive_export_button">Criar backup completo (.sagas)</string>
+    <string name="archive_restore_button">Restaurar backup completo</string>
+    <string name="archive_export_success">Backup salvo. Guarde o arquivo em um lugar seguro 💜</string>
+    <string name="archive_export_failed">Não foi possível criar o backup. Verifique o espaço livre e tente de novo.</string>
+    <string name="archive_invalid">Este arquivo não é um backup do Sagas.</string>
+    <string name="archive_restore_failed">Não foi possível restaurar este backup. Suas sagas atuais foram mantidas.</string>
+    <string name="archive_restore_dialog_title">Restaurar este backup?</string>
+    <string name="archive_restore_dialog_message">Backup de %1$s com %2$d sagas e %3$d mensagens. Tudo o que você tem agora será substituído.</string>
+    <string name="archive_restore_dialog_confirm">Restaurar</string>
+    <string name="archive_reminder_message">Ato concluído! Quer guardar um backup completo das suas sagas?</string>
+    <string name="archive_reminder_action">Fazer backup</string>
+    <string name="home_last_backup">Último backup: %1$s</string>
+    <string name="home_last_backup_never">Você ainda não fez backup das suas sagas. Toque para fazer.</string>
+    <string name="progression_new_level">Novo nível</string>
+    <string name="progression_level_up_caption">subiu de nível</string>
+    <string name="progression_medal_single">%1$s · nova medalha</string>
+    <string name="progression_medals_n">%1$s · %2$d medalhas</string>
+    <string name="progression_medals_gained">Medalhas conquistadas</string>
+    <string name="progression_legacy_single">%1$s · legado</string>
+    <string name="progression_legacy_gained">Legado conquistado</string>
+    <string name="progression_legacies_gained">Legados conquistados</string>
+    <string name="progression_chapter_short">Cap. %1$d</string>
+    <string name="progression_act_short">Ato %1$d</string>
+    <string name="progression_explainer">Cada personagem tem um nível que cresce com o que ele vive: vínculos, riscos, perdas e escolhas, não só lutas. Medalhas marcam os feitos de um capítulo e o legado marca quem mudou um ato. Toque em Ver mais para ler o que rendeu cada ponto. Dá para esconder tudo isso em Configurações.</string>
 </resources>
 
 

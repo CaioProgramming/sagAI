@@ -73,10 +73,6 @@ interface SagaContentManager {
 
     suspend fun reviewEvent(timelineContent: com.ilustris.sagai.features.home.data.model.TimelineMetadata)
 
-    suspend fun backupSaga()
-
-    suspend fun enableBackup(uri: Uri?)
-
     suspend fun reviewChapter(chapterContent: com.ilustris.sagai.features.home.data.model.ChapterMetadata)
 
     val isMilestoneActive: StateFlow<Boolean>

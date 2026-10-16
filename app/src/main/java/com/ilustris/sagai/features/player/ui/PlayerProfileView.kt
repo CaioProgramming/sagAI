@@ -54,6 +54,8 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.player.data.model.ProfileTopic
 import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
+import com.ilustris.sagai.features.share.domain.model.ShareType
+import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
@@ -71,6 +73,7 @@ fun PlayerProfileView(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showUserNameSheet by remember { mutableStateOf(false) }
     var showEnrichmentDialog by remember { mutableStateOf(false) }
+    var showShare by remember { mutableStateOf(false) }
     val playthroughs by viewModel.availableEndedSagas.collectAsStateWithLifecycle(emptyList())
 
     LaunchedEffect(Unit) {
@@ -107,6 +110,15 @@ fun PlayerProfileView(
                         ),
                     modifier = Modifier.weight(1f),
                 )
+                // There is nothing to portray until the profile has topics.
+                if (uiState.topics.isNotEmpty()) {
+                    IconButton(onClick = { showShare = true }) {
+                        Icon(
+                            painterResource(R.drawable.ic_share),
+                            stringResource(R.string.share),
+                        )
+                    }
+                }
             }
 
             if (uiState.isEmpty) {
@@ -325,6 +337,13 @@ fun PlayerProfileView(
             loadingMessage = uiState.enrichmentProgress ?: "Building your profile...",
         )
     }
+
+    ShareSheet(
+        saga = null,
+        isVisible = showShare,
+        shareType = ShareType.PLAYER,
+        onDismiss = { showShare = false },
+    )
 
     if (showUserNameSheet) {
         UserNamePromptDialog(

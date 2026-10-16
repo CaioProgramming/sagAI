@@ -129,12 +129,6 @@ class PermissionService
             }
 
             @Composable
-            fun rememberBackupLauncher(onresult: (Uri?) -> Unit = {}) =
-                rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocumentTree()) { uri ->
-                    onresult(uri)
-                }
-
-            @Composable
             fun rememberDatabaseImportLauncher(onResult: (Uri?) -> Unit = {}) =
                 rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.OpenDocument(),
@@ -146,6 +140,14 @@ class PermissionService
             fun rememberDatabaseExportLauncher(onResult: (Uri?) -> Unit = {}) =
                 rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.CreateDocument("application/x-sqlite3"),
+                ) { uri ->
+                    onResult(uri)
+                }
+
+            @Composable
+            fun rememberArchiveExportLauncher(onResult: (Uri?) -> Unit = {}) =
+                rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
                 ) { uri ->
                     onResult(uri)
                 }

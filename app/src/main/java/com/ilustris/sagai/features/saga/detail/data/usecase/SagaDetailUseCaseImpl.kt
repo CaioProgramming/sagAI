@@ -9,7 +9,6 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
@@ -54,7 +53,6 @@ class SagaDetailUseCaseImpl
         private val timelineUseCase: TimelineUseCase,
         private val emotionalUseCase: EmotionalUseCase,
         private val wikiUseCase: WikiUseCase,
-        private val backupService: BackupService,
         private val genreConfigService: GenreConfigService,
         private val promptService: PromptService,
         private val remoteConfigService: RemoteConfigService,
@@ -195,7 +193,6 @@ class SagaDetailUseCaseImpl
             timelineContent: TimelineContent,
         ): RequestResult<Unit> = timelineUseCase.generateTimelineContent(saga, timelineContent.data)
 
-        override fun getBackupEnabled() = backupService.backupEnabled()
 
         override suspend fun generateStoryBriefing(sagaId: Int): RequestResult<StoryDailyBriefing> =
             executeRequest {

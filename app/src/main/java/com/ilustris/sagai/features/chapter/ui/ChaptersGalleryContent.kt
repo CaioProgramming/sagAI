@@ -17,6 +17,7 @@ import com.ilustris.sagai.ui.theme.fadeGradientTop
 fun ChaptersGalleryContent(
     saga: SagaContent,
     chapters: List<com.ilustris.sagai.features.chapter.data.model.ChapterInfo>,
+    focusChapterId: Int? = null,
     isGenerating: Boolean = false,
     loadingMessage: String? = null,
     onGenerateIcon: (com.ilustris.sagai.features.chapter.data.model.ChapterInfo) -> Unit = {},
@@ -24,8 +25,16 @@ fun ChaptersGalleryContent(
 ) {
     val genre = saga.data.genre
 
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // Each chapter is a sticky header plus its content: two lazy items.
+    androidx.compose.runtime.LaunchedEffect(focusChapterId, chapters.size) {
+        val index = chapters.indexOfFirst { it.id == focusChapterId }
+        if (focusChapterId != null && index >= 0) listState.animateScrollToItem(index * 2)
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
     ) {
         chapters.forEachIndexed { index, chapter ->
             stickyHeader {

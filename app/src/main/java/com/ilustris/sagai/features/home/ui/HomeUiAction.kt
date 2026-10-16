@@ -15,11 +15,9 @@ sealed class HomeUiAction {
 
     data object OpenPremium : HomeUiAction()
 
-    data object RecoverSagas : HomeUiAction()
 
     data object DismissPremiumOnboarding : HomeUiAction()
 
-    data object DismissBackupSheet : HomeUiAction()
 
     data object CreateFakeSaga : HomeUiAction()
 }

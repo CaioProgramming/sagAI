@@ -191,6 +191,8 @@
     <string name="saga_brain_chapter_in_progress">Chapter %1$d – in progress</string>
     <string name="saga_brain_event_in_progress">Event %1$d – in progress</string>
     <string name="saga_brain_stage_in_progress_body">Keep playing to learn more about this stage of the story.</string>
+    <string name="character_action_talk">Talk</string>
+    <string name="character_action_connections">Connections</string>
     <string name="character_brain_open">See connections</string>
     <string name="see_your_universe">See your universe</string>
     <string name="saga_detail_status_ended">Finished on %s</string>
@@ -570,8 +572,8 @@
     <string name="island_test_image_fallback_prompt">A cyberpunk warrior under neon lights, bust portrait</string>
 
     <!-- Conversation Snippet Sharing -->
-    <string name="messages_selected">%1$d of %2$d messages selected</string>
     <string name="share">Share</string>
+    <string name="share_video">Video</string>
     <string name="cancel">Cancel</string>
 
 
@@ -583,6 +585,9 @@
     <string name="notification_new_message">New Message</string>
     <string name="notification_new_message_content">%s sent a new message</string>
     <string name="notification_new_chapter">New Chapter</string>
+    <string name="notification_level_up">Level up</string>
+    <string name="notification_medal">New medal</string>
+    <string name="notification_legacy">Legacy</string>
     <string name="notification_new_chapter_content">Chapter %s has begun!</string>
     <string name="notification_new_act">New Volume</string>
     <string name="notification_new_act_content">Volume %1$s: %2$s</string>
@@ -701,7 +706,6 @@
     <string name="edit_message">Edit</string>
     <string name="delete_message">Delete</string>
     <string name="copy_message">Copy</string>
-    <string name="select_message">Select</string>
     <string name="delete_message_title">Delete Message?</string>
     <string name="delete_message_description">This action cannot be undone.</string>
     <string name="delete">Delete</string>
@@ -1198,4 +1202,63 @@
     <string name="new_saga_saving_character">Bringing the protagonist to life…</string>
     <string name="new_saga_saving_saga">Drawing the saga\'s cover…</string>
     <string name="new_saga_saving_done">Your saga is ready</string>
+    <string name="progression_level_up_pill">LV %1$d ↑</string>
+    <string name="progression_level_pill">LV %1$d</string>
+    <string name="progression_experience_title">Experience</string>
+    <string name="progression_medals">Medals</string>
+    <string name="progression_feats">Feats</string>
+    <string name="progression_messages">Messages</string>
+    <string name="progression_xp_progress">%1$d / %2$d XP to the next level</string>
+    <string name="progression_xp_max">Maximum level</string>
+    <string name="progression_see_more_action">See more</string>
+    <string name="progression_feat_log_title">Feat log</string>
+    <string name="progression_legacy_title">Legacy</string>
+    <string name="progression_skills_title">Skills</string>
+    <string name="progression_no_medals">No medals yet</string>
+    <string name="progression_status_absent">Away</string>
+    <string name="progression_status_missing">Missing</string>
+    <string name="progression_status_dead">Deceased</string>
+    <string name="progression_in_memory">In memory</string>
+    <string name="character_card_about_title">About</string>
+    <string name="character_card_profile_title">Profile</string>
+    <string name="character_card_actions_title">Special actions</string>
+    <string name="character_card_options">Options</string>
+    <string name="character_card_share">Share character</string>
+    <string name="character_card_race_ethnicity">race / ethnicity</string>
+    <string name="character_card_xp_chip">+%1$d XP</string>
+    <string name="progression_medal_label">Medal</string>
+    <string name="progression_close">Close</string>
+    <string name="progression_why">Why</string>
+    <string name="settings_show_progression">Levels and experience</string>
+    <string name="settings_show_progression_description">Shows levels, medals and legacies of the characters. Turn off to read the story without them.</string>
+    <string name="character_status_dialog_title">Change situation</string>
+    <string name="character_status_note_label">Note (optional)</string>
+    <string name="character_status_confirm">Save</string>
+    <string name="progression_status_active">Active</string>
+    <string name="character_card_change_status">Change situation</string>
+    <string name="progression_feats_level">feats · level %1$d</string>
+    <string name="archive_export_button">Create full backup (.sagas)</string>
+    <string name="archive_restore_button">Restore full backup</string>
+    <string name="archive_export_success">Backup saved. Keep the file somewhere safe 💜</string>
+    <string name="archive_export_failed">Could not create the backup. Check the free space and try again.</string>
+    <string name="archive_invalid">This file is not a Sagas backup.</string>
+    <string name="archive_restore_failed">Could not restore this backup. Your current sagas were kept.</string>
+    <string name="archive_restore_dialog_title">Restore this backup?</string>
+    <string name="archive_restore_dialog_message">Backup from %1$s with %2$d sagas and %3$d messages. Everything you have now will be replaced.</string>
+    <string name="archive_restore_dialog_confirm">Restore</string>
+    <string name="archive_reminder_message">Act complete! Want to save a full backup of your sagas?</string>
+    <string name="archive_reminder_action">Back up</string>
+    <string name="home_last_backup">Last backup: %1$s</string>
+    <string name="home_last_backup_never">You haven\'t backed up your sagas yet. Tap to do it.</string>
+    <string name="progression_new_level">New level</string>
+    <string name="progression_level_up_caption">leveled up</string>
+    <string name="progression_medal_single">%1$s · new medal</string>
+    <string name="progression_medals_n">%1$s · %2$d medals</string>
+    <string name="progression_medals_gained">Medals earned</string>
+    <string name="progression_legacy_single">%1$s · legacy</string>
+    <string name="progression_legacy_gained">Legacy earned</string>
+    <string name="progression_legacies_gained">Legacies earned</string>
+    <string name="progression_chapter_short">Ch. %1$d</string>
+    <string name="progression_act_short">Act %1$d</string>
+    <string name="progression_explainer">Every character has a level that grows with what they live through: bonds, risks, losses and choices, not only fights. Medals mark the deeds of a chapter and the legacy marks who changed an act. Tap See more to read what earned each point. You can hide all of this in Settings.</string>
 </resources>

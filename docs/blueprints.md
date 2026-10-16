@@ -68,10 +68,11 @@ This document tracks all the AI prompt blueprints used in the Sagas application.
 | `new_character_milestone_blueprint`| Narrative reaction to a character joining the team. | Milestone | ✅ |
 | `intro_milestone_blueprint` | Cinematic "Previously on" state synthesis. | Milestone | ✅ |
 | `share_playstyle_blueprint` | Catchy slogans for sharing playstyle cards. | Share | ✅ |
-| `share_emotional_blueprint` | Poetic reflection for shareable emotion cards. | Share | ✅ |
-| `share_history_blueprint` | Movie teaser style taglines for sharing. | Share | ✅ |
+| `share_emotional_blueprint` | A page the saga writes to the player (emotional card): title, text of at most 3 sentences, caption. | Share | ✅ |
+| `share_history_blueprint` | Back cover of the saga card: teaser title, one-sentence logline, hook caption. | Share | ✅ |
 | `share_relations_blueprint` | Taglines about relationship tension for sharing. | Share | ✅ |
-| `share_character_blueprint` | Impactful snapshot of a character for sharing. | Share | ✅ |
+| `share_character_blueprint` | Character card: epithet title, one-line tagline of at most 110 characters, hook caption. | Share | ✅ |
+| `share_player_blueprint` | Player portrait card (player profile screen): archetype title, text of at most 3 sentences, caption. | Share | ✅ |
 | `faq_ask_ai_blueprint` | The "Voice of Sagas" for technical and lore support. | FAQ | ✅ |
 
 **Legend:**
