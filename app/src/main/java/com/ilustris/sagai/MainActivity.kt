@@ -97,6 +97,9 @@ import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.components.BlurTarget
 import com.ilustris.sagai.ui.components.FeatureNeedsBillingSheet
 import com.ilustris.sagai.ui.components.SagaSnackBar
+import com.ilustris.sagai.core.database.backup.SagasArchive
+import com.ilustris.sagai.core.database.backup.SagasArchiveService
+import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.ui.components.globalshell.GlobalShellHost
 import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.ChatGenerationIslandContent
@@ -109,6 +112,8 @@ import com.ilustris.sagai.ui.components.island.IslandContent
 import com.ilustris.sagai.ui.components.island.IslandInsets
 import com.ilustris.sagai.ui.components.island.LocalIslandInsets
 import com.ilustris.sagai.ui.components.island.NotificationIslandContent
+import com.ilustris.sagai.ui.components.island.ProgressionIslandContent
+import com.ilustris.sagai.core.globalshell.ProgressionEffect
 import com.ilustris.sagai.ui.components.island.islandPadding
 import com.ilustris.sagai.ui.navigation.ApiSettingsKey
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
@@ -192,6 +197,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var sagaThemeManager: SagaThemeManager
+
+    @Inject
+    lateinit var archiveService: SagasArchiveService
 
     @Inject
     lateinit var sagaNavigationTracker: SagaNavigationTracker
@@ -312,6 +320,24 @@ class MainActivity : ComponentActivity() {
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
                 val globalShellState by globalShellService.uiState.collectAsState()
+
+                val archiveExportLauncher =
+                    PermissionService.rememberArchiveExportLauncher { uri ->
+                        uri ?: return@rememberArchiveExportLauncher
+                        sagaThemeManager.showSnackBar(getString(R.string.backup_loading_creating), durationMs = 0)
+                        archiveService.exportInBackground(uri) { result ->
+                            sagaThemeManager.showSnackBar(
+                                getString(
+                                    if (result.isSuccess) R.string.archive_export_success else R.string.archive_export_failed,
+                                ),
+                            )
+                        }
+                    }
+                LaunchedEffect(Unit) {
+                    archiveService.exportRequests.collect {
+                        archiveExportLauncher.launch(SagasArchive.suggestedFileName())
+                    }
+                }
 
                 LaunchedEffect(Unit) {
                     sideEffectService.sideEffects.collect { effect ->
@@ -465,6 +491,15 @@ class MainActivity : ComponentActivity() {
 
                         visibleChatGen != null -> {
                             ChatGenerationIslandContent(visibleChatGen)
+                        }
+
+                        notificationEffect is ProgressionEffect -> {
+                            ProgressionIslandContent(
+                                effect = notificationEffect,
+                                context = this@MainActivity,
+                                onNavigate = { deepLink -> navigateDeepLink(deepLink) },
+                                onDismiss = { globalShellService.dismiss() },
+                            )
                         }
 
                         notificationEffect != null -> {

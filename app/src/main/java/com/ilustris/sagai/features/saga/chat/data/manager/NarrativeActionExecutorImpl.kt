@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.data.manager
 
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
@@ -52,6 +53,7 @@ class NarrativeActionExecutorImpl
         private val messageDao: MessageDao,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val playerProfileUseCase: PlayerProfileUseCase,
+        private val progressionUseCase: CharacterProgressionUseCase,
         private val worldLocationUseCase: WorldLocationUseCase,
         private val bookUseCase: BookUseCase,
         private val bookGenerationService: BookGenerationService,
@@ -384,6 +386,8 @@ class NarrativeActionExecutorImpl
                     }
                 }
             }
+            // After the chapter is synthesized and its feats exist; a failed evaluation never blocks the story.
+            progressionUseCase.evaluateChapterHonors(saga.data.id, chapter.data.id)
             generated ?: error("Failed to generate chapter synthesis")
         }
 
@@ -509,6 +513,7 @@ class NarrativeActionExecutorImpl
                         }
                     }
                 }
+                progressionUseCase.evaluateActLegacy(saga.data.id, currentAct.data.id)
                 generated ?: error("Failed to generate act synthesis")
             }
         }

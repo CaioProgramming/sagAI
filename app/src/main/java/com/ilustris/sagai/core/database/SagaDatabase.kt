@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.ilustris.sagai.core.database.converters.ArtworkConverter
 import com.ilustris.sagai.core.database.converters.BookConverters
 import com.ilustris.sagai.core.database.converters.CharacterPresenceListConverter
 import com.ilustris.sagai.core.database.converters.ChoiceCardListConverter
@@ -42,6 +43,9 @@ import com.ilustris.sagai.features.characters.relations.data.model.RelationshipU
 import com.ilustris.sagai.features.characters.relations.data.source.CharacterRelationDao
 import com.ilustris.sagai.features.characters.relations.data.source.RelationshipUpdateEventDao
 import com.ilustris.sagai.features.geography.data.model.WorldLocation
+import com.ilustris.sagai.features.progression.data.model.CharacterFeat
+import com.ilustris.sagai.features.progression.data.model.CharacterHonor
+import com.ilustris.sagai.features.progression.data.source.ProgressionDao
 import com.ilustris.sagai.features.geography.data.model.WorldLocationVisit
 import com.ilustris.sagai.features.geography.data.source.WorldLocationDao
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -79,8 +83,10 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         EmbeddingEntry::class,
         EpilogueMessage::class,
         CharacterKnowledge::class,
+        CharacterFeat::class,
+        CharacterHonor::class,
     ],
-    version = 39,
+    version = 42,
     exportSchema = true,
 )
 @TypeConverters(
@@ -93,6 +99,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
     TimelineConverters::class,
     ChoiceCardListConverter::class,
     FloatArrayConverter::class,
+    ArtworkConverter::class,
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
@@ -134,6 +141,8 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun epilogueMessageDao(): EpilogueMessageDao
 
     abstract fun characterKnowledgeDao(): CharacterKnowledgeDao
+
+    abstract fun progressionDao(): ProgressionDao
 
     companion object {
         const val NAME = "SagaDatabase"

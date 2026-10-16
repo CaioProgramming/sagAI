@@ -5,6 +5,8 @@ import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.mergeInstructions
+import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.features.progression.domain.ProgressionConfig
 import com.ilustris.sagai.core.ai.prompts.CosmicLibraryArgs
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.prompts.SagaQuizArgs
@@ -101,6 +103,7 @@ class SagaIdeationService
         suspend fun sealSacredContract(
             sagaDraft: SagaDraft,
             characterInfo: CharacterInfo,
+            progression: ProgressionConfig? = null,
         ): Flow<StreamingState<SacredContract?>> {
             val splitPrompt =
                 NewSagaPrompts
@@ -109,7 +112,10 @@ class SagaIdeationService
                         sagaDraft,
                         characterInfo,
                         themeStyle = genreConfigService.aesthetic(sagaDraft.genre),
-                    ).mergeInstructions(genreConfigService.conversationInstructions(sagaDraft.genre))
+                    ).mergeInstructions(
+                        genreConfigService.conversationInstructions(sagaDraft.genre),
+                        progression?.let { mapOf("LEVEL_BANDS" to it.levelBands.toAINormalize()) }.orEmpty(),
+                    )
             return gemmaClient.generateStreaming<SacredContract>(
                 promptSplit = splitPrompt,
                 requirement = ModelRequirement.HIGH,
@@ -137,7 +143,13 @@ class SagaIdeationService
                         "image",
                         "emojified",
                         "emotionalProfile",
-                    ),
+                    ) +
+                        listOf("status", "statusNote", "statusTimelineId") +
+                        if (progression == null) {
+                            listOf("baseLevel", "levelRationale", "skills")
+                        } else {
+                            listOf("skillsAndProficiencies", "uniqueOrSignatureTalents")
+                        },
             )
         }
     }

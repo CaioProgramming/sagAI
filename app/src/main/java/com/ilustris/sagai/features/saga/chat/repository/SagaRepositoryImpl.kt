@@ -3,6 +3,8 @@ package com.ilustris.sagai.features.saga.chat.repository
 import android.icu.util.Calendar
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.Artwork
+import com.ilustris.sagai.core.ai.model.MAX_COVER_CHARACTERS
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.services.ArtworkConceptService
 import com.ilustris.sagai.core.data.executeRequest
@@ -76,7 +78,7 @@ class SagaRepositoryImpl
             saga: Saga,
             characters: List<Character>,
         ) = executeRequest {
-            val sagaWithArtwork = ensureSagaArtwork(saga)
+            val sagaWithArtwork = ensureSagaArtwork(saga, characters)
             val context = generateIconContext(sagaWithArtwork, characters)
             imageGenerationService
                 .enqueue(
@@ -106,7 +108,7 @@ class SagaRepositoryImpl
         ): Flow<StreamingState<Saga>> =
             kotlinx.coroutines.flow.flow {
                 try {
-                    val sagaWithArtwork = ensureSagaArtwork(saga)
+                    val sagaWithArtwork = ensureSagaArtwork(saga, characters)
                     val context = generateIconContext(sagaWithArtwork, characters)
                     imageGenerationService
                         .enqueue(
@@ -145,15 +147,18 @@ class SagaRepositoryImpl
                 }
             }
 
-        private suspend fun ensureSagaArtwork(saga: Saga): Saga {
-            if (!saga.artwork.isNullOrBlank()) return saga
-            val artwork =
+        /** The cover curator for the saga: picks the concept, the characters that carry the cover and its story elements. */
+        private suspend fun ensureSagaArtwork(
+            saga: Saga,
+            characters: List<Character>,
+        ): Saga {
+            if (saga.artwork?.isBlank() == false) return saga
+            val curated =
                 artworkConceptService
-                    .ensureArtwork(
-                        imageType = ImageType.COVER,
-                        contentType = ImageType.COVER.name,
+                    .ensureCoverArtwork(
+                        contentType = "Saga",
                         genre = saga.genre,
-                        context = saga.description,
+                        context = sagaArtworkContext(saga, characters),
                         currentArtwork = saga.artwork,
                     ).onFailure {
                         Timber.w(
@@ -161,19 +166,50 @@ class SagaRepositoryImpl
                             "ensureSagaArtwork: failed to generate artwork for saga ${saga.id}",
                         )
                     }.getSuccess()
-                    ?.takeIf { it.isNotBlank() }
+                    ?.takeUnless { it.isBlank() }
                     ?: return saga
+            val artwork =
+                curated.copy(
+                    characterIds =
+                        curated.characterIds
+                            .distinct()
+                            .filter { id -> id > 0 && characters.any { it.id == id } }
+                            .take(MAX_COVER_CHARACTERS),
+                )
             return updateSaga(saga.copy(artwork = artwork))
-    }
+        }
+
+        private fun sagaArtworkContext(
+            saga: Saga,
+            characters: List<Character>,
+        ): String =
+            buildString {
+                appendLine("### SAGA")
+                appendLine(saga.title)
+                appendLine(saga.description)
+                if (characters.isNotEmpty()) {
+                    appendLine()
+                    appendLine("### CHARACTERS (id: name, backstory)")
+                    characters.forEach { appendLine("- ${it.id}: ${it.name}, ${it.backstory.take(CHARACTER_BACKSTORY_PREVIEW)}") }
+                }
+            }
 
         private fun generateIconContext(
             saga: Saga,
             characters: List<Character>,
         ): String =
             buildString {
+                val artwork = saga.artwork?.takeUnless { it.isBlank() }
+                // The curator names who the cover needs; sagas curated before that show everyone.
+                val cover =
+                    artwork
+                        ?.characterIds
+                        .orEmpty()
+                        .let { ids -> characters.filter { it.id in ids } }
+                        .ifEmpty { characters }
                 appendLine("### CHARACTERS")
                 appendLine(
-                    characters.toAINormalize(
+                    cover.toAINormalize(
                         listOf(
                             "image",
                             "sagaId",
@@ -186,10 +222,14 @@ class SagaRepositoryImpl
                 )
                 appendLine()
 
-                val artwork = saga.artwork?.takeIf { it.isNotBlank() }
                 if (artwork != null) {
                     appendLine("### KEY ART CONCEPT")
-                    appendLine(artwork)
+                    appendLine(artwork.concept)
+                    if (artwork.elements.isNotEmpty()) {
+                        appendLine()
+                        appendLine("### STORY ELEMENTS TO DRAW ON")
+                        artwork.elements.forEach { appendLine("- $it") }
+                    }
                 } else {
                     appendLine("### SAGA CONTEXT")
                     appendLine(saga.description)
@@ -198,3 +238,5 @@ class SagaRepositoryImpl
 
         override suspend fun backupSaga(sagaContent: SagaContent) = backupService.backupSaga(sagaContent)
     }
+
+private const val CHARACTER_BACKSTORY_PREVIEW = 200

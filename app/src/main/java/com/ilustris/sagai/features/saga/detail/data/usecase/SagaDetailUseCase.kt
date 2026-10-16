@@ -52,7 +52,6 @@ interface SagaDetailUseCase {
         timelineContent: TimelineContent,
     ): RequestResult<Unit>
 
-    fun getBackupEnabled(): Flow<Boolean>
 
     suspend fun generateStoryBriefing(sagaId: Int): RequestResult<StoryDailyBriefing>
 }

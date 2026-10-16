@@ -26,6 +26,7 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.narrative.domain.rollupContinuity
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -59,6 +60,7 @@ class TimelineUseCaseImpl
         private val remoteConfigService: RemoteConfigService,
         private val genreConfigService: GenreConfigService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
+        private val characterProgressionUseCase: CharacterProgressionUseCase,
     ) : TimelineUseCase {
         override suspend fun getAllTimelines() = timelineRepository.getAllTimelines()
 
@@ -84,6 +86,7 @@ class TimelineUseCaseImpl
                         prompt.mergeInstructions(
                             genreConfigService.conversationInstructions(saga.data.genre),
                         ),
+                    filterOutputFields = statusFilter(fullSaga.data.progressionEnabled),
                     requirement = ModelRequirement.HIGH,
                 )!!
 
@@ -127,8 +130,14 @@ class TimelineUseCaseImpl
                 "generateFullLoreUpdate: Updated characters based on lore updates: " +
                     "${persistedCharacters.size}, wikis: ${persistedWikis.size}",
             )
+            // Separate request, after the lore exists; a failure never fails the lore update.
+            characterProgressionUseCase.evaluateEvent(saga.data.id, timeline.id)
             refreshChapterContinuityRollup(saga.data.id, timeline.chapterId)
         }
+
+        /** The status of a character is only asked for in sagas with progression. */
+        private fun statusFilter(progressionEnabled: Boolean) =
+            if (progressionEnabled) emptyList() else listOf("status", "statusNote", "statusReason")
 
         private suspend fun persistLocationUpdates(
             sagaId: Int,
@@ -205,7 +214,7 @@ class TimelineUseCaseImpl
                                     filterOutputFields =
                                         listOf(
                                             "timelineId",
-                                        ),
+                                        ) + statusFilter(fullSaga.data.progressionEnabled),
                                 ),
                         context = "Generating new lore...",
                         genre = saga.data.genre,
@@ -272,6 +281,7 @@ class TimelineUseCaseImpl
                                         "${newlyAppearedCharacters.size}, wikis: ${persistedWikis.size}",
                                 )
 
+                                characterProgressionUseCase.evaluateEvent(saga.data.id, timeline.id)
                                 refreshChapterContinuityRollup(saga.data.id, timeline.chapterId)
 
                                 emit(

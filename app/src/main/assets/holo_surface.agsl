@@ -1,0 +1,61 @@
+// Holographic surface for the share collector cards, in a single pass.
+//
+// Applied as a RenderEffect over the card art, so it reads the art and returns the finished pixel:
+// a chromatic fringe (red and blue taken from either side of the pixel), a band of the genre's
+// palette dodged into the art, and a soft glare that follows the tilt. Doing all of it here replaces
+// the separate foil, glare and fringe layers, each of which needed its own full-size offscreen
+// buffer and a blend mode the GPU could not do in fixed function. That stack cost about 120 ms a
+// frame on a Galaxy S23 FE; this is three texture taps and some arithmetic.
+
+uniform shader image;
+uniform float2 iResolution;
+
+// Card tilt, each axis in -1..1.
+uniform float2 u_tilt;
+
+// Offset of the red channel in pixels; blue moves the opposite way.
+uniform float2 u_shift;
+
+// Strength of the foil, 0..1.
+uniform float u_intensity;
+
+// Five palette stops as plain RGB in 0..1, fed with setFloatUniform like the app's other shaders.
+uniform float3 u_c0;
+uniform float3 u_c1;
+uniform float3 u_c2;
+uniform float3 u_c3;
+uniform float3 u_c4;
+
+float3 ramp(float t) {
+    float x = clamp(t, 0.0, 1.0) * 4.0;
+    float3 c = mix(u_c0, u_c1, clamp(x, 0.0, 1.0));
+    c = mix(c, u_c2, clamp(x - 1.0, 0.0, 1.0));
+    c = mix(c, u_c3, clamp(x - 2.0, 0.0, 1.0));
+    c = mix(c, u_c4, clamp(x - 3.0, 0.0, 1.0));
+    return c;
+}
+
+half4 main(float2 p) {
+    half4 centre = image.eval(p);
+    half3 base = half3(image.eval(p + u_shift).r, centre.g, image.eval(p - u_shift).b);
+
+    float2 uv = p / iResolution;
+
+    // A diagonal band that slides with the tilt, strongest mid-cycle so the repeat never shows.
+    float band = uv.x * 0.9 + uv.y * 0.6 + u_tilt.x * 0.55 + u_tilt.y * 0.35;
+    float w = fract(band * 1.1);
+    float stripe = smoothstep(0.0, 0.2, w) * (1.0 - smoothstep(0.7, 1.0, w));
+    float grain = 0.5 + 0.5 * sin((uv.x - uv.y) * 420.0 + u_tilt.x * 5.0);
+    float amount = clamp((0.62 * stripe + 0.06 * grain) * u_intensity, 0.0, 0.95);
+
+    // Colour dodge: brightens the art toward the foil colour, so dark areas stay dark.
+    half3 foil = half3(ramp(w));
+    half3 col = min(base / max(half3(1.0) - foil * half(amount), half3(0.05)), half3(1.0));
+
+    // Glare: a white screen centred where the card is tilted toward the viewer.
+    float2 g = float2(0.5 + u_tilt.x * 0.5, 0.5 + u_tilt.y * 0.5);
+    float glare = smoothstep(0.6, 0.0, distance(uv, g));
+    col = col + (half3(1.0) - col) * half(glare * 0.3);
+
+    return half4(col * centre.a, centre.a);
+}

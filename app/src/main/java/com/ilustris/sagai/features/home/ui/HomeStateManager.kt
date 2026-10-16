@@ -45,12 +45,8 @@ class HomeStateManager {
         _uiState.update { it.copy(showPremiumOnboarding = show) }
     }
 
-    fun setShowBackupSheet(show: Boolean) {
-        _uiState.update { it.copy(showBackupSheet = show) }
-    }
-
-    fun setBackupAvailable(available: Boolean) {
-        _uiState.update { it.copy(backupAvailable = available) }
+    fun setLastBackupAt(timestamp: Long) {
+        _uiState.update { it.copy(lastBackupAt = timestamp) }
     }
 
     fun setLoading(

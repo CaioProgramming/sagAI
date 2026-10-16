@@ -1,0 +1,309 @@
+<title>Sagas Holo Card</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Almendra:ital,wght@0,400;0,700;1,400&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Orbitron:wght@600;800&family=Exo+2:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* Layout: one centered 3D card on a dark stage, three toggles below, short notes under. Single dark look by choice. Card follows the trading-card anatomy: name plate with ID orb, art window, set line, effect text box. */
+:root {
+  --ink: #0d0b10;
+  --stage: #17131c;
+  --paper: #f3ece0;
+  --muted: #a79fae;
+  --gold: #e8b230;
+  --line: #2c2535;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --body: "Barlow", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+body { background: var(--ink); color: var(--paper); font-family: var(--body); padding-inline: 16px; padding-block: 24px 48px; }
+.wrap { max-width: 520px; margin: 0 auto; display: grid; gap: 28px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: 28px; letter-spacing: .02em; text-transform: uppercase; margin: 0; }
+.sub { color: var(--muted); font-size: 15px; margin: 4px 0 0; max-width: 46ch; }
+
+#deck { --foilg: linear-gradient(115deg, transparent 18%, rgba(255,40,140,.55) 30%, rgba(255,210,0,.55) 40%, rgba(0,255,170,.5) 50%, rgba(0,170,255,.55) 60%, transparent 78%); --gr: 16px; --g1: #e8b230; --g2: #d9739a; --g3: #8b2635; --frameg: linear-gradient(135deg, #e8b230, #8b2635); --gbg1: #1a1322; --gbg2: #0c0a10; --gft: Georgia, serif; --gfb: Georgia, serif; display: grid; gap: 28px; }
+.gen { display: flex; flex-wrap: wrap; gap: 8px; }
+.stage { background: radial-gradient(120% 80% at 50% 30%, #2a2033 0%, var(--stage) 55%, var(--ink) 100%); border: 1px solid var(--line); border-radius: 6px; padding: 36px 16px; display: grid; place-items: center; perspective: 900px; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+.stage:active { cursor: grabbing; }
+
+.card { --tx: 0; --ty: 0; --bx: 50%; --by: 50%; --mx: 50%; --my: 50%; --holo: 1; --depth: 1;
+  position: relative; width: min(78vw, 320px); aspect-ratio: 5 / 7; transform-style: preserve-3d;
+  transform: rotateY(calc(var(--tx) * 17deg)) rotateX(calc(var(--ty) * -17deg));
+  filter: drop-shadow(0 28px 28px rgba(0,0,0,.55)); will-change: transform; }
+.clip { position: absolute; inset: 0; border-radius: var(--gr); overflow: hidden; background: #000; isolation: isolate; }
+.layer { position: absolute; inset: 0; background-image: var(--img); background-size: cover; background-position: 50% 30%; }
+.bg { transform: translate(calc(var(--tx) * var(--depth) * -9px), calc(var(--ty) * var(--depth) * -9px)) scale(1.14); filter: blur(1.5px) saturate(.9) brightness(.85); }
+.fg { transform: translate(calc(var(--tx) * var(--depth) * 7px), calc(var(--ty) * var(--depth) * 7px)) scale(1.04);
+  -webkit-mask-image: radial-gradient(ellipse 62% 52% at 46% 70%, #000 55%, transparent 100%); mask-image: radial-gradient(ellipse 62% 52% at 46% 70%, #000 55%, transparent 100%); }
+.shade { background: linear-gradient(to bottom, rgba(0,0,0,.45), transparent 20%, transparent 46%, rgba(0,0,0,.72) 68%, rgba(0,0,0,.92)); }
+.ui { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
+.frame { position: absolute; inset: 0; border-radius: var(--gr); border: 5px solid transparent; background: var(--frameg) border-box; -webkit-mask: linear-gradient(#000 0 0) padding-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) padding-box exclude, linear-gradient(#000 0 0); transform: translateZ(2px); }
+.head { position: absolute; top: 20px; left: 14px; right: 14px; display: grid; gap: 6px; justify-items: center; transform: translateZ(calc(40px * var(--depth))); }
+.name { max-width: 100%; box-sizing: content-box; padding: .15em .4em; margin: -.15em -.4em; white-space: nowrap; text-align: center; font-family: var(--gft); font-weight: 400; font-size: 34px; line-height: 1; letter-spacing: .03em; background: linear-gradient(180deg, var(--g1), var(--g2)); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 2px rgba(0,0,0,.85)) drop-shadow(0 2px 0 rgba(0,0,0,.9)) drop-shadow(0 0 12px color-mix(in srgb, var(--g3) 85%, transparent)); }
+.mark span { white-space: nowrap; }
+.mark .sg { font-family: var(--gft); font-size: 13px; letter-spacing: .08em; color: var(--g1); }
+.mark .sg .sp { transform: rotate(90deg); }
+.occ { text-align: center; font-family: var(--gfb); font-size: 14px; letter-spacing: .08em; color: rgba(255,255,255,.8); text-shadow: 0 1px 4px #000; }
+.meta { position: absolute; left: 20px; right: 20px; bottom: 20px; display: grid; gap: 0; transform: translateZ(calc(26px * var(--depth))); }
+.flavor { margin: 0; font-family: var(--gfb); font-size: 16px; line-height: 1.4; text-align: center; color: #fff; text-shadow: 0 1px 6px #000; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.mark { position: absolute; right: 14px; top: 86px; font-family: var(--gfb); font-size: 11px; letter-spacing: .06em; white-space: nowrap; color: rgba(255,255,255,.8); text-shadow: 0 1px 4px #000; writing-mode: vertical-rl; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: .7em; transform: translateZ(calc(14px * var(--depth))); }
+
+.foil { position: absolute; inset: 0; background: var(--foilg);
+  background-size: 260% 260%; background-position: var(--bx) var(--by); mix-blend-mode: color-dodge; opacity: calc(var(--holo) * .5); pointer-events: none; }
+.grain { position: absolute; inset: 0; background: repeating-linear-gradient(60deg, rgba(255,255,255,.07) 0 1px, transparent 1px 5px), repeating-linear-gradient(-30deg, rgba(0,0,0,.12) 0 1px, transparent 1px 4px); background-position: var(--bx) var(--by); mix-blend-mode: overlay; opacity: var(--holo); pointer-events: none; }
+.glare { position: absolute; inset: 0; background: radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,.55), rgba(255,255,255,0) 45%); mix-blend-mode: soft-light; opacity: var(--holo); pointer-events: none; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; padding: 10px 14px; border-radius: 4px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.chip[aria-pressed="true"] { color: #1a1205; background: var(--gold); border-color: var(--gold); }
+.chip:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+
+.notes { display: grid; gap: 14px; border-top: 1px solid var(--line); padding-top: 20px; }
+.notes h2 { font-family: var(--mono); font-weight: 500; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin: 0; }
+.notes p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.55; max-width: 60ch; }
+.notes b { color: var(--paper); font-weight: 500; }
+
+.sg { font-weight: 900; text-transform: uppercase; white-space: nowrap; }
+.sg .sp { display: inline-block; width: .8em; height: 1.1em; vertical-align: -.25em; fill: currentColor; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; padding: 10px 14px; border-radius: 4px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.tab[aria-selected="true"] { color: var(--paper); border-color: var(--gold); box-shadow: inset 0 -2px 0 var(--gold); }
+.tab:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+.layer.cover { filter: none; background-position: 50% 50%; transform: translate(calc(var(--tx) * var(--depth) * -6px), calc(var(--ty) * var(--depth) * -6px)) scale(1.08); }
+.panel { display: grid; gap: 14px; }
+.panel[hidden] { display: none; }
+.cap { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 56ch; }
+.cap b { color: var(--paper); font-weight: 500; }
+.name.big { white-space: normal; font-size: 30px; line-height: 1.02; text-wrap: balance; }
+.stage.flat { perspective: none; cursor: default; touch-action: auto; }
+.note { --a1: var(--g1); --a2: var(--g2); --bg1: var(--gbg1); --bg2: var(--gbg2); --edge: color-mix(in srgb, var(--g1) 35%, transparent); --ft: var(--gft); --fb: var(--gfb);
+  position: relative; isolation: isolate; width: 100%; box-sizing: border-box; padding: 7cqw 7cqw 5.5cqw; display: grid; gap: 3.2cqw; overflow: hidden; border-radius: var(--gr);
+  background: radial-gradient(120% 70% at 20% 0%, color-mix(in srgb, var(--a2) 22%, transparent), transparent 60%), radial-gradient(90% 60% at 100% 100%, color-mix(in srgb, var(--a1) 14%, transparent), transparent 65%), linear-gradient(165deg, var(--bg1), var(--bg2));
+  box-shadow: 0 26px 44px rgba(0,0,0,.55), 0 0 0 1px var(--edge); }
+.note::before { content: ""; position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px), radial-gradient(circle at 50% 50%, transparent 55%, rgba(0,0,0,.45)); }
+.note .q { position: absolute; top: -4cqw; right: 3cqw; z-index: -1; font-family: var(--ft); font-size: 34cqw; line-height: 1; color: var(--a1); opacity: .08; }
+.note .t { margin: -.15em -.4em; padding: .15em .4em; font-family: var(--ft); font-weight: 400; font-size: clamp(20px, 6.4cqw, 36px); line-height: 1.08; background: linear-gradient(100deg, var(--a1), var(--a2)); -webkit-background-clip: text; background-clip: text; color: transparent; text-wrap: balance; }
+.note .r { display: flex; align-items: center; gap: 10px; color: var(--a1); }
+.note .r::before, .note .r::after { content: ""; height: 1px; flex: 1; background: linear-gradient(90deg, transparent, var(--a1)); }
+.note .r::after { transform: scaleX(-1); }
+.note .r svg { flex: none; width: 15px; height: 19px; fill: var(--a1); }
+.note .x { margin: 0; font-family: var(--fb); font-size: clamp(11px, 3.1cqw, 17px); line-height: 1.55; color: #efe8f3; }
+.note .x::first-letter { float: left; font-family: var(--ft); font-size: 3.6em; line-height: .8; padding: 6px 8px 0 0; color: var(--a1); }
+.note .c { display: flex; align-items: center; justify-content: space-between; gap: 4cqw; padding-top: 3cqw; border-top: 1px solid var(--edge); }
+.note .cl { font-family: var(--fb); font-style: normal; font-size: clamp(10px, 2.7cqw, 14px); line-height: 1.35; color: color-mix(in srgb, var(--a1) 75%, #fff 25%); opacity: .85; }
+.note .w { flex: none; font-family: var(--ft); font-size: clamp(15px, 4.4cqw, 24px); letter-spacing: .18em; color: var(--a1); }
+
+
+.nw { width: min(100%, 560px); container-type: inline-size; }
+.stage.flat { padding: 16px 12px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Cards de compartilhar</h1>
+    <p class="sub">Arraste os cards para inclinar. Parados, eles balançam sozinhos.</p>
+  </header>
+
+  <div class="gen" role="group" aria-label="Gênero do exemplo" id="genres"></div>
+
+  <div id="deck">
+  <div class="tabs" role="tablist" aria-label="Tipo de compartilhamento">
+    <button class="tab" role="tab" id="tab-char" aria-selected="true" data-p="p-char">Personagem</button>
+    <button class="tab" role="tab" id="tab-saga" aria-selected="false" data-p="p-saga">Saga</button>
+    <button class="tab" role="tab" id="tab-emo" aria-selected="false" data-p="p-emo">Emocional</button>
+  </div>
+
+  <section class="panel" id="p-char" role="tabpanel" aria-labelledby="tab-char">
+    <div class="stage" data-stage>
+      <div class="card" style="--img:url(__IMG__)">
+        <div class="clip">
+          <div class="layer bg"></div><div class="layer fg"></div><div class="layer shade"></div>
+          <div class="foil"></div><div class="grain"></div><div class="glare"></div>
+        </div>
+        <div class="ui">
+          <div class="frame"></div>
+          <div class="head"><div class="name" data-fit>Kira Vale</div><div class="occ">Informante de rua</div></div>
+          <div class="mark"><span class="sg" data-brand></span><span class="gl"></span><span>Nº 142</span></div>
+          <div class="meta"><p class="flavor">Conhece cada beco da cidade e cobra caro por cada segredo que vende.</p></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap"><b>Personagem.</b> Arte do personagem de fundo, com profundidade e holo. Os dados vêm do personagem e do texto gerado.</p>
+  </section>
+
+  <section class="panel" id="p-saga" role="tabpanel" aria-labelledby="tab-saga" hidden>
+    <div class="stage" data-stage>
+      <div class="card" style="--img:url(__IMG2__)">
+        <div class="clip">
+          <div class="layer bg cover"></div><div class="layer shade"></div>
+          <div class="foil"></div><div class="grain"></div><div class="glare"></div>
+        </div>
+        <div class="ui">
+          <div class="frame"></div>
+          <div class="head"><div class="name big">Os Becos de Vesper</div></div>
+          <div class="mark"><span class="sg" data-brand></span><span class="gl"></span><span>Nº 31</span></div>
+          <div class="meta"><p class="flavor">Uma informante, um bairro que não perdoa e uma dívida que ninguém lembra de ter feito.</p></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap"><b>Saga.</b> A capa vira o fundo, sem recorte. Título no topo, sinopse curta embaixo. Serve também para o estilo de jogo, trocando só o texto. </p>
+  </section>
+
+  <section class="panel" id="p-emo" role="tabpanel" aria-labelledby="tab-emo" hidden>
+    <div class="stage flat">
+      <div class="nw"><article class="note" id="note" data-g="fantasy">
+        <span class="q" aria-hidden="true">&ldquo;</span>
+        <h2 class="t" id="nT"></h2>
+        <div class="r" aria-hidden="true" data-spark></div>
+        <p class="x" id="nX"></p>
+        <div class="c"><span class="cl" id="nC"></span><span class="w sg" data-brand></span></div>
+      </article></div>
+    </div>
+    <p class="cap"><b>Emocional.</b> Sem imagem e sem 3D, como uma página arrancada do livro da saga, mais larga do que alta. Cores e fontes seguem o gênero, como já acontece hoje. O que entra de novo é a moldura, o ornamento, a letra capitular, a textura e a assinatura.</p>
+  </section>
+
+  <div class="controls" id="controls">
+    <button class="chip" id="tHolo" aria-pressed="true">Holo</button>
+    <button class="chip" id="tDepth" aria-pressed="true">Profundidade</button>
+    <button class="chip" id="tSway" aria-pressed="true">Balanço automático</button>
+  </div>
+
+  </div>
+
+  <section class="notes">
+    <h2>Fora desta prévia</h2>
+    <p>Relações e História continuam como estão hoje. O Estilo de jogo usaria o card da Saga. Nomes, números e textos desta página são exemplos.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cur = { x: 0, y: 0 }, tgt = { x: 0, y: 0 };
+  var dragging = false, sway = !reduce, last = performance.now(), idleT = 0;
+  var holo = 1, depth = 1;
+  var stage = null, card = null;
+  var controls = document.getElementById('controls');
+
+  function clamp(v) { return Math.max(-1, Math.min(1, v)); }
+  function fromEvent(e) {
+    var r = stage.getBoundingClientRect();
+    tgt.x = clamp(((e.clientX - r.left) / r.width - 0.5) * 2);
+    tgt.y = clamp(((e.clientY - r.top) / r.height - 0.5) * 2);
+  }
+  function release() { dragging = false; }
+  document.querySelectorAll('[data-stage]').forEach(function (st) {
+    st.addEventListener('pointerdown', function (e) { stage = st; dragging = true; st.setPointerCapture(e.pointerId); fromEvent(e); });
+    st.addEventListener('pointermove', function (e) { stage = st; if (dragging || e.pointerType === 'mouse') { dragging = true; fromEvent(e); } });
+    st.addEventListener('pointerup', release);
+    st.addEventListener('pointercancel', release);
+    st.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') release(); });
+  });
+
+  function show(id) {
+    document.querySelectorAll('.panel').forEach(function (p) { p.hidden = p.id !== id; });
+    document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.p === id)); });
+    var p = document.getElementById(id);
+    stage = p.querySelector('[data-stage]');
+    card = p.querySelector('.card');
+    controls.hidden = !card;
+    dragging = false;
+  }
+  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.p); }); });
+  show('p-char');
+
+  var SPARK = '<svg class="sp" viewBox="0 0 110 135" aria-hidden="true"><path fill-rule="evenodd" d="M54.17,110v-0.01,0.01c-2.02,-38.31 -5.69,-59.67 -38.07,-61.94 20.18,0 36.69,-15.7 37.98,-35.56l0.08,-2.29v-0.07,0.04l0.01,-0.04c0.07,20.97 17.08,37.92 38.06,37.92 -32.38,2.27 -36.06,23.63 -38.06,61.94z"/></svg>';
+  document.querySelectorAll('[data-brand]').forEach(function (el) { el.innerHTML = 'S' + SPARK + 'GAS'; el.setAttribute('aria-label', 'Sagas'); });
+  function fitNames() {
+    document.querySelectorAll('[data-fit]').forEach(function (el) {
+      var size = 34; el.style.fontSize = size + 'px';
+      while (el.scrollWidth - size * .8 > el.parentElement.clientWidth && size > 14) { size -= 1; el.style.fontSize = size + 'px'; }
+    });
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNames);
+  window.addEventListener('resize', fitNames);
+  var GENRES = [{"id": "fantasy", "radius": 10, "label": "Fantasia", "primary": "#8B2635", "palette": ["#050204", "#1A0810", "#5E1A24", "#8B2635", "#D44D63", "#FFB4C2", "#FFD166"], "note": ["Cinzas da Graça Perdida", "As asas do céu antigo foram trocadas pelo peso da verdade nas ruas frias. Cada escolha moldou os cacos de uma alma que agora enxerga além do véu. A solidão do mistério dissolveu-se na justiça implacável que agora guia os passos.", "O que o amanhã guarda?"]}, {"id": "crime", "radius": 25, "label": "Crime", "primary": "#E91E63", "palette": ["#1A0F2E", "#3D1B5C", "#C2185B", "#E91E63", "#FF6B9D", "#7FFFEE"], "note": ["O peso do silêncio", "Quando a chuva parou, Kira percebeu que o silêncio doía mais do que os gritos. Foi ali, no escuro do beco, que ela decidiu parar de fugir.", "Quem vai atender o telefone?"]}, {"id": "cyberpunk", "radius": 10, "label": "Cyberpunk", "primary": "#6E48AA", "palette": ["#03020A", "#0A0420", "#1A0A3D", "#6E48AA", "#9D50BB", "#00F5FF", "#FF2EFF", "#E8DCFF"], "note": ["Memória em Neon", "A cidade nunca dorme, mas ela aprendeu a esquecer. Entre luzes e chuva ácida, cada lembrança comprada tinha um preço que ninguém lia.", "Quem lembra por você?"]}, {"id": "space_opera", "radius": 5, "label": "Space Opera", "primary": "#0081A7", "palette": ["#000510", "#001219", "#004E63", "#0081A7", "#00AFB9", "#48CAE4", "#90E0EF", "#C9B1FF"], "note": ["Sinal Perdido em Órbita", "A estação ficou muda depois do último pulso. Entre os destroços, a tripulação descobriu que a pergunta nunca foi quem enviou o sinal, mas quem ainda ouvia.", "Alguém ainda está ouvindo?"]}, {"id": "horror", "radius": 6, "label": "Terror", "primary": "#748b97", "palette": ["#020408", "#0B132B", "#1C2541", "#3A506B", "#748B97", "#4ADEFF", "#6FFFE9", "#E8FFFE"], "note": ["O que respira no porão", "A casa guardou o silêncio por anos. Naquela noite, cada degrau cedeu sob um peso que não era o dela, e a luz da lanterna começou a tremer.", "Você ouviu isso também?"]}, {"id": "shinobi", "radius": 0, "label": "Shinobi", "primary": "#8B0000", "palette": ["#5C2751", "#431C3A", "#7A336B", "#F39237"], "note": ["A lâmina e a névoa", "No templo coberto de névoa, o mestre disse que a mão mais firme é a que aprende a esperar. Ela guardou a lâmina e ouviu o vento.", "Qual caminho a névoa esconde?"]}, {"id": "cowboy", "radius": 12, "label": "Cowboy", "primary": "#8B4513", "palette": ["#1a0a00", "#a84520", "#fce8a8", "#ff99bb", "#d4612f", "#8b3a0f"], "note": ["Poeira e dívida", "O sol afundou atrás da serra e a cidade inteira prendeu o fôlego. Havia uma dívida antiga na poeira, e só um dos dois voltaria para cobrar.", "Quem saca primeiro?"]}, {"id": "heroes", "radius": 4, "label": "Heróis", "primary": "#2845D6", "palette": ["#020412", "#0D1A63", "#1A2CA3", "#2845D6", "#4169F5", "#00D9FF", "#FDC500", "#E6E9FF"], "note": ["O peso da capa", "Ninguém aplaudiu quando as luzes da cidade voltaram. Ela olhou para as próprias mãos e entendeu que salvar todos custa não ser de ninguém.", "Quem salva o herói?"]}, {"id": "punk_rock", "radius": 2, "label": "Punk Rock", "primary": "#729656", "palette": ["#0A0C0F", "#1A1F2A", "#00E676", "#FF7E00", "#FAFF00"], "note": ["Ruído e ferrugem", "O amplificador estourou no último acorde e a rua inteira ouviu. Ninguém pediu bis, mas ninguém foi embora, e foi aí que a banda entendeu.", "Quem vai tocar amanhã?"]}];
+  var FONTS = {"fantasy": {"h": "f-fantasy-h", "b": "f-fantasy-b"}, "crime": {"h": "f-crime-h", "b": "f-crime-b"}, "cyberpunk": {"h": "f-cyberpunk-h", "b": "f-cyberpunk-b"}, "space_opera": {"h": "f-space_opera-h", "b": "f-space_opera-b"}, "horror": {"h": "f-horror-h", "b": "f-horror-b"}, "shinobi": {"h": "f-shinobi-h", "b": null}, "cowboy": {"h": "f-cowboy-h", "b": "f-cowboy-b"}, "heroes": {"h": "f-heroes-h", "b": "f-heroes-b"}, "punk_rock": {"h": "f-punk_rock-h", "b": "f-punk_rock-b"}};
+  function hex(h) { h = h.replace('#', ''); if (h.length === 5) h += h[4]; return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
+  function lum(h) { var c = hex(h).map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
+  function mix(a, b, t) { var x = hex(a), y = hex(b); return 'rgb(' + x.map(function (v, i) { return Math.round(v * (1 - t) + y[i] * t); }).join(',') + ')'; }
+  var deck = document.getElementById('deck');
+  var note = document.getElementById('note');
+  function setVars(g) {
+    // Same source as the app: palette in stored order (genre.gradient()), primaryColor for the genre color.
+    // Near-black entries are backdrop tints that vanish on a dark card, so they are left out of the gradients.
+    var lit = g.palette.filter(function (c) { return lum(c) >= .04; });
+    if (lit.length < 2) lit = g.palette;
+    var dark = g.palette.slice().sort(function (x, y) { return lum(x) - lum(y); });
+    var v = deck.style;
+    // Lighten the genre color just enough to read over art: dark primaries (Fantasy, Shinobi, Cowboy) need more.
+    function lighten(target) { var t = 0; while (t < .85 && lum(mix(g.primary, '#ffffff', t)) < target) t += .05; return mix(g.primary, '#ffffff', t); }
+    v.setProperty('--g1', lighten(.5));
+    v.setProperty('--g2', lighten(.3));
+    v.setProperty('--g3', g.primary);
+    v.setProperty('--gbg1', mix(dark[1], dark[0], .55)); v.setProperty('--gbg2', dark[0]);
+    var n = lit.length;
+    var frame = lit.map(function (c, i) { return c + ' ' + Math.round(i * 100 / Math.max(1, n - 1)) + '%'; }).join(', ');
+    v.setProperty('--frameg', 'linear-gradient(135deg, ' + frame + ')');
+    var st = lit.map(function (c, i) { return 'color-mix(in srgb, ' + c + ' 80%, transparent) ' + Math.round(26 + i * 52 / Math.max(1, n - 1)) + '%'; }).join(', ');
+    v.setProperty('--foilg', 'linear-gradient(115deg, transparent 14%, ' + st + ', transparent 84%)');
+    v.setProperty('--gr', Math.max(0, g.radius) + 'px');
+    var f = FONTS[g.id];
+    v.setProperty('--gft', "'" + f.h + "', Georgia, serif");
+    v.setProperty('--gfb', f.b ? "'" + f.b + "', Georgia, serif" : 'Georgia, serif');
+  }
+  function setGenre(id) {
+    var g = GENRES.filter(function (x) { return x.id === id; })[0];
+    setVars(g);
+    document.getElementById('nT').textContent = g.note[0];
+    document.getElementById('nX').textContent = g.note[1];
+    document.getElementById('nC').textContent = g.note[2];
+    fitNames();
+    document.querySelectorAll('.gl').forEach(function (e) { e.textContent = g.label; });
+    document.querySelectorAll('#genres .chip').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.g === id)); });
+  }
+  var gbox = document.getElementById('genres');
+  GENRES.forEach(function (g) {
+    var b = document.createElement('button'); b.className = 'chip'; b.dataset.g = g.id; b.textContent = g.label; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function () { setGenre(g.id); }); gbox.appendChild(b);
+  });
+  document.querySelectorAll('[data-spark]').forEach(function (el) { el.innerHTML = SPARK; });
+  setGenre('fantasy');
+
+
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!dragging) {
+      if (sway) { idleT += dt; tgt.x = Math.sin(idleT * 0.9) * 0.6; tgt.y = Math.cos(idleT * 0.65) * 0.35; }
+      else { tgt.x = 0; tgt.y = 0; }
+    }
+    var k = 1 - Math.pow(0.0008, dt);
+    cur.x += (tgt.x - cur.x) * k; cur.y += (tgt.y - cur.y) * k;
+    if (card) {
+      var s = card.style;
+      s.setProperty('--tx', cur.x.toFixed(4));
+      s.setProperty('--ty', cur.y.toFixed(4));
+      s.setProperty('--bx', (50 + cur.x * 45).toFixed(2) + '%');
+      s.setProperty('--by', (50 + cur.y * 45).toFixed(2) + '%');
+      s.setProperty('--mx', (50 + cur.x * 50).toFixed(2) + '%');
+      s.setProperty('--my', (50 + cur.y * 50).toFixed(2) + '%');
+      s.setProperty('--holo', holo);
+      s.setProperty('--depth', depth);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  function toggle(id, on, off) {
+    var b = document.getElementById(id);
+    b.addEventListener('click', function () {
+      var p = b.getAttribute('aria-pressed') !== 'true';
+      b.setAttribute('aria-pressed', String(p));
+      (p ? on : off)();
+    });
+  }
+  toggle('tHolo', function () { holo = 1; }, function () { holo = 0; });
+  toggle('tDepth', function () { depth = 1; }, function () { depth = 0; });
+  toggle('tSway', function () { sway = true; }, function () { sway = false; });
+  if (reduce) document.getElementById('tSway').setAttribute('aria-pressed', 'false');
+})();
+</script>

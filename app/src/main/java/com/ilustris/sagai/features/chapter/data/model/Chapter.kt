@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.ilustris.sagai.core.ai.model.Artwork
 import com.ilustris.sagai.features.narrative.data.model.ContinuitySummary
 import com.ilustris.sagai.features.narrative.data.model.LocationCheckpoint
 
@@ -26,7 +27,7 @@ data class Chapter(
     @ColumnInfo(defaultValue = "")
     val narrativeGuide: String? = null,
     @ColumnInfo(defaultValue = "")
-    val artwork: String? = null,
+    val artwork: Artwork? = null,
     @Embedded(prefix = "continuity_")
     val continuitySummary: ContinuitySummary? = null,
     /** Where/when this chapter begins — carried forward from the previous chapter/act's [closingCheckpoint]. */
@@ -41,6 +42,9 @@ data class Chapter(
     val playerChoiceCards: List<GeneratedChoiceCard>? = null,
     /** Index of the option picked on each card, as strings (hands answered early stored tags instead). Null until answered. */
     val playerChoiceAnswers: List<String>? = null,
+    /** True when the last medals evaluation of this chapter succeeded, even with zero medals. */
+    @ColumnInfo(defaultValue = "0")
+    val honorsGenerated: Boolean = false,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()
 }

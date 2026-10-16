@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.chapter.ui
 
+import com.ilustris.sagai.features.progression.data.model.HonorKind
+import com.ilustris.sagai.features.progression.ui.ScopeHonors
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.Image
@@ -194,6 +196,8 @@ fun ChapterContentView(
             onTextUpdate = {
             },
         )
+
+        ScopeHonors(HonorKind.MEDAL, chapter.id, genre)
 
         if (chapter.emotionalReview?.isNotEmpty() == true) {
             EmotionalCard(

@@ -1,4 +1,19 @@
 package com.ilustris.sagai.features.characters.ui
+import com.ilustris.sagai.features.progression.ui.LegacyBadge3D
+import com.ilustris.sagai.features.characters.ui.components.CharacterStatusDialog
+import com.ilustris.sagai.features.progression.data.model.CharacterHonor
+import com.ilustris.sagai.features.progression.ui.HonorSheet
+import androidx.compose.ui.draw.alpha
+import com.ilustris.sagai.features.characters.ui.components.AboutCard
+import com.ilustris.sagai.features.characters.ui.components.ArcsCard
+import com.ilustris.sagai.features.characters.ui.components.EventsCard
+import com.ilustris.sagai.features.characters.ui.components.KnowledgeCard
+import com.ilustris.sagai.features.characters.ui.components.ProfileCard
+import com.ilustris.sagai.features.characters.ui.components.RelationsCard
+import com.ilustris.sagai.features.characters.ui.components.SpecialAction
+import com.ilustris.sagai.features.characters.ui.components.SpecialActionsRow
+import com.ilustris.sagai.ui.components.IosStyleMenuHost
+import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -68,6 +83,10 @@ import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.components.CharacterAbilitiesSection
+import com.ilustris.sagai.features.characters.ui.components.CharacterExperienceCard
+import com.ilustris.sagai.features.characters.ui.components.CharacterFeatLogSheet
+import com.ilustris.sagai.features.characters.ui.components.CharacterLevelRow
+import com.ilustris.sagai.features.characters.ui.components.CharacterSkillChips
 import com.ilustris.sagai.features.characters.ui.components.CharacterAppearanceSection
 import com.ilustris.sagai.features.characters.ui.components.CharacterArcTimeline
 import com.ilustris.sagai.features.characters.ui.components.CharacterDetailDivider
@@ -86,8 +105,6 @@ import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttac
 import com.ilustris.sagai.ui.animations.imageStroke
 import com.ilustris.sagai.ui.animations.rememberStopMotionFrame
 import com.ilustris.sagai.ui.components.views.DepthLayout
-import com.ilustris.sagai.ui.components.views.HeroMenuAction
-import com.ilustris.sagai.ui.components.views.HeroOverflowMenu
 import com.ilustris.sagai.ui.components.views.heroBottomCluster
 import com.ilustris.sagai.ui.theme.PaletteTheme
 import com.ilustris.sagai.ui.theme.SagAITheme
@@ -212,6 +229,10 @@ private fun CharacterDetailsLoaded(
         val characterEvents = detailData.events
         val characterRelations = detailData.relationships
         val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
+        val progress by viewModel.progress.collectAsStateWithLifecycle()
+        var showFeatLog by remember { mutableStateOf(false) }
+        var showStatusDialog by remember { mutableStateOf(false) }
+        var honorSheet by remember { mutableStateOf<Pair<List<CharacterHonor>, Int>?>(null) }
         val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
         var showCharacterShare by remember { mutableStateOf(false) }
 
@@ -392,6 +413,14 @@ private fun CharacterDetailsLoaded(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
+                                progress?.takeIf { it.titles.isNotEmpty() }?.let { current ->
+                                    LegacyBadge3D(
+                                        genre = genre,
+                                        size = 60.dp,
+                                        modifier = Modifier.clickable { honorSheet = current.titles to 0 },
+                                    )
+                                }
+
                                 heroBottomCluster(
                                     title = character.fullName(),
                                     genre = genre,
@@ -401,6 +430,14 @@ private fun CharacterDetailsLoaded(
                                     shimmerColors = characterColor.shimmerize(),
                                     accentColor = characterColor,
                                     onAccentColor = adaptiveTextColor,
+                                )
+
+                                CharacterLevelRow(
+                                    progress = progress,
+                                    status = characterData.status,
+                                    statusNote = characterData.statusNote,
+                                    contentColor = adaptiveTextColor,
+                                    genre = genre,
                                 )
 
                                 Text(
@@ -434,74 +471,40 @@ private fun CharacterDetailsLoaded(
                         }
 
                         item {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(vertical = 8.dp),
-                            ) {
-                                if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
-                                    CircularCharacterAction(
-                                        icon = painterResource(R.drawable.talk_bubble),
-                                        contentDescription =
-                                            stringResource(
-                                                R.string.talk_to_character_again,
-                                                characterData.name,
+                            SpecialActionsRow(
+                                accent = characterColor,
+                                actions =
+                                    buildList {
+                                        if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
+                                            add(
+                                                SpecialAction(
+                                                    iconRes = R.drawable.talk_bubble,
+                                                    label = stringResource(R.string.character_action_talk),
+                                                    onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },
+                                                ),
+                                            )
+                                        }
+                                        add(
+                                            SpecialAction(
+                                                iconRes = R.drawable.ic_constellation,
+                                                label = stringResource(R.string.character_action_connections),
+                                                onClick = { onOpenCharacterBrain(sagaInfo.id, characterData.id) },
                                             ),
-                                        onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },
-                                    )
-                                }
-
-                                CircularCharacterAction(
-                                    icon = painterResource(R.drawable.ic_cosmos),
-                                    contentDescription = stringResource(R.string.character_brain_open),
-                                    onClick = { onOpenCharacterBrain(sagaInfo.id, characterData.id) },
-                                )
-
-                                CircularCharacterAction(
-                                    icon = painterResource(R.drawable.ic_share),
-                                    contentDescription = stringResource(id = R.string.share_character_cd),
-                                    onClick = { showCharacterShare = true },
-                                )
-                            }
-                        }
-
-                        item {
-                            CharacterStats(
-                                character = characterData,
-                                genre = genre,
-                                contentColor = adaptiveTextColor,
+                                        )
+                                    },
                             )
                         }
 
-                        item {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(16.dp),
-                            ) {
-                                Text(
-                                    messageCount.toString(),
-                                    style =
-                                        MaterialTheme.typography.displaySmall.copy(
-                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                            fontWeight = FontWeight.Normal,
-                                            textAlign = TextAlign.Center,
-                                            color = adaptiveTextColor,
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxWidth(),
-                                )
-
-                                Text(
-                                    stringResource(id = R.string.messages_label),
-                                    style =
-                                        MaterialTheme.typography.bodySmall.copy(
-                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                            fontWeight = FontWeight.Light,
-                                            textAlign = TextAlign.Center,
-                                            color = adaptiveTextColor,
-                                        ),
+                        progress?.let { current ->
+                            item {
+                                CharacterExperienceCard(
+                                    progress = current,
+                                    messageCount = messageCount,
+                                    accent = characterColor,
+                                    contentColor = adaptiveTextColor,
+                                    genre = genre,
+                                    onSeeMore = { showFeatLog = true },
+                                    onOpenHonor = { honors, index -> honorSheet = honors to index },
                                 )
                             }
                         }
@@ -509,201 +512,48 @@ private fun CharacterDetailsLoaded(
                         item {
                             val characterResume by viewModel.characterResume.collectAsStateWithLifecycle()
                             val isSummarizing by viewModel.isSummarizing.collectAsStateWithLifecycle()
-
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth(),
-                            ) {
-                                Text(
-                                    stringResource(R.string.character_form_title_backstory),
-                                    style =
-                                        MaterialTheme.typography.titleLarge.copy(
-                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                            color = adaptiveTextColor,
-                                        ),
-                                )
-
-                                AnimatedContent(
-                                    targetState = characterResume ?: characterData.backstory,
-                                    transitionSpec = {
-                                        fadeIn(tween(1000)) togetherWith fadeOut(tween(100))
-                                    },
-                                ) { text ->
-                                    val textColor by animateColorAsState(
-                                        if (isSummarizing.not()) adaptiveTextColor else adaptiveColor,
-                                    )
-                                    Text(
-                                        text,
-                                        style =
-                                            MaterialTheme.typography.bodyMedium.copy(
-                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                color = textColor,
-                                            ),
-                                        modifier =
-                                            Modifier
-                                                .reactiveShimmer(
-                                                    isSummarizing,
-                                                    targetValue = 1000f,
-                                                    repeatMode = RepeatMode.Restart,
-                                                )
-                                                .padding(vertical = 16.dp),
-                                    )
-                                }
-                            }
+                            val backstoryColor by animateColorAsState(
+                                if (isSummarizing.not()) adaptiveTextColor else adaptiveColor,
+                            )
+                            AboutCard(
+                                backstory = characterResume ?: characterData.backstory,
+                                personality = characterData.profile.personality,
+                                accent = characterColor,
+                                backstoryColor = backstoryColor,
+                            )
                         }
+
+                        item { ProfileCard(characterData, characterColor) }
 
                         item {
-                            if (characterData.profile.personality.isNotBlank()) {
-                                CharacterDetailSection(
-                                    title = stringResource(R.string.personality_title),
-                                    contentColor = adaptiveTextColor,
-                                ) {
-                                    CharacterDetailText(
-                                        text = characterData.profile.personality,
-                                        contentColor = adaptiveTextColor,
-                                    )
-                                }
-                            }
-                        }
-
-                        if (characterArcs.isNotEmpty()) {
-                            item { CharacterDetailDivider() }
-                            item {
-                                CharacterDetailSection(
-                                    title = stringResource(R.string.character_details_arcs_title),
-                                    contentColor = adaptiveTextColor,
-                                ) {
-                                    CharacterArcTimeline(
-                                        arcs = characterArcs,
-                                        contentColor = adaptiveTextColor,
-                                        accentColor = characterColor,
-                                        modifier = Modifier.padding(top = 8.dp),
-                                    )
-                                }
-                            }
-                        }
-
-                        characterData.knowledge
-                            ?.filter { it.isNotBlank() }
-                            ?.takeIf { it.isNotEmpty() }
-                            ?.let { knowledge ->
-                                item { CharacterDetailDivider() }
-                                item {
-                                    CharacterDetailSection(
-                                        title = stringResource(R.string.character_details_knowledge_title),
-                                        contentColor = adaptiveTextColor,
-                                    ) {
-                                        CharacterKnowledgeList(
-                                            knowledge = knowledge,
-                                            contentColor = adaptiveTextColor,
-                                            accentColor = characterColor,
-                                            modifier = Modifier.padding(top = 8.dp),
-                                        )
-                                    }
-                                }
-                            }
-
-                        item {
-                            CharacterAppearanceSection(
+                            RelationsCard(
+                                relations = characterRelations,
                                 character = characterData,
-                                contentColor = adaptiveTextColor,
+                                saga = liteSagaContent.data,
+                                genre = genre,
+                                accent = characterColor,
+                            )
+                        }
+
+                        item { ArcsCard(characterArcs, characterColor) }
+
+                        item {
+                            KnowledgeCard(
+                                knowledge = characterData.knowledge.orEmpty().filter { it.isNotBlank() },
+                                accent = characterColor,
                             )
                         }
 
                         item {
-                            CharacterAbilitiesSection(
-                                character = characterData,
-                                contentColor = adaptiveTextColor,
+                            EventsCard(
+                                events = characterEvents,
+                                progress = progress,
+                                accent = characterColor,
+                                onOpenEvent = openEvent,
                             )
                         }
 
-                        if (characterRelations.isNotEmpty()) {
-                            item {
-                                HorizontalDivider(
-                                    color = MaterialTheme.colorScheme.onSurface.copy(.1f),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    thickness = 1.dp,
-                                )
-                            }
-
-                            item {
-                                Text(
-                                    stringResource(R.string.saga_detail_relationships_section_title),
-                                    style =
-                                        MaterialTheme.typography.titleLarge.copy(
-                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                            color = adaptiveTextColor,
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .padding(16.dp)
-                                            .fillMaxWidth(),
-                                )
-                            }
-
-                            item {
-                                LazyRow {
-                                    items(
-                                        characterRelations,
-                                    ) { relationContent ->
-                                        val relatedCharacter =
-                                            relationContent.getCharacterExcluding(characterData)
-                                        SingleRelationShipCard(
-                                            saga = liteSagaContent.data,
-                                            character = relatedCharacter,
-                                            content = relationContent,
-                                            modifier =
-                                                Modifier
-                                                    .padding(16.dp)
-                                                    .requiredWidthIn(max = 300.dp),
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        if (characterEvents.isNotEmpty()) {
-                            item {
-                                HorizontalDivider(
-                                    color = MaterialTheme.colorScheme.onSurface.copy(.1f),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    thickness = 1.dp,
-                                )
-                            }
-                            item {
-                                Text(
-                                    stringResource(R.string.saga_detail_timeline_section_title),
-                                    style =
-                                        MaterialTheme.typography.titleLarge.copy(
-                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                            color = adaptiveTextColor,
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .padding(16.dp)
-                                            .fillMaxWidth(),
-                                )
-                            }
-
-                            items(items = characterEvents) { characterEvent ->
-                                TimelineCharacterAttachment(
-                                    eventDetails = characterEvent,
-                                    sagaContent = sagaInfo.toSagaInfo(),
-                                    showIndicator = true,
-                                    showSpark = false, // Simplified for now
-                                    isLast = characterEvent == characterEvents.last(),
-                                    onSelectReference = { timeline ->
-                                        openEvent(timeline)
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .padding(horizontal = 16.dp)
-                                            .clip(sagaShape()),
-                                )
-                            }
-                        }
+                        item { Spacer(Modifier.height(48.dp)) }
                     }
 
                     Row(
@@ -729,21 +579,66 @@ private fun CharacterDetailsLoaded(
                             )
                         }
 
-                        Spacer(Modifier.weight(1f))
+                        Text(
+                            text = characterData.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = adaptiveTextColor,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .alpha(((scrollFraction - .75f) * 4f).coerceIn(0f, 1f)),
+                        )
 
-                        if (BuildConfig.DEBUG) {
-                            HeroOverflowMenu(
-                                tint = adaptiveTextColor,
-                                containerColor = adaptiveColor.copy(alpha = .75f),
-                                actions =
-                                    listOf(
-                                        HeroMenuAction(
-                                            label = stringResource(R.string.debug_regenerate_image),
-                                        ) {
+                        var menuOpen by remember { mutableStateOf(false) }
+                        IosStyleMenuHost(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false },
+                            anchor = Alignment.TopEnd,
+                            menu = {
+                                IosStyleMenuItem(
+                                    text = stringResource(R.string.character_card_share),
+                                    icon = painterResource(R.drawable.ic_share),
+                                    onClick = {
+                                        menuOpen = false
+                                        showCharacterShare = true
+                                    },
+                                )
+                                if (progress != null) {
+                                    IosStyleMenuItem(
+                                        text = stringResource(R.string.character_card_change_status),
+                                        onClick = {
+                                            menuOpen = false
+                                            showStatusDialog = true
+                                        },
+                                    )
+                                }
+                                if (BuildConfig.DEBUG) {
+                                    IosStyleMenuItem(
+                                        text = stringResource(R.string.debug_regenerate_image),
+                                        onClick = {
+                                            menuOpen = false
                                             viewModel.regenerate(sagaInfo, characterData)
                                         },
+                                    )
+                                }
+                            },
+                        ) {
+                            IconButton(
+                                onClick = { menuOpen = true },
+                                colors =
+                                    IconButtonDefaults.iconButtonColors().copy(
+                                        containerColor = adaptiveColor.copy(alpha = .5f),
                                     ),
-                            )
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_more_vert),
+                                    contentDescription = stringResource(R.string.character_card_options),
+                                    tint = adaptiveTextColor,
+                                )
+                            }
                         }
                     }
                 }
@@ -761,34 +656,37 @@ private fun CharacterDetailsLoaded(
                 character = shareCharacterContent,
                 onDismiss = { showCharacterShare = false },
             )
-        }
-    }
-}
 
-@Composable
-private fun CircularCharacterAction(
-    icon: Painter,
-    contentDescription: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier =
-            modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary, CircleShape)
-                .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            icon,
-            contentDescription = contentDescription,
-            tint = MaterialTheme.colorScheme.onPrimary,
-            modifier =
-                Modifier
-                    .padding(8.dp)
-                    .fillMaxSize(),
-        )
+            progress?.takeIf { showFeatLog }?.let {
+                CharacterFeatLogSheet(
+                    progress = it,
+                    accent = characterColor,
+                    genre = genre,
+                    onDismiss = { showFeatLog = false },
+                )
+            }
+
+            if (showStatusDialog) {
+                CharacterStatusDialog(
+                    current = characterData.status,
+                    currentNote = characterData.statusNote,
+                    onConfirm = { status, note ->
+                        viewModel.updateStatus(characterData, status, note)
+                        showStatusDialog = false
+                    },
+                    onDismiss = { showStatusDialog = false },
+                )
+            }
+
+            honorSheet?.let { (honors, index) ->
+                HonorSheet(
+                    honors = honors,
+                    startIndex = index,
+                    feats = progress?.feats.orEmpty(),
+                    genre = genre,
+                    onDismiss = { honorSheet = null },
+                )
+            }
+        }
     }
 }

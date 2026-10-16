@@ -166,22 +166,41 @@ class SagaBackupServiceImpl
                     charactersRelationsPairs,
                 )
 
-            chapterPairs
-                .filter {
+            // Character ids are per database, so everything on a chapter that points at a character
+            // is remapped to the restored ones: the featured pair and the cover's own cast.
+            fun restoredCharacterId(backedUpId: Int) = newCharacters.find { it.first.id == backedUpId }?.second?.id
+            chapterPairs.forEach { (backedUp, restored) ->
+                val featuredInSaga =
                     sagaContent.characters.any { character ->
-                        it.first.featuredCharacters.any { featured -> featured == character.data.id }
+                        backedUp.featuredCharacters.any { featured -> featured == character.data.id }
                     }
-                }.forEach {
-                    val mappedFeaturedCharacters =
-                        it.first.featuredCharacters.mapNotNull { featured ->
-                            newCharacters.find { character -> character.first.id == featured }?.second?.id
-                        }
-                    chapterRepository.updateChapter(
-                        it.second.copy(
-                            featuredCharacters = mappedFeaturedCharacters,
+                chapterRepository.updateChapter(
+                    restored.copy(
+                        featuredCharacters =
+                            if (featuredInSaga) {
+                                backedUp.featuredCharacters.mapNotNull(::restoredCharacterId)
+                            } else {
+                                restored.featuredCharacters
+                            },
+                        artwork = backedUp.artwork?.copy(characterIds = backedUp.artwork.characterIds.mapNotNull(::restoredCharacterId)),
+                    ),
+                )
+            }
+
+            // The saga's own cover cast too, onto the freshest row so the icon and main character
+            // restored above are kept.
+            sagaContent.data.artwork?.let { backedUpArtwork ->
+                sagaRepository.getSagaById(newSaga.data.id).first()?.data?.let { latest ->
+                    sagaRepository.updateSaga(
+                        latest.copy(
+                            artwork =
+                                backedUpArtwork.copy(
+                                    characterIds = backedUpArtwork.characterIds.mapNotNull(::restoredCharacterId),
+                                ),
                         ),
                     )
                 }
+            }
 
             val backupLog =
                 buildString {

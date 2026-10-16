@@ -25,7 +25,61 @@ sealed class GlobalShellEffect(
      */
     abstract val id: String
 
+    /** False for effects that are only worth showing while the app is open (no system notification in the background). */
+    open val deliversSystemNotification: Boolean = true
+
     abstract fun shouldSuppress(ctx: GlobalShellVisibilityContext): Boolean
+}
+
+enum class ProgressionEffectKind { LEVEL_UP, MEDAL, LEGACY }
+
+/**
+ * One character of a progression announcement. A level-up carries the new [level] and the feat that paid it; a medal
+ * carries the character's latest medal ([title], [detail] = why, [emoji]) and how many more came with it ([extra]);
+ * a legacy carries its [title] and [detail] (the legend), [memorial] when the character is gone.
+ */
+data class ProgressionRow(
+    val character: Character,
+    val title: String = "",
+    val detail: String = "",
+    val level: Int? = null,
+    val xp: Int = 0,
+    val emoji: String? = null,
+    val extra: Int = 0,
+    val memorial: Boolean = false,
+)
+
+/**
+ * Tells the player that characters leveled up or earned a medal or a legacy. Silent in the background (never a system
+ * notification) and deterministic: names, levels and titles, no AI call. [ProgressionIslandContent] draws it.
+ */
+data class ProgressionEffect(
+    val kind: ProgressionEffectKind,
+    val announcementKey: String,
+    val rows: List<ProgressionRow>,
+    override val sagaId: Int,
+    override val sagaTitle: String,
+    override val genre: Genre,
+    override val deepLink: String,
+    /** Where "Ver mais" lands: the event, the chapter or the act that earned it. */
+    val moreDeepLink: String = deepLink,
+    /** True only for the very first level-up the player ever sees: it carries a short explanation of the system. */
+    val showExplainer: Boolean = false,
+) : GlobalShellEffect(
+        sagaId = sagaId,
+        sagaTitle = sagaTitle,
+        genre = genre,
+        message = rows.joinToString { "${it.character.name} · ${it.title.ifBlank { it.level?.toString().orEmpty() }}" },
+        deepLink = deepLink,
+        notificationStyle = NotificationStyle.DEFAULT,
+        priority = GlobalShellPriority.Transient,
+        defaultExpansion = GlobalShellExpansion.Collapsed,
+    ) {
+    override val id: String = "progression_${kind.name}_$announcementKey"
+    override val deliversSystemNotification: Boolean = false
+
+    override fun shouldSuppress(ctx: GlobalShellVisibilityContext): Boolean =
+        kind == ProgressionEffectKind.LEVEL_UP && rows.size == 1 && ctx.isOnCharacterDetail(rows.first().character.id)
 }
 
 data class NewMessageEffect(

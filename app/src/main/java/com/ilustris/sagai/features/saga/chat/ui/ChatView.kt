@@ -111,8 +111,6 @@ import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.key.QuotaStatusViewModel
 import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
-import com.ilustris.sagai.core.file.BACKUP_PERMISSION
-import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.globalshell.rememberOverlayVisibilityTracker
 import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
@@ -248,7 +246,6 @@ fun ChatView(
         val lifecycleOwner = LocalLifecycleOwner.current
         val drawerState = rememberDrawerState(DrawerValue.Closed)
         val coroutineScope = rememberCoroutineScope()
-        var showBackupSheet by remember { mutableStateOf(false) }
 
         BackHandler(enabled = !drawerState.isOpen) {
             onBack()
@@ -266,20 +263,10 @@ fun ChatView(
             }
         }
 
-        val backupLauncher =
-            PermissionService.rememberBackupLauncher { uri ->
-                onAction(ChatUiAction.EnableBackup(uri))
-                requiredPermission = null
-            }
-
         PermissionComponent(onConfirm = {
-            if (requiredPermission != BACKUP_PERMISSION) {
-                context?.let {
-                    openAppSettings(context)
-                    requiredPermission = null
-                }
-            } else {
-                backupLauncher.launch(null)
+            context?.let {
+                openAppSettings(context)
+                requiredPermission = null
             }
         }) {
             requiredPermission = null
@@ -369,10 +356,6 @@ fun ChatView(
                                 }
                             }
 
-                            if (showBackupSheet) {
-                                BackupSheet(onDismiss = { showBackupSheet = false })
-                            }
-
                             if (uiState.showAudioTranscript) {
                                 AudioRecordingSheet(
                                     themeBrushColors(),
@@ -410,13 +393,6 @@ fun ChatView(
                                             ).fillMaxSize(),
                                 )
                             }
-
-                            ShareSheet(
-                                saga = displaySaga.data,
-                                isVisible = uiState.showShareSheet,
-                                shareType = ShareType.CONVERSATION,
-                                onDismiss = { onAction(ChatUiAction.ShareConversation(false)) },
-                            )
 
                             // Gameplay guide onboarding now shows from the Milestone screen
                             // itself (see MilestoneViewModel.showOnboarding) instead of here —
@@ -638,8 +614,7 @@ fun ChatContent(
                 val narrativeState = uiState.narrativeUiState
                 val advanceBlocksInput =
                     narrativeState.showAdvanceTrigger &&
-                        uiState.onboardingType == null &&
-                        !uiState.selectionState.isSelectionMode
+                        uiState.onboardingType == null
 
                 val onSendMessage: (Boolean) -> Unit =
                     remember(onAction, uiState.editingMessage) {
@@ -770,14 +745,6 @@ fun ChatContent(
                                         )
                                     }
 
-                                    is MessageAction.ToggleSelection -> {
-                                        onAction(
-                                            ChatUiAction.ToggleMessageSelection(
-                                                action.messageId,
-                                            ),
-                                        )
-                                    }
-
                                     is MessageAction.LongPress -> {
                                         val message =
                                             content
@@ -795,8 +762,6 @@ fun ChatContent(
                         },
                     onAction = onAction,
                     messageEffectsEnabled = uiState.messageEffectsEnabled,
-                    isSelectionMode = uiState.selectionState.isSelectionMode,
-                    selectedMessageIds = uiState.selectionState.selectedMessageIds,
                         audioPlaybackState = uiState.audioPlaybackState,
                     )
                 }
@@ -814,22 +779,20 @@ fun ChatContent(
                             .fillMaxHeight(.2f),
                 )
 
-                if (!uiState.selectionState.isSelectionMode) {
-                    ChapterScrollRail(
-                        chapters = chapters,
-                        currentChapterId = currentChapterId,
-                        genre = uiState.activeGenre ?: content.data.genre,
-                        isListScrolling = listState.isScrollInProgress,
-                        onChapterSelected = onChapterSelected,
-                        modifier =
-                            Modifier
-                                .constrainAs(chapterRail) {
-                                    end.linkTo(parent.end)
-                                    top.linkTo(parent.top)
-                                    bottom.linkTo(parent.bottom)
-                                }.padding(end = 4.dp),
-                    )
-                }
+                ChapterScrollRail(
+                    chapters = chapters,
+                    currentChapterId = currentChapterId,
+                    genre = uiState.activeGenre ?: content.data.genre,
+                    isListScrolling = listState.isScrollInProgress,
+                    onChapterSelected = onChapterSelected,
+                    modifier =
+                        Modifier
+                            .constrainAs(chapterRail) {
+                                end.linkTo(parent.end)
+                                top.linkTo(parent.top)
+                                bottom.linkTo(parent.bottom)
+                            }.padding(end = 4.dp),
+                )
 
                 // reverseLayout: index 0 is the newest message, so being a few items past it
                 // means the reader has scrolled back through the history.
@@ -837,7 +800,7 @@ fun ChatContent(
                     derivedStateOf { listState.firstVisibleItemIndex > SCROLL_TO_BOTTOM_THRESHOLD }
                 }
                 AnimatedVisibility(
-                    visible = showScrollToBottom && !uiState.selectionState.isSelectionMode,
+                    visible = showScrollToBottom,
                     enter = fadeIn() + scaleIn(),
                     exit = fadeOut() + scaleOut(),
                     modifier =
@@ -899,19 +862,16 @@ fun ChatContent(
                         activeMilestone is SagaMilestone.ActFinished
                 val bottomInputState =
                     when {
-                        milestoneBlocksInput &&
-                            !uiState.selectionState.isSelectionMode -> {
+                        milestoneBlocksInput -> {
                             BottomInputState.Unavailable
                         }
 
-                        narrativeState.showBackgroundBanner &&
-                            !uiState.selectionState.isSelectionMode -> {
+                        narrativeState.showBackgroundBanner -> {
                             BottomInputState.Background(narrativeState.backgroundTask!!)
                         }
 
                         hasActiveTimeline &&
-                            !advanceBlocksInput &&
-                            !uiState.selectionState.isSelectionMode -> {
+                            !advanceBlocksInput -> {
                             BottomInputState.Chat
                         }
 
@@ -948,8 +908,7 @@ fun ChatContent(
                             AnimatedVisibility(
                                 hasActiveTimeline &&
                                     uiState.chatState !is ChatState.Loading &&
-                                    saga.isDebug.not() && saga.isEnded.not() &&
-                                    !uiState.selectionState.isSelectionMode,
+                                    saga.isDebug.not() && saga.isEnded.not(),
                                 enter = slideInVertically(),
                                 exit = slideOutVertically { it },
                             ) {
@@ -1008,92 +967,6 @@ fun ChatContent(
 
                         BottomInputState.Unavailable -> {
                             Unit
-                        }
-                    }
-                }
-
-                AnimatedVisibility(
-                    visible = uiState.selectionState.isSelectionMode,
-                    modifier =
-                        Modifier
-                            .constrainAs(createRef()) {
-                                bottom.linkTo(parent.bottom)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                                width = Dimension.fillToConstraints
-                            }.padding(
-                                bottom = padding.calculateBottomPadding() + 16.dp,
-                                start = 16.dp,
-                                end = 16.dp,
-                            ),
-                    enter = slideInVertically { it } + fadeIn(),
-                    exit = slideOutVertically { it } + fadeOut(),
-                ) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(28.dp))
-                                .background(resolvedColor)
-                                .padding(horizontal = 24.dp, vertical = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton(
-                            onClick = { onAction(ChatUiAction.ClearSelection) },
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.round_close_24),
-                                contentDescription = stringResource(R.string.cancel),
-                                tint = Color.White,
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .fillMaxSize(),
-                            )
-                        }
-
-                        Text(
-                            stringResource(
-                                R.string.messages_selected,
-                                uiState.selectionState.selectedMessageIds.size,
-                                10,
-                            ),
-                            style =
-                                MaterialTheme.typography.labelLarge.copy(
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    textAlign = TextAlign.Center,
-                                ),
-                            maxLines = 1,
-                            modifier = Modifier.weight(1f),
-                        )
-
-                        IconButton(
-                            onClick = {
-                                onAction(ChatUiAction.ShareConversation(true))
-                            },
-                            enabled = uiState.selectionState.selectedMessageIds.isNotEmpty(),
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_share),
-                                contentDescription = stringResource(R.string.share),
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .fillMaxSize(),
-                                tint =
-                                    if (uiState.selectionState.selectedMessageIds.isNotEmpty()) {
-                                        Color.White
-                                    } else {
-                                        Color.White.copy(
-                                            alpha = 0.5f,
-                                        )
-                                    },
-                            )
                         }
                     }
                 }
@@ -1201,7 +1074,7 @@ fun ChatContent(
                     }
                 }
 
-                if (BuildConfig.DEBUG && isDebug && saga.isEnded.not() && !uiState.selectionState.isSelectionMode) {
+                if (BuildConfig.DEBUG && isDebug && saga.isEnded.not()) {
                     var fakeMessageCountText by rememberSaveable { mutableStateOf("3") }
                     val shape = RoundedCornerShape(content.data.genre.cornerSize())
                     Box(
@@ -1315,11 +1188,6 @@ fun ChatContent(
                     androidx.compose.ui.text
                         .AnnotatedString(message.text),
                 )
-                onAction(ChatUiAction.OpenMessageOptions(null))
-            },
-            onSelect = {
-                onAction(ChatUiAction.ToggleSelectionMode)
-                onAction(ChatUiAction.ToggleMessageSelection(message.id))
                 onAction(ChatUiAction.OpenMessageOptions(null))
             },
             onDismiss = {
@@ -1485,8 +1353,6 @@ fun ChatList(
     onAction: (ChatUiAction) -> Unit = {},
     onInitialScrollSettled: () -> Unit = {},
     messageEffectsEnabled: Boolean = true,
-    isSelectionMode: Boolean = false,
-    selectedMessageIds: Set<Int> = emptySet(),
     audioPlaybackState: AudioPlaybackState? = null,
     reasoningChunk: String? = null,
     highlightedMessageId: Int? = null,
@@ -1496,6 +1362,11 @@ fun ChatList(
     val coroutineScope = rememberCoroutineScope()
     val genre = saga.data.genre
     val resolvedColor = MaterialTheme.colorScheme.primary
+    val levelsViewModel = androidx.hilt.navigation.compose.hiltViewModel<com.ilustris.sagai.features.saga.chat.presentation.ChatLevelsViewModel>()
+    val levels by levelsViewModel.levels.collectAsStateWithLifecycle()
+    LaunchedEffect(saga.data.id, characters.map { Triple(it.id, it.baseLevel, it.status) }) {
+        levelsViewModel.load(saga.data.id, characters)
+    }
 
     LaunchedEffect(
         saga
@@ -1629,6 +1500,7 @@ fun ChatList(
                         isLoading = false,
                         mainCharacter = mainCharacter,
                         characters = characters,
+                        levels = levels,
                         wikis = wikis,
                         genre = activeGenre ?: genre,
                         flatEvents = flatEvents,
@@ -1643,8 +1515,6 @@ fun ChatList(
                         audioPlaybackState = audioPlaybackState,
                         modifier = Modifier,
                         onAction = onMessageAction,
-                        isSelectionMode = isSelectionMode,
-                        isSelected = selectedMessageIds.contains(entry.content.message.id),
                         isSearchHit = entry.content.message.id == highlightedMessageId,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,

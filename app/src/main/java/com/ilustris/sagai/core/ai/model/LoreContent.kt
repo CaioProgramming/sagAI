@@ -57,7 +57,6 @@ data class GeneratedChapter(
     val narrativeGuide: String? = null,
     val emotionalTone: EmotionalTone? = null,
     val featuredCharacters: List<Int> = emptyList(),
-    val artwork: String? = null,
 ) {
     fun toLoreContent(): LoreContent =
         LoreContent(
@@ -76,7 +75,9 @@ data class GeneratedChapter(
             emotionalReview = emotionalReview,
             narrativeGuide = narrativeGuide,
             featuredCharacters = featuredCharacters.ifEmpty { existing.featuredCharacters },
-            artwork = artwork ?: existing.artwork,
+            // The cover curator owns the artwork. A chapter without a cover yet is being rewritten, so
+            // its concept is stale and is dropped for the curator to read the final text.
+            artwork = existing.artwork.takeIf { existing.coverImage.isNotBlank() },
         )
 }
 

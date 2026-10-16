@@ -237,6 +237,7 @@ fun createSagaEntryProvider(
     entry<SagaEventsKey> { key ->
         SagaEventsView(
             sagaId = key.sagaId,
+            focusEventId = key.focusId,
             onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
@@ -283,6 +284,7 @@ fun createSagaEntryProvider(
     entry<SagaChaptersKey> { key ->
         ChapterView(
             sagaId = key.sagaId,
+            focusChapterId = key.focusId,
             onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
