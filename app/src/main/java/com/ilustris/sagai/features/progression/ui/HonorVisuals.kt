@@ -283,15 +283,12 @@ fun LegacyBadge3D(
     }
 }
 
-/** The colour of a tier. The number itself is internal and never shown: only the star's colour tells how heavy a feat was. */
+/** The colour of a tier. The number itself is internal and never shown: only the two heaviest tiers carry a colour, the rest stay neutral so a coloured star means a rare feat. */
 fun tierColor(tier: Int): Color =
     when (tier) {
-        0 -> Color(0xFF8E8E93)
-        1 -> Color(0xFF5FBF8A)
-        2 -> Color(0xFF4FA3F7)
-        3 -> Color(0xFFB57BFF)
         4 -> Color(0xFFFFC54D)
-        else -> Color(0xFFFF6B4A)
+        5 -> Color(0xFFFF6B4A)
+        else -> Color(0xFF8E8E93)
     }
 
 /** A feat's star, coloured by its tier; the two heaviest tiers glow. */
