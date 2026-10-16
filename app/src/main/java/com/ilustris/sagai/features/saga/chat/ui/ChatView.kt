@@ -967,7 +967,7 @@ fun ChatContent(
                             modifier = Modifier.size(32.dp),
                         ) {
                             Icon(
-                                painterResource(R.drawable.round_close_24),
+                                painterResource(R.drawable.ic_close),
                                 contentDescription = stringResource(R.string.cancel),
                                 tint = Color.White,
                                 modifier =
@@ -1094,7 +1094,7 @@ fun ChatContent(
                                     // the saga details.
                                     IconButton(onClick = { isSearchActive = true }) {
                                         Icon(
-                                            painterResource(R.drawable.search),
+                                            painterResource(R.drawable.ic_search),
                                             contentDescription =
                                                 stringResource(R.string.chat_search_open),
                                             modifier = Modifier.size(20.dp),

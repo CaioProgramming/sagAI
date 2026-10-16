@@ -319,7 +319,7 @@ fun DetailSectionView.InitialSection.miniSection(
                             }
 
                             Icon(
-                                painterResource(R.drawable.round_arrow_forward_ios_24),
+                                painterResource(R.drawable.ic_chevron_right),
                                 contentDescription = null,
                                 modifier =
                                     Modifier

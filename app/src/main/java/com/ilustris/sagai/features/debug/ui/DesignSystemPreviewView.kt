@@ -438,7 +438,7 @@ fun DesignSystemPreviewView(
                         .padding(4.dp),
             ) {
                 Icon(
-                    painterResource(R.drawable.ic_back_left),
+                    painterResource(R.drawable.ic_chevron_left),
                     contentDescription = stringResource(R.string.back_button_description),
                     tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.fillMaxSize(),
@@ -729,7 +729,7 @@ private fun ShaderParamsTuningMenu(
                 )
             }
             Icon(
-                painterResource(if (expanded) R.drawable.ic_arrow_up else R.drawable.ic_arrow_down),
+                painterResource(if (expanded) R.drawable.ic_arrow_up else R.drawable.ic_chevron_down),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp),

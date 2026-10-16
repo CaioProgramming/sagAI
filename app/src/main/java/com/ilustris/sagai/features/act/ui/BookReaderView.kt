@@ -263,7 +263,7 @@ fun BookReaderView(
                                 )
                                 IosStyleMenuItem(
                                     text = stringResource(R.string.regenerate_book_cd),
-                                    icon = painterResource(R.drawable.baseline_refresh_24),
+                                    icon = painterResource(R.drawable.ic_replay),
                                     onClick = {
                                         showBookMenu = false
                                         viewModel.regenerateBook()

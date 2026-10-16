@@ -50,7 +50,7 @@ fun SagaTopBar(
     ) {
         onBackClick?.let {
             Icon(
-                painterResource(R.drawable.ic_back_left),
+                painterResource(R.drawable.ic_chevron_left),
                 tint = MaterialTheme.colorScheme.onBackground,
                 contentDescription = stringResource(R.string.back_button_description),
                 modifier =

@@ -441,7 +441,7 @@ private fun CharacterDetailsLoaded(
                             ) {
                                 if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
                                     CircularCharacterAction(
-                                        icon = painterResource(R.drawable.talk_bubble),
+                                        icon = painterResource(R.drawable.ic_talk_bubble),
                                         contentDescription =
                                             stringResource(
                                                 R.string.talk_to_character_again,
@@ -723,7 +723,7 @@ private fun CharacterDetailsLoaded(
                                 ),
                         ) {
                             Icon(
-                                painterResource(R.drawable.ic_back_left),
+                                painterResource(R.drawable.ic_chevron_left),
                                 contentDescription = stringResource(R.string.back_button_description),
                                 tint = adaptiveTextColor,
                             )

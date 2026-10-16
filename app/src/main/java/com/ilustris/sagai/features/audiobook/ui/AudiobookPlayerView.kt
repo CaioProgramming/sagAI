@@ -226,7 +226,7 @@ fun AudiobookPlayerView(
             ) {
                 IconButton(onClick = onBack, modifier = Modifier.padding(8.dp)) {
                     Icon(
-                        painterResource(R.drawable.ic_back_left),
+                        painterResource(R.drawable.ic_chevron_left),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
@@ -275,7 +275,7 @@ fun AudiobookPlayerView(
                             )
                             IosStyleMenuItem(
                                 text = "Realign",
-                                icon = painterResource(R.drawable.baseline_refresh_24),
+                                icon = painterResource(R.drawable.ic_replay),
                                 enabled = playingSectionKey != null,
                                 onClick = {
                                     showMenu = false
@@ -307,7 +307,7 @@ fun AudiobookPlayerView(
                                         .padding(4.dp),
                             ) {
                                 Icon(
-                                    painterResource(R.drawable.round_close_24),
+                                    painterResource(R.drawable.ic_close),
                                     contentDescription = stringResource(R.string.audiobook_dismiss_error_cd),
                                     tint = MaterialTheme.colorScheme.error,
                                 )
@@ -350,7 +350,7 @@ fun AudiobookPlayerView(
                                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                             ) {
                                 Icon(
-                                    painterResource(R.drawable.baseline_refresh_24),
+                                    painterResource(R.drawable.ic_replay),
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp),
                                 )
@@ -493,9 +493,9 @@ fun AudiobookPlayerView(
                                 if (audiobook?.isPlaying ==
                                     true
                                 ) {
-                                    R.drawable.round_pause_24
+                                    R.drawable.ic_pause
                                 } else {
-                                    R.drawable.round_play_arrow_24
+                                    R.drawable.ic_play
                                 },
                             ),
                             contentDescription =
@@ -531,7 +531,7 @@ fun AudiobookPlayerView(
                     val dimmed = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f)
                     IconButton(onClick = { showQueue = true }) {
                         Icon(
-                            painterResource(R.drawable.round_queue_music_24),
+                            painterResource(R.drawable.ic_queue_music),
                             contentDescription = stringResource(R.string.audiobook_queue_cd),
                             tint = dimmed,
                         )
@@ -716,7 +716,7 @@ private fun QueueSectionRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            painterResource(R.drawable.round_play_arrow_24),
+            painterResource(R.drawable.ic_play),
             contentDescription = null,
             tint = tint,
             modifier = Modifier.size(20.dp),
