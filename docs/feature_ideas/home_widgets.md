@@ -1,5 +1,10 @@
 # Home Widgets
 
+> **Built (first version).** See [`../features/home_widgets.md`](../features/home_widgets.md) for what
+> ships and what changed from this proposal: the launcher decides the pinned size (the size step is a
+> preview), discreet mode is per generated widget only, and the island/notification during generation
+> and per-line replace are not in yet.
+
 ## Concept
 
 Widgets that keep Sagas close to the player without being invasive. They sit on the Android home
