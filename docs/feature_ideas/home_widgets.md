@@ -74,7 +74,9 @@ Each widget holds a small batch of approved lines and rotates between them.
 1. **Entry point:** widget button on `CharacterDetailsView`, beside the share action. Either a new
    `ShareType.WIDGET` in `ShareSheet` or its own screen.
 2. **Style:** Quote or Hook, each card previewing the widget with the current character.
-3. **Generating:** short loading state, with a note about what data is used.
+3. **Generating:** the existing `LoadingLines` pattern: lines in the character's voice that rotate,
+   so the screen never looks frozen, plus an indeterminate bar. The player can leave: the dynamic
+   island follows the request and a notification says when the lines are ready.
 4. **Pick lines:** the player keeps, edits, regenerates one at a time, or asks for more. Live
    preview follows the selection. At least one line is required.
 5. **Size and rotation:** real Android sizes for that type with minimum dp, rotation rule (each app
@@ -85,6 +87,19 @@ Each widget holds a small batch of approved lines and rotates between them.
 Error and edge states: generation failure (retry), offline (already-created widgets keep working),
 a line adjusted by the safety filter (marked as adjusted, editable), a character with little
 history (smaller batch, with a hint to play more), and the widget limit.
+
+## Widget loading and failure states
+
+Two neutral states shared by any widget that depends on the worker. They use the same neutral
+surface as Your stories and never show story text.
+
+- **Building:** after the player taps Add, the worker still renders the face crop, gradient and
+  blur. The widget shows the genre book tile, "Montando seu widget" and an indeterminate bar
+  (`LinearProgressIndicator` or `CircularProgressIndicator`; Glance only supports indeterminate
+  progress and does not animate the rest). Sizes: 1x1, 4x1, 2x2, 4x2.
+- **Broken:** if the worker fails or the configuration was deleted, the book loses its color, a
+  small alert badge appears and the text reads "Toque para abrir a Sagas". Tapping opens the app.
+  The widget is never empty and never shows a broken image.
 
 ## Visual rules
 
