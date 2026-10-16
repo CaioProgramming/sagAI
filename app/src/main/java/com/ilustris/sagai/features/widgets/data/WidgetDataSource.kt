@@ -176,7 +176,6 @@ class WidgetDataSource
                 title = saga.title,
                 genre = saga.genre,
                 iconPath = saga.icon.takeIf { it.isNotBlank() },
-                artPath = saga.artwork?.takeIf { it.isNotBlank() },
                 portraitPath = portrait?.takeIf { it.isNotBlank() },
             )
         }

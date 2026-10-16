@@ -7,12 +7,12 @@ data class WidgetSaga(
     val id: Int,
     val title: String,
     val genre: Genre,
+    /** The saga's generated cover image (`Saga.icon`). */
     val iconPath: String?,
-    val artPath: String?,
     val portraitPath: String?,
 ) {
-    /** Best picture to put behind text: the saga artwork, then its icon, then the main character. */
-    val backdropPath: String? get() = artPath ?: iconPath ?: portraitPath
+    /** Best picture to put behind text: the saga cover, then the main character. */
+    val backdropPath: String? get() = iconPath ?: portraitPath
 }
 
 /** Shown when no saga is running: the player is invited to write the next story. */

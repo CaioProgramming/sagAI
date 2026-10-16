@@ -36,7 +36,7 @@ The player adds the widget from the launcher and it keeps itself up to date.
 
 | Widget | Shows | Sizes | Data |
 |---|---|---|---|
-| **Continue** | Current objective over the saga artwork, with a play button. Becomes an invitation to write a new story when the saga ended or none is running | 1x1, 2x1, 4x1, 2x2, 4x2 | `Timeline.currentObjective` or `SceneSummary.immediateObjective`, `Saga.artwork`, `Saga.isEnded` |
+| **Continue** | Current objective over the saga artwork, with a play button. Becomes an invitation to write a new story when the saga ended or none is running | 1x1, 2x1, 4x1, 2x2, 4x2 | `Timeline.currentObjective` or `SceneSummary.immediateObjective`, `Saga.icon`, `Saga.isEnded` |
 | **Last message** | The last line from the chat, as written, with the speaker | 2x1, 4x1, 2x2, 4x2 | `Message.text`, `speakerName`, `Character.image` |
 | **Your stories** | A shelf of finished sagas: one book each, title below | 2x2, 4x2, 4x3 | `Saga.isEnded`, `title`, `icon`, `genre` |
 
