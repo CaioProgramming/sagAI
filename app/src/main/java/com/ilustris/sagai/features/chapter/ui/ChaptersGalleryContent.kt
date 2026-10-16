@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 
@@ -45,8 +44,7 @@ fun ChaptersGalleryContent(
                         Modifier
                             .fillMaxWidth()
                             .background(fadeGradientTop())
-                            .padding(16.dp)
-                            .genreVfx(genre),
+                            .padding(16.dp),
                 )
             }
 

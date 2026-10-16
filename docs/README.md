@@ -21,6 +21,7 @@ decision, a system, or a plan that's no longer true, it belongs in `archive/`, n
 | [`marketing/`](marketing/) | `marketing_canvas.md` (live plan: what/why/target/platform/app-resources-needed), plus published output in `social_posts/` and `linkedin_posts/` | You're planning or writing marketing content |
 | [`release_notes/`](release_notes/) | Per-version changelog, one file per release | You need to know what shipped in a given version |
 | [`faq/`](faq/) | Live FAQ data (`faq_data_en.json`, `faq_data_pt.json`) shown in-app | You're updating the in-app FAQ |
+| [`prototypes/`](prototypes/) | Index of UI/visual prototypes (HTML/WebGL mockups, artifact links, repo copies) and what each one explores | You want to see what was prototyped, where the code is, and what was decided |
 | [`archive/`](archive/) | Superseded docs, kept for historical context only | You want to know *why* a decision was made, not *what's true now* |
 
 ## The three agents that write most of this

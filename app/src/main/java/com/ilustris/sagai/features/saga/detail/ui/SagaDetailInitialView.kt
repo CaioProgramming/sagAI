@@ -76,10 +76,11 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSectio
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
-import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.IosStyleMenuDivider
 import com.ilustris.sagai.ui.components.IosStyleMenuHost
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
+import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.components.titlefx.usesTitleFx
 import com.ilustris.sagai.ui.theme.PaletteTheme
 import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -479,14 +480,19 @@ fun sagaHeaderComponent(
                             .clickable(onClick = {
                                 onAction(DetailAction.RegenerateIcon)
                             })
-                            .gradientFill(
-                                themeContainer.gradientFade(),
+                            .then(
+                                if (genre.usesTitleFx()) {
+                                    Modifier
+                                } else {
+                                    Modifier.gradientFill(themeContainer.gradientFade())
+                                },
                             ).reactiveShimmer(
                                 true,
                                 shimmerColors = Color.White.shimmerize(),
                                 repeatMode = RepeatMode.Restart,
                                 duration = 10.seconds,
                             ),
+                    interactive = true,
                 )
             }
         } else {
@@ -529,13 +535,19 @@ fun sagaHeaderComponent(
                             .background(fadeGradientBottom(adaptiveColor))
                             .fillMaxWidth()
                             .padding(8.dp)
-                            .gradientFill(themeContainer.gradientFade())
-                            .reactiveShimmer(
+                            .then(
+                                if (genre.usesTitleFx()) {
+                                    Modifier
+                                } else {
+                                    Modifier.gradientFill(themeContainer.gradientFade())
+                                },
+                            ).reactiveShimmer(
                                 true,
                                 shimmerColors = Color.White.shimmerize(),
                                 duration = 10.seconds,
                                 repeatMode = RepeatMode.Restart,
                             ),
+                    interactive = true,
                 )
 
                 Column(

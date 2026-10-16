@@ -47,6 +47,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.components.titlefx.usesTitleFx
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -90,8 +91,9 @@ fun heroTitleOverlay(
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 4.dp)
-                .gradientFill(titleGradient)
+                .then(if (genre.usesTitleFx()) Modifier else Modifier.gradientFill(titleGradient))
                 .reactiveShimmer(true, shimmerColors),
+        interactive = true,
     )
 }
 
@@ -194,6 +196,7 @@ fun heroBottomCluster(
                     .fillMaxWidth()
                     .padding(16.dp)
                     .reactiveShimmer(true, shimmerColors),
+            interactive = true,
         )
 
         if (actions.isNotEmpty()) {
