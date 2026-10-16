@@ -12,6 +12,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
+import com.ilustris.sagai.features.progression.domain.LevelBand
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -261,6 +262,7 @@ object CharacterPrompts {
         themeColor: String? = null,
         sceneSummary: SceneSummary? = null,
         aesthetic: String? = null,
+        levelBands: List<LevelBand> = emptyList(),
     ): SplitPrompt {
         val latestMessages =
             if (saga.flatMessages().isEmpty()) {
@@ -296,6 +298,16 @@ object CharacterPrompts {
                                 latestMessages
                                     .map { it.message }
                                     .normalizetoAIItems(excludingFields = messageExclusions),
+                            )
+                        }
+                        if (levelBands.isNotEmpty()) {
+                            put("LevelBands", levelBands.toAINormalize())
+                            put(
+                                "Roster",
+                                saga.characters
+                                    .filter { it.data.baseLevel != null }
+                                    .map { mapOf("name" to it.data.name, "level" to it.data.baseLevel, "skills" to it.data.skills) }
+                                    .toAINormalize(),
                             )
                         }
                         put("NewCharacterContext", description)

@@ -48,6 +48,7 @@ import com.ilustris.sagai.ui.theme.themeBrushColors
 @Composable
 fun TimeLineContent(
     sagaId: Int,
+    focusEventId: Int? = null,
     title: String,
     subtitle: String,
     onBackClick: () -> Unit = {},
@@ -55,6 +56,7 @@ fun TimeLineContent(
 ) {
     val timelineViewModel = hiltViewModel<TimelineViewModel>()
     val timelineView by timelineViewModel.timelineView.collectAsStateWithLifecycle()
+    val eventXp by timelineViewModel.eventXp.collectAsStateWithLifecycle()
     val genre = timelineView?.saga?.genre ?: Genre.FANTASY
 
     LaunchedEffect(sagaId) {
@@ -82,6 +84,8 @@ fun TimeLineContent(
 
                 TimelineThreadList(
                     timelineContent = viewContent,
+                    eventXp = eventXp,
+                    focusEventId = focusEventId,
                     modifier = Modifier.weight(1f),
                     onAction = { },
                 )

@@ -14,11 +14,15 @@ import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.progression.domain.CharacterProgress
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
+import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,10 +37,13 @@ class CharacterDetailsViewModel
         private val remoteConfigService: RemoteConfigService,
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
+        private val progressionUseCase: CharacterProgressionUseCase,
+        private val settingsUseCase: SettingsUseCase,
     ) : ViewModel() {
         val characterDetailData = MutableStateFlow<CharacterDetailData?>(null)
         val imagePalette = MutableStateFlow<ImagePalette?>(null)
         val messageCount = MutableStateFlow(0)
+        val progress = MutableStateFlow<CharacterProgress?>(null)
 
         val characterResume = MutableStateFlow<String?>(null)
         val characterArcs = MutableStateFlow<List<CharacterArc>>(emptyList())
@@ -49,6 +56,7 @@ class CharacterDetailsViewModel
         private var currentCharacterId: Int? = null
         private var detailJob: Job? = null
         private var arcsJob: Job? = null
+        private var progressJob: Job? = null
 
         fun onCharacterScreenVisible(sagaId: Int) {
             sagaImmersiveSession.push("character_detail", sagaId)
@@ -64,6 +72,21 @@ class CharacterDetailsViewModel
             }
         }
 
+        fun updateStatus(
+            character: Character,
+            status: com.ilustris.sagai.features.characters.data.model.CharacterStatus,
+            note: String?,
+        ) {
+            viewModelScope.launch(Dispatchers.IO) {
+                characterUseCase.updateCharacter(
+                    character.copy(
+                        status = status.takeIf { it != com.ilustris.sagai.features.characters.data.model.CharacterStatus.ACTIVE },
+                        statusNote = note,
+                    ),
+                )
+            }
+        }
+
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
         }
@@ -74,6 +97,8 @@ class CharacterDetailsViewModel
 
             detailJob?.cancel()
             arcsJob?.cancel()
+            progressJob?.cancel()
+            progress.value = null
             currentCharacterId = characterId
 
             characterDetailData.value = null
@@ -96,6 +121,15 @@ class CharacterDetailsViewModel
                     characterUseCase.getCharacterDetailData(characterId).collect { data ->
                         characterDetailData.value = data
                         data?.let {
+                            if (progressJob == null || progressJob?.isActive == false) {
+                                progressJob =
+                                    viewModelScope.launch(Dispatchers.IO) {
+                                        combine(
+                                            progressionUseCase.observeProgress(it.character),
+                                            settingsUseCase.getShowProgression(),
+                                        ) { value, show -> value.takeIf { show } }.collect { value -> progress.value = value }
+                                    }
+                            }
                             ensureGenreTheme(it.sagaInfo.genre)
                             messageCount.value = it.messageCount
                             loadCompletedActs(it.sagaInfo.id)

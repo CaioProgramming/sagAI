@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.file.BackupService
+import com.ilustris.sagai.core.database.backup.SagasArchiveService
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
@@ -40,7 +40,7 @@ class HomeViewModel
     @Inject
     constructor(
         private val homeUseCase: HomeUseCase,
-        private val backupService: BackupService,
+        private val archiveService: SagasArchiveService,
         private val stringResourceHelper: StringResourceHelper,
         private val appLifecycleManager: AppLifecycleManager,
         private val _userIdentityUseCase: com.ilustris.sagai.features.player.domain.UserIdentityUseCase,
@@ -69,8 +69,13 @@ class HomeViewModel
             observeDynamicPromptsWhenActive()
             observeVisibleSagas()
             observePremiumState()
-            checkForBackups()
-            autoBackup()
+            observeLastBackup()
+        }
+
+        private fun observeLastBackup() {
+            viewModelScope.launch {
+                archiveService.lastBackupAt.collect { stateManager.setLastBackupAt(it) }
+            }
         }
 
         private fun observeVisibleSagas() {
@@ -95,9 +100,7 @@ class HomeViewModel
                 HomeUiAction.CreateNewSaga -> onCreateNewSaga()
                 is HomeUiAction.SelectSaga -> onSelectSaga(action.saga)
                 HomeUiAction.OpenPremium -> stateManager.setShowPremiumOnboarding(true)
-                HomeUiAction.RecoverSagas -> stateManager.setShowBackupSheet(true)
                 HomeUiAction.DismissPremiumOnboarding -> stateManager.setShowPremiumOnboarding(false)
-                HomeUiAction.DismissBackupSheet -> stateManager.setShowBackupSheet(false)
                 HomeUiAction.CreateFakeSaga -> createFakeSaga()
                 is HomeUiAction.SaveName -> saveName(action.name)
             }
@@ -163,17 +166,6 @@ class HomeViewModel
             Timber.d("HomeViewModel: onCleared")
         }
 
-        fun checkForBackups() {
-            viewModelScope.launch {
-                /*backupService.getBackedUpSagas().onSuccessAsync {
-                    val availableSagas = sagas.first()
-                    stateManager.setBackupAvailable(
-                        it.filterBackups(availableSagas.map { it.data }).isNotEmpty(),
-                    )
-                }*/
-            }
-        }
-
         private fun observeDynamicPromptsWhenActive() {
             viewModelScope.launch {
                 appLifecycleManager.isAppInForeground.collect { inForeground ->
@@ -221,17 +213,6 @@ class HomeViewModel
                         ),
                     )
                 }
-            }
-        }
-
-        private var isBackingUp = false
-
-        fun autoBackup() {
-            if (isBackingUp) return
-            viewModelScope.launch(Dispatchers.IO) {
-                isBackingUp = true
-                homeUseCase.autoBackup()
-                isBackingUp = false
             }
         }
     }

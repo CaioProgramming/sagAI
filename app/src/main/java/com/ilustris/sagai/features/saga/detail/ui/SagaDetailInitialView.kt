@@ -77,8 +77,9 @@ import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationSta
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.components.stylisedText
-import com.ilustris.sagai.ui.components.views.HeroMenuAction
-import com.ilustris.sagai.ui.components.views.HeroOverflowMenu
+import com.ilustris.sagai.ui.components.IosStyleMenuDivider
+import com.ilustris.sagai.ui.components.IosStyleMenuHost
+import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.theme.PaletteTheme
 import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -363,42 +364,54 @@ fun SagaDetailInitialContent(
 
                 Spacer(Modifier.weight(1f))
 
-                IconButton(
-                    onClick = { showSagaShare = true },
-                    colors =
-                        IconButtonDefaults.iconButtonColors().copy(
-                            containerColor = adaptiveColor.copy(alpha = .5f),
-                        ),
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_share),
-                        contentDescription = stringResource(R.string.share),
-                        tint = adaptiveTextColor,
-                    )
-                }
-
-                HeroOverflowMenu(
-                    tint = adaptiveTextColor,
-                    containerColor = adaptiveColor.copy(alpha = .5f),
-                    actions =
-                        listOfNotNull(
-                            if (BuildConfig.DEBUG) {
-                                HeroMenuAction(
-                                    label = stringResource(R.string.debug_regenerate_image),
-                                ) {
-                                    onAction(DetailAction.RegenerateIcon)
-                                }
-                            } else {
-                                null
+                var menuOpen by remember { mutableStateOf(false) }
+                IosStyleMenuHost(
+                    expanded = menuOpen,
+                    onDismissRequest = { menuOpen = false },
+                    anchor = Alignment.TopEnd,
+                    menu = {
+                        IosStyleMenuItem(
+                            text = stringResource(R.string.share),
+                            icon = painterResource(R.drawable.ic_share),
+                            onClick = {
+                                menuOpen = false
+                                showSagaShare = true
                             },
-                            HeroMenuAction(
-                                label = stringResource(R.string.saga_detail_delete_saga_button),
-                                destructive = true,
-                            ) {
+                        )
+                        if (BuildConfig.DEBUG) {
+                            IosStyleMenuItem(
+                                text = stringResource(R.string.debug_regenerate_image),
+                                onClick = {
+                                    menuOpen = false
+                                    onAction(DetailAction.RegenerateIcon)
+                                },
+                            )
+                        }
+                        IosStyleMenuDivider()
+                        IosStyleMenuItem(
+                            text = stringResource(R.string.saga_detail_delete_saga_button),
+                            destructive = true,
+                            onClick = {
+                                menuOpen = false
                                 onAction(DetailAction.Delete)
                             },
-                        ),
-                )
+                        )
+                    },
+                ) {
+                    IconButton(
+                        onClick = { menuOpen = true },
+                        colors =
+                            IconButtonDefaults.iconButtonColors().copy(
+                                containerColor = adaptiveColor.copy(alpha = .5f),
+                            ),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_more_vert),
+                            contentDescription = stringResource(R.string.character_card_options),
+                            tint = adaptiveTextColor,
+                        )
+                    }
+                }
             }
         }
     }
@@ -548,7 +561,7 @@ fun sagaHeaderComponent(
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                painterResource(R.drawable.ic_cosmos),
+                                painterResource(R.drawable.ic_constellation),
                                 contentDescription = stringResource(R.string.saga_brain_title),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier =

@@ -59,10 +59,8 @@ data class ChatUiState(
     val typoFixMessage: TypoFix? = null,
     val messageEffectsEnabled: Boolean = true,
     val newCharacterReveal: Int? = null,
-    val selectionState: MessageSelectionState = MessageSelectionState(),
     val notificationsEnabled: Boolean = true,
     val smartSuggestionsEnabled: Boolean = true,
-    val showShareSheet: Boolean = false,
     val showAudioTranscript: Boolean = false,
     val isSendingPending: Boolean = false,
     val sendingProgress: Float = 0f,
@@ -83,13 +81,6 @@ data class ChatUiState(
     val relationships: List<RelationshipContent> = emptyList(),
     val currentMessageCount: Int = 0,
     val showTitle: Boolean = false,
-)
-
-@Immutable
-data class MessageSelectionState(
-    val isSelectionMode: Boolean = false,
-    val selectedMessageIds: Set<Int> = emptySet(),
-    val maxSelection: Int = 10,
 )
 
 @Immutable

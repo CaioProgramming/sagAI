@@ -8,13 +8,13 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.database.backup.SagasArchiveService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.data.isFlowCancellation
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.AVATAR_ICON_TARGET_PX
-import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.globalshell.BookReadyEffect
 import com.ilustris.sagai.core.globalshell.GlobalShellEffect
@@ -133,12 +133,12 @@ class SagaContentManagerImpl
         private val actUseCase: ActUseCase,
         private val emotionalUseCase: EmotionalUseCase,
         private val remoteConfig: RemoteConfigService,
-        private val backupService: BackupService,
         private val imageHelper: ImageHelper,
         private val genreConfigService: GenreConfigService,
         private val messageDao: MessageDao,
         private val database: SagaDatabase,
         private val sagaThemeManager: SagaThemeManager,
+        private val archiveService: SagasArchiveService,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val narrativeCoordinator: NarrativeCoordinator,
         private val narrativeActionExecutor: NarrativeActionExecutor,
@@ -685,23 +685,6 @@ class SagaContentManagerImpl
                     saga,
                     timelineContent.data,
                 )
-            }
-        }
-
-        override suspend fun backupSaga() {
-            val sagaMetadata = content.value ?: return
-            Timber.d("Backing up saga ${sagaMetadata.data.id}")
-
-            val fullSaga = sagaHistoryUseCase.getSagaById(sagaMetadata.data.id).first() ?: return
-            val backup = sagaHistoryUseCase.backupSaga(fullSaga)
-            Timber.d("backupSaga: backup successfull? ${backup.isSuccess}")
-        }
-
-        override suspend fun enableBackup(uri: Uri?) {
-            uri?.let {
-                backupService.enableBackup(it)
-            } ?: run {
-                sagaThemeManager.showSnackBar(context.getString(R.string.backup_disabled))
             }
         }
 
@@ -1404,6 +1387,17 @@ class SagaContentManagerImpl
             setProcessing(false)
         }
 
+        /** An act just closed: a good moment to offer the full backup, at most once a week. */
+        private suspend fun remindFullBackup() {
+            if (!archiveService.shouldRemind()) return
+            archiveService.markReminded()
+            sagaThemeManager.showSnackBar(
+                context.getString(R.string.archive_reminder_message),
+                action = context.getString(R.string.archive_reminder_action) to { archiveService.requestExport() },
+                durationMs = 15_000L,
+            )
+        }
+
         private suspend fun handlePostAction(
             saga: SagaMetadata,
             action: NarrativeAction,
@@ -1425,7 +1419,7 @@ class SagaContentManagerImpl
                                 latest.copy(currentActId = a.id),
                             )
                         }
-                        backupSaga()
+                        remindFullBackup()
                         if (generatedContent != null) {
                             emitMilestone(
                                 SagaMilestone.Introduction(

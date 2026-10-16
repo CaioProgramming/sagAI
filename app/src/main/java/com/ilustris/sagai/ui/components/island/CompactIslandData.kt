@@ -3,6 +3,7 @@ package com.ilustris.sagai.ui.components.island
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -63,4 +64,8 @@ data class CompactIslandData(
      * back in when expanded. When `true` (default), the card is always visible.
      */
     val showBackground: Boolean = true,
+    /** Replaces [iconRes] with arbitrary content (e.g. a character's avatar). */
+    val leading: (@Composable () -> Unit)? = null,
+    /** Shown after the label, before any loading/action indicator (e.g. a medal coin). */
+    val trailing: (@Composable () -> Unit)? = null,
 )

@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
+import com.ilustris.sagai.core.ai.model.Artwork
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.ArtworkConcept
 import com.ilustris.sagai.core.ai.prompts.ArtworkPrompts
@@ -12,7 +13,7 @@ import javax.inject.Inject
 
 /**
  * Ensures a Saga/Chapter/Character has an `artwork` concept before it is used as image
- * generation context. If [currentArtwork] is already set, it's returned as-is with no AI call.
+ * generation context. If the current artwork is already set, it's returned as-is with no AI call.
  */
 class ArtworkConceptService
     @Inject
@@ -24,13 +25,14 @@ class ArtworkConceptService
         /**
          * Artwork rules for [imageType] as an instruction bucket, to merge into any generation
          * that outputs an `artwork` field. Reads from the same blueprint used by [ensureArtwork],
-         * so icon and cover rules only need to be maintained in one place each.
+         * so icon rules only need to be maintained in one place.
          */
         suspend fun artworkInstructions(imageType: ImageType): Map<String, Any> =
             promptService
                 .buildSplitBlueprint(ArtworkPrompts.conceptBlueprintKey(imageType))
                 .renderInstructions()
 
+        /** The text-only portrait concept (characters); covers go through [ensureCoverArtwork]. */
         suspend fun ensureArtwork(
             imageType: ImageType,
             contentType: String,
@@ -51,5 +53,31 @@ class ArtworkConceptService
                         requirement = ModelRequirement.MEDIUM,
                     )!!
                     .artwork
+            }
+
+        /**
+         * The cover curator: reads [context] (a whole saga or chapter, never its latest beat) and
+         * decides the concept, the characters the cover needs and the story elements it draws on.
+         * Its own step, so the choice is made with full attention instead of at the tail of a
+         * prose generation.
+         */
+        suspend fun ensureCoverArtwork(
+            contentType: String,
+            genre: Genre,
+            context: String,
+            currentArtwork: Artwork?,
+        ): RequestResult<Artwork> =
+            executeRequest {
+                currentArtwork?.takeUnless { it.isBlank() } ?: gemmaClient
+                    .generateBlueprint<Artwork>(
+                        remoteConfigKey = ArtworkPrompts.COVER_CURATOR_BLUEPRINT,
+                        variables =
+                            mapOf(
+                                "contentType" to contentType,
+                                "genreAesthetic" to genreConfigService.aesthetic(genre),
+                                "context" to context,
+                            ),
+                        requirement = ModelRequirement.MEDIUM,
+                    )!!
             }
     }

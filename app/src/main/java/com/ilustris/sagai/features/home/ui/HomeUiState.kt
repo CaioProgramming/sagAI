@@ -20,8 +20,8 @@ data class HomeUiState(
     val dynamicNewSagaTexts: DynamicSagaPrompt? = null,
     val isPremium: Boolean = false,
     val showPremiumOnboarding: Boolean = false,
-    val showBackupSheet: Boolean = false,
-    val backupAvailable: Boolean = false,
+    /** Epoch millis of the last full backup; 0 = never, null = not loaded yet. */
+    val lastBackupAt: Long? = null,
     val isLoading: Boolean = false,
     val loadingMessage: String? = null,
 ) {

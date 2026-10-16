@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.SharePrompts
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
@@ -13,6 +14,8 @@ import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.player.domain.PlayerProfileUseCase
+import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.share.domain.model.ShareText
 import com.ilustris.sagai.features.share.domain.model.ShareType
@@ -31,11 +34,16 @@ interface SharePlayUseCase {
 
     suspend fun clearShareFolder(): RequestResult<Unit>
 
+    /** An empty MP4 in the share folder, which is cleared first like for an image. */
+    suspend fun prepareVideoFile(fileName: String): RequestResult<File>
+
     suspend fun generateShareMessage(
         saga: Saga,
         shareType: ShareType,
         character: CharacterContent?,
     ): RequestResult<ShareText>
+
+    suspend fun generatePlayerShareMessage(): RequestResult<ShareText>
 
     suspend fun generateBookPDF(
         book: com.ilustris.sagai.features.act.data.model.Book,
@@ -55,6 +63,8 @@ class SharePlayUseCaseImpl
         private val promptService: PromptService,
         private val pdfGenerator: PDFGenerator,
         private val sagaRepository: SagaRepository,
+        private val playerProfileUseCase: PlayerProfileUseCase,
+        private val playthroughUseCase: PlaythroughUseCase,
     ) : SharePlayUseCase {
         override suspend fun saveBitmapToCache(
             bitmap: Bitmap,
@@ -72,6 +82,12 @@ class SharePlayUseCaseImpl
                     "${context.packageName}.fileprovider",
                     file,
                 )
+            }
+
+        override suspend fun prepareVideoFile(fileName: String): RequestResult<File> =
+            executeRequest {
+                clearShareFolder()
+                File(fileHelper.getFileCacheDir("shares"), "$fileName${System.currentTimeMillis()}.mp4")
             }
 
         override suspend fun clearShareFolder(): RequestResult<Unit> =
@@ -133,7 +149,20 @@ class SharePlayUseCaseImpl
                         }
                     }
 
-                gemmaClient.generate<ShareText>(promptSplit = prompt)!!
+                // A line of copy, not a reasoning task: on the default tier the model spent about a
+                // thousand thinking tokens, roughly six seconds, on a thirty-token answer.
+                gemmaClient.generate<ShareText>(promptSplit = prompt, requirement = ModelRequirement.LOW)!!
+            }
+
+        override suspend fun generatePlayerShareMessage(): RequestResult<ShareText> =
+            executeRequest {
+                val prompt =
+                    SharePrompts.playerPrompt(
+                        promptService,
+                        playerProfileUseCase.getProfile(),
+                        playthroughUseCase.availableSagas().first().map { it.data },
+                    )
+                gemmaClient.generate<ShareText>(promptSplit = prompt, requirement = ModelRequirement.LOW)!!
             }
 
         override suspend fun generateBookPDF(

@@ -7,13 +7,14 @@ import android.net.Uri
 fun launchShareActivity(
     uri: Uri,
     context: Context,
+    mimeType: String? = null,
 ) {
     val shareIntent =
         Intent().apply {
             action = Intent.ACTION_SEND
             type = "image/*"
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            setDataAndType(uri, context.contentResolver.getType(uri))
+            setDataAndType(uri, mimeType ?: context.contentResolver.getType(uri))
             putExtra(
                 Intent.EXTRA_STREAM,
                 uri,

@@ -99,6 +99,7 @@ class ChatViewModel
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val chatGenerationService: ChatGenerationService,
         private val dataStorePreferences: DataStorePreferences,
+        private val progressionUseCase: com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -287,28 +288,12 @@ class ChatViewModel
                     regenerateAudio(action.messageContent)
                 }
 
-                is ChatUiAction.ToggleSelectionMode -> {
-                    stateManager.toggleSelectionMode()
-                }
-
-                is ChatUiAction.ToggleMessageSelection -> {
-                    stateManager.toggleMessageSelection(action.messageId)
-                }
-
                 is ChatUiAction.MarkMessageViewed -> {
                     markMessageViewed(action.messageId)
                 }
 
-                is ChatUiAction.ClearSelection -> {
-                    stateManager.clearSelection()
-                }
-
                 is ChatUiAction.RecordSearchTerm -> {
                     recordSearchTerm(action.term)
-                }
-
-                is ChatUiAction.ShareConversation -> {
-                    stateManager.updateShareSheetVisibility(action.show)
                 }
 
                 is ChatUiAction.Back -> { // UI action
@@ -326,10 +311,6 @@ class ChatViewModel
 
                 is ChatUiAction.RefreshSaga -> {
                     checkSaga()
-                }
-
-                is ChatUiAction.EnableBackup -> {
-                    enableBackup(action.uri)
                 }
 
                 is ChatUiAction.RequestAudioTranscript -> {
@@ -554,7 +535,7 @@ class ChatViewModel
         private fun observeAdvanceTriggerSuppression() =
             viewModelScope.launch(Dispatchers.IO) {
                 uiState
-                    .map { it.onboardingType != null || it.selectionState.isSelectionMode }
+                    .map { it.onboardingType != null }
                     .distinctUntilChanged()
                     .collect { suppressed -> sagaContentManager.setAdvanceTriggerSuppressed(suppressed) }
             }
@@ -668,18 +649,6 @@ class ChatViewModel
 
                 settingsUseCase.getMessageEffectsEnabled().collect {
                     stateManager.updateState { s -> s.copy(messageEffectsEnabled = it) }
-                }
-
-                settingsUseCase.backupEnabled().collect {
-                    if (it.not()) {
-                        sagaThemeManager.showSnackBar(
-                            message = context.getString(R.string.backup_disabled_notification),
-                            action =
-                                context.getString(R.string.configure) to {
-                                    enableBackup(null)
-                                },
-                        )
-                    }
                 }
             }
 
@@ -1069,7 +1038,14 @@ class ChatViewModel
         // Ambient music: SagaThemeManager + MainActivity (not tied to Activity lifecycle — Nav 3 keeps Chat in backstack)
 
         fun onChatScreenVisible(sagaId: String) {
-            sagaId.toIntOrNull()?.let { sagaImmersiveSession.push("chat", it) }
+            sagaId.toIntOrNull()?.let {
+                sagaImmersiveSession.push("chat", it)
+                // What was earned while the app was away comes up now, merged and once.
+                viewModelScope.launch {
+                    runCatching { progressionUseCase.announcePending(it) }
+                    runCatching { progressionUseCase.catchUpPending(it) }
+                }
+            }
         }
 
         fun onChatScreenHidden() {
@@ -1110,7 +1086,6 @@ class ChatViewModel
                     }
                     startTime = 0L
                 }
-                sagaContentManager.backupSaga()
             }
         }
 
@@ -1488,18 +1463,6 @@ class ChatViewModel
                 }
                 Timber.tag("ChatViewModel").d("Finished enqueuing $count fake messages.")
             }
-        }
-
-        fun enableBackup(uri: Uri?) {
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.enableBackup(uri)
-            }
-        }
-
-        fun getSelectedMessages(): List<MessageContent> {
-            val saga = uiState.value.sagaContent ?: return emptyList()
-            val selectedIds = uiState.value.selectionState.selectedMessageIds
-            return saga.flatMessages().filter { it.message.id in selectedIds }
         }
 
         // Audio Playback Methods
