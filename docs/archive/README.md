@@ -189,3 +189,14 @@ that describes "how we got there" is historical, not a reference.**
 **Should you use these?** Same answer as the first pass: generally no — use the current docs. Keep
 these only for historical context on how a decision or a piece of copy evolved.
 
+
+---
+
+### saga_progress_widget.md
+
+**Status:** Superseded by the home widgets proposal  
+**Replacement:** `/docs/feature_ideas/home_widgets.md`
+
+**Content:** First widget idea: a single "Saga Progress" widget with an AI-generated recap of the
+active saga, refreshed by a WorkManager worker. Replaced by a set of automatic and generated widgets
+that reuse data the app already produces and cost no AI at render time.
