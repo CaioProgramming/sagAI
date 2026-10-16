@@ -6,10 +6,13 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -50,6 +53,7 @@ class QuotaStatusViewModel
         fun tierStatus(requirement: ModelRequirement): StateFlow<QuotaStatus> =
             tierStatusFlows.getOrPut(requirement) {
                 flow { emitAll(gemmaClient.tierQuotaStatus(requirement)) }
+                    .catch { unresolvedTiers(it) }
                     .stateIn(
                         scope = viewModelScope,
                         started = SharingStarted.WhileSubscribed(5_000),
@@ -68,9 +72,16 @@ class QuotaStatusViewModel
          */
         val globalStatus: StateFlow<QuotaStatus> =
             flow { emitAll(gemmaClient.allTiersQuotaStatus()) }
+                .catch { unresolvedTiers(it) }
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(5_000),
                     initialValue = QuotaStatus.Clear,
                 )
+
+        /** `model_configs` not loaded (or invalid) yet: nothing to gate on, so stay [QuotaStatus.Clear]. */
+        private suspend fun FlowCollector<QuotaStatus>.unresolvedTiers(error: Throwable) {
+            Timber.w(error, "Quota status unavailable, treating as clear")
+            emit(QuotaStatus.Clear)
+        }
     }
