@@ -103,7 +103,7 @@ half4 main(float2 fragCoord){
   float crust = smoothstep(.45, .75, fbm(float2(uv.x * asp * 11., uv.y * 13.) + 3.));
   float hp = heat * (.72 + .5 * S0.b) + (fbm(float2(uv.x * asp * 5., uv.y * 6.)) - .5) * .3 * heat;
   hp *= 1. - crust * .55 * (1. - smoothstep(.15, 1.2, heat));
-  hp += tf.x * .3;
+  hp += tf.x * 1.0;
   hp = max(hp, 0.) * uIntensity;
   float3 col = mix(float3(.05, .03, .025), uC1, smoothstep(.05, .28, hp));
   col = mix(col, uC2, smoothstep(.22, .55, hp));
@@ -121,17 +121,17 @@ half4 main(float2 fragCoord){
   float ph = hash(float2(cell, 1.9)) * 6.28;
   float d = (uv.y - top) / (uTextH * 1.6 * sc);
   float sway = sin(d * 7. + t * 1.6 + ph) * .28 + (noise(float2(cell * 1.3, d * 3. - t * .5)) - .5) * .5;
-  float xl = fract(wx) - .5 - sway * smoothstep(0., .3, d) - tf.y * .35;
+  float xl = fract(wx) - .5 - sway * smoothstep(0., .3, d) - tf.y * .9;
   float thin = exp(-pow(xl / (.10 + .10 * d), 2.));
   float prof = smoothstep(-.02, .06, d) * (1. - smoothstep(.15, 1., d));
   float flow = .35 + .65 * noise(float2(cell * 2.1, d * 4. - t * .9));
-  float smokeAmt = (.2 + .8 * exp(-age / 2.8)) * uOpt.x * (1. + tf.x * .9);
+  float smokeAmt = (.2 + .8 * exp(-age / 2.8)) * uOpt.x * (1. + tf.x * 2.2);
   float wa = thin * live * prof * flow * smoothstep(.08, .4, Sw.r) * smokeAmt * .85;
-  float pn = fbm(float2(uv.x * asp * 6. - tf.y * .5, uv.y * 5. - t * .8 - tf.z * .5));
-  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2 + tf.x * .5, 0., 1.) * (1. - m0) * smokeAmt * .4;
+  float pn = fbm(float2(uv.x * asp * 6. - tf.y * 1.2, uv.y * 5. - t * .8 - tf.z * 1.2));
+  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2 + tf.x * 1.2, 0., 1.) * (1. - m0) * smokeAmt * .4;
   outc = mix(outc, float3(.62, .56, .52), max(wa, puff));
 
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * (.05) * smoothstep(0., .06, max(outc.r, max(outc.g, outc.b)));
-  float cov = (m0) * boxMask(uv);
-  return finish(boxed(outc, uv), cov);
+  float fxCov = (m0) * boxMask(uv);
+  return finish(boxed(outc, uv), fxCov);
 }

@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.drawText
@@ -51,7 +52,7 @@ internal fun buildTitleMask(
                 drawStyle = Stroke(width = strokePx, join = StrokeJoin.Round),
             )
         }
-        drawText(textLayoutResult = layout, color = Color.White, topLeft = topLeft)
+        drawText(textLayoutResult = layout, color = Color.White, topLeft = topLeft, drawStyle = Fill)
     }
     return image.asAndroidBitmap()
 }
@@ -91,11 +92,13 @@ private fun blur2d(
  * Small CPU "field" the shaders sample instead of doing the blurs themselves (the first, fully
  * procedural fire shader was too heavy for mid-range phones):
  * R = text smeared upwards (decay proportional to the text height), G = wide glow, B = tight halo.
+ * Extents are measured against one line of text, so a title wrapped on two lines keeps the lab's glow.
  * Ported from `buildField` in the HTML lab.
  */
 internal fun buildTitleField(
     mask: Bitmap,
     smearLen: Float,
+    lines: Int,
 ): TitleFxField {
     val sw = (mask.width / 2).coerceIn(64, 320)
     val sh = max(32, (sw.toFloat() * mask.height / mask.width).roundToInt())
@@ -128,7 +131,7 @@ internal fun buildTitleField(
         maxX = (sw * 0.9f).toInt()
     }
 
-    val thS = max(4f, (maxY - minY + 1).toFloat())
+    val thS = max(4f, (maxY - minY + 1).toFloat() / lines.coerceAtLeast(1))
     val dec = 1f / (thS * smearLen)
     val sm = FloatArray(n)
     for (x in 0 until sw) {

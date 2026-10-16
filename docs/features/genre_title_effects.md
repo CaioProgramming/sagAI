@@ -1,9 +1,8 @@
 # Genre Title Effects
 
 Animated, per-genre treatment for the saga title (`Genre.stylisedText`). Explored in the
-[Genre titles lab](../prototypes/README.md) (WebGL prototype). **Built** for Fantasy, Horror, Cowboy,
-Shinobi, Crime and Heroes (API 33+); see [Implementation status](#implementation-status)
-and [Editing a shader](#editing-a-shader). Cyberpunk, Space Opera and Punk Rock are still prototype-only.
+[Genre titles lab](../prototypes/README.md) (WebGL prototype). **Built** for all nine genres (API 33+);
+see [Implementation status](#implementation-status) and [Editing a shader](#editing-a-shader).
 
 ## Principles (agreed during prototyping)
 
@@ -32,7 +31,7 @@ and [Editing a shader](#editing-a-shader). Cyberpunk, Space Opera and Punk Rock 
 | Cowboy | `cowboyBurn` (full-surface "fireplace") | A freshly applied brand: letters flash white-hot and cool over ~8 s to a dark scorch; only a few thin wisps of smoke around the text. Repeats every ~11 s. | Not fire. No background, leather surface or ambient glow behind the text, only the letters, a tight bloom and the smoke. `cowboyBurn` repaints everything and hurts legibility (see `BookRecapCard` note). |
 | Shinobi | `levitate` + `sakuraWind` | No backdrop, subtle smoke wisps, and a random katana cut: the blade crosses the text and the halves open like scissors (wider in the middle). The negative (white paper, black ink, speed lines) is exactly the gap between the halves, with a red edge and a faint scar that lingers. A single cut from edge to edge of the text; the y entry point, angle and side it comes from are random. (An earlier version fired 1–3 short random cuts in a row, which read as several small animations.) | Replaced earlier ink-splat and full-frame impact-frame layers, which felt like separate animations. The slit used to be an independent lens shape, now it is tied to the gap. Inspiration: high-contrast anime impact frames. |
 | Crime | `vhs` + `dreamySparkle` | Euphoria-style iridescent gradient clipped to the letters (pink, light pink, mint, violet from the palette), glitter, 80s film grain. | `vhs` already covers an "aged tape" look, so the aged-print idea was dropped. Watch it next to Cyberpunk (both neon). |
-| Heroes | `WordArtText` extrusion + outline + `levitate` + `lightningStorm` | Keeps extrusion/outline. Adds a soft pulsing glow, halftone shading **only inside** the letters, speed lines, metallic sweep, gold glints. | A square impact ring and outside halftone were tried and rejected. |
+| Heroes | `WordArtText` extrusion + outline + `levitate` + `lightningStorm` | Keeps extrusion/outline. Adds a soft pulsing glow, halftone shading **only inside** the letters, metallic sweep, gold glints. | A square impact ring, outside halftone and speed lines around the title were tried and rejected. |
 | Cyberpunk | `glitch` + `crtScreen(Dream)` | **A VHS tape on a CRT**: interlaced scanlines, per-line wobble, a tracking bar rolling up the screen, RGB channel bleed, static and glitch bursts. Optional CRT screen rectangle filling the layout box. | The first prototype felt too weak. Entry: the signal locks in while a beam walks down the text. |
 | Space Opera | `crtScreen(Element)` | **A phosphor monitor**: RGB triads, scanline gaps, light tube curvature, a refresh bar rolling down, twinkling stars and a sweep of light. Optional CRT screen rectangle. | Entry: a TV power-on line that opens to the text height. |
 | Punk Rock | ransom note + `chromaticAberration` + `glitch` | **Unchanged.** Optional: xerox grain. | Already covers the idea; it just must follow rules 3-4. |
@@ -49,7 +48,7 @@ short fading trail of recent positions.
 | Fantasy | Only the flames above the text lean and heat up near the finger (the base stays still), as if the fire senses the presence. No extra sparks. |
 | Crime | Letters and gradient deform like liquid around the trail and relax slowly. |
 | Horror | A very light magnification and a small clearing of the fog around the finger, no visible rim. |
-| Heroes | A tap fires a punch; speed lines radiate from the touched point. |
+| Heroes | A tap fires a punch; the glow lights up where the finger passes. |
 
 The prototype also has Cyberpunk, Space Opera and Punk Rock tabs. They reproduce what the app already
 does (with stand-in fonts) so the interaction can be tried there too: Cyberpunk, slices of text jump and
@@ -87,7 +86,7 @@ enabled once the effect is lit.
 | Cowboy | The brand press itself (heat starts at the first frame) | Cools, wisps leave |
 | Shinobi | Handwriting reveal in white ink, like Crime | The red floods the letters, smoke appears, first cut after a few seconds |
 | Horror | Materializes out of the fog with a flicker | Ghost double, breath and glitches |
-| Heroes | A slam: scale-in with the impact pulse | Glow and speed lines settle |
+| Heroes | A slam: scale-in with the impact pulse | Glow settles |
 | Cyberpunk | Typewriter or decode (random glyphs resolving) with glitch | Neon, scanlines and glitch bursts |
 | Space Opera | Typewriter, like the terminal boot, then phosphor power-on | Gradient, stars, sweep |
 | Punk Rock | Letters slap in one by one in stop motion | Ransom-note jitter |
@@ -110,6 +109,9 @@ Technical notes:
   needs the mask and the field per frame, so it is more expensive; start with the sequential version.
 
 ## Note on the CRT screen rectangle (Cyberpunk, Space Opera)
+
+**In the app it is off** (`opts.x = 0` in `TitleFxConfig`): a blurred dark panel behind the title read badly
+over the hero art, so the title is only the letters and their effect. The lab keeps the switch.
 
 The optional screen rectangle paints the layout box (rounded corners, vignette, scanlines). It is the one
 place where an effect draws a surface on purpose, which goes against rule 3 (draw only what you paint). It
@@ -146,8 +148,9 @@ through `SrcAtop`. With it off, the scanlines and phosphor only show on the lett
 
 ## Implementation status
 
-Done: Fantasy, Horror, Cowboy, Shinobi, Crime and Heroes titles (API 33+), in
-`ui/components/titlefx/` plus `assets/genre_title_<genre>.agsl`.
+Done: all nine genre titles (API 33+), in `ui/components/titlefx/` plus
+`assets/genre_title_<genre>.agsl`. Checked on a device (2026-10-16) frame by frame against the lab:
+entry, the effect over several seconds, and touch.
 
 - `stylisedText(..., color, interactive, playEntry)` picks `GenreTitleFx` when `Genre.usesTitleFx()`;
   otherwise (or if the shader cannot be built) the old styled text without `genreVfx`.
@@ -164,17 +167,30 @@ Done: Fantasy, Horror, Cowboy, Shinobi, Crime and Heroes titles (API 33+), in
   entry, drag cut on release, heroes tap punch, 8-point finger trail). Touch is observed in the
   `Initial` pass without consuming, so scrolling parents keep working. Only hero titles pass
   `interactive = true`.
-- Call sites: `gradientFill` is applied only when `!genre.usesTitleFx()` (`HeroHeader.kt`,
-  `SagaDetailInitialView.kt` x2); `reactiveShimmer` is kept. The duplicate `genreVfx` in
-  `ChaptersGalleryContent.kt` is gone.
-- Palettes (`TitleFxPalette.kt`) derive from the title colour; Crime and Heroes use the remote
-  `colorPalette` when it has enough entries, like the lab did with the app's own colours.
+- Call sites: `gradientFill` **and `reactiveShimmer`** are applied only when `!genre.usesTitleFx()`
+  (`HeroHeader.kt` x2, `SagaDetailInitialView.kt` x2, `StorySheet.kt`). Both draw with `SrcAtop`, so over the emissive
+  layer they recolour the glow, halftone and ghost pixels too (Heroes looked flat blue, Horror lost its
+  pale letters). The duplicate `genreVfx` in `ChaptersGalleryContent.kt` is gone.
+- Cyberpunk and Space Opera are the lab's VHS and phosphor shaders without the CRT screen. Punk Rock
+  draws its ransom-note tiles on the CPU (`RansomNotePainter.kt`, port of `paintRansom`/`ransomStep`):
+  a mask and a colour layer (`uCol`) repainted on a new 5 s identity, the 2 fps jitter, each letter of
+  the entry, or when the finger pushes the tiles. Tile fonts are the genre header font plus system faces.
+- The mask fill is drawn with an explicit `drawStyle = Fill`: `drawText` keeps the previous call's
+  `Stroke` otherwise, and every title was only an outline.
+- Extents in the field (glow, halo, smear) are measured per text line, so a title wrapped on two lines
+  keeps the lab's glow size. A word is never broken between letters; the font shrinks instead.
+- Palettes (`TitleFxPalette.kt`) derive from the title colour; Crime, Heroes, Cyberpunk and Space Opera
+  use the remote `colorPalette` when it has enough entries, like the lab did with the app's own colours.
+- Fake bold (`stroke`) is 0 for Cyberpunk, Space Opera and Punk Rock: their header fonts are already
+  heavy, and the extra ink saturated the halo.
 
 Deviations / not done yet:
-- **Not compiled or run on a device in this environment** (no Android SDK). The AGSL was only checked
-  as GLSL in WebGL; first run on a device may need fixes. Shader or asset failures are caught and fall
-  back to the simple title.
-- Cyberpunk, Space Opera and Punk Rock titles are unchanged (their VHS/CRT/ransom rework stays a later PR).
+- Horror never compiled until 2026-10-16 (a second `cov` declared by the port script; now `fxCov`), so
+  before that it always showed the simple title. Check logcat for `Title effect shader ... failed` after
+  any shader change.
+- Tweaks made after the lab was published (Fantasy white letters and flames fading behind them, Crime
+  less white, stronger touch on Fantasy/Horror/Cowboy/Crime/Heroes) live in the repo lab
+  (`docs/prototypes/genre-titles/genre-titles.html`); the published artifact is older.
 - The entry animation does not follow `HandwrittenText`'s own writing; the shader draws its own
   handwriting/ignition. Letter bounds are estimated (72% of the layout height) for the margins.
 - Icon `genreVfx` replacements are still phase two.
@@ -187,7 +203,7 @@ Deviations / not done yet:
 - **Never put `gradientFill` on the modifier when `genre.usesTitleFx()`**: the shader draws its own
   colour and a gradient over the composable would tint the whole box. Pass the colour with `color`
   and apply the gradient only to the fallback and to genres without the effect (see `HeroHeader.kt`,
-  `SagaDetailInitialView.kt`). `reactiveShimmer` is fine to keep.
+  `SagaDetailInitialView.kt`). The same goes for `reactiveShimmer`.
 - Do not add `genreVfx` on top of these titles; the effect replaces it. Icon VFX is a separate thing.
 - `interactive = true` only for hero titles (touch easter egg); lists and cards leave it off.
 - The composable reserves a per-genre margin around the letters (pads in `TitleFxConfig`, in text
@@ -202,7 +218,7 @@ The shaders are written and tuned in the browser lab, then converted:
 1. Edit the `FS_*` template literals in `docs/prototypes/genre-titles/genre-titles.html` (`FS_FIRE` is
    the Fantasy shader) and open the file in a browser to see the result.
 2. Run `python3 scripts/genre-titles/port_agsl.py`. It reads the lab and rewrites
-   `app/src/main/assets/genre_title_<genre>.agsl`: GLSL to AGSL (`vecN` to `floatN`, `texture2D` to the
+   `app/src/main/assets/genre_title_<genre>.agsl` (`--only CYBER,SPACE` rewrites just those): GLSL to AGSL (`vecN` to `floatN`, `texture2D` to the
    child-shader helpers `sM`/`sS`), the emissive model (transparent background, `finish()` outputs
    premultiplied light, `boxMask()` fades to nothing at the box edge), grain gated by luminance.
    `scripts/genre-titles/boxmask.glsl` is the box-fade snippet it injects.

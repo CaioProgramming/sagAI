@@ -91,8 +91,15 @@ fun heroTitleOverlay(
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 4.dp)
-                .then(if (genre.usesTitleFx()) Modifier else Modifier.gradientFill(titleGradient))
-                .reactiveShimmer(true, shimmerColors),
+                // the title effect owns its colours: gradientFill and reactiveShimmer recolour every
+                // non-transparent pixel (SrcAtop), which flattens the glow, halftone and ghost layers
+                .then(
+                    if (genre.usesTitleFx()) {
+                        Modifier
+                    } else {
+                        Modifier.gradientFill(titleGradient).reactiveShimmer(true, shimmerColors)
+                    },
+                ),
         interactive = true,
     )
 }
@@ -195,7 +202,7 @@ fun heroBottomCluster(
                 Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .reactiveShimmer(true, shimmerColors),
+                    .then(if (genre.usesTitleFx()) Modifier else Modifier.reactiveShimmer(true, shimmerColors)),
             interactive = true,
         )
 
