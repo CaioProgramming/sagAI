@@ -1,7 +1,9 @@
 # Genre Title Effects
 
 Animated, per-genre treatment for the saga title (`Genre.stylisedText`). Explored in the
-[Genre titles lab](../prototypes/README.md) (WebGL prototype). **Not built in Compose yet.**
+[Genre titles lab](../prototypes/README.md) (WebGL prototype). **Built** for Fantasy, Horror, Cowboy,
+Shinobi, Crime and Heroes (API 33+); see [Implementation status](#implementation-status)
+and [Editing a shader](#editing-a-shader). Cyberpunk, Space Opera and Punk Rock are still prototype-only.
 
 ## Principles (agreed during prototyping)
 
@@ -65,7 +67,7 @@ parameter, off by default, on only for hero titles (`HeroHeader`, `SagaDetailIni
 and soften it with the system reduce-motion setting. Discoverability needs a hint (for example a one-time
 sheen when the screen opens); the effect has to look good without interaction anyway.
 
-## Entry animations (to integrate)
+## Entry animations
 
 *Prototyped in the lab: each tab plays its entry when opened, with a "Reproduzir entrada" button and a switch to turn it off. The pointer interaction only turns on after the entry and the ignition finish. In the prototype the handwriting reveal is approximated by a pen sweeping left to right (outline first, fill behind it); in the app it is the real `HandwrittenText`.*
 
@@ -142,7 +144,7 @@ through `SrcAtop`. With it off, the scanlines and phosphor only show on the lett
 - Stop animating with `rememberLifecycleAnimationsActive()`; consider a static first frame for
   list items.
 
-## Implementation status (PR into `feature/1.18.0`)
+## Implementation status
 
 Done: Fantasy, Horror, Cowboy, Shinobi, Crime and Heroes titles (API 33+), in
 `ui/components/titlefx/` plus `assets/genre_title_<genre>.agsl`.
@@ -176,3 +178,37 @@ Deviations / not done yet:
 - The entry animation does not follow `HandwrittenText`'s own writing; the shader draws its own
   handwriting/ignition. Letter bounds are estimated (72% of the layout height) for the margins.
 - Icon `genreVfx` replacements are still phase two.
+
+## Using it in code
+
+- Call `genre.stylisedText(text, modifier, fontSize, color, interactive, playEntry)`; do not call
+  `GenreTitleFx` directly. `Genre.usesTitleFx()` says whether the genre gets the AGSL title (API 33+
+  and a genre with a config in `titlefx/TitleFxConfig.kt`).
+- **Never put `gradientFill` on the modifier when `genre.usesTitleFx()`**: the shader draws its own
+  colour and a gradient over the composable would tint the whole box. Pass the colour with `color`
+  and apply the gradient only to the fallback and to genres without the effect (see `HeroHeader.kt`,
+  `SagaDetailInitialView.kt`). `reactiveShimmer` is fine to keep.
+- Do not add `genreVfx` on top of these titles; the effect replaces it. Icon VFX is a separate thing.
+- `interactive = true` only for hero titles (touch easter egg); lists and cards leave it off.
+- The composable reserves a per-genre margin around the letters (pads in `TitleFxConfig`, in text
+  heights); the effect fades out inside it. Account for that extra space in layouts.
+- Shader failures are caught (`createTitleShader`) and fall back to the simple title; look for
+  `Title effect shader ... failed` in Timber.
+
+## Editing a shader
+
+The shaders are written and tuned in the browser lab, then converted:
+
+1. Edit the `FS_*` template literals in `docs/prototypes/genre-titles/genre-titles.html` (`FS_FIRE` is
+   the Fantasy shader) and open the file in a browser to see the result.
+2. Run `python3 scripts/genre-titles/port_agsl.py`. It reads the lab and rewrites
+   `app/src/main/assets/genre_title_<genre>.agsl`: GLSL to AGSL (`vecN` to `floatN`, `texture2D` to the
+   child-shader helpers `sM`/`sS`), the emissive model (transparent background, `finish()` outputs
+   premultiplied light, `boxMask()` fades to nothing at the box edge), grain gated by luminance.
+   `scripts/genre-titles/boxmask.glsl` is the box-fade snippet it injects.
+3. Build and run on an API 33+ device. AGSL compiles at runtime, so a typo shows up only there (log:
+   `Title effect shader ... failed`, and the title falls back to plain text).
+
+Do not hand-edit the `.agsl` files: the next conversion overwrites them. Uniforms and their units
+(`uBox`, `uFw`, `uPtr`, `uTrail`, `uCut`, entry/event times) are set in `titlefx/GenreTitleFx.kt` and must
+match the lab's `frame()` function.

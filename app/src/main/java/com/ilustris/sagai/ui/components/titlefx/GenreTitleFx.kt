@@ -150,7 +150,7 @@ private class FxHolder {
  * punch. The shader outputs light on a transparent layer, so the text sits on whatever is behind it
  * and everything stays inside this composable's bounds (the layout reserves a per-genre margin for
  * the effect to fade out in). Prototype and decisions: `docs/prototypes/genre-titles` and
- * `docs/feature_ideas/genre_title_effects.md`.
+ * `docs/features/genre_title_effects.md`.
  *
  * [fallback] is shown when the shader cannot be created (compile error on exotic GPUs).
  */

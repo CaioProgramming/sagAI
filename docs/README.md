@@ -14,7 +14,7 @@ decision, a system, or a plan that's no longer true, it belongs in `archive/`, n
 
 | Folder | What's there | Read it when |
 |---|---|---|
-| [`features/`](features/) | One doc per **shipped** feature (milestones, expressive messages, Saga Wrapped, image references, message editing) | You need to understand how something that already exists works |
+| [`features/`](features/) | One doc per **shipped** feature (milestones, expressive messages, Saga Wrapped, image references, message editing, genre title effects) | You need to understand how something that already exists works |
 | [`feature_ideas/`](feature_ideas/) | Backlog of ideas **not yet built** — specs, brainstorms, half-formed proposals | You're exploring what could be built next, or checking if an idea already has a writeup |
 | [`feature_planning/`](feature_planning/) | The actual roadmap (`roadmap.md`) plus one folder per feature in planning, each with a `task.md`/`plan.md` (objective, what's reusable, what's missing, risk, recommendation) | You need to know what's prioritized, parked, cancelled, or proposed — and why |
 | [`architecture/`](architecture/) | How the systems work: `image_generation/` and `character_generation/` (multi-pillar content generation), `ai/` (Gemma model tiering, anti-hallucination prompting), `audio/` (sound design), `notifications.md`, `analytics.md`, `release_debug_symbols.md` | You're building on top of an existing system and need the real mechanics, not just the feature description |
