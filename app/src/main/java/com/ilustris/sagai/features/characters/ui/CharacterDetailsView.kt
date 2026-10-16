@@ -100,6 +100,7 @@ import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
+import com.ilustris.sagai.features.widgets.ui.WidgetCreatorSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.animations.imageStroke
@@ -235,6 +236,7 @@ private fun CharacterDetailsLoaded(
         var honorSheet by remember { mutableStateOf<Pair<List<CharacterHonor>, Int>?>(null) }
         val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
         var showCharacterShare by remember { mutableStateOf(false) }
+        var showWidgetCreator by remember { mutableStateOf(false) }
 
         // Lite wrapper to satisfy legacy components that still need SagaContent
         val liteSagaContent =
@@ -606,6 +608,13 @@ private fun CharacterDetailsLoaded(
                                         showCharacterShare = true
                                     },
                                 )
+                                IosStyleMenuItem(
+                                    text = stringResource(R.string.widget_create_menu),
+                                    onClick = {
+                                        menuOpen = false
+                                        showWidgetCreator = true
+                                    },
+                                )
                                 if (progress != null) {
                                     IosStyleMenuItem(
                                         text = stringResource(R.string.character_card_change_status),
@@ -656,6 +665,13 @@ private fun CharacterDetailsLoaded(
                 character = shareCharacterContent,
                 onDismiss = { showCharacterShare = false },
             )
+
+            if (showWidgetCreator) {
+                WidgetCreatorSheet(
+                    detail = detailData,
+                    onDismiss = { showWidgetCreator = false },
+                )
+            }
 
             progress?.takeIf { showFeatLog }?.let {
                 CharacterFeatLogSheet(
