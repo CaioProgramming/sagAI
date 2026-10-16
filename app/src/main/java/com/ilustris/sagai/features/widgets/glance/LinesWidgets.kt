@@ -153,6 +153,10 @@ private fun LinesUi.Ready.shownLine(context: Context): String =
 private fun LinesUi.Ready.shownName(context: Context): String =
     if (config.discreet) context.getString(R.string.widget_discreet_character) else character.name
 
+/** The saga title is as identifying as the character name, so discreet mode drops it. */
+private fun LinesUi.Ready.byline(name: String): String =
+    if (config.discreet) name else "$name · ${character.sagaTitle}"
+
 @Composable
 private fun QuoteLayout(
     ui: LinesUi.Ready,
@@ -234,7 +238,7 @@ private fun QuoteLayout(
                         modifier = GlanceModifier.width((width * 0.5f).dp),
                     )
                     Spacer(modifier = GlanceModifier.height(12.dp))
-                    WidgetText("$name · ${ui.character.sagaTitle}", palette.accent, 12f, FontWeight.Bold, maxLines = 1)
+                    WidgetText(ui.byline(name), palette.accent, 12f, FontWeight.Bold, maxLines = 1)
                 }
             }
 
@@ -259,7 +263,7 @@ private fun QuoteLayout(
                         modifier = GlanceModifier.width((width * 0.5f).dp),
                     )
                     Spacer(modifier = GlanceModifier.height(8.dp))
-                    WidgetText("$name · ${ui.character.sagaTitle}", palette.accent, 11f, FontWeight.Bold, maxLines = 1)
+                    WidgetText(ui.byline(name), palette.accent, 11f, FontWeight.Bold, maxLines = 1)
                 }
             }
         }
@@ -335,7 +339,7 @@ private fun HookLayout(
             else -> {
                 val avatar = rememberAvatar(ui.art, 52, palette.accent)
                 Column(modifier = GlanceModifier.fillMaxSize().padding(14.dp)) {
-                    WidgetTag(ui.character.sagaTitle, palette.textMuted)
+                    WidgetTag(if (ui.config.discreet) ui.shownName(LocalContext.current) else ui.character.sagaTitle, palette.textMuted)
                     Spacer(modifier = GlanceModifier.height(10.dp))
                     Row(verticalAlignment = Alignment.Top) {
                         HookAvatar(avatar, 52)

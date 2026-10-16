@@ -20,6 +20,7 @@ import com.ilustris.sagai.features.widgets.WidgetUpdater
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -106,7 +107,8 @@ class SagaApp :
      */
     private fun syncWidgetsOnLifecycle() {
         CoroutineScope(Dispatchers.IO).launch {
-            appLifecycleManager.isAppInForeground.collect { inForeground ->
+            // The first emission is the initial `false`, not a real transition.
+            appLifecycleManager.isAppInForeground.drop(1).collect { inForeground ->
                 if (inForeground) widgetUpdater.onAppOpened() else widgetUpdater.updateAll()
             }
         }

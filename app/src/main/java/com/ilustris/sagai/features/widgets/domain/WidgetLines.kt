@@ -21,7 +21,11 @@ data class WidgetConfig(
     val discreet: Boolean = false,
     /** Differs between widgets so two with the same lines do not rotate in lockstep. */
     val seed: Int = 0,
-)
+) {
+    /** False when Gson read an unknown enum as null, which the layouts would not survive. */
+    @Suppress("SENSELESS_COMPARISON")
+    fun isUsable() = type != null && rotation != null && lines != null
+}
 
 object WidgetLimits {
     const val MAX_WIDGETS = 10

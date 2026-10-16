@@ -195,7 +195,7 @@ class WidgetCreatorViewModel
 
         fun goTo(step: CreatorStep) {
             if (step != CreatorStep.GENERATING) generationJob?.cancel()
-            _state.update { it.copy(step = step, failed = false) }
+            _state.update { it.copy(step = step, failed = false, generatingMore = false) }
         }
 
         /** Asks the launcher to add the widget. The system shows its own confirmation. */

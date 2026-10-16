@@ -7,7 +7,6 @@ import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import com.google.gson.Gson
-import com.google.gson.JsonParseException
 import com.ilustris.sagai.features.widgets.domain.WidgetConfig
 
 /**
@@ -25,8 +24,9 @@ object WidgetConfigState {
             null
         } else {
             try {
-                gson.fromJson(json, WidgetConfig::class.java)
-            } catch (_: JsonParseException) {
+                // Gson leaves an unknown enum (a downgrade) as null in a non-null field.
+                gson.fromJson(json, WidgetConfig::class.java)?.takeIf { it.isUsable() }
+            } catch (_: Exception) {
                 null
             }
         }
