@@ -1,11 +1,13 @@
 package com.ilustris.sagai.ui.components.titlefx
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapShader
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RuntimeShader
 import android.graphics.Shader
+import android.graphics.Typeface
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -25,6 +27,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
@@ -143,7 +146,25 @@ private class FxHolder {
     var textH = 0.2f
     var txMin = 0.1f
     var txMax = 0.9f
+
+    // punk rock: ransom-note layers repainted while the title animates
+    var ransom: RansomNotePainter? = null
+    var ransomMask: Bitmap? = null
+    var ransomColor: Bitmap? = null
+    var colorShader: BitmapShader? = null
+    var lastT = 0f
 }
+
+/** The genre's own header font first, then system faces, so every tile looks cut from a different page. */
+private fun ransomTypefaces(header: Typeface?): List<Typeface> =
+    listOfNotNull(
+        header,
+        Typeface.create("serif", Typeface.BOLD),
+        Typeface.create("sans-serif-black", Typeface.NORMAL),
+        Typeface.create("sans-serif-condensed", Typeface.BOLD),
+        Typeface.create("monospace", Typeface.BOLD),
+        Typeface.create("serif", Typeface.BOLD_ITALIC),
+    )
 
 /**
  * Genre title drawn by an AGSL shader (API 33+): flames, fog, brand, katana cut, iridescence, comic
@@ -179,6 +200,16 @@ internal fun GenreTitleFx(
     val state = remember(genre, interactive, playEntry) { TitleFxState(cfg, interactive, playEntry) }
     val uniforms = remember(shader) { FxUniforms(shader) }
     val holder = remember { FxHolder() }
+    val fontResolver = LocalFontFamilyResolver.current
+    holder.ransom =
+        remember(cfg.ransom, style.fontFamily) {
+            if (!cfg.ransom) {
+                null
+            } else {
+                val header = style.fontFamily?.let { runCatching { fontResolver.resolve(it).value as? Typeface }.getOrNull() }
+                RansomNotePainter(ransomTypefaces(header))
+            }
+        }
     val paint = remember { Paint().apply { isAntiAlias = false } }
     val measurer = rememberTextMeasurer()
     val tick = remember(state) { mutableLongStateOf(0L) }
@@ -252,17 +283,25 @@ private fun Density.measureTitle(
         val inner = if (available == Constraints.Infinity) Constraints.Infinity else max(1, available - (2 * side).toInt())
         return measurer.measure(
             text = text,
-            style = style.copy(fontSize = fontSize),
-            maxLines = 2,
+            style = style.copy(fontSize = fontSize, color = Color.White),
+            // the ransom note is a single row of tiles, like the lab
+            maxLines = if (cfg.ransom) 1 else 2,
             constraints = Constraints(maxWidth = inner),
         )
     }
+
+    // a word too long for the line gets broken between letters ("CYBERPU / NK"); shrink instead
+    fun TextLayoutResult.breaksWord(): Boolean =
+        (0 until lineCount - 1).any { line ->
+            val end = getLineEnd(line)
+            end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()
+        }
 
     // shrink until the title fits in at most two lines, like AutoResizeText did
     var size = baseSize
     var layout = measureAt(size)
     var tries = 0
-    while ((layout.didOverflowWidth || layout.didOverflowHeight) && tries < 8) {
+    while ((layout.didOverflowWidth || layout.didOverflowHeight || layout.breaksWord()) && tries < 12) {
         size *= 0.9f
         layout = measureAt(size)
         tries++
@@ -314,11 +353,27 @@ private fun DrawScope.rebuildAssets(
     holder.builtKey = key
     holder.maskShader = null
     holder.fieldShader = null
+    // a colour layer left from Punk Rock would hit a shader that has no uCol
+    holder.colorShader = null
+    holder.ransomMask = null
+    holder.ransomColor = null
     runCatching {
         val w = holder.width
         val h = holder.height
-        val mask = buildTitleMask(w, h, layout, holder.topLeft, holder.fontPx * cfg.stroke, this)
-        val field = buildTitleField(mask, cfg.smearLen)
+        val ransom = holder.ransom
+        val mask =
+            if (ransom != null) {
+                // the field (glow, halo) is built once from every tile shown; the layers repaint as it animates
+                val m = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                val c = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                ransom.paintIn(holder, m, c, layout, t = 0f, entry = 100f, textColor = floatArrayOf(1f, 1f, 1f), density = density)
+                holder.ransomMask = m
+                holder.ransomColor = c
+                m
+            } else {
+                buildTitleMask(w, h, layout, holder.topLeft, holder.fontPx * cfg.stroke, this)
+            }
+        val field = buildTitleField(mask, cfg.smearLen, layout.lineCount)
         holder.maskShader =
             BitmapShader(mask, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
                 setFilterMode(BitmapShader.FILTER_MODE_LINEAR)
@@ -355,6 +410,8 @@ private fun DrawScope.drawTitle(
     val h = holder.height
     if (w <= 0 || h <= 0) return
     if (holder.builtKey != key) rebuildAssets(holder, layout, cfg, key)
+    val ransom = holder.ransom
+    if (ransom != null) updateRansom(holder, ransom, layout, state, palette)
     val mask = holder.maskShader ?: return
     val field = holder.fieldShader ?: return
 
@@ -393,7 +450,56 @@ private fun DrawScope.drawTitle(
     runCatching {
         shader.setInputShader("uMask", mask)
         shader.setInputShader("uS", field)
+        holder.colorShader?.let { shader.setInputShader("uCol", it) }
     }.onFailure { return }
     paint.shader = shader
     drawIntoCanvas { it.nativeCanvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint) }
 }
+
+private fun RansomNotePainter.paintIn(
+    holder: FxHolder,
+    mask: Bitmap,
+    color: Bitmap,
+    layout: TextLayoutResult,
+    t: Float,
+    entry: Float,
+    textColor: FloatArray,
+    density: Float,
+) = paint(
+    mask = mask,
+    color = color,
+    text = layout.layoutInput.text.text,
+    cx = holder.width / 2f,
+    cy = holder.topLeft.y + layout.size.height / 2f,
+    maxWidth = holder.width - 2f * holder.padSide,
+    lineHeight = layout.size.height.toFloat(),
+    t = t,
+    entry = entry,
+    textColor = textColor,
+    density = density,
+)
+
+/** Pushes the tiles away from the finger and repaints the ransom layers when they change. */
+@RequiresApi(33)
+private fun DrawScope.updateRansom(
+    holder: FxHolder,
+    ransom: RansomNotePainter,
+    layout: TextLayoutResult,
+    state: TitleFxState,
+    palette: TitleFxPalette,
+) {
+    val mask = holder.ransomMask ?: return
+    val color = holder.ransomColor ?: return
+    val dt = (state.t - holder.lastT).coerceIn(0f, 0.1f)
+    holder.lastT = state.t
+    val moved = ransom.step(dt, state.pointerX * holder.width, (1f - state.pointerY) * holder.height, state.pointerActive)
+    if (!ransom.needsPaint(state.t, state.entryTime, moved, System.currentTimeMillis()) && holder.colorShader != null) return
+    ransom.paintIn(holder, mask, color, layout, state.t, state.entryTime, palette.text, density)
+    holder.maskShader = linearShader(mask)
+    holder.colorShader = linearShader(color)
+}
+
+private fun linearShader(bitmap: Bitmap) =
+    BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+        setFilterMode(BitmapShader.FILTER_MODE_LINEAR)
+    }

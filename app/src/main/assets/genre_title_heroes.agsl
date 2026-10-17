@@ -96,19 +96,11 @@ half4 main(float2 fragCoord){
   float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
   float sc = uHeight / .85;
 
-  // speed lines fanning out from an ellipse around the title
-  float2 fc = mix(ctr, uPtr.xy, uPtr.w * .85);
-  float2 pe = (uv - fc) / float2(.5, .28);
-  float rad = length(pe);
-  float ang = atan(pe.y, pe.x);
-  float ln = smoothstep(.58, .92, noise(float2(ang * 26., floor(t * 7.) * 1.7)));
-  float lines = ln * smoothstep(.95, 1.35, rad) * (1. - smoothstep(1.4 * sc, 3. * sc, rad)) * (.35 + .95 * punch) * uIntensity;
-
+  float3 tf = trailField(uv, asp, .15);
   // a soft glow that breathes with each punch
   float pg = .6 + .5 * punch;
-  float3 tf = trailField(uv, asp, .15);
-  float3 bg = float3(0.) + uC2 * .22 * S.g * pg + uC3 * .35 * S.b * pg * uIntensity + uC3 * tf.x * .12 * pg;
-  float3 outc = bg + uC3 * lines * .5;
+  float3 bg = float3(0.) + uC2 * .22 * S.g * pg + uC3 * .35 * S.b * pg * uIntensity + uC3 * tf.x * .6 * pg;
+  float3 outc = bg;
 
   // chunky extrusion down-right, then a white outline, then the face
   float ext = 0.;
@@ -143,6 +135,6 @@ half4 main(float2 fragCoord){
   outc += uHalo * star * smoothstep(.1, .6, S.b) * 1.4;
   outc *= 1. - .6 * dot(uv - .5, uv - .5);
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * (.045) * smoothstep(0., .06, max(outc.r, max(outc.g, outc.b)));
-  float cov = (max(max(m0, ext * ea * (1. - m0)), ol)) * boxMask(uv);
-  return finish(boxed(outc, uv), cov);
+  float fxCov = (max(max(m0, ext * ea * (1. - m0)), ol)) * boxMask(uv);
+  return finish(boxed(outc, uv), fxCov);
 }

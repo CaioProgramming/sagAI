@@ -100,17 +100,17 @@ half4 main(float2 fragCoord){
   float2 q = float2(uv.x * asp * 2.2, uv.y * 2.6);
   float2 w = float2(fbm(q + float2(t1, 0.)) - .5, fbm(q * 1.3 + float2(4.2, -t1)) - .5);
   float3 tf = trailField(uv, asp, .13);
-  float2 mu = uv + w * .010 * dist * float2(1., .6) + tf.yz * .014 + w * tf.x * .07;
+  float2 mu = uv + w * .010 * dist * float2(1., .6) + tf.yz * .045 + w * tf.x * .22;
   float m0r = sM( mu).r;
   float m0 = mix(m0r * (1. - smoothstep(.5, .9, sS( uv).b)), m0r, filled) * written;
   float g = clamp((uv.y - (uTextY - uTextH * .5)) / uTextH, 0., 1.);
 
   // iridescent gradient bent by noise
-  float tg = uv.x * .9 + uv.y * 4. + (fbm(q * 1.7 + w * 2.5 * dist + t1) - .5) * 1.1 * dist + t1 * .6 + tf.x * 1.1;
+  float tg = uv.x * .9 + uv.y * 4. + (fbm(q * 1.7 + w * 2.5 * dist + t1) - .5) * 1.1 * dist + t1 * .6 + tf.x * 2.6;
   float3 gc = ramp(fract(tg * .5));
   float band = exp(-pow((fract(uv.x * asp * .5 - uv.y * .3 - uTime * .1) - .5) / .06, 2.)) * .5;
   float3 col = gc * (.95 + .2 * (1. - g));
-  col = mix(col, float3(1.), .42 + band * .5);
+  col = mix(col, float3(1.), .12 + band * .35);
   col = mix(float3(1.), col, ign);
 
   float4 S = sS( uv);
@@ -126,9 +126,9 @@ half4 main(float2 fragCoord){
   float star = tw * step(.8, hh) * (smoothstep(.5, 0., length(f)) + max(smoothstep(.05, 0., abs(f.x)) * smoothstep(.45, 0., abs(f.y)), smoothstep(.05, 0., abs(f.y)) * smoothstep(.45, 0., abs(f.x))));
   float near = clamp(S.b * 3. + m0, 0., 1.);
   outc = mix(outc, col, m0);
-  outc += float3(1., .95, 1.) * star * near * 1.6 * ign;
+  outc += float3(1., .95, 1.) * star * near * 1.6 * (1. + tf.x * 3.) * ign;
   outc *= 1. - .6 * dot(uv - .5, uv - .5);
   outc += (hash(uv * uRes + fract(uTime) * 91.7) - .5) * (.09) * smoothstep(0., .06, max(outc.r, max(outc.g, outc.b)));
-  float cov = (m0) * boxMask(uv);
-  return finish(boxed(outc, uv), cov);
+  float fxCov = (m0) * boxMask(uv);
+  return finish(boxed(outc, uv), fxCov);
 }

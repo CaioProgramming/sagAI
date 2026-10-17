@@ -84,6 +84,9 @@ internal fun titleFxPalette(
         Genre.COWBOY -> paletteCowboy(color)
         Genre.SHINOBI -> paletteShinobi(color)
         Genre.CRIME -> paletteCrime(color, remote)
+        Genre.CYBERPUNK -> paletteCyber(color, remote)
+        Genre.SPACE_OPERA -> paletteSpace(color, remote)
+        Genre.PUNK_ROCK -> palettePunk(color)
         else -> paletteHeroes(color, remote)
     }
 
@@ -201,4 +204,54 @@ private fun paletteHeroes(
         c4 = mix(hsl(h, 0.9f, 0.9f), WHITE, 0.4f),
         halo = hsl(h + 180f, 1f, 0.5f),
     )
+}
+
+/** Cyberpunk uses the remote palette `[bg, deep, deeper, primary, violet, cyan, magenta, lavender]`. */
+private fun paletteCyber(
+    color: Color,
+    remote: List<Color>,
+): TitleFxPalette {
+    val t = lift(rgb(color))
+    if (remote.size >= 8) {
+        val c4 = rgb(remote[7])
+        return TitleFxPalette(text = t, c1 = rgb(remote[4]), c2 = rgb(remote[5]), c3 = rgb(remote[6]), c4 = c4, halo = c4)
+    }
+    val h = rgb2hsl(t)[0]
+    val c4 = mix(t, WHITE, 0.6f)
+    return TitleFxPalette(
+        text = t,
+        c1 = hsl(h, 0.85f, 0.6f),
+        c2 = hsl(h + 150f, 1f, 0.55f),
+        c3 = hsl(h - 40f, 1f, 0.6f),
+        c4 = c4,
+        halo = c4,
+    )
+}
+
+/** Space Opera uses the remote palette `[bg, deep, teal, primary, aqua, cyan, ice, lavender]`. */
+private fun paletteSpace(
+    color: Color,
+    remote: List<Color>,
+): TitleFxPalette {
+    val t = lift(rgb(color))
+    if (remote.size >= 8) {
+        val c4 = rgb(remote[6])
+        return TitleFxPalette(text = t, c1 = rgb(remote[3]), c2 = rgb(remote[5]), c3 = rgb(remote[7]), c4 = c4, halo = c4)
+    }
+    val h = rgb2hsl(t)[0]
+    val c4 = hsl(h, 0.7f, 0.82f)
+    return TitleFxPalette(
+        text = t,
+        c1 = hsl(h, 0.9f, 0.4f),
+        c2 = hsl(h, 0.8f, 0.62f),
+        c3 = hsl(h + 60f, 0.8f, 0.8f),
+        c4 = c4,
+        halo = c4,
+    )
+}
+
+/** Punk Rock draws its colours in the ransom-note tiles; the shader only needs the text colour. */
+private fun palettePunk(color: Color): TitleFxPalette {
+    val t = lift(rgb(color))
+    return TitleFxPalette(text = t, c1 = t, c2 = t, c3 = t, c4 = t, halo = t)
 }

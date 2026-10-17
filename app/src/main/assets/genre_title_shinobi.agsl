@@ -202,6 +202,6 @@ half4 main(float2 fragCoord){
   outc += uText * edge * 1.1 + float3(1.) * blade * 1.2 + float3(1.) * flashL * .7 + uText * scar * .45;
   outc *= 1. - .35 * smoothstep(0., .55, uEvtA) * (1. - step(0., tc0)) * uOpt.y;
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * (.05) * smoothstep(0., .06, max(outc.r, max(outc.g, outc.b)));
-  float cov = (max(m0, inBand)) * boxMask(uv);
-  return finish(boxed(outc, uv), cov);
+  float fxCov = (max(m0, inBand)) * boxMask(uv);
+  return finish(boxed(outc, uv), fxCov);
 }

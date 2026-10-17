@@ -207,9 +207,9 @@ class ReasoningSynthesizerService
         ) {
             // A holding line is never worth someone's last request of the day — judged against the
             // MINIMAL tier these lines are written on, not the worst model anywhere on the key.
-            if (tierQuotaStatus(ModelRequirement.MINIMAL).first() is QuotaStatus.DailyExhausted) return
-
             try {
+                if (tierQuotaStatus(ModelRequirement.MINIMAL).first() is QuotaStatus.DailyExhausted) return
+
                 val aesthetic =
                     if (genre != null) {
                         genreConfigService.aesthetic(genre)

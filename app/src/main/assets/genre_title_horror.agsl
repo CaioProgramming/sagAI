@@ -99,12 +99,13 @@ half4 main(float2 fragCoord){
   float tear = (hash(float2(tick, 5.5)) - .5) * .10 * inBand;
   // magnifying lens that follows the finger
   float2 pp = uPtr.xy; float act = uPtr.w;
+  float3 tf = trailField(uv, asp, .12);
   float2 dl = (uv - pp) * float2(asp, 1.);
-  float kl = (1. - smoothstep(0., .13, length(dl))) * act;
-  float2 uvm = pp + (uv - pp) * (1. - .16 * kl);
+  float kl = (1. - smoothstep(0., .2, length(dl))) * act;
+  float2 uvm = pp + (uv - pp) * (1. - .4 * kl);
   float w1 = fbm(float2(uv.x * asp * 3., uv.y * 3. + t * .15)) - .5;
   float2 mu = uvm + float2(tear + w1 * .004, 0.);
-  float cs = .006 * gl;
+  float cs = .006 * gl + .012 * kl;
   float mR = sM( mu + float2(cs, 0.)).r;
   float mB = sM( mu - float2(cs, 0.)).r;
   float m0 = sM( mu).r * mat * fk;
@@ -120,7 +121,7 @@ half4 main(float2 fragCoord){
   float f1 = fbm(float2(uv.x * asp * 2.0 + t * .10, uv.y * 3.5 + t * .02));
   float f2 = fbm(float2(uv.x * asp * 3.4 - t * .17, uv.y * 5. + 7.));
   float ground = 1. - smoothstep(bot - uTextH * .6, uTextY + uTextH * 2. * (uHeight / .85), uv.y);
-  float dens = smoothstep(.25, .9, f1 * .65 + f2 * .55) * ground * uOpt.x * (1. - kl * .5) * smoothstep(0., .4, kE);
+  float dens = smoothstep(.25, .9, f1 * .65 + f2 * .55) * ground * uOpt.x * (1. - min(kl * 1.2 + tf.x * .8, 1.)) * smoothstep(0., .4, kE);
   float sc = uHeight / .85;
   float dyC = uv.y - uTextY;
   float2 q = float2(uv.x * asp * 2.4, uv.y * 1.6 - t * .35);
@@ -157,11 +158,11 @@ half4 main(float2 fragCoord){
   outc = mix(outc, mix(uC3, uC4, hl * .9), drip);
 
   // letters: pale, cold, never fully hidden by the fog
-  float3 tcol = mix(uC4, uText, .35) * fl * (1. + kl * .12);
+  float3 tcol = mix(uC4, uText, .35) * fl * (1. + kl * .45 + tf.x * .3);
   outc = mix(outc, tcol, m0 * blink * (1. - dens * .3));
   outc += (uC3 * mB + uC2 * mR * 1.5) * gl * .6 * (1. - m0);
   outc *= 1. - 1.3 * dot(uv - .5, uv - .5);
   outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * ((.06 + .5 * inBand)) * smoothstep(0., .06, max(outc.r, max(outc.g, outc.b)));
-  float cov = (max(m0, drip)) * boxMask(uv);
-  return finish(boxed(outc, uv), cov);
+  float fxCov = (max(m0, drip)) * boxMask(uv);
+  return finish(boxed(outc, uv), fxCov);
 }

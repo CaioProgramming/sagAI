@@ -23,6 +23,8 @@ internal class TitleFxConfig(
     /** Fake-bold stroke, as a fraction of the font size, so thin display fonts survive the glow. */
     val stroke: Float,
     val opts: FloatArray,
+    /** Punk Rock: the mask and a colour layer are ransom-note tiles painted by [RansomNotePainter]. */
+    val ransom: Boolean = false,
 )
 
 internal fun Genre.titleFxConfig(): TitleFxConfig? =
@@ -50,12 +52,30 @@ internal fun Genre.titleFxConfig(): TitleFxConfig? =
         Genre.CRIME ->
             TitleFxConfig(
                 "genre_title_crime.agsl", 3.0f, padTop = 0.5f, padBottom = 0.5f, padSide = 0.4f,
-                smearLen = 0.45f, stroke = 0.01f, opts = floatArrayOf(0f, 0f, 0f),
+                smearLen = 0.45f, stroke = 0.035f, opts = floatArrayOf(0f, 0f, 0f),
             )
         Genre.HEROES ->
             TitleFxConfig(
                 "genre_title_heroes.agsl", 0.8f, tapEvt = true, padTop = 0.7f, padBottom = 0.7f, padSide = 0.6f,
                 smearLen = 0.6f, stroke = 0.015f, opts = floatArrayOf(0f, 0f, 0f),
+            )
+        // opts.x would show the lab's CRT screen (dark glass filling the title box): off, the title is only
+        // the text and its effect. The app's header fonts are already heavy, so no fake bold (the lab's
+        // 0.05 was for its thin stand-in fonts)
+        Genre.CYBERPUNK ->
+            TitleFxConfig(
+                "genre_title_cyberpunk.agsl", 1.6f, padTop = 0.5f, padBottom = 0.5f, padSide = 0.4f,
+                smearLen = 0.5f, stroke = 0f, opts = floatArrayOf(0f, 0f, 0f),
+            )
+        Genre.SPACE_OPERA ->
+            TitleFxConfig(
+                "genre_title_space_opera.agsl", 1.4f, padTop = 0.5f, padBottom = 0.5f, padSide = 0.4f,
+                smearLen = 0.5f, stroke = 0f, opts = floatArrayOf(0f, 0f, 0f),
+            )
+        Genre.PUNK_ROCK ->
+            TitleFxConfig(
+                "genre_title_punk_rock.agsl", 1.9f, padTop = 0.4f, padBottom = 0.4f, padSide = 0.35f,
+                smearLen = 0.3f, stroke = 0f, opts = floatArrayOf(0f, 0f, 0f), ransom = true,
             )
         else -> null
     }

@@ -486,11 +486,17 @@ fun sagaHeaderComponent(
                                 } else {
                                     Modifier.gradientFill(themeContainer.gradientFade())
                                 },
-                            ).reactiveShimmer(
+                            ).then(
+                                if (genre.usesTitleFx()) {
+                                    Modifier
+                                } else {
+                                    Modifier.reactiveShimmer(
                                 true,
                                 shimmerColors = Color.White.shimmerize(),
                                 repeatMode = RepeatMode.Restart,
                                 duration = 10.seconds,
+                                    )
+                                },
                             ),
                     interactive = true,
                 )
@@ -541,11 +547,17 @@ fun sagaHeaderComponent(
                                 } else {
                                     Modifier.gradientFill(themeContainer.gradientFade())
                                 },
-                            ).reactiveShimmer(
-                                true,
-                                shimmerColors = Color.White.shimmerize(),
-                                duration = 10.seconds,
-                                repeatMode = RepeatMode.Restart,
+                            ).then(
+                                if (genre.usesTitleFx()) {
+                                    Modifier
+                                } else {
+                                    Modifier.reactiveShimmer(
+                                        true,
+                                        shimmerColors = Color.White.shimmerize(),
+                                        duration = 10.seconds,
+                                        repeatMode = RepeatMode.Restart,
+                                    )
+                                },
                             ),
                     interactive = true,
                 )
