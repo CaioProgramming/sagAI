@@ -41,3 +41,9 @@
 -keep class com.ilustris.sagai.features.widgets.domain.LinesType { *; }
 -keep class com.ilustris.sagai.features.widgets.domain.RotationRule { *; }
 -keep class com.ilustris.sagai.features.widgets.data.WidgetLinesGen { *; }
+
+# Voiced messages: the performance script is parsed from the model's JSON by reflection and its output
+# schema is built from the declared field names. None of its fields has @SerializedName and the package
+# is outside the wildcarded model packages, so R8 would rename them in release builds only.
+-keep class com.ilustris.sagai.features.saga.chat.data.voicing.PerformanceScript { *; }
+-keep class com.ilustris.sagai.features.saga.chat.data.voicing.PerformanceLine { *; }
