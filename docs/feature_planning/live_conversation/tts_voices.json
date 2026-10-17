@@ -1,0 +1,154 @@
+{
+  "voices": [
+    {
+      "id": "zephyr",
+      "gender": "FEMALE",
+      "description": "Energetic, bright, and perky. Projects positivity and youthfulness."
+    },
+    {
+      "id": "puck",
+      "gender": "MALE",
+      "description": "Upbeat, energetic, and youthful."
+    },
+    {
+      "id": "charon",
+      "gender": "MALE",
+      "description": "Mature, confident, and professional. Reassuring and trustworthy."
+    },
+    {
+      "id": "kore",
+      "gender": "FEMALE",
+      "description": "Firm, direct, and professional."
+    },
+    {
+      "id": "fenrir",
+      "gender": "MALE",
+      "description": "High-energy, excitable, and conversational. Very engaging."
+    },
+    {
+      "id": "leda",
+      "gender": "FEMALE",
+      "description": "Youthful, vibrant, and light-hearted. Fresh and perky."
+    },
+    {
+      "id": "orus",
+      "gender": "MALE",
+      "description": "Solid, firm, and reliable. Steady delivery."
+    },
+    {
+      "id": "aoede",
+      "gender": "FEMALE",
+      "description": "Conversational, thoughtful, and articulate. Sounds intelligent."
+    },
+    {
+      "id": "callirrhoe",
+      "gender": "FEMALE",
+      "description": "Confident, direct, and professional. Articulate and clear."
+    },
+    {
+      "id": "autonoe",
+      "gender": "FEMALE",
+      "description": "Mature, resonant, and thoughtful. Conveys wisdom."
+    },
+    {
+      "id": "enceladus",
+      "gender": "MALE",
+      "description": "Energetic and enthusiastic. Impactful with a promotional feel."
+    },
+    {
+      "id": "iapetus",
+      "gender": "MALE",
+      "description": "Friendly, casual, and relatable. An 'everyman' voice."
+    },
+    {
+      "id": "umbriel",
+      "gender": "MALE",
+      "description": "Smooth, authoritative, and knowledgeable. Trustworthy."
+    },
+    {
+      "id": "algieba",
+      "gender": "MALE",
+      "description": "Smooth-talking, polished, and confident. Conversational."
+    },
+    {
+      "id": "despina",
+      "gender": "FEMALE",
+      "description": "Warm, inviting, and trustworthy. Friendly and engaging."
+    },
+    {
+      "id": "erinome",
+      "gender": "FEMALE",
+      "description": "Clear, consistent, and straightforward."
+    },
+    {
+      "id": "algenib",
+      "gender": "FEMALE",
+      "description": "Crisp, professional, and friendly. Warm authority."
+    },
+    {
+      "id": "rasalgethi",
+      "gender": "MALE",
+      "description": "Informative, balanced, and steady."
+    },
+    {
+      "id": "laomedeia",
+      "gender": "FEMALE",
+      "description": "Naturally upbeat, energetic, and positive."
+    },
+    {
+      "id": "achernar",
+      "gender": "FEMALE",
+      "description": "Energetic, crisp, and confident. High brightness."
+    },
+    {
+      "id": "alnilam",
+      "gender": "MALE",
+      "description": "Firm, steady, direct, and authoritative."
+    },
+    {
+      "id": "schedar",
+      "gender": "MALE",
+      "description": "Even, consistent, and utility-focused. Steady pacing."
+    },
+    {
+      "id": "gacrux",
+      "gender": "FEMALE",
+      "description": "Smooth, confident, and authoritative yet approachable."
+    },
+    {
+      "id": "pulcherrima",
+      "gender": "FEMALE",
+      "description": "Forward, direct, and engaging."
+    },
+    {
+      "id": "achird",
+      "gender": "FEMALE",
+      "description": "Youthful, friendly, and approachable. Inquisitive feel."
+    },
+    {
+      "id": "zubenelgenubi",
+      "gender": "MALE",
+      "description": "Casual, relaxed, and natural."
+    },
+    {
+      "id": "vindemiatrix",
+      "gender": "FEMALE",
+      "description": "Calm, thoughtful, and mature. Reassuring and gentle."
+    },
+    {
+      "id": "sadachbia",
+      "gender": "MALE",
+      "description": "Lively, energetic, and distinctive."
+    },
+    {
+      "id": "sadaltager",
+      "gender": "MALE",
+      "description": "Friendly, enthusiastic, and professional. Great for presentations."
+    },
+    {
+      "id": "sulafat",
+      "gender": "FEMALE",
+      "description": "Warm, gentle, and comforting. Very trustworthy."
+    }
+  ]
+}

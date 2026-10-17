@@ -67,6 +67,11 @@ android {
     }
 
     buildTypes {
+        // Debug builds point to the homologation Firebase project (app/src/debug/google-services.json)
+        // and install side by side with the production app.
+        debug {
+            applicationIdSuffix = ".debug"
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(
@@ -124,6 +129,7 @@ dependencies {
     implementation(libs.androidx.media3.effect)
 
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.hilt.work)
 
     implementation(libs.androidx.hilt.navigation.compose)

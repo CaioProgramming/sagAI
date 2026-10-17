@@ -25,9 +25,9 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TileMode
@@ -49,13 +49,11 @@ enum class GradientType {
     SWEEP,
     ;
 
-    fun toBrush(
-        colors: List<Color>,
-    ): Brush =
+    fun toBrush(colors: List<Color>): Brush =
         when (this) {
             LINEAR -> {
                 Brush.linearGradient(
-                    colors = colors
+                    colors = colors,
                 )
             }
 
@@ -67,13 +65,13 @@ enum class GradientType {
 
             RADIAL -> {
                 Brush.radialGradient(
-                    colors = colors
+                    colors = colors,
                 )
             }
 
             SWEEP -> {
                 Brush.sweepGradient(
-                    colors = colors
+                    colors = colors,
                 )
             }
         }

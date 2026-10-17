@@ -45,63 +45,10 @@ class ChatStateManager {
         _uiState.update { it.copy(senderType = type) }
     }
 
-    fun toggleMessageSelection(messageId: Int) {
-        _uiState.update { currentState ->
-            val selection = currentState.selectionState
-            val currentSelected = selection.selectedMessageIds
-            val newSelected =
-                if (currentSelected.contains(messageId)) {
-                    currentSelected - messageId
-                } else {
-                    if (currentSelected.size < selection.maxSelection) {
-                        currentSelected + messageId
-                    } else {
-                        currentSelected
-                    }
-                }
-            currentState.copy(
-                selectionState =
-                    selection.copy(
-                        selectedMessageIds = newSelected,
-                        isSelectionMode = newSelected.isNotEmpty(),
-                    ),
-            )
-        }
-    }
-
-    fun toggleSelectionMode() {
-        _uiState.update { currentState ->
-            val isSelectionMode = !currentState.selectionState.isSelectionMode
-            currentState.copy(
-                selectionState =
-                    currentState.selectionState.copy(
-                        isSelectionMode = isSelectionMode,
-                        selectedMessageIds = if (isSelectionMode) currentState.selectionState.selectedMessageIds else emptySet(),
-                    ),
-            )
-        }
-    }
-
-    fun clearSelection() {
-        _uiState.update { currentState ->
-            currentState.copy(
-                selectionState =
-                    currentState.selectionState.copy(
-                        isSelectionMode = false,
-                        selectedMessageIds = emptySet(),
-                    ),
-            )
-        }
-    }
-
     fun updateCharacter(content: Character?) {
         _uiState.update {
             it.copy(selectedCharacter = content)
         }
-    }
-
-    fun updateShareSheetVisibility(show: Boolean) {
-        _uiState.update { it.copy(showShareSheet = show) }
     }
 
     fun updateAudioTranscriptVisibility(show: Boolean) {

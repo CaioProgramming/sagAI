@@ -13,7 +13,6 @@ import com.ilustris.sagai.features.act.data.model.WriterNotes
 import com.ilustris.sagai.features.characters.data.model.ArcSourceType
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.timeline.data.model.NotableExchange
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
@@ -274,11 +273,6 @@ object BookPrompts {
         val entries = chapterWikis + mentioned
         if (entries.isEmpty()) return NONE
         return entries.normalizetoAIItems(WIKI_EXCLUDED_FIELDS)
-    }
-
-    private fun MessageContent.transcriptLine(): String {
-        val speaker = character?.name ?: message.speakerName ?: message.senderType.name
-        return "$speaker: ${message.text}"
     }
 
     private fun NotableExchange.render(): String {

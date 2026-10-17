@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.chapter.ui
 
+import com.ilustris.sagai.features.progression.data.model.HonorKind
+import com.ilustris.sagai.features.progression.ui.ScopeHonors
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.Image
@@ -34,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -183,15 +186,18 @@ fun ChapterContentView(
             characters = sagaContent?.getCharacters() ?: emptyList(),
             wiki = sagaContent?.wikis ?: emptyList(),
             style =
-                MaterialTheme.typography.bodyMedium.copy(
+                MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Normal,
                     fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                    lineHeight = 28.sp,
                     textAlign = TextAlign.Justify,
                     color = MaterialTheme.colorScheme.onBackground,
                 ),
             onTextUpdate = {
             },
         )
+
+        ScopeHonors(HonorKind.MEDAL, chapter.id, genre)
 
         if (chapter.emotionalReview?.isNotEmpty() == true) {
             EmotionalCard(

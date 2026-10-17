@@ -1,6 +1,5 @@
 package com.ilustris.sagai.ui.theme.components.mascot
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -37,14 +36,14 @@ fun MascotEmotionFace(
     animate: Boolean = true,
     expression: MascotExpression? = rememberMascotExpression(emotionalTone),
     color: Color = emotionalTone.color,
-    eyeColor: Color = MaterialTheme.colorScheme.background,
     look: () -> Offset? = { null },
+    pokeable: Boolean = false,
 ) {
     BlobMascot(
         expression = expression,
         color = color,
-        eyeColor = eyeColor,
         look = look,
+        pokeable = pokeable,
         animate = animate,
         modifier =
             modifier.then(

@@ -1,9 +1,14 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.PromptBlueprint
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.CHAT_REACTION_BLUEPRINT
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.REPLY_GENERATION_BLUEPRINT
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.SCENE_SUMMARIZATION_BLUEPRINT
+import com.ilustris.sagai.core.ai.rag.EmbeddingSourceType
+import com.ilustris.sagai.core.ai.rag.RetrievalGroup
+import com.ilustris.sagai.core.ai.rag.SemanticMatch
+import com.ilustris.sagai.core.ai.rag.SemanticRetrievalService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.asMap
@@ -17,6 +22,7 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.narrative.domain.buildChatContinuityContext
+import com.ilustris.sagai.features.saga.chat.data.model.InputMode
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
@@ -40,6 +46,34 @@ object ChatPrompts {
      * than the one the reply spends from.
      */
     const val REPLY_FALLOUT_BLUEPRINT = "reply_fallout_blueprint"
+
+    /**
+     * Rules for returning the player's corrected message (`AIReply.playerInput`). Not a prompt of
+     * its own: its `instructions` hold a shared bucket plus one per [InputMode], merged into the
+     * reply prompt by [playerInputInstructions].
+     */
+    const val PLAYER_INPUT_BLUEPRINT = "player_input_blueprint"
+    private const val PLAYER_INPUT_SHARED_BUCKET = "PLAYER INPUT"
+
+    /** Optional ceiling for voice-turn replies: shorter lines are faster to voice and easier to follow by ear. */
+    const val LIVE_REPLY_LIMIT_KEY = "live_reply_limit"
+
+    /**
+     * The shared `PLAYER INPUT` bucket plus only the one for [mode], so a typed turn doesn't carry
+     * the voice formatting rules. Empty when the blueprint isn't published yet — the reply still
+     * works, it just won't correct the player's text.
+     */
+    fun playerInputInstructions(
+        blueprint: PromptBlueprint?,
+        mode: InputMode,
+    ): Map<String, Any> {
+        val buckets = blueprint?.instructions ?: return emptyMap()
+        return buildMap {
+            buckets[PLAYER_INPUT_SHARED_BUCKET]?.let { put(PLAYER_INPUT_SHARED_BUCKET, it) }
+            val modeKey = "$PLAYER_INPUT_SHARED_BUCKET (${mode.name})"
+            buckets[modeKey]?.let { put(modeKey, it) }
+        }
+    }
 
     /**
      * Character ceiling for a single chat message, shared by the composer and the AI reply so both
@@ -102,6 +136,10 @@ object ChatPrompts {
             // Read-receipt state for the UI. The model has no use for it and it rode along on
             // every message in the history.
             "viewed",
+            // Live-mode bookkeeping. The latest player turn gets its inputMode explicitly in the
+            // reply prompt; history doesn't need either field.
+            "inputMode",
+            "originalText",
         )
 
     /**
@@ -149,7 +187,18 @@ object ChatPrompts {
             "events",
             "relationships",
             "artwork",
+            // The raw start level would contradict the derived one the power context states.
+            "baseLevel",
+            "levelRationale",
+            "statusTimelineId",
         )
+
+    /** ' [DEAD: note]' for a character who is not simply around, so the reply never writes them in as if they were. */
+    private fun statusLabel(character: com.ilustris.sagai.features.characters.data.model.Character): String {
+        val status = character.status ?: return ""
+        if (status == com.ilustris.sagai.features.characters.data.model.CharacterStatus.ACTIVE) return ""
+        return " [${status.name}${character.statusNote?.let { ": $it" }.orEmpty()}]"
+    }
 
     @Suppress("ktlint:standard:max-line-length")
     suspend fun replyMessagePrompt(
@@ -161,6 +210,13 @@ object ChatPrompts {
         narrativeRules: NarrativeRules,
         characterArcsById: Map<Int, List<CharacterArc>> = emptyMap(),
         maxMessageLimit: Int = DEFAULT_CHAT_INPUT_LIMIT,
+        /**
+         * Null when RAG isn't wired at a call site (tests, other callers) — every use below has a
+         * recency- or string-based fallback, so this stays fully optional.
+         */
+        semanticRetrievalService: SemanticRetrievalService? = null,
+        /** Level gaps of the characters in the scene; null when the saga has no progression. */
+        powerContext: String? = null,
     ): SplitPrompt {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
@@ -169,11 +225,55 @@ object ChatPrompts {
 
         val messageSender = saga.findCharacter(message.speakerName)
 
+        // One embedding call for message.text, shared by both groups below — mentionedWikis and
+        // relevantMemories used to each call search() independently and embed the same player
+        // message twice per chat turn. Retrieval, not indexing, is RAG's per-message cost surface,
+        // so that redundant call mattered.
+        val (semanticWikiMatches, relevantMemories) =
+            semanticRetrievalService
+                ?.searchGroups(
+                    sagaId = saga.data.id,
+                    query = message.text,
+                    groups =
+                        listOf(
+                            RetrievalGroup(listOf(EmbeddingSourceType.WIKI), topK = 3),
+                            RetrievalGroup(
+                                listOf(
+                                    EmbeddingSourceType.CHARACTER_EVENT,
+                                    EmbeddingSourceType.CONTINUITY_FACT,
+                                    EmbeddingSourceType.CHARACTER_RELATION,
+                                    EmbeddingSourceType.LOCATION,
+                                ),
+                                topK = 5,
+                            ),
+                        ),
+                )?.let { (wikis, memories) -> wikis to memories }
+                ?: (emptyList<SemanticMatch>() to emptyList<SemanticMatch>())
+
+        // Wiki titles/content are rarely quoted verbatim by the player, so the old .contains()
+        // filter mostly missed — it stays only as a fallback for when RAG has nothing indexed yet
+        // (a fresh saga, or the key/flag being unavailable) rather than the primary path.
         val mentionedWikis =
-            saga.wikis.filter {
-                it.title.contains(message.text, ignoreCase = true) ||
-                    it.content.contains(message.text, ignoreCase = true)
-            }
+            semanticWikiMatches
+                .mapNotNull { match -> match.sourceKey.removePrefix("wiki:").toIntOrNull() }
+                .mapNotNull { wikiId -> saga.wikis.find { it.id == wikiId } }
+                .ifEmpty {
+                    // A voice turn reaches here with no text (the model hears the audio), and
+                    // "".contains matches every wiki — so no text, no fallback mentions.
+                    message.text.takeIf { it.isNotBlank() }?.let { text ->
+                        saga.wikis.filter {
+                            it.title.contains(text, ignoreCase = true) ||
+                                it.content.contains(text, ignoreCase = true)
+                        }
+                    }.orEmpty()
+                }
+
+        // relevantMemories: facts and character-history beats pulled by relevance to [message],
+        // not by recency. `LatestCharacterEvents` below and the continuity rollups baked into
+        // `narrativeContinuity` are both cut by "most recent N" — a callback to something
+        // established many chapters back falls out of both. This is the section that actually
+        // catches that case: it searches the *whole* saga's indexed events and continuity facts
+        // and surfaces whatever is semantically closest to what the player just said, however old.
 
         val narrativeContinuity =
             saga.buildChatContinuityContext(narrativeRules).toAINormalize(
@@ -199,9 +299,13 @@ object ChatPrompts {
                     put("narrativeContinuity", narrativeContinuity)
                 }
 
+                powerContext?.takeIf { it.isNotBlank() }?.let { put("powerContext", it) }
+
                 put(
                     "storyCharacters",
-                    saga.characters.joinToString { "${it.data.fullName()} - ${it.data.profile.occupation}" },
+                    saga.characters.joinToString {
+                        "${it.data.fullName()} - ${it.data.profile.occupation}" + statusLabel(it.data)
+                    },
                 )
 
                 sceneSummary?.charactersPresent?.takeIf { it.isNotEmpty() }?.let {
@@ -249,6 +353,10 @@ object ChatPrompts {
                 if (mentionedWikis.isNotEmpty()) {
                     put("mentionedWikis", mentionedWikis.normalizetoAIItems())
                 }
+
+                if (relevantMemories.isNotEmpty()) {
+                    put("relevantMemories", relevantMemories.map { it.text }.normalizetoAIItems())
+                }
             }
 
         val argsMap =
@@ -256,7 +364,12 @@ object ChatPrompts {
                 "worldContext" to worldContext,
                 "conversationHistory" to
                     conversationHistory(updateLimit, saga, excludingMessageId = message.id),
-                "latestMessage" to message.toAINormalize(messageExclusions),
+                // inputMode tells the model which PLAYER INPUT bucket applies (typed fixes vs. voice
+                // formatting); it's excluded from history but kept on the latest turn.
+                "latestMessage" to
+                    message
+                        .copy(inputMode = message.inputMode ?: InputMode.TYPED)
+                        .toAINormalize(messageExclusions - "inputMode"),
                 "maxMessageLimit" to maxMessageLimit,
             )
 

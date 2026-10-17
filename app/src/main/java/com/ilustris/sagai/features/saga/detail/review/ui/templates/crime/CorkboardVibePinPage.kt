@@ -21,7 +21,6 @@ import com.ilustris.sagai.ui.genre.crime.PinCaption
 import com.ilustris.sagai.ui.genre.crime.PinProse
 import com.ilustris.sagai.ui.genre.crime.PinSignature
 import com.ilustris.sagai.ui.genre.crime.PinTitle
-import com.ilustris.sagai.ui.genre.crime.rememberCorkboardPalette
 import com.ilustris.sagai.ui.theme.components.mascot.BlobMascot
 import com.ilustris.sagai.ui.theme.components.mascot.rememberMascotExpression
 import com.ilustris.sagai.ui.theme.components.mascot.rememberTiltLook
@@ -58,7 +57,6 @@ class CorkboardVibePinPage(
                 BlobMascot(
                     expression = rememberMascotExpression(tone),
                     color = tone.color,
-                    eyeColor = rememberCorkboardPalette().paper,
                     look = { tilt.value },
                     animate = canAnimate,
                     modifier = Modifier.size(BLOB_SIZE),

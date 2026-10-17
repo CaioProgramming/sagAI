@@ -12,6 +12,11 @@ sealed class NarrativeProgressIntent {
         val actId: Int,
     ) : NarrativeProgressIntent()
 
+    /** The chapter-closure choice cards, dealt and answered before [GenerateChapter]. */
+    data class GenerateChoiceCards(
+        val chapterId: Int,
+    ) : NarrativeProgressIntent()
+
     data class GenerateChapter(
         val chapterId: Int,
     ) : NarrativeProgressIntent()

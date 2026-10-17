@@ -5,14 +5,25 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
@@ -20,6 +31,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneUiState
 import com.ilustris.sagai.features.saga.milestone.presentation.MilestoneViewModel
 import com.ilustris.sagai.ui.genre.surface.GenreScreenEffects
@@ -65,6 +77,7 @@ fun MilestoneScreen(
     val actChapterCovers by viewModel.actChapterCovers.collectAsStateWithLifecycle()
     val bookGenerationState by viewModel.bookGenerationState.collectAsStateWithLifecycle()
     val showOnboarding by viewModel.showOnboarding.collectAsStateWithLifecycle()
+    var digestMilestone by remember { mutableStateOf<SagaMilestone?>(null) }
 
     SagAITheme(genre = genre) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -74,57 +87,94 @@ fun MilestoneScreen(
                 AnimatedContent(
                     targetState = uiState,
                     transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    // ChoiceCardsStep/Loading are data classes whose payload legitimately mutates
+                    // while still conceptually being the same step (a pick, a reasoning chunk).
+                    // The default identity key (full equality) reads each mutation as a brand-new
+                    // step and tears the composition down to rebuild it — which reset
+                    // ChapterChoiceCardsScreen's own pager position back to the first pair on
+                    // every tap, and crossfaded the whole loading screen on every reasoning
+                    // tick. Keying on what actually identifies the step
+                    // (the chapter; just "loading") keeps one composition alive across those
+                    // mutations, so only a real step change (a different milestone, a different
+                    // state type) crossfades.
+                    contentKey = { state ->
+                        when (state) {
+                            is MilestoneUiState.ChoiceCardsStep -> state.milestone.chapter.id
+                            is MilestoneUiState.Loading -> "loading"
+                            else -> state
+                        }
+                    },
                     label = "milestone_step",
                 ) { state ->
                     when (state) {
                         is MilestoneUiState.Loading -> {
-                            GenreStoryLoading(
-                                title = sagaData?.title ?: emptyString(),
-                                message =
-                                    state.reasoning?.takeIf { it.isNotBlank() }
-                                        ?: stringResource(
-                                            if (state.isAutomaticStep) {
-                                                R.string.milestone_adjusting_lore
-                                            } else {
-                                                R.string.milestone_loading_default
-                                            },
-                                        ),
-                                genre = genre,
-                            )
+                            Box(Modifier.fillMaxSize()) {
+                                GenreStoryLoading(
+                                    title = sagaData?.title ?: emptyString(),
+                                    message =
+                                        state.reasoning?.takeIf { it.isNotBlank() }
+                                            ?: stringResource(
+                                                if (state.isAutomaticStep) {
+                                                    R.string.milestone_adjusting_lore
+                                                } else {
+                                                    R.string.milestone_loading_default
+                                                },
+                                            ),
+                                    genre = genre,
+                                )
+                                MilestoneCloseButton(
+                                    onClick = viewModel::onCloseRequested,
+                                    modifier = Modifier.align(Alignment.TopStart),
+                                )
+                            }
                         }
 
                         is MilestoneUiState.Error -> {
-                            GenreStoryNotice(
-                                title = stringResource(R.string.milestone_error_title),
-                                message = state.message,
-                                genre = genre,
-                                action =
-                                    if (state.canRetry) {
-                                        StoryBeatAction(
-                                            id = "retry",
-                                            label = stringResource(R.string.try_again),
-                                            onClick = viewModel::retryFailedStep,
-                                        )
-                                    } else {
-                                        null
-                                    },
-                            )
+                            Box(Modifier.fillMaxSize()) {
+                                GenreStoryNotice(
+                                    title = stringResource(R.string.milestone_error_title),
+                                    message = state.message,
+                                    genre = genre,
+                                    action =
+                                        if (state.canRetry) {
+                                            StoryBeatAction(
+                                                id = "retry",
+                                                label = stringResource(R.string.try_again),
+                                                onClick = viewModel::retryFailedStep,
+                                            )
+                                        } else {
+                                            null
+                                        },
+                                )
+                                MilestoneCloseButton(
+                                    onClick = viewModel::onCloseRequested,
+                                    modifier = Modifier.align(Alignment.TopStart),
+                                )
+                            }
                         }
 
                         is MilestoneUiState.ClosureStep -> {
                             GenreStorySurface(
                                 beat =
                                     state.toStoryBeat(
-                                        sagaId = sagaId,
                                         sagaTitle = sagaData?.title,
                                         coverImage = chapterCoverImage,
                                         actCoverImages = actChapterCovers,
                                         bookGenerationState = bookGenerationState,
                                         onContinue = viewModel::onContinue,
-                                        onNavigate = onNavigate,
+                                        onOpenDigest = { digestMilestone = state.milestone },
                                         onGenerateBook = viewModel::generateBook,
                                     ),
                                 genre = genre,
+                            )
+                        }
+
+                        is MilestoneUiState.ChoiceCardsStep -> {
+                            ChapterChoiceCardsScreen(
+                                state = state,
+                                genre = genre,
+                                onSelect = viewModel::selectChoice,
+                                onSubmit = viewModel::submitChoiceAnswers,
                             )
                         }
 
@@ -144,6 +194,17 @@ fun MilestoneScreen(
                     }
                 }
 
+                digestMilestone?.let { milestone ->
+                    MilestoneDigestSheet(
+                        milestone = milestone,
+                        onSeeMore = {
+                            digestMilestone = null
+                            milestone.detailDestination(sagaId)?.let(onNavigate)
+                        },
+                        onDismiss = { digestMilestone = null },
+                    )
+                }
+
                 // Only ever true for a brand-new saga's first act, tutorials on — overlaps with
                 // that act's introduction generating underneath instead of gating it.
                 if (showOnboarding) {
@@ -156,5 +217,29 @@ fun MilestoneScreen(
                 }
             }
         }
+    }
+}
+
+/**
+ * The screen's one emergency exit, for the rare case the chain is genuinely stuck for a reason
+ * this screen can't fix on its own — never a shortcut past a step that's still legitimately
+ * pending. Only offered on Loading/Error, the two states with no action of their own; a
+ * generation still running answers with a snackbar instead (see
+ * [MilestoneViewModel.onCloseRequested]).
+ */
+@Composable
+private fun MilestoneCloseButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier.statusBarsPadding().padding(8.dp),
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.round_close_24),
+            contentDescription = stringResource(R.string.milestone_close_description),
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+        )
     }
 }

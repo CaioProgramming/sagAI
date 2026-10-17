@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
+import com.ilustris.sagai.core.media.AmbientMusicPulse
 import MessageStatus
 import android.content.Context
 import android.graphics.Bitmap
@@ -12,6 +13,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.google.gson.Gson
 import com.ilustris.sagai.core.ai.gsonTypeOfStringList
@@ -39,6 +41,7 @@ import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManage
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.mapper.SagaMetadataUIMapper
 import com.ilustris.sagai.features.saga.chat.data.model.ChatGenerationOutcome
+import com.ilustris.sagai.features.saga.chat.data.model.InputMode
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -90,10 +93,13 @@ class ChatViewModel
         private val wikiMapper: WikiMapper,
         private val characterUseCase: CharacterUseCase,
         private val sagaThemeManager: SagaThemeManager,
+        /** The saga music's loudness, for the chat's reactive bottom fade. */
+        val ambientMusicPulse: AmbientMusicPulse,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val chatGenerationService: ChatGenerationService,
         private val dataStorePreferences: DataStorePreferences,
+        private val progressionUseCase: com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -282,28 +288,12 @@ class ChatViewModel
                     regenerateAudio(action.messageContent)
                 }
 
-                is ChatUiAction.ToggleSelectionMode -> {
-                    stateManager.toggleSelectionMode()
-                }
-
-                is ChatUiAction.ToggleMessageSelection -> {
-                    stateManager.toggleMessageSelection(action.messageId)
-                }
-
                 is ChatUiAction.MarkMessageViewed -> {
                     markMessageViewed(action.messageId)
                 }
 
-                is ChatUiAction.ClearSelection -> {
-                    stateManager.clearSelection()
-                }
-
                 is ChatUiAction.RecordSearchTerm -> {
                     recordSearchTerm(action.term)
-                }
-
-                is ChatUiAction.ShareConversation -> {
-                    stateManager.updateShareSheetVisibility(action.show)
                 }
 
                 is ChatUiAction.Back -> { // UI action
@@ -321,10 +311,6 @@ class ChatViewModel
 
                 is ChatUiAction.RefreshSaga -> {
                     checkSaga()
-                }
-
-                is ChatUiAction.EnableBackup -> {
-                    enableBackup(action.uri)
                 }
 
                 is ChatUiAction.RequestAudioTranscript -> {
@@ -449,8 +435,17 @@ class ChatViewModel
             stateManager.updateLoading(true)
             enableDebugMode(isDebug)
 
-            sagaContentManager.resetSagaSession()
-
+            // No resetSagaSession() call here on purpose: whether the shared session needs
+            // tearing down is the manager's call, not this screen's. The guard above only knows
+            // about THIS ViewModel's own (possibly blank, on a fresh instance) uiState, not
+            // whether the manager already has this exact saga live elsewhere — e.g. the Milestone
+            // screen mid-chain on it, blocked on an unresolved milestone like the chapter-closure
+            // choice cards. A stray reset from here used to wipe that shared state out from under
+            // it: with isMilestoneActive/milestoneUpdate gone, NarrativeCheck read a synthesized-
+            // but-unanswered chapter as fully complete and marched the saga into the next one
+            // before the player had even submitted a pick. loadSaga() below has its own
+            // "already loaded, don't disrupt it" check against its own state, so it's the only
+            // place a reset should ever get decided.
             sagaObserverJob = observeSaga()
 
             milestoneObserverJob?.cancel()
@@ -493,7 +488,8 @@ class ChatViewModel
                 val limit =
                     remoteConfigService.getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)?.toInt()
                         ?: ChatPrompts.DEFAULT_CHAT_INPUT_LIMIT
-                stateManager.updateState { it.copy(maxContentLength = limit) }
+                val liveEnabled = BuildConfig.DEBUG || remoteConfigService.getBoolean(LIVE_CONVERSATION_FLAG) == true
+                stateManager.updateState { it.copy(maxContentLength = limit, liveConversationEnabled = liveEnabled) }
             }
 
             wikiObserverJob?.cancel()
@@ -539,7 +535,7 @@ class ChatViewModel
         private fun observeAdvanceTriggerSuppression() =
             viewModelScope.launch(Dispatchers.IO) {
                 uiState
-                    .map { it.onboardingType != null || it.selectionState.isSelectionMode }
+                    .map { it.onboardingType != null }
                     .distinctUntilChanged()
                     .collect { suppressed -> sagaContentManager.setAdvanceTriggerSuppressed(suppressed) }
             }
@@ -653,18 +649,6 @@ class ChatViewModel
 
                 settingsUseCase.getMessageEffectsEnabled().collect {
                     stateManager.updateState { s -> s.copy(messageEffectsEnabled = it) }
-                }
-
-                settingsUseCase.backupEnabled().collect {
-                    if (it.not()) {
-                        sagaThemeManager.showSnackBar(
-                            message = context.getString(R.string.backup_disabled_notification),
-                            action =
-                                context.getString(R.string.configure) to {
-                                    enableBackup(null)
-                                },
-                        )
-                    }
                 }
             }
 
@@ -1054,7 +1038,14 @@ class ChatViewModel
         // Ambient music: SagaThemeManager + MainActivity (not tied to Activity lifecycle — Nav 3 keeps Chat in backstack)
 
         fun onChatScreenVisible(sagaId: String) {
-            sagaId.toIntOrNull()?.let { sagaImmersiveSession.push("chat", it) }
+            sagaId.toIntOrNull()?.let {
+                sagaImmersiveSession.push("chat", it)
+                // What was earned while the app was away comes up now, merged and once.
+                viewModelScope.launch {
+                    runCatching { progressionUseCase.announcePending(it) }
+                    runCatching { progressionUseCase.catchUpPending(it) }
+                }
+            }
         }
 
         fun onChatScreenHidden() {
@@ -1095,7 +1086,6 @@ class ChatViewModel
                     }
                     startTime = 0L
                 }
-                sagaContentManager.backupSaga()
             }
         }
 
@@ -1218,6 +1208,7 @@ class ChatViewModel
                     characterId = mainCharacter.id,
                     timelineId = currentTimeline.data.id,
                     status = MessageStatus.LOADING,
+                    inputMode = InputMode.TYPED,
                 )
 
             val isActuallyAudio = isAudio || uiState.value.isAudioInput
@@ -1289,6 +1280,18 @@ class ChatViewModel
                             characterReference?.name ?: message.speakerName
                         }
 
+                    // Reserved before the save below, not after it succeeds — see
+                    // ChatGenerationService.reserve's own doc for why the order matters: saving
+                    // the user's message is what invalidates the Room flow that drives this
+                    // saga's own progression recheck (further down in this file), and that
+                    // recheck used to find activeGenerations still empty for this saga in the gap
+                    // before generate() got called, letting it decide EvolveTimeline off the
+                    // user's message alone — running in parallel with, or even before, this
+                    // turn's reply.
+                    if (isFromUser) {
+                        chatGenerationService.reserve(saga.data.id, saga.data.title, saga.data.genre)
+                    }
+
                     messageUseCase
                         .saveMessage(
                             saga,
@@ -1311,6 +1314,9 @@ class ChatViewModel
                                 triggerGeneration(saga, savedMessage, sceneSummaryData)
                             }
                         }.onFailureAsync {
+                            if (isFromUser) {
+                                chatGenerationService.releaseReservation(saga.data.id)
+                            }
                             sagaThemeManager.showSnackBar(
                                 message = context.getString(R.string.message_save_error),
                                 action =
@@ -1375,6 +1381,7 @@ class ChatViewModel
             sceneSummary: SceneSummary?,
         ) {
         if (saga.getCurrentTimeLine() == null) {
+                chatGenerationService.releaseReservation(saga.data.id)
                 sagaContentManager.checkNarrativeProgression(saga)
                 return
             }
@@ -1456,18 +1463,6 @@ class ChatViewModel
                 }
                 Timber.tag("ChatViewModel").d("Finished enqueuing $count fake messages.")
             }
-        }
-
-        fun enableBackup(uri: Uri?) {
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.enableBackup(uri)
-            }
-        }
-
-        fun getSelectedMessages(): List<MessageContent> {
-            val saga = uiState.value.sagaContent ?: return emptyList()
-            val selectedIds = uiState.value.selectionState.selectedMessageIds
-            return saga.flatMessages().filter { it.message.id in selectedIds }
         }
 
         // Audio Playback Methods
@@ -1624,3 +1619,6 @@ class ChatViewModel
             }
         }
     }
+
+/** Remote Config flag that ships live conversation dark until it's turned on (saga and epilogue alike). */
+const val LIVE_CONVERSATION_FLAG = "live_conversation_enabled"

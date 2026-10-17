@@ -22,14 +22,15 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
  *
  * ### Data (Dynamic — sent as `contents` / user turn)
  * These fields support `{key}` placeholder substitution with runtime values.
- * - **template**: The narrative bridge. Optional. If provided, it supports `{key}` replacement.
- *   If left blank, the system automatically generates a structured `# TASK CONTEXT` from
- *   the runtime variables/objects.
+ * - **template**: DEPRECATED. Don't write one: the variables passed to `buildSplitBlueprint` (a map or an
+ *   args object) are always injected as a structured `# TASK CONTEXT`. Kept only so blueprints already
+ *   published with a template keep working, with `{key}` replacement as before.
  * - **examples**: Few-shot examples rendered after placeholder substitution.
  *
  * ## CRITICAL GUIDELINES
  * 1. **Writer-First**: Role, Directives, and Rules MUST focus on tone, persona, and narrative style.
- * 2. **Context-Only Template**: Only use the template for variable injection (e.g., `{sagaContext}`).
+ * 2. **No Template**: Variable data reaches the prompt through the runtime variables, never through a
+ *    `template` written in the blueprint.
  * 3. **No JSON Meta**: Do NOT instruct the AI on JSON structures or output formats within the blueprint.
  *    The [com.ilustris.sagai.core.ai.GemmaClient] automatically injects the required JSON structure and
  *    formatting rules into the final prompt based on the target data type.
@@ -39,6 +40,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 data class PromptBlueprint(
     val title: String = "",
     val role: String = "",
+    @Deprecated("Variables are injected as a TASK CONTEXT from the runtime args; don't write a template.")
     val template: String? = null,
     val directives: Map<String, String> = emptyMap(),
     val rules: Map<String, String> = emptyMap(),

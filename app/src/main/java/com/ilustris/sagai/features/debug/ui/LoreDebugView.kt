@@ -15,6 +15,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -40,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -112,8 +115,8 @@ fun LoreDebugView(
     }
 
     val view = LocalView.current
-    DisposableEffect(uiState.isFixing) {
-        if (uiState.isFixing) {
+    DisposableEffect(uiState.isFixing, uiState.progressionRun != null) {
+        if (uiState.isFixing || uiState.progressionRun != null) {
             view.keepScreenOn = true
         }
         onDispose {
@@ -236,6 +239,17 @@ fun LoreDebugView(
                             )
                         }
 
+                        item {
+                            ProgressionSection(
+                                ledger = uiState.ledger,
+                                enabled = uiState.progressionRun == null && !uiState.isFixing,
+                                onGenerate = viewModel::backfillProgression,
+                                onRecompute = viewModel::recomputeProgressionXp,
+                                onShowLedger = viewModel::showLedger,
+                                onReset = viewModel::resetProgression,
+                            )
+                        }
+
                         items(saga.acts) {
                             StoryCard(
                                 saga = saga,
@@ -292,6 +306,12 @@ fun LoreDebugView(
                 onGenerate = viewModel::generateImageForTarget,
             )
         }
+
+        if (uiState.showLedger) {
+            LedgerSheet(ledger = uiState.ledger, onDismiss = viewModel::hideLedger)
+        }
+
+        uiState.progressionRun?.let { ProgressionRunOverlay(it, saga?.data?.genre ?: Genre.FANTASY) }
 
         if (uiState.showFixConfirmation && saga != null) {
             val rules = NarrativeRules() // Fallback if RC not ready, but VM uses actual one

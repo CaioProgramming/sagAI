@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import android.text.format.DateUtils
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -71,7 +72,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
-import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.characters.ui.components.buildMessagePreviewAnnotatedString
@@ -89,12 +89,12 @@ import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
 import com.ilustris.sagai.features.premium.MiniPremiumCard
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
+import com.ilustris.sagai.ui.components.LuminousButton
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SAGA_THEME_TRANSITION_MS
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.iridescentGradient
 import com.ilustris.sagai.ui.theme.sagaBrush
 import java.util.Calendar
 
@@ -176,12 +176,6 @@ fun HomeView(
                 }
             }
         }
-    }
-
-    if (uiState.showBackupSheet) {
-        BackupSheet(true, {
-            viewModel.handleAction(HomeUiAction.DismissBackupSheet)
-        })
     }
 
     StarryLoader(
@@ -404,70 +398,16 @@ private fun ChatList(
                 )
             }
 
-            if (state.backupAvailable) {
-                item {
-                    Box(
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Button(onClick = {
-                            onAction(HomeUiAction.RecoverSagas)
-                        }, colors = ButtonDefaults.textButtonColors()) {
-                            Icon(
-                                painterResource(R.drawable.ic_restore),
-                                null,
-                                modifier =
-                                    Modifier
-                                        .padding(horizontal = 8.dp)
-                                        .size(24.dp),
-                            )
-                            Text(
-                                stringResource(id = R.string.restore_sagas),
-                                style =
-                                    MaterialTheme.typography.labelLarge.copy(
-                                        fontWeight = FontWeight.Light,
-                                    ),
-                            )
-                        }
-                    }
-                }
-            }
             item {
-                Button(
-                    onClick = {
-                        onAction(HomeUiAction.CreateNewSaga)
-                    },
-                    shape = MaterialTheme.shapes.large,
-                    colors =
-                        ButtonDefaults.buttonColors().copy(
-                            containerColor = Color.Transparent,
-                        ),
+                LuminousButton(
+                    text = stringResource(R.string.home_create_new_saga_title).uppercase(),
+                    icon = painterResource(R.drawable.ic_spark),
+                    onClick = { onAction(HomeUiAction.CreateNewSaga) },
                     modifier =
                         Modifier
                             .padding(32.dp)
-                            .dropShadow(MaterialTheme.shapes.large) {
-                                brush =
-                                    Brush.horizontalGradient(iridescentGradient)
-                                radius = 20f
-                                spread = .4f
-                            }
-                            .background(
-                                MaterialTheme.colorScheme.onBackground,
-                                MaterialTheme.shapes.large,
-                            )
                             .fillMaxWidth(),
-                ) {
-                    Text(
-                        stringResource(R.string.home_create_new_saga_title).uppercase(),
-                        style =
-                            MaterialTheme.typography.titleSmall.copy(
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.background,
-                            ),
-                    )
-                }
+                )
             }
 
             if (!state.isPremium) {
@@ -479,6 +419,12 @@ private fun ChatList(
                                 .fillMaxWidth()
                                 .clickable { onAction(HomeUiAction.OpenPremium) },
                     )
+                }
+            }
+
+            state.lastBackupAt?.takeIf { state.visibleSagas.isNotEmpty() }?.let { lastBackupAt ->
+                item {
+                    LastBackupNotice(lastBackupAt, onClick = openSettings)
                 }
             }
 
@@ -721,3 +667,44 @@ fun HomeViewPreview() {
         }
     }
 }
+
+@Composable
+private fun LastBackupNotice(
+    lastBackupAt: Long,
+    onClick: () -> Unit,
+) {
+    val stale =
+        lastBackupAt == 0L ||
+            System.currentTimeMillis() - lastBackupAt > BACKUP_STALE_DAYS * DateUtils.DAY_IN_MILLIS
+    val text =
+        if (lastBackupAt == 0L) {
+            stringResource(R.string.home_last_backup_never)
+        } else {
+            stringResource(
+                R.string.home_last_backup,
+                DateUtils
+                    .getRelativeTimeSpanString(
+                        lastBackupAt,
+                        System.currentTimeMillis(),
+                        DateUtils.MINUTE_IN_MILLIS,
+                    ).toString(),
+            )
+        }
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color =
+            if (stale) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+            },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+}
+
+private const val BACKUP_STALE_DAYS = 14

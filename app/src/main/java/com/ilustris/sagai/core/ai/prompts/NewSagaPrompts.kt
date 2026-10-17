@@ -98,10 +98,17 @@ data class SacredBindingArgs(
     val themeStyle: String,
 )
 
+data class SagaQuizArgs(
+    val playerIdea: String,
+    /** The player's profile as JSON; null (and so left out of the prompt) for a first-time player. */
+    val playerProfile: String? = null,
+)
+
 data class CosmicLibraryArgs(
     val userPrompt: String,
     val themes: String,
-    val genreAesthetics: String = "",
+    /** The player's quiz read, one trait per line; null (and so left out of the prompt) without a quiz. */
+    val userTraits: String? = null,
 )
 
 @Suppress("ktlint:standard:max-line-length")
@@ -122,6 +129,7 @@ object NewSagaPrompts {
     const val SAAGA_IDEATION_PROCESS = "ideation_task"
     const val COSMIC_LIBRARY_BLUEPRINT = "cosmic_library_blueprint"
     const val UNIVERSE_ECHOES_BLUEPRINT = "universe_echoes_blueprint"
+    const val SAGA_QUIZ_BLUEPRINT = "saga_creation_quiz_blueprint"
     const val SACRED_BINDING_BLUEPRINT = "sacred_binding_blueprint"
 
     suspend fun conversationalSagaReply(

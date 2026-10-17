@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,7 +56,10 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.WikiCard
+import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryDigestCard
+import com.ilustris.sagai.ui.genre.surface.StoryAside
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryBody
@@ -158,6 +162,8 @@ fun PlainStoryBeat(
                         )
                     }
 
+                    beat.digest?.let { StoryDigestCard(it, Modifier.padding(top = 16.dp)) }
+
                     if (beat.figures.size == 1) {
                         FigureCard(beat.figures.first(), Modifier.padding(top = 16.dp))
                     } else if (beat.figures.size > 1) {
@@ -172,7 +178,7 @@ fun PlainStoryBeat(
                         CastRow(beat.cast, beat.castLabel, genre, Modifier.padding(top = 16.dp))
                     }
 
-                    beat.aside?.let { AsideNote(it.label, it.text, Modifier.padding(top = 16.dp)) }
+                    beat.aside?.let { AsideNote(it, canAnimate, Modifier.padding(top = 16.dp)) }
                 }
             }
         }
@@ -344,30 +350,40 @@ private fun CastRow(
     }
 }
 
-/** A quiet, neutrally-bordered aside — deliberately not competing with the story above it. */
+/**
+ * A quiet, neutrally-bordered aside — deliberately not competing with the story above it. Laid out
+ * like the timeline's emotional note: the mascot and the label as a header, the text beneath.
+ */
 @Composable
 private fun AsideNote(
-    label: String,
-    text: String,
+    aside: StoryAside,
+    canAnimate: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier
             .fillMaxWidth()
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)
-            .padding(12.dp),
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AsideMascot(aside, canAnimate = canAnimate, modifier = Modifier.size(32.dp))
+            Text(
+                text = aside.label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
+            text = aside.text,
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
+            fontStyle = FontStyle.Italic,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp),
         )
     }
 }

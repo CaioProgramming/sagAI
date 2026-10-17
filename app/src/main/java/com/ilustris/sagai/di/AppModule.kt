@@ -1,5 +1,8 @@
 package com.ilustris.sagai.di
 
+import com.ilustris.sagai.features.characters.data.source.CharacterKnowledgeDao
+import com.ilustris.sagai.features.progression.data.source.ProgressionDao
+import com.ilustris.sagai.features.saga.datasource.EpilogueMessageDao
 import android.content.Context
 import androidx.work.WorkManager
 import coil3.ImageLoader
@@ -143,6 +146,8 @@ import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepositoryImpl
 import com.ilustris.sagai.features.timeline.data.source.TimelineDao
 import com.ilustris.sagai.features.timeline.domain.TimelineMapper
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCaseImpl
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCaseImpl
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
@@ -274,6 +279,18 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideEpilogueMessageDao(database: SagaDatabase): EpilogueMessageDao = database.epilogueMessageDao()
+
+    @Provides
+    @Singleton
+    fun provideCharacterKnowledgeDao(database: SagaDatabase): CharacterKnowledgeDao = database.characterKnowledgeDao()
+
+    @Provides
+    @Singleton
+    fun provideProgressionDao(database: SagaDatabase): ProgressionDao = database.progressionDao()
+
+    @Provides
+    @Singleton
     fun provideChapterDao(database: SagaDatabase): ChapterDao = database.chapterDao()
 
     @Provides
@@ -310,11 +327,24 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideEmbeddingDao(database: SagaDatabase): com.ilustris.sagai.core.ai.rag.EmbeddingDao = database.embeddingDao()
+
+    @Provides
+    @Singleton
     fun provideDatabaseBackupService(
         @ApplicationContext context: Context,
         preferences: DataStorePreferences,
         database: SagaDatabase,
     ): DatabaseBackupService = DatabaseBackupService(context, preferences, database)
+
+    @Provides
+    @Singleton
+    fun provideSagasArchiveService(
+        @ApplicationContext context: Context,
+        database: SagaDatabase,
+        preferences: DataStorePreferences,
+    ): com.ilustris.sagai.core.database.backup.SagasArchiveService =
+        com.ilustris.sagai.core.database.backup.SagasArchiveService(context, database, preferences)
 
     @Provides
     @Singleton
@@ -653,6 +683,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun proviesTimelineUseCase(timelineUseCaseImpl: TimelineUseCaseImpl): TimelineUseCase
+
+    @Binds
+    abstract fun providesCharacterProgressionUseCase(impl: CharacterProgressionUseCaseImpl): CharacterProgressionUseCase
 
     @Binds
     abstract fun providesActUseCase(actUseCaseImpl: ActUseCaseImpl): ActUseCase

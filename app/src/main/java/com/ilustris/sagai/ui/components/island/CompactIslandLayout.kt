@@ -70,12 +70,21 @@ fun CompactIslandLayout(
                 modifier
                     .padding(12.dp)
                     .fillMaxWidth(pillFill)
-                    .gradientFill(if (data.isLoading) sagaBrush() else MaterialTheme.colorScheme.onBackground.solidGradient())
+                    // The gradient paints over everything the row draws, which would flatten an avatar or a coin
+                    // into a solid shape: rows with their own slots keep their colours.
+                    .let {
+                        if (data.leading != null || data.trailing != null) {
+                            it
+                        } else {
+                            it.gradientFill(if (data.isLoading) sagaBrush() else MaterialTheme.colorScheme.onBackground.solidGradient())
+                        }
+                    }
                     .reactiveShimmer(data.isLoading, repeatMode = RepeatMode.Restart, shimmerColors = Color.White.shimmerize()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            data.iconRes?.let { iconRes ->
+            data.leading?.invoke()
+            data.iconRes?.takeIf { data.leading == null }?.let { iconRes ->
                 Icon(
                     painter = painterResource(iconRes),
                     contentDescription = null,
@@ -99,6 +108,8 @@ fun CompactIslandLayout(
                             .basicMarquee(),
                 )
             }
+
+            data.trailing?.invoke()
 
             if (hasLoadingIndicator) {
                 CompactIslandIndicator(data)

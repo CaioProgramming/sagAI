@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.navigation
 import com.ilustris.sagai.ui.navigation.BookReaderKey
 import com.ilustris.sagai.ui.navigation.ChatKey
 import com.ilustris.sagai.ui.navigation.CharacterDetailKey
+import com.ilustris.sagai.ui.navigation.LiveConversationKey
 import com.ilustris.sagai.ui.navigation.MilestoneKey
 import com.ilustris.sagai.ui.navigation.SagaActsKey
 import com.ilustris.sagai.ui.navigation.SagaDetailKey
@@ -29,6 +30,17 @@ class SagaNavigationTracker
             val key = _currentKey.value
             return key is ChatKey && key.sagaId == sagaId.toString()
         }
+
+        fun isOnLiveConversation(sagaId: Int): Boolean {
+            val key = _currentKey.value
+            return key is LiveConversationKey && key.sagaId == sagaId
+        }
+
+        /**
+         * The player is in this saga's conversation, typed (chat) or spoken (live mode). Milestones,
+         * the generation island and in-app notifications treat both the same.
+         */
+        fun isInConversation(sagaId: Int): Boolean = isOnChatForSaga(sagaId) || isOnLiveConversation(sagaId)
 
         fun isOnSagaDetail(sagaId: Int): Boolean {
             val key = _currentKey.value

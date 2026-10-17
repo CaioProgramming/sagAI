@@ -192,6 +192,11 @@ fun SagaMetadata.chatMessagesFingerprint(): Long {
         fingerprint = fingerprint * 31 + (last.message.characterId ?: 0)
         fingerprint = fingerprint * 31 + last.reactions.size
     }
+    // Voice lands after the message is already OK (live mode, Regenerate audio) and not always on
+    // the last one, so every message's audio counts — short strings, cheap to hash.
+    messages.forEach { fingerprint = fingerprint * 31 + (it.message.audioPath?.hashCode() ?: 0) }
+    // A voice turn's corrected text (or its fallback transcription) can arrive after the reply.
+    messages.takeLast(2).forEach { fingerprint = fingerprint * 31 + it.message.text.hashCode() }
     return fingerprint
 }
 

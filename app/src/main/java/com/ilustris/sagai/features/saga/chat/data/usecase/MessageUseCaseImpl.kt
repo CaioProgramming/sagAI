@@ -1,16 +1,18 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
 import MessageStatus
 import androidx.room.withTransaction
-import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelCatalog
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.core.ai.model.AudioConfig
-import com.ilustris.sagai.core.ai.model.Voice
+import com.ilustris.sagai.core.ai.TranscribeClient
+import com.ilustris.sagai.core.ai.model.AudioAttachment
+import com.ilustris.sagai.core.ai.model.PromptBlueprint
 import com.ilustris.sagai.core.ai.model.mergeInstructions
-import com.ilustris.sagai.core.ai.prompts.AudioPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import com.ilustris.sagai.core.ai.prompts.PlayerSpectrumPrompts
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -26,10 +28,10 @@ import com.ilustris.sagai.core.globalshell.NewMessageEffect
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.utils.AudioUtils
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
@@ -43,6 +45,8 @@ import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.model.AIReaction
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+import com.ilustris.sagai.features.saga.chat.data.model.GeneratedReply
+import com.ilustris.sagai.features.saga.chat.data.model.InputMode
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.Reaction
@@ -51,6 +55,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
+import com.ilustris.sagai.features.saga.chat.data.voicing.MessageVoicingUseCase
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
@@ -62,6 +67,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.File
 import javax.inject.Inject
 
 class MessageUseCaseImpl
@@ -73,7 +79,9 @@ class MessageUseCaseImpl
         private val characterUseCase: CharacterUseCase,
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
-        private val audioGenClient: AudioGenClient,
+        private val messageVoicingUseCase: MessageVoicingUseCase,
+        private val transcribeClient: TranscribeClient,
+        private val modelCatalog: ModelCatalog,
         private val fileHelper: FileHelper,
         private val imageHelper: ImageHelper,
         private val genreConfigService: GenreConfigService,
@@ -84,6 +92,8 @@ class MessageUseCaseImpl
         private val sagaContentManager: SagaContentManager,
         private val globalShellService: GlobalShellService,
         private val database: SagaDatabase,
+        private val progressionUseCase: CharacterProgressionUseCase,
+        private val semanticRetrievalService: com.ilustris.sagai.core.ai.rag.SemanticRetrievalService,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -223,7 +233,7 @@ class MessageUseCaseImpl
         override suspend fun generateMessage(
             saga: SagaMetadata,
             message: MessageContent,
-        ): Flow<StreamingState<AIReply?>> =
+        ): Flow<StreamingState<GeneratedReply?>> =
             flow {
                 try {
                     if (isDebugModeEnabled) {
@@ -238,7 +248,7 @@ class MessageUseCaseImpl
                                         timelineId = saga.getCurrentTimeLine()!!.data.id,
                                     ),
                             )
-                        emit(StreamingState.Success(fakeReply))
+                        emit(StreamingState.Success(GeneratedReply(fakeReply, message.message)))
                         return@flow
                     }
 
@@ -251,21 +261,39 @@ class MessageUseCaseImpl
                         sagaContent.getCurrentTimeLine()?.data?.sceneSummary
                             ?: getSceneContext(saga).getSuccess()
                     val characterArcsById = loadCharacterArcsForScene(sagaContent, sceneSummary)
+                    val voiceTurn = prepareVoiceTurn(message.message)
+                    val inputMode = message.message.inputMode ?: InputMode.TYPED
                     val prompt =
                         ChatPrompts.replyMessagePrompt(
                             promptService = promptService,
                             saga = sagaContent,
-                            message = message.message,
+                            message = voiceTurn.promptMessage,
                             sceneSummary = sceneSummary,
                             updateLimit = narrativeRules.loreUpdateLimit,
                             narrativeRules = narrativeRules,
                             characterArcsById = characterArcsById,
+                            semanticRetrievalService = semanticRetrievalService,
+                            powerContext =
+                                progressionUseCase.powerContext(
+                                    sagaContent,
+                                    sceneSummary?.charactersPresent?.map { it.name }.orEmpty(),
+                                ),
                             maxMessageLimit =
-                                remoteConfigService
-                                    .getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)
+                                (if (inputMode == InputMode.VOICE) remoteConfigService.getLong(ChatPrompts.LIVE_REPLY_LIMIT_KEY) else null)
                                     ?.toInt()
                                     ?.takeIf { it > 0 }
+                                    ?: remoteConfigService
+                                        .getLong(ChatPrompts.CHAT_INPUT_LIMIT_KEY)
+                                        ?.toInt()
+                                        ?.takeIf { it > 0 }
                                     ?: ChatPrompts.DEFAULT_CHAT_INPUT_LIMIT,
+                        )
+                    val playerInputInstructions =
+                        ChatPrompts.playerInputInstructions(
+                            runCatching {
+                                remoteConfigService.getJson<PromptBlueprint>(ChatPrompts.PLAYER_INPUT_BLUEPRINT)
+                            }.getOrNull(),
+                            inputMode,
                         )
                     val conversationInstructions =
                         genreConfigService
@@ -291,10 +319,24 @@ class MessageUseCaseImpl
                                         prompt.mergeInstructions(
                                             conversationInstructions,
                                             actContext.renderInstructions(),
+                                            playerInputInstructions,
+                                            // The last chapter-closure read of the player, so the
+                                            // cast plays off it live instead of only at the next
+                                            // chapter's closing synthesis. Characterization only.
+                                            PlayerSpectrumPrompts.lensInstructions(
+                                                PlayerSpectrumPrompts.latestSpectrum(saga),
+                                            ),
                                         ),
                                     userInteraction = true,
                                     filterOutputFields = ChatPrompts.messageOutputExclusions,
                                     requirement = ModelRequirement.HIGH,
+                                    audio = voiceTurn.audio,
+                                    thinkingLevelOverride =
+                                        if (inputMode == InputMode.VOICE) {
+                                            gemmaClient.voiceThinkingLevel(ModelRequirement.HIGH)
+                                        } else {
+                                            null
+                                        },
                                 )
                             // gemmaClient.generate returns null rather than throwing on a final,
                             // non-retryable failure (spent daily quota, rejected key, exhausted
@@ -330,8 +372,21 @@ class MessageUseCaseImpl
                                 // narrative judgements the model makes, not invariants to enforce
                                 // from here.
                                 val reply = state.data!!
+                                // Re-resolved right here instead of trusting `saga` (captured by
+                                // the caller before the multi-second gemmaClient.generate() call
+                                // above): narrative progression can advance currentEventId to a
+                                // new Timeline while this reply is in flight (e.g. the player
+                                // dismissing a NewEvent milestone mid-generation), and writing this
+                                // turn's sceneSummary/message onto that now-stale pinned timeline
+                                // splits the scene across two rows — the old one loses this turn's
+                                // content, the new one never gets one either, and a chapter close
+                                // later comes up a timeline short. Re-fetching narrows that race
+                                // from the whole generation call down to this DB round trip.
+                                val freshSaga =
+                                    sagaRepository.getSagaMetadata(saga.data.id).first()
+                                        ?: saga
                                 reply.sceneSummary?.let { summary ->
-                                    saga.getCurrentTimeLine()?.let { timeline ->
+                                    freshSaga.getCurrentTimeLine()?.let { timeline ->
                                         if (timeline.data.sceneSummary != summary) {
                                             timelineUseCase.updateTimeline(
                                                 timeline.data.copy(
@@ -342,9 +397,6 @@ class MessageUseCaseImpl
                                         }
                                     }
                                 }
-                                val freshSaga =
-                                    sagaRepository.getSagaMetadata(saga.data.id).first()
-                                        ?: saga
                                 val existingCharacter =
                                     resolveExistingCharacterForReply(freshSaga, reply)
                                 // Everything the reply writes to the DB goes in one transaction so
@@ -354,19 +406,37 @@ class MessageUseCaseImpl
                                 // resolveReplyCharacterLinks stays outside: it can hit the network to
                                 // generate a character, and holding a DB transaction across that is
                                 // how you get lock contention/ANRs.
+                                // Corrected text + tone from the reply, behind the guard in
+                                // PlayerInputCorrection. A voice turn's duration bounds how much
+                                // text its correction may plausibly contain.
+                                var correction =
+                                    PlayerInputCorrection.apply(
+                                        original = voiceTurn.promptMessage,
+                                        feedback = reply.playerInput,
+                                        audioDurationMs = voiceTurn.durationMs,
+                                    )
+                                // The reply heard the audio but came back without a usable line:
+                                // transcribe the recording so the message never stays without text.
+                                if (correction.needsTranscription && voiceTurn.wav != null) {
+                                    transcribe(voiceTurn.wav)?.let { text ->
+                                        correction =
+                                            correction.copy(
+                                                message = correction.message.copy(text = text),
+                                                needsTranscription = false,
+                                            )
+                                    }
+                                }
                                 val savedMessage =
                                     withContext(Dispatchers.IO) {
                                         database.withTransaction {
                                             val saved =
                                                 insertAiReplyMessage(
-                                                    saga,
+                                                    freshSaga,
                                                     reply,
                                                     character = existingCharacter,
                                                 )
-                                            reply.userTone?.let { tone ->
-                                                updateMessage(
-                                                    message.message.copy(emotionalTone = tone),
-                                                )
+                                            if (correction.message != message.message) {
+                                                updateMessage(correction.message)
                                             }
                                             reply.playerCompass
                                                 ?.takeIf { it.isNotBlank() && it != freshSaga.data.playerCompass }
@@ -390,9 +460,21 @@ class MessageUseCaseImpl
                                     savedMessage = savedMessage,
                                     sceneSummary = reply.sceneSummary ?: sceneSummary,
                                 )
-                                emit(StreamingState.Success(reply.copy(message = savedMessage)))
+                                emit(
+                                    StreamingState.Success(
+                                        GeneratedReply(
+                                            reply = reply.copy(message = savedMessage),
+                                            userMessage = correction.message,
+                                            needsTranscription = correction.needsTranscription,
+                                        ),
+                                    ),
+                                )
                             } else {
-                                emit(state)
+                                when (state) {
+                                    is StreamingState.Reasoning -> emit(state)
+                                    is StreamingState.Error -> emit(state)
+                                    else -> Unit
+                                }
                             }
                         }
                 } catch (e: Exception) {
@@ -464,8 +546,13 @@ class MessageUseCaseImpl
 
             // Patched onto the scene the reply just wrote rather than written wholesale, so the
             // hook lands without clobbering the state the HIGH model established this turn.
+            // Re-resolved fresh for the same reason as generateMessage's own sceneSummary write
+            // above: `saga` here is whatever ChatGenerationService captured before this call's own
+            // gemmaClient.generate(), and narrative progression may have moved currentEventId on
+            // since.
             fallout.notificationHook?.takeIf { it.isNotBlank() }?.let { hook ->
-                saga.getCurrentTimeLine()?.let { timeline ->
+                val freshSaga = sagaRepository.getSagaMetadata(saga.data.id).first() ?: saga
+                freshSaga.getCurrentTimeLine()?.let { timeline ->
                     timeline.data.sceneSummary?.let { scene ->
                         timelineUseCase.updateTimeline(
                             timeline.data.copy(
@@ -650,75 +737,11 @@ class MessageUseCaseImpl
             characterReference: Character?,
         ): RequestResult<Unit> =
             executeRequest {
-                val sagaContent = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
-                val isNarrator = savedMessage.senderType == SenderType.NARRATOR
-                val speaker = characterReference?.let { "Character: ${it.name}" } ?: "Narrator"
-                Timber.i("🎙️ Starting audio generation for $speaker")
-
-                val voice =
-                    Voice.findByName(
-                        if (isNarrator) {
-                            saga.data.narratorVoice
-                        } else {
-                            characterReference?.voice
-                        },
-                    )
-
-                val audioConfig =
-                    gemmaClient.generate<AudioConfig>(
-                        promptSplit =
-                            AudioPrompts.audioConfigPrompt(
-                                promptService,
-                                sagaContent,
-                                message = savedMessage,
-                                character = characterReference?.let { CharacterContent(it) },
-                            ),
-                        requireTranslation = false,
-                        requirement = ModelRequirement.MEDIUM,
-                    )!!
-
-                val finalConfig =
-                    audioConfig.copy(
-                        voice = voice ?: audioConfig.voice,
-                    )
-                if (isNarrator) {
-                    sagaRepository.updateSaga(
-                        saga.data.copy(
-                            narratorVoice = finalConfig.voice.id,
-                        ),
-                    )
-                } else {
-                    if (characterReference != null) {
-                        characterRepository.updateCharacter(
-                            characterReference.copy(
-                                voice = finalConfig.voice.id,
-                            ),
-                        )
-                        Timber.i("✅ Character voice updated to: ${finalConfig.voice.name} for ${characterReference.name}")
-                    }
-                }
-
-                // Generate audio
-                val audioResult =
-                    audioGenClient
-                        .generateAudio(
-                            finalConfig,
-                        )!!
-
-                val audioFile =
-                    fileHelper.saveBinaryFile(
-                        audioResult,
-                        path = "sagas/${saga.data.id}/audios",
-                        fileName = "message_${savedMessage.id}_audio",
-                        extension = "wav",
-                    )!!
-
-                updateMessage(
-                    savedMessage.copy(
-                        audioPath = audioFile.absolutePath,
-                        audible = true,
-                    ),
-                )
+                // Casting, performance script and (multi-speaker) TTS live in MessageVoicingUseCase,
+                // shared with live mode so a message sounds the same wherever it was voiced.
+                messageVoicingUseCase.voice(saga, savedMessage)
+                    ?: error("Message ${savedMessage.id} has nothing a voice can perform")
+                Unit
             }
 
         override suspend fun updateMessage(message: Message): RequestResult<Message> =
@@ -754,6 +777,38 @@ class MessageUseCaseImpl
                 generateAudio(saga, message, characterReference)
             }
         }
+
+        /**
+         * A voice turn's inputs for the reply: the recording attached inline when the reply model
+         * can hear it, or — when the tier's current model can't (e.g. a Gemma model in rotation) —
+         * a transcript in its place, so the reply still has the player's words.
+         */
+        private data class VoiceTurn(
+            val promptMessage: Message,
+            val audio: AudioAttachment? = null,
+            val wav: ByteArray? = null,
+            val durationMs: Long? = null,
+        )
+
+        private suspend fun prepareVoiceTurn(message: Message): VoiceTurn {
+            if (message.inputMode != InputMode.VOICE) return VoiceTurn(message)
+            val file = message.audioPath?.takeIf { it.isNotBlank() }?.let(::File)?.takeIf { it.exists() }
+            val wav = file?.readBytes() ?: return VoiceTurn(message)
+            val durationMs = AudioUtils.wavDurationMs(file)
+            val model = gemmaClient.modelName(ModelRequirement.HIGH)
+            if (modelCatalog.supportsAudioInput(model)) {
+                return VoiceTurn(message, AudioAttachment(wav), wav, durationMs)
+            }
+            Timber.w("Reply model $model can't take audio; transcribing the voice turn first")
+            val transcript = transcribe(wav) ?: error("Couldn't transcribe the voice turn for $model")
+            return VoiceTurn(message.copy(text = transcript), audio = null, wav = wav, durationMs = durationMs)
+        }
+
+        private suspend fun transcribe(wav: ByteArray): String? =
+            runCatching { transcribeClient.transcribeWords(wav, languageCode = null).text.trim() }
+                .onFailure { Timber.w(it, "Voice turn transcription failed") }
+                .getOrNull()
+                ?.takeIf { it.isNotBlank() }
 
         private suspend fun loadCharacterArcsForScene(
             saga: SagaContent,

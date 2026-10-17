@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterKnowledge
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -23,6 +24,7 @@ private const val CONVERSATION_HISTORY_LIMIT = 20
 object EpiloguePrompts {
     const val EPILOGUE_CHAT_INTRO_BLUEPRINT = "epilogue_chat_intro_blueprint"
     const val EPILOGUE_CHAT_REPLY_BLUEPRINT = "epilogue_chat_reply_blueprint"
+    const val EPILOGUE_KNOWLEDGE_BLUEPRINT = "epilogue_knowledge_blueprint"
 
     /**
      * Remote Config blueprint expectations (published separately, see docs/blueprints.md):
@@ -36,6 +38,10 @@ object EpiloguePrompts {
      * - [EPILOGUE_CHAT_REPLY_BLUEPRINT] is used for every turn after that, responding to
      *   `latestMessage` in light of `conversationHistory`.
      * - Both must stay consistent with `sagaEndingContext` and `recentCharacterBeats`.
+     * - `characterKnowledgeOfPlayer` (only when there is some) is what this character has come to
+     *   know about the player in earlier epilogue talks: color the reply with it, never recite it.
+     * - On the intro, `conversationHistory` + `timeSinceLastConversation` (only when they have
+     *   talked before) make it a reunion: pick things back up instead of greeting a stranger.
      * - `protagonistContext` is the player's own character (same shape as `characterContext`'s
      *   underlying data) — use it to keep references to the protagonist accurate, not to shift
      *   focus away from the character actually being addressed.
@@ -47,6 +53,7 @@ object EpiloguePrompts {
         arcs: List<CharacterArc>,
         conversationSoFar: List<EpilogueMessage>,
         userMessage: String? = null,
+        knowledge: CharacterKnowledge? = null,
     ): SplitPrompt {
         val recentCharacterBeats =
             saga
@@ -89,9 +96,59 @@ object EpiloguePrompts {
                     },
                 )
                 put("latestMessage", userMessage.orEmpty())
+                knowledge?.toPromptContext()?.let { put("characterKnowledgeOfPlayer", it) }
+                if (userMessage == null) {
+                    conversationSoFar.lastOrNull()?.let { last ->
+                        put("timeSinceLastConversation", humanizeElapsed(System.currentTimeMillis() - last.timestamp))
+                    }
+                }
             }
 
         val blueprintKey = if (userMessage == null) EPILOGUE_CHAT_INTRO_BLUEPRINT else EPILOGUE_CHAT_REPLY_BLUEPRINT
         return promptService.buildSplitBlueprint(blueprintKey, args)
+    }
+
+    /**
+     * The compaction: folds the turns since the last pass into what the character knows about the
+     * player, rewriting the whole thing (like the player spectrum) so it never grows unbounded.
+     */
+    suspend fun knowledgePrompt(
+        promptService: PromptService,
+        saga: SagaContent,
+        character: CharacterContent,
+        previous: CharacterKnowledge?,
+        newTurns: List<EpilogueMessage>,
+    ): SplitPrompt =
+        promptService.buildSplitBlueprint(
+            EPILOGUE_KNOWLEDGE_BLUEPRINT,
+            buildMap {
+                put("character", character.data.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS))
+                put("protagonist", saga.mainCharacter?.data?.fullName().orEmpty())
+                put("previousKnowledge", previous?.toPromptContext() ?: "none yet")
+                put(
+                    "newConversation",
+                    newTurns.joinToString("\n") {
+                        "${if (it.isUser) "Player" else character.data.fullName()}: ${it.text}"
+                    },
+                )
+            },
+        )
+
+    private fun CharacterKnowledge.toPromptContext(): String? =
+        buildString {
+            impression.takeIf { it.isNotBlank() }?.let { appendLine("impression: $it") }
+            sharedMoments.takeIf { it.isNotEmpty() }?.let { appendLine("sharedMoments: ${it.joinToString(" | ")}") }
+            openThreads.takeIf { it.isNotEmpty() }?.let { appendLine("openThreads: ${it.joinToString(" | ")}") }
+        }.trim().ifBlank { null }
+
+    /** Rough and model-facing, e.g. "about 3 days": the character only needs a sense of the gap. */
+    private fun humanizeElapsed(ms: Long): String {
+        val minutes = ms / 60_000
+        return when {
+            minutes < 60 -> "a few minutes"
+            minutes < 60 * 24 -> "about ${minutes / 60} hours"
+            minutes < 60 * 24 * 30 -> "about ${minutes / (60 * 24)} days"
+            else -> "about ${minutes / (60 * 24 * 30)} months"
+        }
     }
 }

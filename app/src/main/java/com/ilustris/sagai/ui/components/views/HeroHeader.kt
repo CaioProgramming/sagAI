@@ -47,6 +47,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.components.titlefx.usesTitleFx
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -90,8 +91,16 @@ fun heroTitleOverlay(
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 4.dp)
-                .gradientFill(titleGradient)
-                .reactiveShimmer(true, shimmerColors),
+                // the title effect owns its colours: gradientFill and reactiveShimmer recolour every
+                // non-transparent pixel (SrcAtop), which flattens the glow, halftone and ghost layers
+                .then(
+                    if (genre.usesTitleFx()) {
+                        Modifier
+                    } else {
+                        Modifier.gradientFill(titleGradient).reactiveShimmer(true, shimmerColors)
+                    },
+                ),
+        interactive = true,
     )
 }
 
@@ -158,6 +167,7 @@ fun heroBottomCluster(
     shimmerColors: List<Color>,
     accentColor: Color,
     onAccentColor: Color,
+    titleColor: Color? = null,
     statusTag: String? = null,
     actions: List<HeroAction> = emptyList(),
     modifier: Modifier = Modifier,
@@ -193,7 +203,9 @@ fun heroBottomCluster(
                 Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .reactiveShimmer(true, shimmerColors),
+                    .then(if (genre.usesTitleFx()) Modifier else Modifier.reactiveShimmer(true, shimmerColors)),
+            color = titleColor,
+            interactive = true,
         )
 
         if (actions.isNotEmpty()) {
@@ -225,56 +237,6 @@ fun heroBottomCluster(
             }
         } else {
             Spacer(Modifier.height(8.dp))
-        }
-    }
-}
-
-data class HeroMenuAction(
-    val label: String,
-    val destructive: Boolean = false,
-    val onClick: () -> Unit,
-)
-
-/** "..." overflow-menu trigger. Caller controls placement (works inside a Box, a Row, anywhere). */
-@Composable
-fun HeroOverflowMenu(
-    tint: Color,
-    actions: List<HeroMenuAction>,
-    modifier: Modifier = Modifier,
-    containerColor: Color = Color.Transparent,
-) {
-    if (actions.isEmpty()) return
-    var expanded by remember { mutableStateOf(false) }
-
-    Box(modifier = modifier) {
-        IconButton(
-            onClick = { expanded = true },
-            modifier = Modifier.size(36.dp),
-            colors = IconButtonDefaults.iconButtonColors(containerColor = containerColor),
-        ) {
-            Icon(
-                painterResource(R.drawable.ic_menu),
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.padding(6.dp).fillMaxSize(),
-            )
-        }
-
-        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
-            actions.forEach { action ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            action.label,
-                            color = if (action.destructive) MaterialTheme.colorScheme.error else Color.Unspecified,
-                        )
-                    },
-                    onClick = {
-                        expanded = false
-                        action.onClick()
-                    },
-                )
-            }
         }
     }
 }

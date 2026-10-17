@@ -19,7 +19,7 @@ import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaCreationState
-import com.ilustris.sagai.ui.navigation.ChatKey
+import com.ilustris.sagai.ui.navigation.NarratorVoiceKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -56,9 +56,12 @@ class NewSagaViewModel
         val effect = MutableStateFlow<Effect?>(null)
 
         private var promptJob: Job? = null
+        private var quizJob: Job? = null
+        private var lastIdea: String = ""
         private var initialEchoesJob: Job? = null
         private var echoesRequestGeneration = 0
         private var lastUserPrompt: String = ""
+        private var lastTraits: String? = null
 
         init {
             preFetchVisualConfigs()
@@ -90,22 +93,17 @@ class NewSagaViewModel
                                     return@onSuccessAsync
                                 }
                                 val echoes =
-                                    it.suggestions.mapNotNull { echo ->
-                                        val config = visualConfigService.getVisualConfig(echo.genre)
-                                        if (config != null) echo to config else null
-                                    }
+                                    it.suggestions
                                 updateState {
                                     copy(
                                         universeEchoes = echoes,
-                                        statusMessage = it.message.ifBlank { statusMessage },
+                                        statusMessage = (it.message as String?)?.ifBlank { null } ?: statusMessage,
                                     )
                                 }
                             }.onFailureAsync {
-                                val state = _uiState.value
-                                if (generation != echoesRequestGeneration || state.isGenerating) {
-                                    return@onFailureAsync
-                                }
-                                updateState { copy(error = genericErrorMessage()) }
+                                // The suggestions are a nicety: the player can always type an idea, so a
+                                // failed request (the model API throws intermittent 500s) stays silent.
+                                Timber.w(it, "Initial universe echoes failed; showing the idea screen without chips")
                             }
                     } catch (e: Exception) {
                         if (e.isFlowCancellation()) {
@@ -161,6 +159,26 @@ class NewSagaViewModel
                     selectEcho(intent)
                 }
 
+                is NewSagaIntent.QuizSelect -> {
+                    quizSelect(intent.cardIndex, intent.optionIndex)
+                }
+
+                is NewSagaIntent.QuizNext -> {
+                    quizNext()
+                }
+
+                is NewSagaIntent.QuizPrevious -> {
+                    quizPrevious()
+                }
+
+                is NewSagaIntent.FocusStory -> {
+                    updateState { copy(focusedIndex = intent.index) }
+                }
+
+                is NewSagaIntent.ChangeIdea -> {
+                    changeIdea()
+                }
+
                 is NewSagaIntent.LoadMore -> {
                     loadMore()
                 }
@@ -172,43 +190,97 @@ class NewSagaViewModel
         }
 
         /**
+         * One step back per call, so a stray tap never throws the whole flow away.
          * @return true when the screen should pop; false when back was handled internally.
          */
         fun onBackPressed(): Boolean {
             val state = _uiState.value
             if (state.isSaving) return false
 
-            if (state.phase == NewSagaScreenPhase.Creation) {
-                navigateBack()
-                return false
+            when {
+                state.isLoadingQuiz -> {
+                    quizJob?.cancel()
+                    updateState { copy(isLoadingQuiz = false) }
+                }
+
+                state.phase == NewSagaScreenPhase.Creation && state.lockedCharacter != null -> {
+                    unlockCharacter()
+                }
+
+                state.phase == NewSagaScreenPhase.Creation && state.lockedSaga != null -> {
+                    unlockSaga()
+                }
+
+                state.phase == NewSagaScreenPhase.Creation -> {
+                    promptJob?.cancel()
+                    updateState {
+                        copy(
+                            phase = NewSagaScreenPhase.Quiz,
+                            quizIndex = (quiz?.cards?.lastIndex ?: 0).coerceAtLeast(0),
+                            focusedIndex = 0,
+                            isGenerating = false,
+                            isLoadingMore = false,
+                            libraryBooks = emptyList(),
+                            lockedSaga = null,
+                            lockedCharacter = null,
+                            isReadyToSave = false,
+                            currentVisualConfig = null,
+                            statusMessage = null,
+                            error = null,
+                        )
+                    }
+                }
+
+                state.phase == NewSagaScreenPhase.Quiz -> {
+                    if (state.quizIndex > 0) {
+                        updateState { copy(quizIndex = quizIndex - 1) }
+                    } else {
+                        updateState {
+                            copy(
+                                phase = NewSagaScreenPhase.Suggestions,
+                                quiz = null,
+                                quizAnswers = emptyList(),
+                                quizIndex = 0,
+                                error = null,
+                            )
+                        }
+                        if (_uiState.value.universeEchoes.isEmpty()) requestInitialEchoes()
+                    }
+                }
+
+                else -> {
+                    return true
+                }
             }
-            return true
+            return false
+        }
+
+        /** From the stories, back to the idea screen: what was asked and proposed is dropped. */
+        private fun changeIdea() {
+            promptJob?.cancel()
+            updateState {
+                copy(
+                    phase = NewSagaScreenPhase.Suggestions,
+                    quiz = null,
+                    quizAnswers = emptyList(),
+                    quizIndex = 0,
+                    focusedIndex = 0,
+                    isGenerating = false,
+                    isLoadingMore = false,
+                    libraryBooks = emptyList(),
+                    lockedSaga = null,
+                    lockedCharacter = null,
+                    isReadyToSave = false,
+                    currentVisualConfig = null,
+                    statusMessage = null,
+                    error = null,
+                )
+            }
+            if (_uiState.value.universeEchoes.isEmpty()) requestInitialEchoes()
         }
 
         private fun navigateBack() {
-            val state = _uiState.value
-            if (state.isSaving) return
-
-            if (state.phase == NewSagaScreenPhase.Creation) {
-                promptJob?.cancel()
-                updateState {
-                    copy(
-                        phase = NewSagaScreenPhase.Suggestions,
-                        isGenerating = false,
-                        isLoadingMore = false,
-                        libraryBooks = emptyList(),
-                        lockedSaga = null,
-                        lockedCharacter = null,
-                        isReadyToSave = false,
-                        currentVisualConfig = null,
-                        statusMessage = null,
-                        error = null,
-                    )
-                }
-                if (_uiState.value.universeEchoes.isEmpty()) {
-                    requestInitialEchoes()
-                }
-            }
+            onBackPressed()
         }
 
         private fun selectSaga(draft: SagaDraft) {
@@ -259,12 +331,6 @@ class NewSagaViewModel
         }
 
         private fun selectEcho(intent: NewSagaIntent.SelectEcho) {
-            updateState {
-                copy(
-                    statusMessage = "Exploring the ${intent.echo.genre.name} universe...",
-                    universeEchoes = emptyList(),
-                )
-            }
             submitUserPrompt(intent.echo.pitch)
         }
 
@@ -276,6 +342,7 @@ class NewSagaViewModel
             val usedGenres = state.libraryBooks.map { it.first.draft.genre }
             collectLibraryStream(
                 prompt = lastUserPrompt,
+                userTraits = lastTraits,
                 excludedGenres = usedGenres,
                 append = true,
             )
@@ -350,14 +417,94 @@ class NewSagaViewModel
             }
         }
 
+        /** The player's idea: asks the quiz first, the stories only come after it is answered. */
         private fun submitUserPrompt(prompt: String) {
             if (prompt.isBlank()) return
-            lastUserPrompt = prompt
+            lastIdea = prompt
             cancelInitialEchoes()
+            quizJob?.cancel()
+            updateState {
+                copy(
+                    error = null,
+                    isLoadingQuiz = true,
+                    quiz = null,
+                    quizAnswers = emptyList(),
+                    quizIndex = 0,
+                    libraryBooks = emptyList(),
+                    lockedSaga = null,
+                    lockedCharacter = null,
+                    isReadyToSave = false,
+                    currentVisualConfig = null,
+                )
+            }
+            quizJob =
+                viewModelScope.launch {
+                    newSagaUseCase
+                        .generateQuiz(prompt)
+                        .onSuccessAsync { quiz ->
+                            updateState {
+                                copy(
+                                    isLoadingQuiz = false,
+                                    phase = NewSagaScreenPhase.Quiz,
+                                    quiz = quiz,
+                                    quizAnswers = List(quiz.cards.size) { null },
+                                    quizIndex = 0,
+                                )
+                            }
+                        }.onFailureAsync {
+                            updateState { copy(isLoadingQuiz = false, error = genericErrorMessage()) }
+                        }
+                }
+        }
+
+        private fun quizSelect(
+            cardIndex: Int,
+            optionIndex: Int,
+        ) {
+            updateState {
+                if (cardIndex !in quizAnswers.indices) {
+                    this
+                } else {
+                    copy(quizAnswers = quizAnswers.toMutableList().also { it[cardIndex] = optionIndex })
+                }
+            }
+        }
+
+        private fun quizPrevious() {
+            updateState { copy(quizIndex = (quizIndex - 1).coerceAtLeast(0)) }
+        }
+
+        private fun quizNext() {
+            val state = _uiState.value
+            val cards = state.quiz?.cards ?: return
+            if (state.currentQuizAnswer == null) return
+            if (state.quizIndex < cards.lastIndex) {
+                updateState { copy(quizIndex = quizIndex + 1) }
+            } else {
+                submitQuiz()
+            }
+        }
+
+        /**
+         * The stories are asked for with the idea alone as the prompt; what the picks indicated (the hidden
+         * readings) travels apart as userTraits, kept for "load more", so it shapes how the stories are
+         * built without ever being read as a theme.
+         */
+        private fun submitQuiz() {
+            val state = _uiState.value
+            val cards = state.quiz?.cards ?: return
+            val tastes =
+                cards.mapIndexedNotNull { index, card ->
+                    state.quizAnswers.getOrNull(index)?.let { card.options.getOrNull(it)?.insight }
+                }
+            // The idea stays the prompt, untouched; the taste travels apart so it can only tune.
+            lastUserPrompt = lastIdea
+            lastTraits = tastes.joinToString("\n") { "- $it" }.ifBlank { null }
             updateState {
                 copy(
                     phase = NewSagaScreenPhase.Creation,
                     error = null,
+                    focusedIndex = 0,
                     universeEchoes = emptyList(),
                     libraryBooks = emptyList(),
                     lockedSaga = null,
@@ -366,18 +513,19 @@ class NewSagaViewModel
                     currentVisualConfig = null,
                 )
             }
-            collectLibraryStream(prompt = prompt, append = false)
+            collectLibraryStream(prompt = lastIdea, userTraits = lastTraits, append = false)
         }
 
         private fun collectLibraryStream(
             prompt: String,
+            userTraits: String? = null,
             excludedGenres: List<Genre> = emptyList(),
             append: Boolean = false,
         ) {
             promptJob?.cancel()
             promptJob =
                 newSagaUseCase
-                    .executePrompt(prompt, excludedGenres)
+                    .executePrompt(prompt, excludedGenres, userTraits)
                     .onStart {
                         updateState {
                             copy(
@@ -429,7 +577,8 @@ class NewSagaViewModel
                     val config = visualConfigService.getVisualConfig(normalized.draft.genre)
                     if (config != null) normalized to config else null
                 }
-            val welcomeMessage = response.welcomeMessage.ifBlank { null }
+            // Gson leaves an omitted field null despite the type, and a null welcome used to crash here.
+            val welcomeMessage = (response.welcomeMessage as String?)?.ifBlank { null }
             updateState {
                 val mergedBooks =
                     if (append) {
@@ -478,7 +627,15 @@ class NewSagaViewModel
         private fun saveSaga() {
             val sagaDraft = _uiState.value.lockedSaga ?: return
             val characterInfo = _uiState.value.lockedCharacter ?: return
-            updateState { copy(isSaving = true, savingError = null) }
+            updateState {
+                copy(
+                    isSaving = true,
+                    savingError = null,
+                    saveStage = SaveStage.Contract,
+                    savedCharacter = null,
+                    savedSaga = null,
+                )
+            }
 
             newSagaUseCase
                 .sealSacredContract(
@@ -490,8 +647,23 @@ class NewSagaViewModel
                             updateState { copy(statusMessage = state.message) }
                         }
 
+                        is SagaCreationState.ContractReady -> {
+                            updateState { copy(saveStage = SaveStage.Character) }
+                        }
+
+                        is SagaCreationState.CharacterReady -> {
+                            updateState { copy(saveStage = SaveStage.Saga, savedCharacter = state.character) }
+                        }
+
                         is SagaCreationState.Success -> {
-                            updateState { copy(isSaving = false) }
+                            // Stays "saving" so the finished cards hold on screen until the chat opens.
+                            updateState {
+                                copy(
+                                    saveStage = SaveStage.Done,
+                                    savedSaga = state.saga,
+                                    savedCharacter = state.character,
+                                )
+                            }
                             viewModelScope.launch {
                                 delay(3000)
                                 resetAfterSave()
@@ -507,6 +679,7 @@ class NewSagaViewModel
                                         state.error.message
                                             ?: "Unknown error occurred while saving",
                                     isSaving = false,
+                                    saveStage = SaveStage.Contract,
                                 )
                             }
                         }
@@ -526,13 +699,14 @@ class NewSagaViewModel
                 )
             }
             lastUserPrompt = ""
+            lastTraits = null
             requestInitialEchoes()
         }
 
         private fun navigateToSaga(saga: Saga) {
             effect.value =
                 Effect.Navigate(
-                    key = ChatKey(saga.id.toString(), false),
+                    key = NarratorVoiceKey(saga.id.toString()),
                 )
         }
     }

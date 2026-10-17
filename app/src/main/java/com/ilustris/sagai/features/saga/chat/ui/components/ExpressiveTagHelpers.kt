@@ -42,14 +42,16 @@ fun insertExpressiveTag(
     tag: ExpressiveTag,
 ): TextFieldValue {
     val currentText = currentValue.text
-    val selection = currentValue.selection
+    // A selection dragged right to left has start > end, so read it as a range.
+    val selectionStart = currentValue.selection.min.coerceIn(0, currentText.length)
+    val selectionEnd = currentValue.selection.max.coerceIn(0, currentText.length)
 
-    return if (selection.start != selection.end) {
+    return if (selectionStart != selectionEnd) {
         // Text is selected - wrap it
-        val selectedText = currentText.substring(selection.start, selection.end)
+        val selectedText = currentText.substring(selectionStart, selectionEnd)
         val wrappedText = tag.wrapText(selectedText)
-        val newText = currentText.replaceRange(selection.start, selection.end, wrappedText)
-        val newCursorPosition = selection.start + wrappedText.length
+        val newText = currentText.replaceRange(selectionStart, selectionEnd, wrappedText)
+        val newCursorPosition = selectionStart + wrappedText.length
 
         TextFieldValue(
             text = newText,
@@ -58,7 +60,7 @@ fun insertExpressiveTag(
     } else {
         // No selection - insert opening tag only; closing is added on exit/send
         val opening = tag.openingTag()
-        val insertPosition = selection.start
+        val insertPosition = selectionStart
         val newText =
             currentText.substring(0, insertPosition) +
                 opening +
@@ -419,6 +421,8 @@ fun handleTagAwareBackspace(currentValue: TextFieldValue): TextFieldValue? {
 
     getCursorAfterClosingTag(text, cursorPosition)?.let { tag ->
         handleEmptyTagDeletion(text, cursorPosition, tag)?.let { return it }
+        // The closing markup is invisible, so backspace here removes the last visible character.
+        deleteLastContentCharacter(text, cursorPosition, tag)?.let { return it }
     }
 
     val tagInside = getCursorInsideTag(text, cursorPosition)
@@ -439,8 +443,9 @@ fun handleTagAwareBackspace(currentValue: TextFieldValue): TextFieldValue? {
             ) {
                 return deleteTagPair(text, openTagIndex, text.length, openTagIndex)
             }
+            // Backspace at the start of the content takes the tag off and keeps what was written.
             if (cursorPosition == contentStart) {
-                return currentValue
+                return stripTag(TextFieldValue(text, TextRange(cursorPosition)))
             }
             return null
         }
@@ -450,21 +455,16 @@ fun handleTagAwareBackspace(currentValue: TextFieldValue): TextFieldValue? {
             return deleteTagPair(text, openTagIndex, contentEnd + closeTag.length, openTagIndex)
         }
         if (cursorPosition == contentStart) {
-            return currentValue
-        }
-        if (cursorPosition in (contentStart + 1)..contentEnd) {
-            return null
+            return stripTag(TextFieldValue(text, TextRange(cursorPosition)))
         }
         return null
     }
 
-    if (cursorPosition > 0) {
-        val charBefore = text[cursorPosition - 1]
-        if (charBefore == '<' || charBefore == '>' || isInsidePartialTagMarkup(text, cursorPosition - 1)) {
-            return repairAtCursor(text, cursorPosition)?.let {
-                val newCursor = (cursorPosition - 1).coerceIn(0, it.length)
-                TextFieldValue(it, TextRange(newCursor))
-            }
+    // Only real tag markup is protected; a stray '<' or '>' the player typed is plain text.
+    if (cursorPosition > 0 && isInsidePartialTagMarkup(text, cursorPosition - 1)) {
+        return repairAtCursor(text, cursorPosition)?.let {
+            val newCursor = (cursorPosition - 1).coerceIn(0, it.length)
+            TextFieldValue(it, TextRange(newCursor))
         }
     }
 
@@ -496,22 +496,43 @@ fun handleTagAwareDelete(currentValue: TextFieldValue): TextFieldValue? {
         val closeIndexRelative = afterOpenTag.indexOf(closeTag)
         if (closeIndexRelative == -1) return null
 
-        val contentEnd = openTagIndex + openTag.length + closeIndexRelative
-        val closeTagStart = contentEnd
-        val closeTagEnd = closeTagStart + closeTag.length
+        val contentStart = openTagIndex + openTag.length
+        val contentEnd = contentStart + closeIndexRelative
+        val closeTagEnd = contentEnd + closeTag.length
 
-        if (cursorPosition in closeTagStart until closeTagEnd) {
-            return deleteTagPair(text, openTagIndex, closeTagEnd, openTagIndex)
+        // The closing markup is invisible, so delete here removes what is visibly next: the first
+        // character after the tag. An empty tag has nothing else to give, so it goes away whole.
+        if (cursorPosition in contentEnd until closeTagEnd) {
+            if (isTagContentEmpty(text, contentStart, contentEnd)) {
+                return deleteTagPair(text, openTagIndex, closeTagEnd, openTagIndex)
+            }
+            val next = text.getOrNull(closeTagEnd)
+            if (next == null || next == '<') return currentValue
+            return TextFieldValue(text.removeRange(closeTagEnd, closeTagEnd + 1), TextRange(cursorPosition))
         }
     }
 
-    if (text[cursorPosition] == '<' || text[cursorPosition] == '>' || isInsidePartialTagMarkup(text, cursorPosition)) {
+    if (isInsidePartialTagMarkup(text, cursorPosition)) {
         return repairAtCursor(text, cursorPosition)?.let {
             TextFieldValue(it, TextRange(cursorPosition.coerceAtMost(it.length)))
         }
     }
 
     return null
+}
+
+private fun deleteLastContentCharacter(
+    text: String,
+    cursorAfterClosingTag: Int,
+    tag: ExpressiveTag,
+): TextFieldValue? {
+    val closeTag = tag.closingTag()
+    val contentEnd = cursorAfterClosingTag - closeTag.length
+    val openIndex = text.substring(0, contentEnd).lastIndexOf(tag.openingTag())
+    if (openIndex == -1) return null
+    val contentStart = openIndex + tag.openingTag().length
+    if (contentEnd <= contentStart) return null
+    return TextFieldValue(text.removeRange(contentEnd - 1, contentEnd), TextRange(contentEnd - 1))
 }
 
 private fun deleteTagPair(
@@ -524,16 +545,18 @@ private fun deleteTagPair(
     return TextFieldValue(newText, TextRange(newCursor.coerceIn(0, newText.length)))
 }
 
+private val WHOLE_TAG_MARKUP_REGEX = Regex("</?(?:action|narrator|think)>")
+
+/** True when [index] falls inside a real tag marker such as `<action>` or `</think>`. */
 private fun isInsidePartialTagMarkup(
     text: String,
     index: Int,
 ): Boolean {
+    if (index !in text.indices) return false
     val start = text.lastIndexOf('<', index).takeIf { it >= 0 } ?: return false
     val end = text.indexOf('>', start)
     if (end == -1 || index > end) return false
-    val fragment = text.substring(start, end + 1)
-    return EXPRESSIVE_TAG_NAMES.any { name -> fragment.contains(name) } ||
-        fragment.contains("redacted_thinking")
+    return WHOLE_TAG_MARKUP_REGEX.matches(text.substring(start, end + 1))
 }
 
 private fun repairAtCursor(
@@ -673,14 +696,14 @@ fun processInputChange(
     }
 
     if (newValue.text.length == previousValue.text.length - 1) {
-        handleTagAwareBackspace(previousValue)?.let { handled ->
-            return if (getCleanTextLength(handled.text) <= maxContentLength) {
-                sanitizeExpressiveTagsOnChange(previousValue, handled)
-            } else {
-                null
+        // The cursor tells which key it was: backspace pulls it one back, delete leaves it put.
+        val handled =
+            when (newValue.selection.start) {
+                previousValue.selection.start - 1 -> handleTagAwareBackspace(previousValue)
+                previousValue.selection.start -> handleTagAwareDelete(previousValue)
+                else -> null
             }
-        }
-        handleTagAwareDelete(previousValue)?.let { handled ->
+        if (handled != null) {
             return if (getCleanTextLength(handled.text) <= maxContentLength) {
                 sanitizeExpressiveTagsOnChange(previousValue, handled)
             } else {

@@ -54,26 +54,14 @@ sealed class ChatUiAction {
         val messageContent: MessageContent,
     ) : ChatUiAction()
 
-    data object ToggleSelectionMode : ChatUiAction()
-
-    data class ToggleMessageSelection(
-        val messageId: Int,
-    ) : ChatUiAction()
-
     /** A message finished its reveal animation and should never replay it. */
     data class MarkMessageViewed(
         val messageId: Int,
     ) : ChatUiAction()
 
-    data object ClearSelection : ChatUiAction()
-
     /** A search the reader actually ran, kept per saga to offer back when the field reopens. */
     data class RecordSearchTerm(
         val term: String,
-    ) : ChatUiAction()
-
-    data class ShareConversation(
-        val show: Boolean,
     ) : ChatUiAction()
 
     data class DeleteMessage(
@@ -103,10 +91,6 @@ sealed class ChatUiAction {
     ) : ChatUiAction()
 
     data object RefreshSaga : ChatUiAction()
-
-    data class EnableBackup(
-        val uri: android.net.Uri?,
-    ) : ChatUiAction()
 
     data class RequestAudioTranscript(
         val show: Boolean,

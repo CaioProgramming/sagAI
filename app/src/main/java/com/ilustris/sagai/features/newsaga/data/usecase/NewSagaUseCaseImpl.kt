@@ -9,7 +9,9 @@ import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.google.gson.Gson
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.player.domain.PlayerProfileUseCase
 import com.ilustris.sagai.features.newsaga.data.model.LibraryPitchesResponse
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.service.SagaIdeationService
@@ -17,6 +19,8 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import com.ilustris.sagai.features.progression.domain.ProgressionConfigProvider
+import com.ilustris.sagai.features.progression.domain.withPlacement
 import javax.inject.Inject
 
 class NewSagaUseCaseImpl
@@ -27,13 +31,16 @@ class NewSagaUseCaseImpl
         private val sagaIdeationService: SagaIdeationService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val worldLocationUseCase: WorldLocationUseCase,
+        private val playerProfileUseCase: PlayerProfileUseCase,
+        private val progressionConfigProvider: ProgressionConfigProvider,
     ) : NewSagaUseCase {
         override fun executePrompt(
             prompt: String,
             excludedGenres: List<Genre>,
+            userTraits: String?,
         ): Flow<StreamingState<LibraryPitchesResponse?>> =
             flow {
-                val sourceFlow = sagaIdeationService.generateCosmicLibrary(prompt, excludedGenres)
+                val sourceFlow = sagaIdeationService.generateCosmicLibrary(prompt, excludedGenres, userTraits)
                 emitAll(
                     reasoningSynthesizerService.synthesizeReasoning(
                         sourceFlow = sourceFlow,
@@ -45,18 +52,33 @@ class NewSagaUseCaseImpl
 
         override suspend fun provideInitialEchoes() = sagaIdeationService.suggestUniverseEchoes()
 
+        /**
+         * The quiz gets a glance at who is playing: their profile as JSON, the same shape the profile
+         * updates use. A first-time player has none, and the quiz then probes the idea alone.
+         */
+        override suspend fun generateQuiz(idea: String) =
+            sagaIdeationService.generateCreationQuiz(
+                idea,
+                playerProfileUseCase
+                    .getProfile()
+                    ?.takeIf { it.topics.isNotEmpty() }
+                    ?.let { Gson().toJson(it) },
+            )
+
         override fun sealSacredContract(
             sagaDraft: SagaDraft,
             characterInfo: CharacterInfo,
         ): Flow<SagaCreationState> =
             flow {
                 try {
+                    val progression = progressionConfigProvider.activeConfig()
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             sourceFlow =
                                 sagaIdeationService.sealSacredContract(
                                     sagaDraft,
                                     characterInfo,
+                                    progression,
                                 ),
                             context = "Sealing the Sacred Contract for ${sagaDraft.title}",
                             genre = sagaDraft.genre,
@@ -68,7 +90,8 @@ class NewSagaUseCaseImpl
 
                                 is StreamingState.Success -> {
                                     val contract = streamingState.data!!
-                                    val savedSagaResult = saveSaga(contract.saga)
+                                    val savedSagaResult =
+                                        saveSaga(contract.saga.copy(progressionEnabled = progression != null))
                                     val savedSaga =
                                         savedSagaResult.getSuccess()
                                             ?: throw Exception("Failed to save saga")
@@ -85,10 +108,11 @@ class NewSagaUseCaseImpl
                                         }
 
                                     val characterToSave =
-                                        contract.character.copy(
-                                            sagaId = savedSaga.id,
-                                            image = emptyString(),
-                                        )
+                                        contract.character
+                                            .copy(
+                                                sagaId = savedSaga.id,
+                                                image = emptyString(),
+                                            ).withPlacement(progression, isProtagonist = true)
                                     val savedCharacter =
                                         characterUseCase.insertCharacter(characterToSave)
 
@@ -96,6 +120,7 @@ class NewSagaUseCaseImpl
                                         savedSaga.copy(mainCharacterId = savedCharacter.id)
                                     val updatedSaga =
                                         updateSaga(finalizedSaga).getSuccess() ?: finalizedSaga
+                                    emit(SagaCreationState.ContractReady)
 
                                     characterUseCase
                                         .generateCharacterImageStream(savedCharacter, updatedSaga)
@@ -106,6 +131,7 @@ class NewSagaUseCaseImpl
                                                 is StreamingState.Success -> {
                                                     val finalCharacter =
                                                         charIconState.data.data.first
+                                                    emit(SagaCreationState.CharacterReady(finalCharacter))
                                                     sagaRepository
                                                         .generateSagaIconStream(
                                                             updatedSaga,
@@ -136,6 +162,7 @@ class NewSagaUseCaseImpl
                                                 }
 
                                                 is StreamingState.Error -> {
+                                                    emit(SagaCreationState.CharacterReady(savedCharacter))
                                                     sagaRepository
                                                         .generateSagaIconStream(
                                                             updatedSaga,

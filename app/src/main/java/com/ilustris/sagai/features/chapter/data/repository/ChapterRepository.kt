@@ -19,4 +19,5 @@ interface ChapterRepository {
     suspend fun getChapterById(chapterId: Int): Chapter?
 
     suspend fun deleteAllChapters()
+
 }

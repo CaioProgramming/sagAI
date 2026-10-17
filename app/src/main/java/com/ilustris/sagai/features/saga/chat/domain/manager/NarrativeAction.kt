@@ -32,6 +32,10 @@ sealed class NarrativeAction {
         val act: ActContent,
     ) : NarrativeAction()
 
+    data class GenerateChoiceCards(
+        val chapter: ChapterContent,
+    ) : NarrativeAction()
+
     data class GenerateChapter(
         val chapter: ChapterContent,
     ) : NarrativeAction()
@@ -70,6 +74,7 @@ fun NarrativeAction.targetKey(): String =
         NarrativeAction.CreateAct -> "CreateAct"
         is NarrativeAction.GenerateActIntro -> "GenerateActIntro:${act.data.id}"
         is NarrativeAction.CreateChapter -> "CreateChapter:${act.data.id}"
+        is NarrativeAction.GenerateChoiceCards -> "GenerateChoiceCards:${chapter.data.id}"
         is NarrativeAction.GenerateChapter -> "GenerateChapter:${chapter.data.id}"
         is NarrativeAction.GenerateChapterIntro -> "GenerateChapterIntro:${chapter.data.id}"
         is NarrativeAction.CreateTimeline -> "CreateTimeline:${chapter.data.id}"

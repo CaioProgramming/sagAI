@@ -2,6 +2,11 @@
 
 package com.ilustris.sagai.features.saga.chat.ui
 
+import androidx.navigation3.runtime.NavKey
+import com.ilustris.sagai.features.live.ui.epilogueLiveSpeakerKey
+import com.ilustris.sagai.ui.navigation.EpilogueLiveKey
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import MessageStatus
 import android.graphics.Matrix
 import android.graphics.Shader
@@ -139,10 +144,13 @@ fun EpilogueChatView(
     sagaId: String,
     characterId: Int,
     onBack: () -> Unit = {},
+    onNavigate: (NavKey) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: EpilogueChatViewModel = hiltViewModel(),
 ) {
+    val liveEnabled by viewModel.liveEnabled.collectAsStateWithLifecycle()
+    val audioPlaybackState by viewModel.audioPlaybackState.collectAsStateWithLifecycle()
     val character by viewModel.character.collectAsStateWithLifecycle()
     val protagonist by viewModel.protagonist.collectAsStateWithLifecycle()
     val genre by viewModel.genre.collectAsStateWithLifecycle()
@@ -185,7 +193,13 @@ fun EpilogueChatView(
                     isLoading = isReplying,
                     onBackClick = onBack,
                     modifier = Modifier.fillMaxWidth(),
-                    actionContent = { EpilogueInfoAction() },
+                    actionContent = {
+                        EpilogueRestartAction(
+                            characterName = character?.data?.name.orEmpty(),
+                            enabled = !isReplying && messages.isNotEmpty(),
+                            onRestart = viewModel::restartConversation,
+                        )
+                    },
                 )
 
                 val listState = rememberLazyListState()
@@ -217,12 +231,17 @@ fun EpilogueChatView(
                             genre = resolvedGenre,
                             flatEvents = emptyList(),
                             canAnimate = true,
+                            audioPlaybackState = audioPlaybackState,
                             // This is a closed 1:1 conversation — the only character whose avatar
                             // can ever appear here is the one we're already talking to, so tapping
                             // it just closes back to the CharacterDetailsView the player came from
                             // instead of pushing a duplicate of the same detail screen on top.
                             onAction = { action ->
-                                if (action is MessageAction.ClickCharacter) onBack()
+                                when (action) {
+                                    is MessageAction.ClickCharacter -> onBack()
+                                    is MessageAction.PlayAudio -> viewModel.playOrPauseAudio(epilogueMessage)
+                                    else -> Unit
+                                }
                             },
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
@@ -278,11 +297,24 @@ fun EpilogueChatView(
                     }
                 }
 
+                val sagaIdInt = sagaId.toIntOrNull() ?: 0
                 EpilogueChatInput(
                     protagonist = protagonist?.data,
                     genre = resolvedGenre,
                     isReplying = isReplying,
                     onSend = { viewModel.sendMessage(it) },
+                    onOpenLive =
+                        {
+                            viewModel.stopAudio()
+                            onNavigate(EpilogueLiveKey(sagaIdInt, characterId))
+                        }.takeIf { liveEnabled },
+                    avatarModifier =
+                        with(sharedTransitionScope) {
+                            Modifier.sharedElement(
+                                rememberSharedContentState(epilogueLiveSpeakerKey(sagaIdInt, characterId)),
+                                animatedVisibilityScope,
+                            )
+                        },
                 )
             }
         }
@@ -290,30 +322,38 @@ fun EpilogueChatView(
 }
 
 /**
- * Placeholder icon ([R.drawable.ic_spark]) until a dedicated one is designed — opens a tooltip
- * explaining the conversation is temporary, replacing the old persistent disclaimer banner.
+ * Starts the conversation over, after a confirmation: the turns go, but the character still
+ * remembers the player (their knowledge is kept) and greets them again.
  */
 @Composable
-private fun EpilogueInfoAction() {
-    val tooltipState = rememberTooltipState(isPersistent = true)
-    val coroutineScope = rememberCoroutineScope()
-
-    TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-        state = tooltipState,
-        tooltip = {
-            PlainTooltip {
-                Text(stringResource(R.string.epilogue_chat_disclaimer))
-            }
-        },
-    ) {
-        IconButton(onClick = { coroutineScope.launch { tooltipState.show() } }, modifier = Modifier.size(32.dp).padding(2.dp)) {
-            Icon(
-                painterResource(R.drawable.ic_temp),
-                contentDescription = stringResource(R.string.epilogue_chat_disclaimer),
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+private fun EpilogueRestartAction(
+    characterName: String,
+    enabled: Boolean,
+    onRestart: () -> Unit,
+) {
+    var confirming by remember { mutableStateOf(false) }
+    IconButton(onClick = { confirming = true }, enabled = enabled, modifier = Modifier.size(32.dp).padding(2.dp)) {
+        Icon(
+            painterResource(R.drawable.baseline_refresh_24),
+            contentDescription = stringResource(R.string.epilogue_restart),
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text(stringResource(R.string.epilogue_restart_title)) },
+            text = { Text(stringResource(R.string.epilogue_restart_message, characterName)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirming = false
+                    onRestart()
+                }) { Text(stringResource(R.string.epilogue_restart)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
     }
 }
 
@@ -351,6 +391,9 @@ private fun EpilogueChatInput(
     genre: Genre,
     isReplying: Boolean,
     onSend: (String) -> Unit,
+    /** Null when live mode is off: the button then only ever sends. */
+    onOpenLive: (() -> Unit)? = null,
+    avatarModifier: Modifier = Modifier,
 ) {
     var inputField by remember { mutableStateOf(TextFieldValue("")) }
     var speechModeSheet by remember { mutableStateOf(false) }
@@ -565,7 +608,7 @@ private fun EpilogueChatInput(
                         grainRadius = 0f,
                         pixelation = 0f,
                         useFallback = false,
-                        modifier = Modifier.size(32.dp).clip(CircleShape),
+                        modifier = avatarModifier.size(32.dp).clip(CircleShape),
                         borderSize = 1.dp,
                         innerPadding = 0.dp,
                     )
@@ -623,11 +666,13 @@ private fun EpilogueChatInput(
 
                 Spacer(Modifier.weight(1f))
 
+                // Nothing typed and nothing on its way: the button opens live mode instead.
+                val showsLive = onOpenLive != null && inputField.text.isBlank() && !isReplying
                 val canSend = inputField.text.isNotBlank() && !isReplying
                 Box(contentAlignment = Alignment.Center) {
                     IconButton(
-                        onClick = { sendMessage() },
-                        enabled = canSend,
+                        onClick = { if (showsLive) onOpenLive?.invoke() else sendMessage() },
+                        enabled = canSend || showsLive,
                         colors =
                             IconButtonDefaults.filledIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
@@ -641,8 +686,9 @@ private fun EpilogueChatInput(
                                 .size(32.dp),
                     ) {
                         Icon(
-                            painterResource(R.drawable.ic_send),
-                            contentDescription = stringResource(R.string.send_button_description),
+                            painterResource(if (showsLive) R.drawable.ic_mic else R.drawable.ic_send),
+                            contentDescription =
+                                stringResource(if (showsLive) R.string.live_open else R.string.send_button_description),
                             modifier =
                                 Modifier
                                     .padding(8.dp)
@@ -695,7 +741,8 @@ private fun EpilogueMessage.toMessageContent(
 ) = MessageContent(
     message =
         Message(
-            id = 0,
+            // The epilogue row's own id: the audio player tells bubbles apart by it.
+            id = id,
             text = text,
             timestamp = timestamp,
             senderType = if (isUser) SenderType.USER else SenderType.CHARACTER,
@@ -705,6 +752,11 @@ private fun EpilogueMessage.toMessageContent(
             timelineId = 0,
             status = MessageStatus.OK,
             viewed = true,
+            emotionalTone = emotionalTone,
+            inputMode = inputMode,
+            // The player shows whenever the file exists; never "audible" on its own, since that
+            // flag makes a bubble offer Regenerate audio, which the epilogue doesn't do.
+            audioPath = audioPath,
         ),
     character = if (isUser) null else character,
     reactions = emptyList(),

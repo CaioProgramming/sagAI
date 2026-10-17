@@ -43,4 +43,5 @@ interface ChapterDao {
 
     @Query("SELECT * FROM Chapter WHERE id = :chapterId")
     suspend fun getChapterById(chapterId: Int): Chapter?
+
 }

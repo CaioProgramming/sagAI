@@ -1,0 +1,137 @@
+
+uniform shader uMask;
+uniform shader uS;
+uniform float uTime;
+uniform float uIntensity;
+uniform float uHeight;
+uniform float uTextY;
+uniform float uTextH;
+uniform float2 uRes;
+uniform float3 uC1;
+uniform float3 uC2;
+uniform float3 uC3;
+uniform float3 uC4;
+uniform float3 uHalo;
+uniform float3 uText;
+uniform float3 uOpt;
+uniform float uEvtA;
+uniform float uEvtB;
+uniform float uSeedB;
+uniform float uSeedA;
+uniform float uEntry;
+uniform float uEntryDur;
+uniform float2 uTx;
+uniform float4 uBox;
+uniform float4 uFw;
+uniform float4 uTrail[8];
+uniform float2 uTrailV[8];
+uniform float4 uPtr;
+uniform float4 uCut;
+// recent finger positions with a fading strength; returns (influence, weighted velocity x, y)
+float3 trailField(float2 uv, float asp, float rad){
+  float3 acc = float3(0.);
+  for (int i = 0; i < 8; i++){
+    float2 d = (uv - uTrail[i].xy) * float2(asp, 1.);
+    float g = exp(-dot(d, d) / (rad * rad)) * uTrail[i].z;
+    acc.x += g; acc.yz += uTrailV[i] * g;
+  }
+  return acc;
+}
+uniform float2 uBoxCfg;
+// Simulates the bounds a Compose layout gives the title: nothing may show outside the box.
+// With the soft edge on, every effect fades to the background over the margin instead of being cut.
+float boxMask(float2 uv){
+  if (uBoxCfg.x < .5) return 1.;
+  float2 px = uv * uRes, lo = uBox.xy * uRes, hi = uBox.zw * uRes;
+  float soft = uBoxCfg.y;
+  float fx = max(soft > .5 ? uFw.x : 1., 1.), ft = max(soft > .5 ? uFw.y : 1., 1.), fb = max(soft > .5 ? uFw.z : 1., 1.);
+  float m = smoothstep(lo.x, lo.x + fx, px.x) * (1. - smoothstep(hi.x - fx, hi.x, px.x));
+  return m * smoothstep(lo.y, lo.y + fb, px.y) * (1. - smoothstep(hi.y - ft, hi.y, px.y));
+}
+float3 boxed(float3 c, float2 uv){
+  if (uBoxCfg.x < .5) return c;
+  float2 px = uv * uRes, lo = uBox.xy * uRes, hi = uBox.zw * uRes;
+  float soft = uBoxCfg.y;
+  float fx = max(soft > .5 ? uFw.x : 1., 1.), ft = max(soft > .5 ? uFw.y : 1., 1.), fb = max(soft > .5 ? uFw.z : 1., 1.);
+  float m = smoothstep(lo.x, lo.x + fx, px.x) * (1. - smoothstep(hi.x - fx, hi.x, px.x));
+  m *= smoothstep(lo.y, lo.y + fb, px.y) * (1. - smoothstep(hi.y - ft, hi.y, px.y));
+  float3 o = mix(float3(0.), c, m);
+  float2 d = min(px - lo, hi - px);
+  float e = min(d.x, d.y);
+  o = mix(o, float3(.35, .75, 1.), (1. - smoothstep(0., 1.6, abs(e))) * .7 * step(-1.6, e) * step(.5, uFw.w));
+  return o;
+}
+float hash(float2 p){ p = fract(p * float2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float noise(float2 p){ float2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+  float a = hash(i), b = hash(i + float2(1., 0.)), c = hash(i + float2(0., 1.)), d = hash(i + float2(1., 1.));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y); }
+float fbm(float2 p){ float v = 0., a = .5; for (int i = 0; i < 4; i++){ v += a * noise(p); p = p * 2.03 + float2(7.1, 3.7); a *= .5; } return v; }
+
+// Child shaders are sampled in pixel space; the lab sampled normalised uv with y up.
+half4 sM(float2 p) { return uMask.eval(float2(p.x * uRes.x, (1.0 - p.y) * uRes.y)); }
+half4 sS(float2 p) { return uS.eval(float2(p.x * uRes.x, (1.0 - p.y) * uRes.y)); }
+// Emissive output: the effect is light on a transparent layer. A pixel is as opaque as it is bright,
+// or as covered by the letters, so nothing paints a backdrop and gradientFill/shimmer find no box.
+half4 finish(float3 c, float cov) {
+    c = clamp(c, 0.0, 1.0);
+    float a = clamp(max(max(c.r, max(c.g, c.b)), cov), 0.0, 1.0);
+    return half4(half3(c), half(a));
+}
+
+half4 main(float2 fragCoord){
+  float2 uv = float2(fragCoord.x / uRes.x, 1.0 - fragCoord.y / uRes.y);
+  float asp = uRes.x / uRes.y; float t = uTime;
+  float age = uEvtA;
+  float top = uTextY + uTextH * .5;
+  float heat = 1.25 * exp(-age / 3.4) + .10;
+  float pressK = exp(-age * 14.);
+  float2 ctr = float2(.5, uTextY);
+  float sc = uHeight / .85;
+  float above = smoothstep(0., .3, uv.y - top);
+  float nx = fbm(float2(uv.x * asp * 3., uv.y * 2. - t * .3)) - .5;
+  // the iron lands: a quick press, then a faint shimmer rising off the hot letters
+  float2 pu = ctr + (uv - ctr) / (1. + .045 * pressK);
+  float2 mu = pu + float2(nx * .006 * heat * above + sin(uv.y * 90. - t * 3.) * .0012 * heat * above, 0.);
+  float m0 = sM( mu).r;
+  float4 S0 = sS( uv);
+  float3 tf = trailField(uv, asp, .15);
+
+  // no surface and no ambient light: only the mark itself, a tight bloom hugging the letters, and the smoke
+  float3 outc = float3(0.) + uC3 * S0.b * heat * .22 * uIntensity + float3(1., .9, .7) * S0.b * exp(-age * 7.) * .5;
+
+  // the mark: thick strokes hold heat longest, a crust forms in patches as it cools
+  float crust = smoothstep(.45, .75, fbm(float2(uv.x * asp * 11., uv.y * 13.) + 3.));
+  float hp = heat * (.72 + .5 * S0.b) + (fbm(float2(uv.x * asp * 5., uv.y * 6.)) - .5) * .3 * heat;
+  hp *= 1. - crust * .55 * (1. - smoothstep(.15, 1.2, heat));
+  hp += tf.x * 1.0;
+  hp = max(hp, 0.) * uIntensity;
+  float3 col = mix(float3(.05, .03, .025), uC1, smoothstep(.05, .28, hp));
+  col = mix(col, uC2, smoothstep(.22, .55, hp));
+  col = mix(col, uC3, smoothstep(.5, .95, hp));
+  col = mix(col, uC4, smoothstep(.95, 1.4, hp));
+  col += uC4 * S0.b * m0 * exp(-age * 6.) * .5;
+  outc = mix(outc, col, m0);
+
+  // a few thin wisps leaving the letters, plus soft puffs around them, fading as the mark cools
+  float2 su = float2(uv.x, uTextY + max(uv.y - uTextY, 0.) / sc + min(uv.y - uTextY, 0.));
+  float4 Sw = sS( su);
+  float wx = uv.x * asp * 15.;
+  float cell = floor(wx);
+  float live = max(step(.5, hash(float2(cell, 3.7))), step(.15, tf.x));
+  float ph = hash(float2(cell, 1.9)) * 6.28;
+  float d = (uv.y - top) / (uTextH * 1.6 * sc);
+  float sway = sin(d * 7. + t * 1.6 + ph) * .28 + (noise(float2(cell * 1.3, d * 3. - t * .5)) - .5) * .5;
+  float xl = fract(wx) - .5 - sway * smoothstep(0., .3, d) - tf.y * .9;
+  float thin = exp(-pow(xl / (.10 + .10 * d), 2.));
+  float prof = smoothstep(-.02, .06, d) * (1. - smoothstep(.15, 1., d));
+  float flow = .35 + .65 * noise(float2(cell * 2.1, d * 4. - t * .9));
+  float smokeAmt = (.2 + .8 * exp(-age / 2.8)) * uOpt.x * (1. + tf.x * 2.2);
+  float wa = thin * live * prof * flow * smoothstep(.08, .4, Sw.r) * smokeAmt * .85;
+  float pn = fbm(float2(uv.x * asp * 6. - tf.y * 1.2, uv.y * 5. - t * .8 - tf.z * 1.2));
+  float puff = smoothstep(.55, .8, pn) * clamp(Sw.g * 1.2 + tf.x * 1.2, 0., 1.) * (1. - m0) * smokeAmt * .4;
+  outc = mix(outc, float3(.62, .56, .52), max(wa, puff));
+
+  outc += (hash(uv * uRes + fract(t) * 91.7) - .5) * (.05) * smoothstep(0., .06, max(outc.r, max(outc.g, outc.b)));
+  float fxCov = (m0) * boxMask(uv);
+  return finish(boxed(outc, uv), fxCov);
+}

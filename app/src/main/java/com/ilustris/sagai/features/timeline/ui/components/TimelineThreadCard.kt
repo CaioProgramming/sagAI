@@ -1,5 +1,8 @@
 package com.ilustris.sagai.features.timeline.ui.components
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaInfo
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
@@ -33,6 +37,9 @@ import com.ilustris.sagai.ui.theme.filters.effectForGenre
 fun TimelineThreadCard(
     sagaInfo: SagaInfo,
     eventCard: TimelineCardContent,
+    eventXp: Map<Int, com.ilustris.sagai.features.progression.domain.EventXp> = emptyMap(),
+    /** The event an announcement pointed at, softly lit so it is easy to find. */
+    highlighted: Boolean = false,
     onAction: (DetailAction) -> Unit = {},
 ) {
     val genre = sagaInfo.genre
@@ -43,6 +50,7 @@ fun TimelineThreadCard(
         modifier =
             Modifier
                 .fillMaxWidth()
+                .background(if (highlighted) MaterialTheme.colorScheme.primary.copy(alpha = .1f) else Color.Transparent)
                 .padding(vertical = 8.dp),
     ) {
         // Root Post
@@ -97,9 +105,10 @@ fun TimelineThreadCard(
                 Text(
                     text = event.data.content,
                     style =
-                        MaterialTheme.typography.bodyMedium.copy(
+                        MaterialTheme.typography.bodyLarge.copy(
                             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             color = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 26.sp,
                         ),
                 )
 
@@ -132,6 +141,7 @@ fun TimelineThreadCard(
                 title = detail.character.name,
                 content = detail.event.summary,
                 genre = genre,
+                xp = eventXp[detail.character.id],
                 modifier = Modifier.padding(start = 60.dp),
             )
         }
@@ -226,14 +236,20 @@ fun TimelineReplyItem(
     content: String,
     genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
     modifier: Modifier = Modifier,
+    /** What this event paid the character; a tap opens what changed and what it cost. */
+    xp: com.ilustris.sagai.features.progression.domain.EventXp? = null,
     onClick: () -> Unit = {},
 ) {
+    var showWhy by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp)
-                .clickable { onClick() },
+                .clickable {
+                    if (xp != null) showWhy = !showWhy
+                    onClick()
+                },
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Line continuation
@@ -279,12 +295,42 @@ fun TimelineReplyItem(
             Text(
                 text = content,
                 style =
-                    MaterialTheme.typography.bodySmall.copy(
+                    MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                        lineHeight = 22.sp,
                     ),
                 modifier = Modifier.padding(top = 2.dp),
             )
+
+            xp?.let {
+                Row(
+                    modifier = Modifier.padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    com.ilustris.sagai.features.progression.ui.TierStar(it.feats.maxOfOrNull { f -> f.tier } ?: 0, size = 14.dp)
+                    Text(
+                        stringResource(R.string.character_card_xp_chip, it.xp),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    if (it.leveledUp) {
+                        Text(
+                            stringResource(R.string.progression_level_up_pill, it.levelAfter),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+                if (showWhy) {
+                    it.feats.forEach { feat ->
+                        Text(feat.title, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), modifier = Modifier.padding(top = 4.dp))
+                        if (feat.changed.isNotBlank()) Text(feat.changed, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f))
+                        feat.cost?.takeIf { c -> c.isNotBlank() }?.let { c -> Text(c, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f)) }
+                    }
+                }
+            }
         }
     }
 }

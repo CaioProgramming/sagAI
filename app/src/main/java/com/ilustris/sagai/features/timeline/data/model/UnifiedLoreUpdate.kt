@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.timeline.data.model
 
+import com.ilustris.sagai.features.characters.data.model.CharacterStatus
 import com.ilustris.sagai.core.ai.model.GeneratedTimeline
 import com.ilustris.sagai.features.wiki.data.model.WikiType
 
@@ -25,6 +26,10 @@ data class CharacterUpdates(
     val relationships: List<GeneratedRelationshipUpdate>?,
     val knowledgeUpdate: List<String>?,
     val nickNames: List<String>?,
+    /** Only when this stretch of story changed the character's situation; see CharacterStatus. */
+    val status: CharacterStatus? = null,
+    val statusNote: String? = null,
+    val statusReason: String? = null,
 )
 
 data class GeneratedCharacterEvent(

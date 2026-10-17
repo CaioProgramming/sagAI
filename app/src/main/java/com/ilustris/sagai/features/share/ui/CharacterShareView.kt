@@ -1,48 +1,31 @@
 package com.ilustris.sagai.features.share.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
+import android.graphics.Bitmap
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.graphics.rememberGraphicsLayer
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
-import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.theme.hexToColor
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.seconds
+import com.ilustris.sagai.features.share.ui.card.BakedGenreImage
+import com.ilustris.sagai.features.share.ui.card.CollectorCard
+import com.ilustris.sagai.features.share.ui.card.CollectorShareFrame
+import com.ilustris.sagai.features.share.ui.card.drift
 
+/** The character share: a tilting, holographic collector card of the character. */
 @Composable
 fun CharacterShareView(
     content: Saga,
@@ -50,95 +33,72 @@ fun CharacterShareView(
     viewModel: SharePlayViewModel = hiltViewModel(),
 ) {
     val genre = remember(content) { content.genre }
-    val resolvedColor = MaterialTheme.colorScheme.primary
-    MaterialTheme.colorScheme.secondary
-    val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val shareText by viewModel.shareText.collectAsStateWithLifecycle()
-    val savedPath by viewModel.savedFilePath.collectAsStateWithLifecycle()
-    val coroutineScope = rememberCoroutineScope()
-    val graphicsLayer = rememberGraphicsLayer()
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    remember { character.data.hexColor.hexToColor() ?: resolvedColor }
+    val originalImage by viewModel.originalBitmap.collectAsStateWithLifecycle()
+    val segmentedImage by viewModel.segmentedBitmap.collectAsStateWithLifecycle()
 
-    DisposableEffect(lifecycleOwner, viewModel) {
-        lifecycleOwner.lifecycle.addObserver(viewModel)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(viewModel)
-        }
-    }
-
-    LaunchedEffect(character) {
+    LaunchedEffect(character.data.image) {
         viewModel.segmentImage(character.data.image)
     }
 
-    Box(
-        contentAlignment = Alignment.Center,
-    ) {
-        AnimatedVisibility(isLoading.not(), enter = fadeIn() + scaleIn(), exit = fadeOut()) {
-            Column(
-                Modifier
-                    .padding(20.dp)
-                    .drawWithContent {
-                        graphicsLayer.record {
-                            this@drawWithContent.drawContent()
-                        }
-                        drawLayer(graphicsLayer)
-                    }
-                    .shadow(10.dp, RectangleShape, spotColor = resolvedColor)
-                    .clip(RectangleShape)
-                    .background(resolvedColor, RectangleShape)
-                    .clickable {
-                        coroutineScope.launch {
-                            delay(1.seconds)
-                            viewModel.startSaving()
-                            graphicsLayer
-                                .toImageBitmap()
-                                .asAndroidBitmap()
-                                .let { bitmap ->
-                                    viewModel.saveBitmap(bitmap, ShareType.CHARACTER.name)
-                                }
-                        }
-                    },
-            ) {
-                CharacterCard(
-                    character = character,
-                    saga = content,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(.5f),
-                    shareText = shareText,
-                    showWatermark = true,
-                )
-            }
-        }
-
-        StarryLoader(isLoading, brushColors = genre.colorPalette())
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.generateShareText(saga = content, ShareType.CHARACTER, character)
-    }
-
-    LaunchedEffect(isLoading) {
-        if (isLoading.not() && isSaving.not()) {
-            coroutineScope.launch {
-                delay(2.seconds)
-                graphicsLayer
-                    .toImageBitmap()
-                    .asAndroidBitmap()
-                    .let { bitmap ->
-                        viewModel.saveBitmap(bitmap, "character_share")
-                    }
-            }
+    CollectorShareFrame(genre, ShareType.CHARACTER.name, viewModel) { tilt, captureLayer, shareText ->
+        CollectorCard(
+            genre = genre,
+            title = "${character.data.name} ${character.data.lastName.orEmpty()}".trim(),
+            // The generated epithet when there is one: the occupation field can be a whole sentence.
+            subtitle = shareText?.title?.takeIf { it.isNotBlank() } ?: character.data.profile.occupation,
+            number = "#${character.data.id}",
+            body = shareText?.text,
+            tilt = tilt,
+            captureLayer = captureLayer,
+            modifier = Modifier.fillMaxWidth(),
+        ) { cardTilt, scale ->
+            CharacterArt(
+                imageUrl = character.data.image,
+                original = originalImage,
+                segmented = segmentedImage,
+                genre = genre,
+                tilt = cardTilt,
+                scale = scale,
+            )
         }
     }
+}
 
-    LaunchedEffect(savedPath) {
-        savedPath?.let {
-            launchShareActivity(it, context = context)
-        }
+/**
+ * The art behind the card: the character cut out over their own backdrop when segmentation is done,
+ * the plain portrait until then. The two layers drift in opposite directions as the card tilts. The
+ * genre filter is baked once, not run per frame.
+ */
+@Composable
+private fun BoxScope.CharacterArt(
+    imageUrl: String,
+    original: Bitmap?,
+    segmented: Bitmap?,
+    genre: Genre,
+    tilt: () -> Offset,
+    scale: Float,
+) {
+    if (original != null && segmented != null) {
+        BakedGenreImage(
+            bitmap = original,
+            genre = genre,
+            modifier = Modifier.fillMaxSize().drift(tilt, -6f, 1.1f, scale),
+            // The backdrop still contains the character. Blurred, the offset copy reads as depth of
+            // field behind the sharp cut-out instead of as a second, doubled figure.
+            blur = 10.dp,
+        )
+        BakedGenreImage(
+            bitmap = segmented,
+            genre = genre,
+            modifier = Modifier.fillMaxSize().drift(tilt, 4f, 1.05f, scale),
+        )
+    } else {
+        // Plain until the cut-out is ready: the genre filter is applied once, to the finished pair.
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().drift(tilt, -5f, 1.1f, scale),
+        )
     }
 }

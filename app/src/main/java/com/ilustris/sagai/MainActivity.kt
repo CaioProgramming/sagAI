@@ -83,6 +83,7 @@ import com.ilustris.sagai.features.act.BookGenerationService
 import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
+import com.ilustris.sagai.features.live.data.LiveSessionTracker
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
@@ -96,6 +97,9 @@ import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.components.BlurTarget
 import com.ilustris.sagai.ui.components.FeatureNeedsBillingSheet
 import com.ilustris.sagai.ui.components.SagaSnackBar
+import com.ilustris.sagai.core.database.backup.SagasArchive
+import com.ilustris.sagai.core.database.backup.SagasArchiveService
+import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.ui.components.globalshell.GlobalShellHost
 import com.ilustris.sagai.ui.components.island.BookGenerationIslandContent
 import com.ilustris.sagai.ui.components.island.ChatGenerationIslandContent
@@ -108,6 +112,8 @@ import com.ilustris.sagai.ui.components.island.IslandContent
 import com.ilustris.sagai.ui.components.island.IslandInsets
 import com.ilustris.sagai.ui.components.island.LocalIslandInsets
 import com.ilustris.sagai.ui.components.island.NotificationIslandContent
+import com.ilustris.sagai.ui.components.island.ProgressionIslandContent
+import com.ilustris.sagai.core.globalshell.ProgressionEffect
 import com.ilustris.sagai.ui.components.island.islandPadding
 import com.ilustris.sagai.ui.navigation.ApiSettingsKey
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
@@ -133,6 +139,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -183,10 +190,16 @@ class MainActivity : ComponentActivity() {
     lateinit var chatGenerationService: ChatGenerationService
 
     @Inject
+    lateinit var liveSessionTracker: LiveSessionTracker
+
+    @Inject
     lateinit var debugImageFallbackService: DebugImageFallbackService
 
     @Inject
     lateinit var sagaThemeManager: SagaThemeManager
+
+    @Inject
+    lateinit var archiveService: SagasArchiveService
 
     @Inject
     lateinit var sagaNavigationTracker: SagaNavigationTracker
@@ -289,9 +302,15 @@ class MainActivity : ComponentActivity() {
             // can see both without one.
             LaunchedEffect(Unit) {
                 sagaContentManager.milestoneChainReady.collect { sagaId ->
-                    if (!sagaNavigationTracker.isOnChatForSaga(sagaId)) return@collect
+                    if (!sagaNavigationTracker.isInConversation(sagaId)) return@collect
                     chatGenerationService.activeGenerations.first { it[sagaId] == null }
-                    if (sagaNavigationTracker.isOnChatForSaga(sagaId)) {
+                    // In live mode the reply that hit the limit is usually still being voiced or
+                    // played: let the character finish the line first (bounded, so a stuck TTS
+                    // can't hold the milestone forever).
+                    withTimeoutOrNull(LIVE_TURN_MILESTONE_WAIT_MS) {
+                        liveSessionTracker.turnsInFlight.first { sagaId !in it }
+                    }
+                    if (sagaNavigationTracker.isInConversation(sagaId)) {
                         navigator.navigate(MilestoneKey(sagaId))
                     }
                 }
@@ -301,6 +320,24 @@ class MainActivity : ComponentActivity() {
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
                 val globalShellState by globalShellService.uiState.collectAsState()
+
+                val archiveExportLauncher =
+                    PermissionService.rememberArchiveExportLauncher { uri ->
+                        uri ?: return@rememberArchiveExportLauncher
+                        sagaThemeManager.showSnackBar(getString(R.string.backup_loading_creating), durationMs = 0)
+                        archiveService.exportInBackground(uri) { result ->
+                            sagaThemeManager.showSnackBar(
+                                getString(
+                                    if (result.isSuccess) R.string.archive_export_success else R.string.archive_export_failed,
+                                ),
+                            )
+                        }
+                    }
+                LaunchedEffect(Unit) {
+                    archiveService.exportRequests.collect {
+                        archiveExportLauncher.launch(SagasArchive.suggestedFileName())
+                    }
+                }
 
                 LaunchedEffect(Unit) {
                     sideEffectService.sideEffects.collect { effect ->
@@ -426,7 +463,7 @@ class MainActivity : ComponentActivity() {
                     (bookGenState as? BookGenerationUiState.Generating)
                         ?.takeUnless { sagaNavigationTracker.isOnChronicle(it.sagaId) }
                 val visibleChatGen =
-                    chatGenState.values.firstOrNull { !sagaNavigationTracker.isOnChatForSaga(it.sagaId) }
+                    chatGenState.values.firstOrNull { !sagaNavigationTracker.isInConversation(it.sagaId) }
                 // Real notifications only — the generation "work effects" arbitrate priority in
                 // GlobalShellService but render as their own islands (above), never here.
                 val notificationEffect =
@@ -454,6 +491,15 @@ class MainActivity : ComponentActivity() {
 
                         visibleChatGen != null -> {
                             ChatGenerationIslandContent(visibleChatGen)
+                        }
+
+                        notificationEffect is ProgressionEffect -> {
+                            ProgressionIslandContent(
+                                effect = notificationEffect,
+                                context = this@MainActivity,
+                                onNavigate = { deepLink -> navigateDeepLink(deepLink) },
+                                onDismiss = { globalShellService.dismiss() },
+                            )
                         }
 
                         notificationEffect != null -> {
@@ -864,3 +910,6 @@ class MainActivity : ComponentActivity() {
             }
     }
 }
+
+/** How long the milestone waits for a live turn's reply to finish playing before opening anyway. */
+private const val LIVE_TURN_MILESTONE_WAIT_MS = 60_000L

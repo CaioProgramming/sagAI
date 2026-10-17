@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.core.ai.model.AudioAttachment
 import com.ilustris.sagai.core.ai.model.GeminiUsageMetadata
 import com.ilustris.sagai.core.ai.model.ImageReference
 
@@ -35,6 +36,8 @@ data class GeminiSyncGenerationParams(
     val promptForFailureLog: String,
     val includeSystemInFullPrompt: Boolean = true,
     val onGuardrailBlock: (suspend (GuardrailsException) -> Unit)? = null,
+    /** Inline audio (a voice turn). Dropped for models that can't take audio input. */
+    val audio: AudioAttachment? = null,
 )
 
 data class GeminiStreamingGenerationParams(

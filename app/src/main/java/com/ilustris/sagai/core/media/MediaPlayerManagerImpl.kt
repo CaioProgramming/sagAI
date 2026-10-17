@@ -190,6 +190,16 @@ class MediaPlayerManagerImpl
 
         private var pendingVolume: Float = 1f
 
+        override val volume: Float get() = pendingVolume
+
+        override fun positionMs(): Long? =
+            try {
+                mediaPlayer?.currentPosition?.toLong()
+            } catch (e: IllegalStateException) {
+                // Released between the null check and the read.
+                null
+            }
+
         override fun setVolume(volume: Float) {
             pendingVolume = volume.coerceIn(0f, 1f)
             mediaPlayer?.setVolume(pendingVolume, pendingVolume)

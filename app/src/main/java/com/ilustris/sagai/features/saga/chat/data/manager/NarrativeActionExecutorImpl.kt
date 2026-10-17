@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.data.manager
 
+import com.ilustris.sagai.features.progression.domain.CharacterProgressionUseCase
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
@@ -14,6 +15,7 @@ import com.ilustris.sagai.features.act.data.usecase.BookUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.chapter.data.usecase.ChoiceCardsReveal
 import com.ilustris.sagai.features.geography.data.usecase.WorldLocationUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaEnding
@@ -51,6 +53,7 @@ class NarrativeActionExecutorImpl
         private val messageDao: MessageDao,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
         private val playerProfileUseCase: PlayerProfileUseCase,
+        private val progressionUseCase: CharacterProgressionUseCase,
         private val worldLocationUseCase: WorldLocationUseCase,
         private val bookUseCase: BookUseCase,
         private val bookGenerationService: BookGenerationService,
@@ -74,6 +77,10 @@ class NarrativeActionExecutorImpl
 
                     is NarrativeAction.CreateChapter -> {
                         startChapter(action.act, environment)
+                    }
+
+                    is NarrativeAction.GenerateChoiceCards -> {
+                        dealChoiceCards(action.chapter, environment)
                     }
 
                     is NarrativeAction.GenerateChapter -> {
@@ -324,6 +331,34 @@ class NarrativeActionExecutorImpl
             return finalChapter ?: error("Failed to generate chapter introduction")
         }
 
+        private suspend fun dealChoiceCards(
+            chapter: ChapterContent,
+            environment: NarrativeExecutionEnvironment,
+        ) = executeRequest {
+            var dealt: ChoiceCardsReveal? = null
+            chapterUseCase.generateChoiceCardsStream(chapter.data.id).collect { state ->
+                when (state) {
+                    is StreamingState.Reasoning -> {
+                        environment.onReasoningChunk(state.chunk)
+                    }
+
+                    is StreamingState.Success -> {
+                        dealt = state.data
+                        environment.onReasoningChunk(null)
+                    }
+
+                    is StreamingState.Error -> {
+                        environment.onReasoningChunk(null)
+                        if (state.isFlowCancellation()) {
+                            throw CancellationException(state.message)
+                        }
+                        error(state.message)
+                    }
+                }
+            }
+            dealt ?: error("Failed to deal choice cards")
+        }
+
         private suspend fun updateChapter(
             chapter: ChapterContent,
             environment: NarrativeExecutionEnvironment,
@@ -351,6 +386,8 @@ class NarrativeActionExecutorImpl
                     }
                 }
             }
+            // After the chapter is synthesized and its feats exist; a failed evaluation never blocks the story.
+            progressionUseCase.evaluateChapterHonors(saga.data.id, chapter.data.id)
             generated ?: error("Failed to generate chapter synthesis")
         }
 
@@ -476,6 +513,7 @@ class NarrativeActionExecutorImpl
                         }
                     }
                 }
+                progressionUseCase.evaluateActLegacy(saga.data.id, currentAct.data.id)
                 generated ?: error("Failed to generate act synthesis")
             }
         }

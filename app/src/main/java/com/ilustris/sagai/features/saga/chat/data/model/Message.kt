@@ -62,4 +62,11 @@ data class Message(
      */
     @ColumnInfo(defaultValue = "0")
     val viewed: Boolean = false,
+    /** How the player sent it. Null on rows older than live mode and on AI messages — read as TYPED. */
+    val inputMode: InputMode? = null,
+    /**
+     * The player's text before the reply corrected it (typed turns only). Set only when the
+     * correction actually changed something, so the bubble can show the original on long-press.
+     */
+    val originalText: String? = null,
 )
