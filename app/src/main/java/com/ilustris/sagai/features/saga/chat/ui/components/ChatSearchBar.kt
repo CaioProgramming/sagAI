@@ -75,7 +75,7 @@ fun ChatSearchBar(
         ) {
             IconButton(onClick = onClose, modifier = Modifier.size(ControlSize)) {
                 Icon(
-                    painterResource(R.drawable.round_close_24),
+                    painterResource(R.drawable.ic_close),
                     contentDescription = stringResource(R.string.chat_search_close),
                     modifier = Modifier.size(20.dp),
                 )
@@ -154,7 +154,7 @@ fun ChatSearchBar(
             }
 
             Icon(
-                painterResource(R.drawable.search),
+                painterResource(R.drawable.ic_search),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
                 modifier = Modifier.size(18.dp),

@@ -55,7 +55,7 @@ fun FAQCard(
                 targetValue = if (expanded) 90f else 0f,
             )
             Icon(
-                painter = painterResource(R.drawable.round_arrow_forward_ios_24),
+                painter = painterResource(R.drawable.ic_chevron_right),
                 contentDescription = null,
                 modifier =
                     Modifier

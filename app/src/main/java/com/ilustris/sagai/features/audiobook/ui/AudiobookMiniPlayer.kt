@@ -100,7 +100,7 @@ fun AudiobookMiniPlayer(
                 ) {
                     Icon(
                         painterResource(
-                            if (audiobook.isPlaying) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24,
+                            if (audiobook.isPlaying) R.drawable.ic_pause else R.drawable.ic_play,
                         ),
                         contentDescription =
                             stringResource(

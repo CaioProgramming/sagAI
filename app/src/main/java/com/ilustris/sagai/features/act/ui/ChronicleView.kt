@@ -89,7 +89,7 @@ fun ChronicleView(
                         modifier = Modifier.clip(CircleShape),
                     ) {
                         Icon(
-                            painterResource(R.drawable.ic_back_left),
+                            painterResource(R.drawable.ic_chevron_left),
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onBackground,
                         )

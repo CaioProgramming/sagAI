@@ -191,7 +191,7 @@ fun CosmicBook(
                                                     .size(24.dp),
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.round_close_24),
+                                                painter = painterResource(R.drawable.ic_close),
                                                 contentDescription = "Close",
                                                 tint = MaterialTheme.colorScheme.secondary,
                                                 modifier = Modifier.size(24.dp),
@@ -275,7 +275,7 @@ fun CosmicBook(
                                         )
 
                                         Icon(
-                                            painterResource(R.drawable.round_arrow_forward_ios_24),
+                                            painterResource(R.drawable.ic_chevron_right),
                                             null,
                                             tint = MaterialTheme.colorScheme.secondary,
                                             modifier = Modifier.size(12.dp),
@@ -333,7 +333,7 @@ fun CosmicBook(
                                                     modifier = Modifier.size(24.dp),
                                                 ) {
                                                     Icon(
-                                                        painter = painterResource(R.drawable.round_close_24),
+                                                        painter = painterResource(R.drawable.ic_close),
                                                         contentDescription = "Close",
                                                         tint = MaterialTheme.colorScheme.secondary,
                                                         modifier = Modifier.size(24.dp),
@@ -383,7 +383,7 @@ fun CosmicBook(
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
                                                 Icon(
-                                                    painterResource(R.drawable.ic_back_left),
+                                                    painterResource(R.drawable.ic_chevron_left),
                                                     null,
                                                     tint = MaterialTheme.colorScheme.secondary,
                                                     modifier = Modifier.size(12.dp),
@@ -671,7 +671,7 @@ private fun ExpandedCharacterPage(
                 modifier = Modifier.size(24.dp),
             ) {
                 Icon(
-                    painterResource(R.drawable.round_close_24),
+                    painterResource(R.drawable.ic_close),
                     null,
                     tint = genre.resolveIconColor(visualConfig),
                     modifier = Modifier.fillMaxSize(),

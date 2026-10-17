@@ -112,9 +112,9 @@ fun SenderTypePreview() {
 
 fun SenderType.icon() =
     when (this) {
-        CHARACTER -> R.drawable.talk_bubble
+        CHARACTER -> R.drawable.ic_talk_bubble
         NARRATOR -> R.drawable.ic_feather
-        THOUGHT -> R.drawable.think_icon
+        THOUGHT -> R.drawable.ic_think
         ACTION -> R.drawable.action_icon
         else -> R.drawable.ic_spark
     }

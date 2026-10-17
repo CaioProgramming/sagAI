@@ -838,7 +838,7 @@ fun ChatContent(
                                 ),
                     ) {
                         Icon(
-                            painterResource(R.drawable.ic_arrow_down),
+                            painterResource(R.drawable.ic_chevron_down),
                             contentDescription = stringResource(R.string.chat_scroll_to_bottom),
                             tint = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.size(20.dp),
@@ -1049,7 +1049,7 @@ fun ChatContent(
                                         // the saga details.
                                         IconButton(onClick = { isSearchActive = true }) {
                                             Icon(
-                                                painterResource(R.drawable.search),
+                                                painterResource(R.drawable.ic_search),
                                                 contentDescription =
                                                     stringResource(R.string.chat_search_open),
                                                 modifier = Modifier.size(20.dp),
