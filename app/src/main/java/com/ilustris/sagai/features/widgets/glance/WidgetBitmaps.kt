@@ -27,6 +27,9 @@ object WidgetFocus {
     const val ARTWORK_Y = 0.42f
 }
 
+/** Which edge of a picture melts into the widget's own colour. */
+enum class ArtFade { NONE, LEFT, BOTTOM }
+
 /**
  * Bitmap work for the widgets. RemoteViews carry every bitmap in memory, so everything is decoded
  * small and cropped to the exact box it will fill.
@@ -104,6 +107,54 @@ object WidgetBitmaps {
         }
     }
 
+    /**
+     * Melts one edge of [source] into transparency, so the widget's base colour shows through. The ramp
+     * is an eased curve over many stops: Glance has no multi-stop gradients and a tinted drawable
+     * scrim rendered as a hard edge on some launchers, so the fade lives in the picture itself.
+     */
+    fun fade(
+        source: Bitmap,
+        edge: ArtFade,
+    ): Bitmap {
+        if (edge == ArtFade.NONE) return source
+        val w = source.width
+        val h = source.height
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(out)
+        canvas.drawBitmap(source, 0f, 0f, null)
+        val positions = FloatArray(FADE_STEPS + 1) { it / FADE_STEPS.toFloat() }
+        val colors =
+            IntArray(positions.size) { i ->
+                val t = positions[i]
+                val alpha =
+                    when (edge) {
+                        ArtFade.LEFT -> smoothstep(0f, FADE_LEFT_END, t)
+                        ArtFade.BOTTOM -> 1f - smoothstep(FADE_BOTTOM_START, FADE_BOTTOM_END, t)
+                        ArtFade.NONE -> 1f
+                    }
+                (alpha * 255f).toInt().coerceIn(0, 255) shl 24
+            }
+        val paint = Paint()
+        paint.shader =
+            if (edge == ArtFade.LEFT) {
+                LinearGradient(0f, 0f, w.toFloat(), 0f, colors, positions, Shader.TileMode.CLAMP)
+            } else {
+                LinearGradient(0f, 0f, 0f, h.toFloat(), colors, positions, Shader.TileMode.CLAMP)
+            }
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
+        canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
+        return out
+    }
+
+    private fun smoothstep(
+        from: Float,
+        to: Float,
+        x: Float,
+    ): Float {
+        val t = ((x - from) / (to - from)).coerceIn(0f, 1f)
+        return t * t * (3f - 2f * t)
+    }
+
     /** A round avatar of the face region of [source], with an optional ring. */
     fun circle(
         source: Bitmap,
@@ -156,20 +207,19 @@ object WidgetBitmaps {
     }
 
     /**
-     * One book of the stories shelf: a rounded gradient tile with a darker spine on the left, and
-     * either the saga's own icon or the genre glyph in the middle.
+     * One saga on the stories strip: a rounded square, either the saga's own icon or the genre glyph
+     * over a gradient of its colors.
      */
-    fun bookTile(
-        widthPx: Int,
-        heightPx: Int,
+    fun coverTile(
+        sizePx: Int,
         topColor: Int,
         bottomColor: Int,
         radiusPx: Float,
         icon: Bitmap?,
         glyph: Drawable?,
     ): Bitmap {
-        val w = widthPx.coerceIn(8, MAX_SIDE_PX)
-        val h = heightPx.coerceIn(8, MAX_SIDE_PX)
+        val w = sizePx.coerceIn(8, MAX_SIDE_PX)
+        val h = w
         val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(out)
         val rect = RectF(0f, 0f, w.toFloat(), h.toFloat())
@@ -192,15 +242,11 @@ object WidgetBitmaps {
                 glyph.draw(canvas)
             }
         }
-        // Spine: a darker strip along the left edge, clipped to the rounded shape.
-        val spine = Paint(Paint.ANTI_ALIAS_FLAG)
-        spine.color = SPINE_COLOR
-        canvas.save()
-        canvas.clipRect(0f, 0f, max(2f, w * 0.09f), h.toFloat())
-        canvas.drawRoundRect(rect, radiusPx, radiusPx, spine)
-        canvas.restore()
         return out
     }
 
-    private const val SPINE_COLOR = 0x47000000
+    private const val FADE_STEPS = 16
+    private const val FADE_LEFT_END = 0.7f
+    private const val FADE_BOTTOM_START = 0.36f
+    private const val FADE_BOTTOM_END = 0.74f
 }

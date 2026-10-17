@@ -46,19 +46,25 @@ sealed interface LastMessageData {
     ) : LastMessageData
 }
 
+/** One saga on the strip under the main one: a cover that opens its chat, or its details when finished. */
 data class StoryBook(
     val id: Int,
     val title: String,
     val genre: Genre,
     val iconPath: String?,
+    val isEnded: Boolean,
 )
 
+/**
+ * The stories widget: the saga the player touched last on top, the other recent ones under it.
+ * [hero] is the unfinished saga played most recently, or the newest finished one when none is running.
+ */
 data class StoriesData(
-    val books: List<StoryBook>,
-    val totalCount: Int,
-    val playTimeHours: Int,
-    /** Genre used when the widget has nothing to show; the newest finished saga's, if any. */
-    val fallbackGenre: Genre,
+    val hero: WidgetSaga?,
+    val heroIsEnded: Boolean,
+    /** The hero's current objective, only for a running saga. */
+    val objective: String?,
+    val others: List<StoryBook>,
 )
 
 /** Colors and corner radius for one widget, resolved from the genre's Remote Config. */

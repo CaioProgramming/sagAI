@@ -1268,7 +1268,7 @@
     <string name="widget_last_message_name">Última mensagem</string>
     <string name="widget_last_message_description">A última fala do chat da sua saga.</string>
     <string name="widget_stories_name">Suas histórias</string>
-    <string name="widget_stories_description">Uma estante com as sagas que você concluiu.</string>
+    <string name="widget_stories_description">A saga que você jogou por último, com atalho para continuar, e as outras recentes logo abaixo.</string>
     <string name="widget_quote_name">Citação do personagem</string>
     <string name="widget_quote_description">Frases poéticas na voz de um dos seus personagens.</string>
     <string name="widget_hook_name">Gancho do personagem</string>
@@ -1285,11 +1285,6 @@
     <string name="widget_invite_short">Escrever a próxima?</string>
     <string name="widget_cd_new_story">Escrever uma nova história</string>
     <string name="widget_cd_continue">Continuar saga</string>
-    <plurals name="widget_stories_completed">
-        <item quantity="one">%d história concluída</item>
-        <item quantity="other">%d histórias concluídas</item>
-    </plurals>
-    <string name="widget_stories_hours">%1$d h jogadas</string>
     <string name="widget_loading_title">Montando seu widget</string>
     <string name="widget_loading_subtitle">Só um instante</string>
     <string name="widget_error_title">Não foi possível montar</string>
@@ -1336,7 +1331,7 @@
     <string name="widget_add_to_home">Adicionar à tela inicial</string>
     <string name="widget_pin_unsupported">Seu launcher não permite adicionar widgets por aqui. Adicione pela lista de widgets.</string>
     <string name="widget_limit_reached">Você já tem %1$d widgets. Remova um para criar outro.</string>
-    <string name="widget_stories_empty">Conclua uma saga e ela aparece aqui na estante.</string>
+    <string name="widget_stories_empty">Comece uma saga e ela aparece aqui.</string>
     <string name="widget_continue">Continuar</string>
     <string name="widget_resize_hint">Você pode redimensionar na tela inicial.</string>
 </resources>

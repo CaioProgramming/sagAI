@@ -80,22 +80,31 @@ class WidgetDataSource
             )
         }
 
+        /** The saga played last on top, then the other sagas, running and finished, newest first. */
         suspend fun loadStories(): StoriesData {
-            val finished = realSummaries().map { it.data }.filter { it.isEnded }.sortedByDescending { it.endedAt }
-            val books =
-                finished.map {
-                    StoryBook(
-                        id = it.id,
-                        title = it.title,
-                        genre = it.genre,
-                        iconPath = it.icon.takeIf { path -> path.isNotBlank() },
-                    )
+            val recent =
+                realSummaries().sortedByDescending {
+                    if (it.data.isEnded) maxOf(it.data.endedAt, it.lastMessageTime ?: 0L) else it.lastMessageTime ?: it.data.createdAt
                 }
+            // A running saga wins the main slot; when everything is finished, the newest finished one takes it.
+            val hero = activeSummary() ?: recent.firstOrNull()
+            val others =
+                recent
+                    .filter { it.data.id != hero?.data?.id }
+                    .map {
+                        StoryBook(
+                            id = it.data.id,
+                            title = it.data.title,
+                            genre = it.data.genre,
+                            iconPath = it.data.icon.takeIf { path -> path.isNotBlank() },
+                            isEnded = it.data.isEnded,
+                        )
+                    }
             return StoriesData(
-                books = books,
-                totalCount = books.size,
-                playTimeHours = (finished.sumOf { it.playTimeMs } / MS_PER_HOUR).toInt(),
-                fallbackGenre = finished.firstOrNull()?.genre ?: Genre.entries.first(),
+                hero = hero?.let { toWidgetSaga(it.data) },
+                heroIsEnded = hero?.data?.isEnded ?: false,
+                objective = hero?.takeIf { !it.data.isEnded }?.let { currentObjective(it.data.id) },
+                others = others,
             )
         }
 
@@ -223,7 +232,6 @@ class WidgetDataSource
 
         private companion object {
             const val TAG = "WidgetDataSource"
-            const val MS_PER_HOUR = 3_600_000L
             const val DARK = 0xFF000000.toInt()
             const val BASE_CORNER_DP = 12f
             const val CORNER_FACTOR = 1.2f

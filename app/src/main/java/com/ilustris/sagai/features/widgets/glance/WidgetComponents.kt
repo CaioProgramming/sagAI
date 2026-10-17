@@ -326,17 +326,21 @@ fun rememberArt(
     focusX: Float,
     focusY: Float,
     targetY: Float = 0.5f,
+    fade: ArtFade = ArtFade.NONE,
 ): Bitmap? {
     val density = LocalContext.current.resources.displayMetrics.density
-    return remember(source, widthDp, heightDp, focusX, focusY, targetY) {
+    return remember(source, widthDp, heightDp, focusX, focusY, targetY, fade) {
         source?.let {
-            WidgetBitmaps.crop(
-                source = it,
-                widthPx = (widthDp * density).toInt(),
-                heightPx = (heightDp * density).toInt(),
-                focusX = focusX,
-                focusY = focusY,
-                targetY = targetY,
+            WidgetBitmaps.fade(
+                WidgetBitmaps.crop(
+                    source = it,
+                    widthPx = (widthDp * density).toInt(),
+                    heightPx = (heightDp * density).toInt(),
+                    focusX = focusX,
+                    focusY = focusY,
+                    targetY = targetY,
+                ),
+                fade,
             )
         }
     }

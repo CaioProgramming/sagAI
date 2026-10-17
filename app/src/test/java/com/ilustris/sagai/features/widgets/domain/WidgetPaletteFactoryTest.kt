@@ -40,6 +40,22 @@ class WidgetPaletteFactoryTest {
     }
 
     @Test
+    fun `the dark base wears the primary colour instead of the near-black tint`() {
+        genres.forEach { (name, config) ->
+            val palette = WidgetPaletteFactory.create(config.second, config.first, false)
+            val primary = config.first
+            // the base is the primary deepened: the channel that dominates the primary still dominates it
+            fun dominant(argb: Int): Int {
+                val channels = intArrayOf((argb shr 16) and 0xFF, (argb shr 8) and 0xFF, argb and 0xFF)
+                return channels.indices.maxByOrNull { channels[it] } ?: 0
+            }
+            assertEquals("$name hue family", dominant(primary), dominant(palette.base))
+            assertTrue("$name base is deep", WidgetPaletteFactory.luminance(palette.base) <= 0.06)
+            assertTrue("$name base is not black", WidgetPaletteFactory.luminance(palette.base) > 0.004)
+        }
+    }
+
+    @Test
     fun `the icon on the accent button reads in every genre`() {
         genres.forEach { (name, config) ->
             listOf(false, true).forEach { light ->

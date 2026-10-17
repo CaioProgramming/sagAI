@@ -1280,7 +1280,7 @@
     <string name="widget_last_message_name">Last message</string>
     <string name="widget_last_message_description">The last line from your saga chat.</string>
     <string name="widget_stories_name">Your stories</string>
-    <string name="widget_stories_description">A shelf with the sagas you have finished.</string>
+    <string name="widget_stories_description">The saga you played last, with a shortcut to continue it, and the other recent ones under it.</string>
     <string name="widget_quote_name">Character quote</string>
     <string name="widget_quote_description">Poetic lines in the voice of one of your characters.</string>
     <string name="widget_hook_name">Character hook</string>
@@ -1297,11 +1297,6 @@
     <string name="widget_invite_short">Write the next one?</string>
     <string name="widget_cd_new_story">Write a new story</string>
     <string name="widget_cd_continue">Continue saga</string>
-    <plurals name="widget_stories_completed">
-        <item quantity="one">%d story completed</item>
-        <item quantity="other">%d stories completed</item>
-    </plurals>
-    <string name="widget_stories_hours">%1$d h played</string>
     <string name="widget_loading_title">Building your widget</string>
     <string name="widget_loading_subtitle">Just a moment</string>
     <string name="widget_error_title">Couldn\'t build this widget</string>
@@ -1348,7 +1343,7 @@
     <string name="widget_add_to_home">Add to home screen</string>
     <string name="widget_pin_unsupported">Your launcher can\'t add widgets from here. Add it from the widget list instead.</string>
     <string name="widget_limit_reached">You already have %1$d widgets. Remove one to create another.</string>
-    <string name="widget_stories_empty">Finish a saga and it will be shelved here.</string>
+    <string name="widget_stories_empty">Start a saga and it will show up here.</string>
     <string name="widget_continue">Continue</string>
     <string name="widget_resize_hint">You can resize it on the home screen.</string>
 </resources>

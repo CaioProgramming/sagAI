@@ -30,6 +30,8 @@ object WidgetPaletteFactory {
     private const val PAPER_ALT = 0xFFE4DDCC.toInt()
     private const val INK_MUTED = 0xFF5B524A.toInt()
     private const val MIN_TEXT_CONTRAST = 4.5
+    private const val BASE_DEEPEN = 0.4f
+    private const val MAX_BASE_LUMINANCE = 0.06
 
     /**
      * @param colors the genre's palette, in any order (empty is fine)
@@ -49,14 +51,16 @@ object WidgetPaletteFactory {
         primary: Int,
         colors: List<Int>,
     ): WidgetPalette {
-        val byLuminance = colors.sortedBy { luminance(it) }
-        var base = blend(byLuminance.first(), BLACK, 0.35f)
+        // The widget wears the genre's own primary colour (blue for Heroes, red for Shinobi), deepened only
+        // until white text reads on it with room to spare. The palette's darkest entry is a near-black
+        // backdrop tint and made every widget look black.
+        var base = blend(primary, BLACK, BASE_DEEPEN)
         var guard = 0
-        while (luminance(base) > 0.08 && guard < 6) {
-            base = blend(base, BLACK, 0.3f)
+        while (luminance(base) > MAX_BASE_LUMINANCE && guard < 8) {
+            base = blend(base, BLACK, 0.2f)
             guard++
         }
-        val baseAlt = blend(byLuminance.getOrElse(1) { byLuminance.first() }, BLACK, 0.25f)
+        val baseAlt = blend(base, BLACK, 0.4f)
         val accent =
             colors
                 .filter { luminance(it) >= 0.25 }

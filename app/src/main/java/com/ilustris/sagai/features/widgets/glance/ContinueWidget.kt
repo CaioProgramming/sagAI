@@ -143,12 +143,11 @@ private fun ActiveContent(ui: ContinueUi.Active) {
             // 4x1: text on the left half over a solid base, art fading in on the right.
             cells == WidgetCells(4, 1) -> {
                 val stripWidth = width * STRIP_WIDE
-                val art = rememberArt(ui.art, stripWidth, height, WidgetFocus.ARTWORK_X, WidgetFocus.ARTWORK_Y)
+                val art = rememberArt(ui.art, stripWidth, height, WidgetFocus.ARTWORK_X, WidgetFocus.ARTWORK_Y, fade = ArtFade.LEFT)
                 Row(modifier = GlanceModifier.fillMaxSize()) {
                     Spacer(modifier = GlanceModifier.defaultWeight())
-                    art?.let { ArtImage(it, GlanceModifier.fillMaxHeight().width(stripWidth.dp)) }
+                    art?.let { ArtImage(it, GlanceModifier.fillMaxHeight().defaultWeight()) }
                 }
-                TintedLayer(R.drawable.widget_scrim_left, glanceColor(palette.base))
                 Row(
                     modifier = GlanceModifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -164,9 +163,8 @@ private fun ActiveContent(ui: ContinueUi.Active) {
 
             // 2x2: art on top, solid scrim below, every piece of text in the solid part.
             cells == WidgetCells(2, 2) -> {
-                val art = rememberArt(ui.art, width, height, WidgetFocus.ARTWORK_X, WidgetFocus.ARTWORK_Y, 0.3f)
+                val art = rememberArt(ui.art, width, height, WidgetFocus.ARTWORK_X, WidgetFocus.ARTWORK_Y, 0.3f, fade = ArtFade.BOTTOM)
                 art?.let { ArtImage(it, GlanceModifier.fillMaxSize()) }
-                TintedLayer(R.drawable.widget_scrim_bottom, glanceColor(palette.base))
                 Column(
                     modifier = GlanceModifier.fillMaxSize().padding(12.dp),
                     verticalAlignment = Alignment.Bottom,
@@ -191,12 +189,11 @@ private fun ActiveContent(ui: ContinueUi.Active) {
             // 4x2 and larger: saga title and a big objective on the left, art on the right.
             else -> {
                 val stripWidth = width * STRIP_TALL
-                val art = rememberArt(ui.art, stripWidth, height, WidgetFocus.ARTWORK_X, WidgetFocus.ARTWORK_Y)
+                val art = rememberArt(ui.art, stripWidth, height, WidgetFocus.ARTWORK_X, WidgetFocus.ARTWORK_Y, fade = ArtFade.LEFT)
                 Row(modifier = GlanceModifier.fillMaxSize()) {
                     Spacer(modifier = GlanceModifier.defaultWeight())
-                    art?.let { ArtImage(it, GlanceModifier.fillMaxHeight().width(stripWidth.dp)) }
+                    art?.let { ArtImage(it, GlanceModifier.fillMaxHeight().defaultWeight()) }
                 }
-                TintedLayer(R.drawable.widget_scrim_left, glanceColor(palette.base))
                 Column(modifier = GlanceModifier.fillMaxSize().padding(14.dp)) {
                     WidgetTag(ui.saga.title, palette.textMuted)
                     Spacer(modifier = GlanceModifier.defaultWeight())

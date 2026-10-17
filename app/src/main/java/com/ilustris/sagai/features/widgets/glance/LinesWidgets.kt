@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.LocalContext
@@ -179,12 +180,11 @@ private fun QuoteLayout(
             // 4x1: a thin slice of the portrait on the right, the line on the left.
             cells == WidgetCells(4, 1) -> {
                 val strip = width * 0.38f
-                val art = rememberArt(ui.art, strip, height, WidgetFocus.PORTRAIT_X, WidgetFocus.PORTRAIT_Y, 0.38f)
+                val art = rememberArt(ui.art, strip, height, WidgetFocus.PORTRAIT_X, WidgetFocus.PORTRAIT_Y, 0.38f, fade = ArtFade.LEFT)
                 Row(modifier = GlanceModifier.fillMaxSize()) {
                     Spacer(modifier = GlanceModifier.defaultWeight())
-                    art?.let { ArtImage(it, GlanceModifier.fillMaxHeight().width(strip.dp)) }
+                    art?.let { ArtImage(it, GlanceModifier.fillMaxHeight().defaultWeight()) }
                 }
-                TintedLayer(R.drawable.widget_scrim_left, glanceColor(palette.base))
                 Column(
                     modifier = GlanceModifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -204,9 +204,8 @@ private fun QuoteLayout(
 
             // 2x2: portrait on top, the line in the solid part below.
             cells == WidgetCells(2, 2) -> {
-                val art = rememberArt(ui.art, width, height, WidgetFocus.PORTRAIT_X, WidgetFocus.PORTRAIT_Y, 0.3f)
+                val art = rememberArt(ui.art, width, height, WidgetFocus.PORTRAIT_X, WidgetFocus.PORTRAIT_Y, 0.3f, fade = ArtFade.BOTTOM)
                 art?.let { ArtImage(it, GlanceModifier.fillMaxSize()) }
-                TintedLayer(R.drawable.widget_scrim_bottom, glanceColor(palette.base))
                 Column(
                     modifier = GlanceModifier.fillMaxSize().padding(12.dp),
                     verticalAlignment = Alignment.Bottom,
@@ -220,14 +219,19 @@ private fun QuoteLayout(
             // 4x3: the tall version, with a big opening mark.
             cells.rows >= 3 -> {
                 val strip = width * 0.48f
-                val art = rememberArt(ui.art, strip, height, WidgetFocus.PORTRAIT_X, WidgetFocus.PORTRAIT_Y, 0.36f)
+                val art = rememberArt(ui.art, strip, height, WidgetFocus.PORTRAIT_X, WidgetFocus.PORTRAIT_Y, 0.36f, fade = ArtFade.LEFT)
                 Row(modifier = GlanceModifier.fillMaxSize()) {
                     Spacer(modifier = GlanceModifier.defaultWeight())
-                    art?.let { ArtImage(it, GlanceModifier.fillMaxHeight().width(strip.dp)) }
+                    art?.let { ArtImage(it, GlanceModifier.fillMaxHeight().defaultWeight()) }
                 }
-                TintedLayer(R.drawable.widget_scrim_left, glanceColor(palette.base))
                 Column(modifier = GlanceModifier.fillMaxSize().padding(16.dp)) {
-                    WidgetText("“", palette.accent, 44f, FontWeight.Bold, maxLines = 1)
+                    // the genre's own mark instead of a typographic quote: it carries the theme, not a font
+                    Image(
+                        provider = ImageProvider(ui.character.genre.icon),
+                        contentDescription = null,
+                        modifier = GlanceModifier.size(34.dp),
+                        colorFilter = ColorFilter.tint(glanceColor(palette.accent)),
+                    )
                     Spacer(modifier = GlanceModifier.defaultWeight())
                     WidgetText(
                         text = text,
@@ -245,12 +249,11 @@ private fun QuoteLayout(
             // 4x2.
             else -> {
                 val strip = width * 0.46f
-                val art = rememberArt(ui.art, strip, height, WidgetFocus.PORTRAIT_X, WidgetFocus.PORTRAIT_Y, 0.38f)
+                val art = rememberArt(ui.art, strip, height, WidgetFocus.PORTRAIT_X, WidgetFocus.PORTRAIT_Y, 0.38f, fade = ArtFade.LEFT)
                 Row(modifier = GlanceModifier.fillMaxSize()) {
                     Spacer(modifier = GlanceModifier.defaultWeight())
-                    art?.let { ArtImage(it, GlanceModifier.fillMaxHeight().width(strip.dp)) }
+                    art?.let { ArtImage(it, GlanceModifier.fillMaxHeight().defaultWeight()) }
                 }
-                TintedLayer(R.drawable.widget_scrim_left, glanceColor(palette.base))
                 Column(modifier = GlanceModifier.fillMaxSize().padding(14.dp)) {
                     WidgetTag(context.getString(R.string.widget_tag_from_saga), palette.textMuted)
                     Spacer(modifier = GlanceModifier.defaultWeight())
