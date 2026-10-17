@@ -47,6 +47,18 @@ interface TimelineDao {
     )
     fun getLatestEventBySaga(sagaId: Int): Flow<TimelineWithAct?>
 
+    /**
+     * The newest timeline of a saga, finished or not, read once. The open one carries the scene's
+     * current objective, which the home screen widget shows.
+     */
+    @Query(
+        "SELECT timelines.* FROM timelines " +
+            "INNER JOIN CHAPTER ON timelines.chapterId = chapter.id " +
+            "INNER JOIN acts ON chapter.actId = acts.id " +
+            "WHERE acts.sagaId = :sagaId ORDER BY timelines.createdAt DESC LIMIT 1",
+    )
+    suspend fun getLatestTimelineBySagaOnce(sagaId: Int): Timeline?
+
     @Query(
         "SELECT COUNT(*) FROM timelines " +
             "INNER JOIN CHAPTER ON timelines.chapterId = chapter.id " +

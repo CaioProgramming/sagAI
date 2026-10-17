@@ -1261,8 +1261,82 @@
     <string name="progression_chapter_short">Cap. %1$d</string>
     <string name="progression_act_short">Ato %1$d</string>
     <string name="progression_explainer">Cada personagem tem um nível que cresce com o que ele vive: vínculos, riscos, perdas e escolhas, não só lutas. Medalhas marcam os feitos de um capítulo e o legado marca quem mudou um ato. Toque em Ver mais para ler o que rendeu cada ponto. Dá para esconder tudo isso em Configurações.</string>
+
+    <!-- Widgets da tela inicial -->
+    <string name="widget_continue_name">Continuar saga</string>
+    <string name="widget_continue_description">O objetivo atual da sua saga, com um botão para continuar de onde parou.</string>
+    <string name="widget_last_message_name">Última mensagem</string>
+    <string name="widget_last_message_description">A última fala do chat da sua saga.</string>
+    <string name="widget_stories_name">Suas histórias</string>
+    <string name="widget_stories_description">Uma estante com as sagas que você concluiu.</string>
+    <string name="widget_quote_name">Citação do personagem</string>
+    <string name="widget_quote_description">Frases poéticas na voz de um dos seus personagens.</string>
+    <string name="widget_hook_name">Gancho do personagem</string>
+    <string name="widget_hook_description">Um personagem chamando você de volta para a história.</string>
+
+    <string name="widget_tag_current_objective">Objetivo atual</string>
+    <string name="widget_tag_objective_short">Objetivo</string>
+    <string name="widget_tag_last_message">Última mensagem</string>
+    <string name="widget_tag_stories">Suas histórias</string>
+    <string name="widget_tag_new_story">Nova história</string>
+    <string name="widget_tag_from_saga">Da sua saga</string>
+    <string name="widget_invite_text">Sua história chegou ao fim. Que tal escrever a próxima?</string>
+    <string name="widget_invite_first">Que tal escrever a sua primeira história?</string>
+    <string name="widget_invite_short">Escrever a próxima?</string>
+    <string name="widget_cd_new_story">Escrever uma nova história</string>
+    <string name="widget_cd_continue">Continuar saga</string>
+    <plurals name="widget_stories_completed">
+        <item quantity="one">%d história concluída</item>
+        <item quantity="other">%d histórias concluídas</item>
+    </plurals>
+    <string name="widget_stories_hours">%1$d h jogadas</string>
+    <string name="widget_loading_title">Montando seu widget</string>
+    <string name="widget_loading_subtitle">Só um instante</string>
+    <string name="widget_error_title">Não foi possível montar</string>
+    <string name="widget_error_subtitle">Toque para abrir a Sagas</string>
+    <string name="widget_unconfigured_title">Escolha um personagem</string>
+    <string name="widget_unconfigured_subtitle">Abra um personagem e toque em Criar widget</string>
+    <string name="widget_discreet_message">Há uma nova mensagem na sua saga.</string>
+    <string name="widget_discreet_quote">Uma frase da sua saga está guardada aqui.</string>
+    <string name="widget_discreet_hook">Alguém está esperando por você.</string>
+    <string name="widget_discreet_objective">Sua saga espera por você.</string>
+    <string name="widget_discreet_character">Alguém</string>
+
+    <string name="widget_create_menu">Criar widget</string>
+    <string name="widget_create_title">Criar widget</string>
+    <string name="widget_create_style_title">Que tipo de widget?</string>
+    <string name="widget_create_style_subtitle">Você escolhe o estilo e a IA escreve frases com a voz de %1$s.</string>
+    <string name="widget_style_quote">Citação</string>
+    <string name="widget_style_quote_desc">Frases curtas e poéticas, com o retrato do personagem.</string>
+    <string name="widget_style_hook">Gancho</string>
+    <string name="widget_style_hook_desc">O personagem chamando você de volta, como uma mensagem.</string>
+    <string name="widget_generating_title">Escrevendo para %1$s…</string>
+    <string name="widget_generating_line_1">%1$s está relembrando o que viveu…</string>
+    <string name="widget_generating_line_2">Lendo arcos e relações…</string>
+    <string name="widget_generating_line_3">Escolhendo as palavras certas…</string>
+    <string name="widget_generating_line_4">Quase pronto, revisando o tom…</string>
+    <string name="widget_generating_privacy">Usamos o perfil, os arcos e as relações do personagem. As mensagens do seu chat não são enviadas.</string>
+    <string name="widget_generation_failed">Não foi possível escrever as frases agora.</string>
+    <string name="widget_lines_title">Frases de %1$s</string>
+    <string name="widget_lines_selected">%1$d de %2$d selecionadas</string>
+    <string name="widget_lines_more">Gerar mais</string>
+    <string name="widget_lines_all">Todas</string>
+    <string name="widget_lines_clear">Limpar</string>
+    <string name="widget_lines_edit">Editar frase</string>
+    <string name="widget_lines_save">Salvar</string>
+    <string name="widget_little_history">Este personagem ainda tem pouca história. Jogue mais um pouco para gerar frases melhores.</string>
+    <string name="widget_size_title">Tamanho e troca</string>
+    <string name="widget_size_label">Tamanho</string>
+    <string name="widget_rotation_label">Troca de frase</string>
+    <string name="widget_rotation_open">A cada abertura</string>
+    <string name="widget_rotation_daily">Todo dia</string>
+    <string name="widget_rotation_fixed">Fixa</string>
+    <string name="widget_discreet_mode">Modo discreto</string>
+    <string name="widget_discreet_mode_desc">Borra a arte e esconde o texto da história.</string>
+    <string name="widget_add_to_home">Adicionar à tela inicial</string>
+    <string name="widget_pin_unsupported">Seu launcher não permite adicionar widgets por aqui. Adicione pela lista de widgets.</string>
+    <string name="widget_limit_reached">Você já tem %1$d widgets. Remova um para criar outro.</string>
+    <string name="widget_stories_empty">Conclua uma saga e ela aparece aqui na estante.</string>
+    <string name="widget_continue">Continuar</string>
+    <string name="widget_resize_hint">Você pode redimensionar na tela inicial.</string>
 </resources>
-
-
-
-

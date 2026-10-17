@@ -52,6 +52,72 @@
               android:resource="@xml/filepaths" />
         </provider>
 
+        <!-- Home screen widgets (Glance). See docs/feature_ideas/home_widgets.md -->
+        <receiver
+            android:name=".features.widgets.glance.ContinueWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_continue_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/continue_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".features.widgets.glance.LastMessageWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_last_message_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/last_message_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".features.widgets.glance.StoriesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_stories_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/stories_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".features.widgets.glance.QuoteWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_quote_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quote_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".features.widgets.glance.HookWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_hook_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hook_widget_info" />
+        </receiver>
+
+        <!-- Receives the system's "widget pinned" callback and binds the new widget to its generated lines. -->
+        <receiver
+            android:name=".features.widgets.glance.WidgetPinnedReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".features.sos.ui.SOSActivity"
             android:exported="false"

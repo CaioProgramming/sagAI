@@ -16,9 +16,11 @@ import com.ilustris.sagai.core.icon.AppIconManager
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.permissions.NotificationUtils
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.features.widgets.WidgetUpdater
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -43,6 +45,9 @@ class SagaApp :
     @Inject
     lateinit var appIconManager: AppIconManager
 
+    @Inject
+    lateinit var widgetUpdater: WidgetUpdater
+
     override fun onCreate() {
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler(SagasExceptionHandler(this, defaultHandler))
@@ -61,6 +66,7 @@ class SagaApp :
             }
             observePurchasesOnForeground()
             syncIconOnBackground()
+            syncWidgetsOnLifecycle()
         }
     }
 
@@ -92,6 +98,19 @@ class SagaApp :
             appLifecycleManager.isAppInForeground
                 .filter { !it }
                 .collect { appIconManager.applyOnBackground() }
+        }
+    }
+
+    /**
+     * Keeps the home screen widgets in step with the player: opening the app counts as an open (which
+     * advances generated lines) and leaving it redraws everything with what just happened. Never on a timer.
+     */
+    private fun syncWidgetsOnLifecycle() {
+        CoroutineScope(Dispatchers.IO).launch {
+            // The first emission is the initial `false`, not a real transition.
+            appLifecycleManager.isAppInForeground.drop(1).collect { inForeground ->
+                if (inForeground) widgetUpdater.onAppOpened() else widgetUpdater.updateAll()
+            }
         }
     }
 
