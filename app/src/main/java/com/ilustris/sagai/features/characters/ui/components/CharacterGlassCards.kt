@@ -157,6 +157,8 @@ data class SpecialAction(
     val iconRes: Int,
     val label: String,
     val onClick: () -> Unit,
+    /** Replaces the drawable when the action has an icon that is drawn, not loaded. */
+    val icon: (@Composable () -> Unit)? = null,
 )
 
 /** The special actions as compact glass buttons of the same weight, side by side; the options are the player's, none is highlighted. */
@@ -182,7 +184,7 @@ fun SpecialActionsRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(painterResource(action.iconRes), contentDescription = null, modifier = Modifier.size(18.dp))
+                action.icon?.invoke() ?: Icon(painterResource(action.iconRes), contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(action.label, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp), maxLines = 1)
             }
         }

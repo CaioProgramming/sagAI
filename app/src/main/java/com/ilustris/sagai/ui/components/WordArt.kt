@@ -421,6 +421,7 @@ fun Genre.stylisedText(
             modifier = modifier,
             interactive = interactive,
             playEntry = playEntry,
+            tinted = color != null,
         ) {
             SimpleStylisedText(text, modifier, fontSize, titleColor)
         }

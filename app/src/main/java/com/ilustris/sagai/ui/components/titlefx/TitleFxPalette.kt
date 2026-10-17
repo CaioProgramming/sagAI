@@ -73,22 +73,53 @@ private fun lift(t: FloatArray): FloatArray {
     return if (x[2] < 0.58f) hsl(x[0], x[1], 0.62f) else t
 }
 
+/**
+ * [color] is the title colour. Fantasy, Horror, Cowboy, Shinobi and Punk Rock derive their whole palette
+ * from it. Crime, Heroes, Cyberpunk and Space Opera use the genre's remote palette, so they would ignore
+ * it; when [tinted] says the caller chose that colour on purpose (a character's own colour), their
+ * palette is turned toward its hue instead, keeping the genre's saturation and lightness.
+ */
 internal fun titleFxPalette(
     genre: Genre,
     color: Color,
     remote: List<Color>,
-): TitleFxPalette =
-    when (genre) {
-        Genre.FANTASY -> paletteFire(color)
-        Genre.HORROR -> paletteHorror(color)
-        Genre.COWBOY -> paletteCowboy(color)
-        Genre.SHINOBI -> paletteShinobi(color)
-        Genre.CRIME -> paletteCrime(color, remote)
-        Genre.CYBERPUNK -> paletteCyber(color, remote)
-        Genre.SPACE_OPERA -> paletteSpace(color, remote)
-        Genre.PUNK_ROCK -> palettePunk(color)
-        else -> paletteHeroes(color, remote)
+    tinted: Boolean = false,
+): TitleFxPalette {
+    val palette =
+        when (genre) {
+            Genre.FANTASY -> return paletteFire(color)
+            Genre.HORROR -> return paletteHorror(color)
+            Genre.COWBOY -> return paletteCowboy(color)
+            Genre.SHINOBI -> return paletteShinobi(color)
+            Genre.PUNK_ROCK -> return palettePunk(color)
+            Genre.CRIME -> paletteCrime(color, remote)
+            Genre.CYBERPUNK -> paletteCyber(color, remote)
+            Genre.SPACE_OPERA -> paletteSpace(color, remote)
+            else -> paletteHeroes(color, remote)
+        }
+    return if (tinted) palette.turnedToward(color) else palette
+}
+
+/** Rotates the hue of the gradient colours so its main one lands on [color]'s hue; the halo stays. */
+private fun TitleFxPalette.turnedToward(color: Color): TitleFxPalette {
+    val target = rgb2hsl(rgb(color))
+    val pivot = rgb2hsl(c2)
+    if (target[1] < 0.08f) return this // a grey has no hue to turn toward
+    val delta = target[0] - pivot[0]
+
+    fun turn(c: FloatArray): FloatArray {
+        val x = rgb2hsl(c)
+        return if (x[1] < 0.06f) c else hsl(x[0] + delta, x[1], x[2])
     }
+    return TitleFxPalette(
+        text = lift(rgb(color)),
+        c1 = turn(c1),
+        c2 = turn(c2),
+        c3 = turn(c3),
+        c4 = turn(c4),
+        halo = halo,
+    )
+}
 
 private fun paletteFire(color: Color): TitleFxPalette {
     val t = lift(rgb(color))

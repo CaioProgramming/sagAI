@@ -185,6 +185,7 @@ internal fun GenreTitleFx(
     modifier: Modifier = Modifier,
     interactive: Boolean = false,
     playEntry: Boolean = true,
+    tinted: Boolean = false,
     fallback: @Composable () -> Unit,
 ) {
     val cfg = genre.titleFxConfig()
@@ -196,7 +197,7 @@ internal fun GenreTitleFx(
     }
 
     val remotePalette = genre.colorPalette()
-    val palette = remember(genre, color, remotePalette) { titleFxPalette(genre, color, remotePalette) }
+    val palette = remember(genre, color, remotePalette, tinted) { titleFxPalette(genre, color, remotePalette, tinted) }
     val state = remember(genre, interactive, playEntry) { TitleFxState(cfg, interactive, playEntry) }
     val uniforms = remember(shader) { FxUniforms(shader) }
     val holder = remember { FxHolder() }

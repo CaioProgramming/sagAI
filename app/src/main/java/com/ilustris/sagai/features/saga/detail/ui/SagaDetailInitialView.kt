@@ -13,12 +13,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -67,6 +72,7 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.formatDate
+import com.ilustris.sagai.features.brain.ui.components.ConstellationGlobe
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileCard
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
@@ -79,6 +85,7 @@ import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.components.IosStyleMenuDivider
 import com.ilustris.sagai.ui.components.IosStyleMenuHost
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
+import com.ilustris.sagai.ui.components.GlassWaveButton
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.titlefx.usesTitleFx
 import com.ilustris.sagai.ui.theme.PaletteTheme
@@ -126,6 +133,15 @@ fun SagaDetailInitialContent(
                 columns = GridCells.Fixed(columnCount),
                 modifier = Modifier.fillMaxSize(),
                 state = gridState,
+                contentPadding =
+                    PaddingValues(
+                        bottom =
+                            if (saga.review != null) {
+                                WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 80.dp
+                            } else {
+                                0.dp
+                            },
+                    ),
             ) {
                 item(span = { GridItemSpan(columnCount) }) {
                     sagaHeaderComponent(
@@ -257,22 +273,26 @@ fun SagaDetailInitialContent(
                 }
 
                 if (saga.isEnded) {
-                    item(span = { GridItemSpan(columnCount) }) {
-                        RecapHeroCard(
-                            saga = saga,
-                            chaptersCount = resume.chaptersCount,
-                            charactersCount = resume.charactersCount,
-                            messagesCount = resume.messagesCount,
-                            reviewGenerationState = reviewGenerationState,
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth()
-                                    .height(200.dp),
-                            onClick = {
-                                onAction(DetailAction.OpenReview)
-                            },
-                        )
+                    // while the review is being prepared this card shows the progress; once it exists the
+                    // fixed button at the bottom takes over
+                    if (saga.review == null) {
+                        item(span = { GridItemSpan(columnCount) }) {
+                            RecapHeroCard(
+                                saga = saga,
+                                chaptersCount = resume.chaptersCount,
+                                charactersCount = resume.charactersCount,
+                                messagesCount = resume.messagesCount,
+                                reviewGenerationState = reviewGenerationState,
+                                modifier =
+                                    Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                onClick = {
+                                    onAction(DetailAction.OpenReview)
+                                },
+                            )
+                        }
                     }
 
                     item(span = { GridItemSpan(columnCount) }) {
@@ -414,6 +434,20 @@ fun SagaDetailInitialContent(
                     }
                 }
             }
+
+            if (saga.review != null) {
+                // A small glass pill, centred and quiet: found, not announced.
+                GlassWaveButton(
+                    text = stringResource(R.string.saga_detail_recap_cta).uppercase(),
+                    icon = themePainter(),
+                    onClick = { onAction(DetailAction.OpenReview) },
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding()
+                            .padding(vertical = 16.dp),
+                )
+            }
         }
     }
 
@@ -491,10 +525,10 @@ fun sagaHeaderComponent(
                                     Modifier
                                 } else {
                                     Modifier.reactiveShimmer(
-                                true,
-                                shimmerColors = Color.White.shimmerize(),
-                                repeatMode = RepeatMode.Restart,
-                                duration = 10.seconds,
+                                        true,
+                                        shimmerColors = Color.White.shimmerize(),
+                                        repeatMode = RepeatMode.Restart,
+                                        duration = 10.seconds,
                                     )
                                 },
                             ),
@@ -532,6 +566,10 @@ fun sagaHeaderComponent(
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth(),
             ) {
+                ConstellationGlobe(
+                    onClick = { onAction(DetailAction.OpenSection(RequestSection.BRAIN)) },
+                    glow = MaterialTheme.colorScheme.primary,
+                )
                 EndedSagaTag(saga.isEnded)
 
                 genre.stylisedText(
@@ -562,113 +600,12 @@ fun sagaHeaderComponent(
                     interactive = true,
                 )
 
-                Column(
+                Spacer(
                     Modifier
                         .background(adaptiveColor)
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .15f), CircleShape)
-                                    .clickable {
-                                        onAction(DetailAction.OpenSection(RequestSection.BRAIN))
-                                    },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_constellation),
-                                contentDescription = stringResource(R.string.saga_brain_title),
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .fillMaxSize(),
-                            )
-                        }
-
-                        saga.review?.let {
-                            val primary = MaterialTheme.colorScheme.primary
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .dropShadow(sagaShape()) {
-                                            color = primary
-                                            radius = 15f
-                                            spread = 1f
-                                            alpha = .7f
-                                        }.border(
-                                            1.dp,
-                                            MaterialTheme.colorScheme.primary.gradientFade(),
-                                            sagaShape(),
-                                        ).clip(sagaShape())
-                                        .clickable {
-                                            onAction(DetailAction.OpenReview)
-                                        }.background(
-                                            MaterialTheme.colorScheme.onBackground,
-                                            sagaShape(),
-                                        ).gradientFill(sagaBrush())
-                                        .padding(16.dp),
-                            ) {
-                                Icon(
-                                    themePainter(),
-                                    contentDescription = stringResource(R.string.saga_detail_recap_button),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier =
-                                        Modifier
-                                            .reactiveShimmer(
-                                                isPlaying = true,
-                                                repeatMode = RepeatMode.Restart,
-                                            ).size(24.dp),
-                                )
-
-                                Text(
-                                    stringResource(R.string.saga_detail_recap_cta),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier =
-                                        Modifier
-                                            .reactiveShimmer(
-                                                isPlaying = true,
-                                                repeatMode = RepeatMode.Restart,
-                                            ).padding(horizontal = 8.dp),
-                                )
-                            }
-                        }
-
-                        saga.emotionalProfile?.let {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .15f), CircleShape)
-                                        .clickable {
-                                            onAction(DetailAction.OpenEmotionalReview)
-                                        },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_emotional),
-                                    contentDescription = stringResource(R.string.emotional_card_title),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxSize(),
-                                )
-                            }
-                        }
-                    }
-                }
+                        .height(8.dp),
+                )
             }
         }
     }

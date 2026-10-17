@@ -11,6 +11,7 @@ import com.ilustris.sagai.features.characters.ui.components.KnowledgeCard
 import com.ilustris.sagai.features.characters.ui.components.ProfileCard
 import com.ilustris.sagai.features.characters.ui.components.RelationsCard
 import com.ilustris.sagai.features.characters.ui.components.SpecialAction
+import com.ilustris.sagai.features.brain.ui.components.ConstellationGlobeIcon
 import com.ilustris.sagai.features.characters.ui.components.SpecialActionsRow
 import com.ilustris.sagai.ui.components.IosStyleMenuHost
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
@@ -65,6 +66,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -430,6 +433,7 @@ private fun CharacterDetailsLoaded(
                                     shimmerColors = characterColor.shimmerize(),
                                     accentColor = characterColor,
                                     onAccentColor = adaptiveTextColor,
+                                    titleColor = characterColor,
                                 )
 
                                 CharacterLevelRow(
@@ -489,6 +493,14 @@ private fun CharacterDetailsLoaded(
                                                 iconRes = R.drawable.ic_constellation,
                                                 label = stringResource(R.string.character_action_connections),
                                                 onClick = { onOpenCharacterBrain(sagaInfo.id, characterData.id) },
+                                                // the saga's constellation globe, in the character's colour
+                                                icon = {
+                                                    ConstellationGlobeIcon(
+                                                        size = 24.dp,
+                                                        glow = characterColor,
+                                                        colors = listOf(characterColor, lerp(characterColor, Color.White, 0.55f)),
+                                                    )
+                                                },
                                             ),
                                         )
                                     },

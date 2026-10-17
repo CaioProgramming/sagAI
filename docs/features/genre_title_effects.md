@@ -181,6 +181,11 @@ entry, the effect over several seconds, and touch.
   keeps the lab's glow size. A word is never broken between letters; the font shrinks instead.
 - Palettes (`TitleFxPalette.kt`) derive from the title colour; Crime, Heroes, Cyberpunk and Space Opera
   use the remote `colorPalette` when it has enough entries, like the lab did with the app's own colours.
+- A title can take a colour of its own (`stylisedText(color = ...)`; the character screen passes the
+  character's). Fantasy, Horror, Cowboy, Shinobi and Punk Rock derive their whole palette from it.
+  Crime, Heroes, Cyberpunk and Space Opera use the remote genre palette, so for them an explicit colour
+  turns the hue of that palette toward the colour's (`TitleFxPalette.turnedToward`: same saturation and
+  lightness, the halo stays). With no colour passed (every saga title) nothing changes.
 - Fake bold (`stroke`) is 0 for Cyberpunk, Space Opera and Punk Rock: their header fonts are already
   heavy, and the extra ink saturated the halo.
 

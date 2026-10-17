@@ -167,6 +167,7 @@ fun heroBottomCluster(
     shimmerColors: List<Color>,
     accentColor: Color,
     onAccentColor: Color,
+    titleColor: Color? = null,
     statusTag: String? = null,
     actions: List<HeroAction> = emptyList(),
     modifier: Modifier = Modifier,
@@ -203,6 +204,7 @@ fun heroBottomCluster(
                     .fillMaxWidth()
                     .padding(16.dp)
                     .then(if (genre.usesTitleFx()) Modifier else Modifier.reactiveShimmer(true, shimmerColors)),
+            color = titleColor,
             interactive = true,
         )
 
