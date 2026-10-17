@@ -243,7 +243,7 @@ private fun SharedTransitionScope.FaqContentView(
                     ),
             ) {
                 Icon(
-                    painterResource(R.drawable.ic_back_left),
+                    painterResource(R.drawable.ic_chevron_left),
                     null,
                     modifier =
                         Modifier
@@ -283,12 +283,12 @@ private fun SharedTransitionScope.FaqContentView(
                         .clip(RoundedCornerShape(20.dp))
                         .padding(16.dp),
                 leadingIcon = {
-                    Icon(painterResource(R.drawable.search), null)
+                    Icon(painterResource(R.drawable.ic_search), null)
                 },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { onQueryChange("") }) {
-                            Icon(painterResource(R.drawable.round_close_24), null)
+                            Icon(painterResource(R.drawable.ic_close), null)
                         }
                     }
                 },

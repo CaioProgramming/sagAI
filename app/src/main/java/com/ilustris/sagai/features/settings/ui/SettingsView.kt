@@ -159,7 +159,7 @@ fun SettingsView(
                         ),
                 ) {
                     Icon(
-                        painterResource(R.drawable.ic_back_left),
+                        painterResource(R.drawable.ic_chevron_left),
                         contentDescription = null,
                         modifier =
                             Modifier
@@ -305,7 +305,7 @@ fun SettingsView(
                             )
 
                             Icon(
-                                painterResource(R.drawable.round_arrow_forward_ios_24),
+                                painterResource(R.drawable.ic_chevron_right),
                                 null,
                                 modifier =
                                     Modifier
