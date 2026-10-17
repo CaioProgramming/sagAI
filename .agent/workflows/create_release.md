@@ -3,7 +3,7 @@ description: Automate the full release process (Version Bump -> Notes -> Build)
 ---
 
 This workflow automates the entire release cycle, from determining the version number to building
-the APK.
+the app bundle.
 
 1. **Smart Commit Check**:
     - Run the `.agent/workflows/smart_commit.md` workflow to ensure all changes are committed and summarized.
@@ -136,13 +136,15 @@ the APK.
 
 12. **Build Debug & Release**:
     - **Debug Build**: Run `./gradlew assembleDebug` for Firebase distribution.
-    - **Release Build**: Run `./gradlew assembleRelease` for Google Play Console.
+    - **Release Build**: Run `./gradlew bundleRelease` for Google Play Console (we upload the `.aab`, not an APK).
+      Mapping for the Play Console is `app/build/outputs/mapping/release/mapping.txt`.
+    - Only one Gradle at a time: a leftover daemon holding `~/.gradle/caches/journal-1` makes the next build fail at start; just rerun.
     - *Note*: This might take a few minutes.
 
 13. **Distribute to Firebase**:
     - **Prepare Release Notes**: Read the content from `docs/release_notes/release_[new_version].md`.
-    - **Distribute**: Run `firebase appdistribution:distribute app/build/outputs/apk/debug/app-debug.apk --app [FIREBASE_APP_ID] --groups "alpha-testers" --release-notes-file docs/release_notes/release_[new_version].md`
-    - *Note*: This distributes the debug build to alpha-testers. The release build will be uploaded to Google Play Console manually.
+    - **Distribute**: Run `firebase appdistribution:distribute app/build/outputs/apk/debug/app-debug.apk --app 1:504234581198:android:1894fc2b64ae93d97bc49f --groups "alpha-testers" --release-notes-file docs/release_notes/release_[new_version].md`
+    - *Note*: This distributes the debug build to alpha-testers. The debug package (`com.ilustris.sagai.debug`) is registered as its own app in `sagai-ilustris` (that is where the `alpha-testers` group lives), and the build still talks to the hmg backend. The `.aab` is uploaded to Google Play Console manually.
     - *Note*: Distributing to real alpha-testers is user-visible and not easily reversible —
       confirm with the user before running this, don't fire it automatically just because the
       rest of the workflow ran cleanly.
@@ -158,7 +160,11 @@ the APK.
       `firebase remoteconfig:get --project sagai-ilustris -o /tmp/rc_live.json`, then pull
       `parameters.faq_data` out of it. Never draft against anything else.
     - **Analyze**: Using the features and changes identified in Step 6 and 9, determine what new
-      questions users might have — and check them against what the live FAQ already covers.
+      questions users might have — and check them against what the live FAQ already covers. Also
+      review the whole FAQ for answers the release (or earlier ones) made stale, duplicated or
+      pointless: propose rewrites and removals, not only additions. Describe what exists (e.g. what
+      comes after a saga) rather than pointing at one button, and don't teach what is meant to be
+      discovered (e.g. visual easter eggs).
     - **Generate**: Draft the new/updated items (Question & Answer) in both EN and PT-BR. PT-BR is
       natural copy in the same voice, not a literal translation.
     - **Refine**: Present the user with the suggested additions, updates, or removals and let them
@@ -168,15 +174,15 @@ the APK.
     - **Validate before handing it over** — parameter count, parameterGroups count, group count and
       condition count must be identical to the template you read, and `faq_data` must be the *only*
       parameter that differs.
-    - **Do NOT publish it yourself.** Per `.cursor/skills/firebase-remote-config/SKILL.md`,
-      Remote Config is never published from CLI, MCP or REST — a bad template can wipe the whole
-      project's config. Hand the user the validated JSON and let them upload it in the console.
-      Note that the console's *Import* has been known to reject valid JSON; pasting the `faq_data`
-      parameter values directly is the reliable path.
+    - **Publish only after the user approves the points.** Then publish to both environments, `sagai-hmg`
+      first and `sagai-ilustris` after, from a fresh `firebase remoteconfig:get` of each project (their
+      `faq_data` can differ): build the template, check that `faq_data` is the only changed parameter,
+      `firebase deploy --only remoteconfig --project <p> --dry-run`, deploy, then read it back and confirm
+      the version. Never deploy a template built from an older fetch.
     - **Confirm**: Remind the user to check **Version history** in the console after publishing.
 
 15. **Finalize**:
     - Notify the user that Release **[new_version]** is ready.
-    - Run `open app/build/outputs/apk/release/` to show the APK in Finder.
-    - Provide the path to the APK: `app/build/outputs/apk/release/app-release.apk`.
+    - Run `open app/build/outputs/bundle/release/` to show the bundle in Finder.
+    - Provide the path to the bundle: `app/build/outputs/bundle/release/app-release.aab`.
     - Ask the user to review the generated release notes.
