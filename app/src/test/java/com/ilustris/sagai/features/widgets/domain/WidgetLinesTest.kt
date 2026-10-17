@@ -58,11 +58,17 @@ class WidgetLinesTest {
     }
 
     @Test
-    fun `instructions differ by kind`() {
-        val quote = WidgetLinesPrompt.instructions(LinesType.QUOTE).toString()
-        val hook = WidgetLinesPrompt.instructions(LinesType.HOOK).toString()
-        assertTrue(quote.contains("Quotes"))
-        assertTrue(hook.contains("Never guilt"))
+    fun `the task line names the kind and the limit`() {
+        val quote = WidgetLinesPrompt.build(facts(type = LinesType.QUOTE))
+        val hook = WidgetLinesPrompt.build(facts(type = LinesType.HOOK))
+        assertTrue(quote.contains("at most ${WidgetLinesPrompt.QUOTE_MAX_CHARS} characters"))
+        assertTrue(hook.contains("at most ${WidgetLinesPrompt.HOOK_MAX_CHARS} characters"))
+        assertTrue(hook.contains("calling the player"))
+    }
+
+    @Test
+    fun `the blueprint key follows the registry convention`() {
+        assertTrue(WidgetLinesPrompt.BLUEPRINT_KEY.endsWith("_blueprint"))
     }
 
     @Test

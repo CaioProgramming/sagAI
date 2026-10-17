@@ -74,6 +74,7 @@ This document tracks all the AI prompt blueprints used in the Sagas application.
 | `share_character_blueprint` | Character card: epithet title, one-line tagline of at most 110 characters, hook caption. | Share | ✅ |
 | `share_player_blueprint` | Player portrait card (player profile screen): archetype title, text of at most 3 sentences, caption. | Share | ✅ |
 | `faq_ask_ai_blueprint` | The "Voice of Sagas" for technical and lore support. | FAQ | ✅ |
+| `widget_lines_blueprint` | Quote and Hook lines of the generated home widgets, written in a character's voice. Role and directives only; the task context (profile, arcs, events, bonds, objective, count, limit) is built in code. Remote-only: a missing key fails the request. Published to hmg first. | Widget | ✅ |
 
 **Legend:**
 - ✅ : Fully refactored to use `PromptService` and Remote Config.

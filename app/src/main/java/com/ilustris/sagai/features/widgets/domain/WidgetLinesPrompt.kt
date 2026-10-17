@@ -27,7 +27,8 @@ data class LinesFacts(
  * changes from one saga to the next.
  */
 object WidgetLinesPrompt {
-    const val BLUEPRINT_KEY = "widget_lines"
+    /** Remote Config key of the blueprint with the instructions (role and directives). */
+    const val BLUEPRINT_KEY = "widget_lines_blueprint"
     private const val BACKSTORY_LIMIT = 700
     private const val ITEM_LIMIT = 260
     private const val MAX_ARCS = 3
@@ -88,35 +89,6 @@ object WidgetLinesPrompt {
                 "Write ${facts.count} different short messages in ${facts.characterName}'s voice, calling the player " +
                     "back to the story, like a message left for a friend. Each one is at most ${HOOK_MAX_CHARS} characters."
         }
-
-    /** The system-side instructions, as the nested buckets the prompt service renders. */
-    fun instructions(type: LinesType): Map<String, Any> =
-        mapOf(
-            "role" to
-                "You write the short lines that appear on a player's phone home screen, " +
-                "in the voice of a character from the story they played.",
-            "directives" to
-                mapOf(
-                    "VOICE" to
-                        "Speak as the character, in first person, with the register their personality and world imply. " +
-                        "Poetic, never generic.",
-                    "SPECIFIC" to
-                        "Draw on the character's own history, wounds and bonds. A line that fits any character is a failed line.",
-                    "NO_SPOILERS_OF_THE_CHAT" to
-                        "Do not quote or retell specific conversations. Evoke what the character lived through instead.",
-                    "FORMAT" to
-                        "Plain text only. No quotation marks around the line, no numbering, no emojis, no hashtags, " +
-                        "no stage directions. One sentence or two short ones.",
-                    "SAFETY" to
-                        "Nothing graphic, sexual or hateful: these lines sit on a home screen anyone may glance at.",
-                    "KIND" to
-                        if (type == LinesType.QUOTE) {
-                            "Quotes: reflective, quotable, self-contained."
-                        } else {
-                            "Hooks: warm, a little mysterious, an invitation. Never guilt the player for being away."
-                        },
-                ),
-        )
 }
 
 /** Cleans what the model returned: no blanks, no repeats, nothing too long for the widget. */

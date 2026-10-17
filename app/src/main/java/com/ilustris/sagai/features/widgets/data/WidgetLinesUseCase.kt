@@ -2,8 +2,8 @@ package com.ilustris.sagai.features.widgets.data
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
-import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
@@ -33,6 +33,7 @@ class WidgetLinesUseCase
     constructor(
         private val gemmaClient: GemmaClient,
         private val genreConfigService: GenreConfigService,
+        private val promptService: PromptService,
     ) {
         suspend fun generate(
             detail: CharacterDetailData,
@@ -61,12 +62,12 @@ class WidgetLinesUseCase
                         count = count,
                         avoid = avoid,
                     )
+                // Instructions come from the Remote Config blueprint only (remote-only, no compiled copy);
+                // the task context is data and is built here. A missing blueprint fails the request.
                 val prompt =
-                    SplitPrompt(
-                        blueprintKey = WidgetLinesPrompt.BLUEPRINT_KEY,
-                        instructionBuckets = WidgetLinesPrompt.instructions(type),
-                        processedTemplate = WidgetLinesPrompt.build(facts),
-                    )
+                    promptService
+                        .buildSplitBlueprint(WidgetLinesPrompt.BLUEPRINT_KEY, emptyMap<String, String>())
+                        .copy(processedTemplate = WidgetLinesPrompt.build(facts))
 
                 val generated =
                     gemmaClient.generate<WidgetLinesGen>(
