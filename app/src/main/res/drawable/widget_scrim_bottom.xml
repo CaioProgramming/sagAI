@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Transparent on top, solid from about 60% of the height down. Square widgets keep every piece of text in the solid part. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:centerColor="#FFFFFFFF"
+        android:centerY="0.62"
+        android:endColor="#FFFFFFFF"
+        android:startColor="#00FFFFFF"
+        android:type="linear" />
+</shape>

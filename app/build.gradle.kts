@@ -129,6 +129,7 @@ dependencies {
     implementation(libs.androidx.media3.effect)
 
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.hilt.work)
 
     implementation(libs.androidx.hilt.navigation.compose)

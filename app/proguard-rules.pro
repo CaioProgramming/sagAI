@@ -34,3 +34,10 @@
 -keepclassmembers class * extends androidx.work.Worker {
     public <init>(android.content.Context,androidx.work.WorkerParameters);
 }
+
+# Home screen widgets: the configuration is stored as JSON inside each widget's state, and the AI
+# output is parsed by reflection. Renaming either would break widgets that already exist.
+-keep class com.ilustris.sagai.features.widgets.domain.WidgetConfig { *; }
+-keep class com.ilustris.sagai.features.widgets.domain.LinesType { *; }
+-keep class com.ilustris.sagai.features.widgets.domain.RotationRule { *; }
+-keep class com.ilustris.sagai.features.widgets.data.WidgetLinesGen { *; }
