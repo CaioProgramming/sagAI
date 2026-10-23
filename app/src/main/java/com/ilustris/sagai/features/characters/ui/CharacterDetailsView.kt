@@ -484,7 +484,7 @@ private fun CharacterDetailsLoaded(
                                         if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
                                             add(
                                                 SpecialAction(
-                                                    iconRes = R.drawable.talk_bubble,
+                                                    iconRes = R.drawable.ic_talk_bubble,
                                                     label = stringResource(R.string.character_action_talk),
                                                     onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },
                                                 ),
@@ -587,7 +587,7 @@ private fun CharacterDetailsLoaded(
                                 ),
                         ) {
                             Icon(
-                                painterResource(R.drawable.ic_back_left),
+                                painterResource(R.drawable.ic_chevron_left),
                                 contentDescription = stringResource(R.string.back_button_description),
                                 tint = adaptiveTextColor,
                             )

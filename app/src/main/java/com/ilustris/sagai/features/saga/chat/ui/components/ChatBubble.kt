@@ -922,7 +922,7 @@ fun ChatBubble(
                                                         .fillMaxWidth(),
                                             ) {
                                                 Icon(
-                                                    painterResource(R.drawable.baseline_refresh_24),
+                                                    painterResource(R.drawable.ic_replay),
                                                     null,
                                                     Modifier.size(12.dp),
                                                 )
@@ -1092,7 +1092,7 @@ fun ChatBubble(
                                     ),
                         ) {
                             Icon(
-                                painterResource(R.drawable.baseline_refresh_24),
+                                painterResource(R.drawable.ic_replay),
                                 contentDescription = stringResource(R.string.try_again),
                                 modifier =
                                     Modifier

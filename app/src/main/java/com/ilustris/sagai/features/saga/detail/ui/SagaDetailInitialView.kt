@@ -244,7 +244,7 @@ fun SagaDetailInitialContent(
                             }
 
                             Icon(
-                                painterResource(R.drawable.round_arrow_forward_ios_24),
+                                painterResource(R.drawable.ic_chevron_right),
                                 contentDescription = null,
                                 tint = adaptiveTextColor,
                                 modifier = Modifier.size(20.dp),
@@ -377,7 +377,7 @@ fun SagaDetailInitialContent(
                         ),
                 ) {
                     Icon(
-                        painterResource(R.drawable.ic_back_left),
+                        painterResource(R.drawable.ic_chevron_left),
                         contentDescription = stringResource(R.string.back_button_description),
                         tint = adaptiveTextColor,
                     )

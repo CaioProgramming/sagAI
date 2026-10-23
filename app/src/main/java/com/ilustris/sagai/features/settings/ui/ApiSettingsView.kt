@@ -83,7 +83,7 @@ fun ApiSettingsView(
                 ) {
                     IconButton(onClick = onBack) {
                         Icon(
-                            painterResource(R.drawable.ic_back_left),
+                            painterResource(R.drawable.ic_chevron_left),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onBackground,
                         )

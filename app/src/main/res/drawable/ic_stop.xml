@@ -2,11 +2,10 @@
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
-    android:viewportHeight="24">
-
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
     <path
-        android:fillColor="#000000"
+        android:fillColor="@android:color/white"
         android:fillType="evenOdd"
-        android:pathData="M4,18a2,2 0,0 0,2 2h12a2,2 0,0 0,2 -2V6a2,2 0,0 0,-2 -2H6a2,2 0,0 0,-2 2v12z" />
-
+        android:pathData="M15.40 5.00 L8.60 5.00 L8.13 5.03 L7.67 5.12 L7.22 5.27 L6.80 5.48 L6.41 5.74 L6.05 6.05 L5.74 6.41 L5.48 6.80 L5.27 7.22 L5.12 7.67 L5.03 8.13 L5.00 8.60 L5.00 15.40 L5.03 15.87 L5.12 16.33 L5.27 16.78 L5.48 17.20 L5.74 17.59 L6.05 17.95 L6.41 18.26 L6.80 18.52 L7.22 18.73 L7.67 18.88 L8.13 18.97 L8.60 19.00 L15.40 19.00 L15.87 18.97 L16.33 18.88 L16.78 18.73 L17.20 18.52 L17.59 18.26 L17.95 17.95 L18.26 17.59 L18.52 17.20 L18.73 16.78 L18.88 16.33 L18.97 15.87 L19.00 15.40 L19.00 8.60 L18.97 8.13 L18.88 7.67 L18.73 7.22 L18.52 6.80 L18.26 6.41 L17.95 6.05 L17.59 5.74 L17.20 5.48 L16.78 5.27 L16.33 5.12 L15.87 5.03z"/>
 </vector>

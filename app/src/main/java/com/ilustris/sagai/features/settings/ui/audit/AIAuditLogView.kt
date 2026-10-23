@@ -185,7 +185,7 @@ fun AIAuditLogView(
                         ),
                 ) {
                     Icon(
-                        painterResource(R.drawable.ic_back_left),
+                        painterResource(R.drawable.ic_chevron_left),
                         null,
                         modifier =
                             Modifier
@@ -691,7 +691,7 @@ fun AuditLogItem(
                 targetValue = if (expanded) 90f else 0f,
             )
             Icon(
-                painter = painterResource(R.drawable.round_arrow_forward_ios_24),
+                painter = painterResource(R.drawable.ic_chevron_right),
                 contentDescription = null,
                 modifier =
                     Modifier
@@ -917,7 +917,7 @@ fun AuditLogSectionCard(
         }
 
         Icon(
-            painter = painterResource(R.drawable.round_arrow_forward_ios_24),
+            painter = painterResource(R.drawable.ic_chevron_right),
             contentDescription = null,
             modifier = Modifier.size(12.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
