@@ -392,8 +392,11 @@ class MilestoneViewModel
 
         /**
          * The close button's tap. A generation genuinely in flight isn't stuck, so it gets told
-         * that instead of a reevaluation that would just be queued behind it; anything else goes
-         * through [requestStuckExit], which leaves only if nothing is actually left pending.
+         * that instead of a reevaluation that would just be queued behind it. Loading and Error
+         * have no action of their own, so they go through [requestStuckExit], which leaves only if
+         * nothing is actually left pending. Every other step is showing content the player can
+         * read, so there is nothing to reevaluate: the exit is theirs to take, and it also covers
+         * a step whose own controls never showed up.
          */
         fun onCloseRequested() {
             val narrativeState = sagaContentManager.narrativeUiState.value
@@ -408,7 +411,10 @@ class MilestoneViewModel
                 )
                 return
             }
-            requestStuckExit()
+            when (_uiState.value) {
+                is MilestoneUiState.Loading, is MilestoneUiState.Error -> requestStuckExit()
+                else -> _finished.tryEmit(Unit)
+            }
         }
 
         fun onContinue() {

@@ -44,8 +44,9 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 
 /**
  * The narrative chain between scenes: an event logged, a chapter closed, an act finished, a new one
- * opening. This screen fully owns that chain — it can't be backed out of, and it drives itself step
- * by step via [MilestoneViewModel].
+ * opening. This screen fully owns that chain and drives itself step by step via
+ * [MilestoneViewModel]; it can only be left once nothing is generating (see
+ * [MilestoneViewModel.onCloseRequested]).
  *
  * It has no idea what any genre looks like. Each state is described as a
  * [com.ilustris.sagai.ui.genre.surface.StoryBeat] (see `MilestoneStoryBeat.kt`) and handed to
@@ -67,8 +68,8 @@ fun MilestoneScreen(
     LaunchedEffect(sagaId) { viewModel.start(sagaId) }
     LaunchedEffect(Unit) { viewModel.finished.collect { onFinished() } }
 
-    // A narrative chain is mandatory once started — no escaping back into chat mid-generation.
-    BackHandler(enabled = true) { }
+    // Back is the close button: a generation in flight answers with a snackbar instead of leaving.
+    BackHandler(enabled = true, onBack = viewModel::onCloseRequested)
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val sagaData by viewModel.sagaData.collectAsStateWithLifecycle()
@@ -84,114 +85,113 @@ fun MilestoneScreen(
             // Terminal's tube curvature/bloom and Cyberpunk's glitch, applied once around every
             // state this screen can show rather than per-state — a screen filter, not a beat one.
             GenreScreenEffects(genre = genre) {
-                AnimatedContent(
-                    targetState = uiState,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
-                    // ChoiceCardsStep/Loading are data classes whose payload legitimately mutates
-                    // while still conceptually being the same step (a pick, a reasoning chunk).
-                    // The default identity key (full equality) reads each mutation as a brand-new
-                    // step and tears the composition down to rebuild it — which reset
-                    // ChapterChoiceCardsScreen's own pager position back to the first pair on
-                    // every tap, and crossfaded the whole loading screen on every reasoning
-                    // tick. Keying on what actually identifies the step
-                    // (the chapter; just "loading") keeps one composition alive across those
-                    // mutations, so only a real step change (a different milestone, a different
-                    // state type) crossfades.
-                    contentKey = { state ->
+                Box(Modifier.fillMaxSize()) {
+                    AnimatedContent(
+                        targetState = uiState,
+                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        // ChoiceCardsStep/Loading are data classes whose payload legitimately mutates
+                        // while still conceptually being the same step (a pick, a reasoning chunk).
+                        // The default identity key (full equality) reads each mutation as a brand-new
+                        // step and tears the composition down to rebuild it — which reset
+                        // ChapterChoiceCardsScreen's own pager position back to the first pair on
+                        // every tap, and crossfaded the whole loading screen on every reasoning
+                        // tick. Keying on what actually identifies the step
+                        // (the chapter; just "loading") keeps one composition alive across those
+                        // mutations, so only a real step change (a different milestone, a different
+                        // state type) crossfades.
+                        contentKey = { state ->
+                            when (state) {
+                                is MilestoneUiState.ChoiceCardsStep -> state.milestone.chapter.id
+                                is MilestoneUiState.Loading -> "loading"
+                                else -> state
+                            }
+                        },
+                        label = "milestone_step",
+                    ) { state ->
                         when (state) {
-                            is MilestoneUiState.ChoiceCardsStep -> state.milestone.chapter.id
-                            is MilestoneUiState.Loading -> "loading"
-                            else -> state
-                        }
-                    },
-                    label = "milestone_step",
-                ) { state ->
-                    when (state) {
-                        is MilestoneUiState.Loading -> {
-                            Box(Modifier.fillMaxSize()) {
-                                GenreStoryLoading(
-                                    title = sagaData?.title ?: emptyString(),
-                                    message =
-                                        state.reasoning?.takeIf { it.isNotBlank() }
-                                            ?: stringResource(
-                                                if (state.isAutomaticStep) {
-                                                    R.string.milestone_adjusting_lore
-                                                } else {
-                                                    R.string.milestone_loading_default
-                                                },
-                                            ),
+                            is MilestoneUiState.Loading -> {
+                                Box(Modifier.fillMaxSize()) {
+                                    GenreStoryLoading(
+                                        title = sagaData?.title ?: emptyString(),
+                                        message =
+                                            state.reasoning?.takeIf { it.isNotBlank() }
+                                                ?: stringResource(
+                                                    if (state.isAutomaticStep) {
+                                                        R.string.milestone_adjusting_lore
+                                                    } else {
+                                                        R.string.milestone_loading_default
+                                                    },
+                                                ),
+                                        genre = genre,
+                                    )
+                                }
+                            }
+
+                            is MilestoneUiState.Error -> {
+                                Box(Modifier.fillMaxSize()) {
+                                    GenreStoryNotice(
+                                        title = stringResource(R.string.milestone_error_title),
+                                        message = state.message,
+                                        genre = genre,
+                                        action =
+                                            if (state.canRetry) {
+                                                StoryBeatAction(
+                                                    id = "retry",
+                                                    label = stringResource(R.string.try_again),
+                                                    onClick = viewModel::retryFailedStep,
+                                                )
+                                            } else {
+                                                null
+                                            },
+                                    )
+                                }
+                            }
+
+                            is MilestoneUiState.ClosureStep -> {
+                                GenreStorySurface(
+                                    beat =
+                                        state.toStoryBeat(
+                                            sagaTitle = sagaData?.title,
+                                            coverImage = chapterCoverImage,
+                                            actCoverImages = actChapterCovers,
+                                            bookGenerationState = bookGenerationState,
+                                            onContinue = viewModel::onContinue,
+                                            onOpenDigest = { digestMilestone = state.milestone },
+                                            onGenerateBook = viewModel::generateBook,
+                                        ),
                                     genre = genre,
                                 )
-                                MilestoneCloseButton(
-                                    onClick = viewModel::onCloseRequested,
-                                    modifier = Modifier.align(Alignment.TopStart),
-                                )
                             }
-                        }
 
-                        is MilestoneUiState.Error -> {
-                            Box(Modifier.fillMaxSize()) {
-                                GenreStoryNotice(
-                                    title = stringResource(R.string.milestone_error_title),
-                                    message = state.message,
+                            is MilestoneUiState.ChoiceCardsStep -> {
+                                ChapterChoiceCardsScreen(
+                                    state = state,
                                     genre = genre,
-                                    action =
-                                        if (state.canRetry) {
-                                            StoryBeatAction(
-                                                id = "retry",
-                                                label = stringResource(R.string.try_again),
-                                                onClick = viewModel::retryFailedStep,
-                                            )
-                                        } else {
-                                            null
-                                        },
-                                )
-                                MilestoneCloseButton(
-                                    onClick = viewModel::onCloseRequested,
-                                    modifier = Modifier.align(Alignment.TopStart),
+                                    onSelect = viewModel::selectChoice,
+                                    onSubmit = viewModel::submitChoiceAnswers,
                                 )
                             }
-                        }
 
-                        is MilestoneUiState.ClosureStep -> {
-                            GenreStorySurface(
-                                beat =
-                                    state.toStoryBeat(
-                                        sagaTitle = sagaData?.title,
-                                        coverImage = chapterCoverImage,
-                                        actCoverImages = actChapterCovers,
-                                        bookGenerationState = bookGenerationState,
-                                        onContinue = viewModel::onContinue,
-                                        onOpenDigest = { digestMilestone = state.milestone },
-                                        onGenerateBook = viewModel::generateBook,
-                                    ),
-                                genre = genre,
-                            )
-                        }
-
-                        is MilestoneUiState.ChoiceCardsStep -> {
-                            ChapterChoiceCardsScreen(
-                                state = state,
-                                genre = genre,
-                                onSelect = viewModel::selectChoice,
-                                onSubmit = viewModel::submitChoiceAnswers,
-                            )
-                        }
-
-                        // Always one centred composition, whatever the genre — see
-                        // GenreStoryIntroduction's own doc for why this beat doesn't go through
-                        // GenreStorySurface's per-style layouts like every other state here does.
-                        is MilestoneUiState.IntroductionStep -> {
-                            GenreStoryIntroduction(
-                                beat =
-                                    state.milestone.toStoryBeat(
-                                        sagaTitle = sagaData?.title,
-                                        onContinue = viewModel::onContinue,
-                                    ),
-                                genre = genre,
-                            )
+                            // Always one centred composition, whatever the genre — see
+                            // GenreStoryIntroduction's own doc for why this beat doesn't go through
+                            // GenreStorySurface's per-style layouts like every other state here does.
+                            is MilestoneUiState.IntroductionStep -> {
+                                GenreStoryIntroduction(
+                                    beat =
+                                        state.milestone.toStoryBeat(
+                                            sagaTitle = sagaData?.title,
+                                            onContinue = viewModel::onContinue,
+                                        ),
+                                    genre = genre,
+                                )
+                            }
                         }
                     }
+
+                    MilestoneCloseButton(
+                        onClick = viewModel::onCloseRequested,
+                        modifier = Modifier.align(Alignment.TopStart),
+                    )
                 }
 
                 digestMilestone?.let { milestone ->
@@ -221,10 +221,8 @@ fun MilestoneScreen(
 }
 
 /**
- * The screen's one emergency exit, for the rare case the chain is genuinely stuck for a reason
- * this screen can't fix on its own — never a shortcut past a step that's still legitimately
- * pending. Only offered on Loading/Error, the two states with no action of their own; a
- * generation still running answers with a snackbar instead (see
+ * The screen's exit, offered on every step so a step whose own controls never appear can't trap
+ * the player. A generation still running answers with a snackbar instead of leaving (see
  * [MilestoneViewModel.onCloseRequested]).
  */
 @Composable
