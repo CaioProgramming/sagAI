@@ -10,10 +10,19 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import timber.log.Timber
 import java.lang.reflect.Type
 
+/** [status] is one of the FirebaseRemoteConfig.LAST_FETCH_STATUS_* constants; [timeMillis] is -1 when nothing was fetched yet. */
+data class RemoteConfigFetchInfo(
+    val timeMillis: Long,
+    val status: Int,
+)
+
 class RemoteConfigService {
     private val firebaseRemoteConfig by lazy {
         FirebaseRemoteConfig.getInstance()
     }
+
+    fun lastFetchInfo(): RemoteConfigFetchInfo =
+        firebaseRemoteConfig.info.let { RemoteConfigFetchInfo(it.fetchTimeMillis, it.lastFetchStatus) }
 
     suspend fun getString(
         key: String?,

@@ -783,6 +783,12 @@
     <string name="settings_debug_section">Depuração</string>
     <string name="settings_audit_logs_subtitle">Inspecionar requisições de IA</string>
     <string name="settings_design_system_subtitle">Validar o design system</string>
+    <string name="settings_remote_config_title">Remote Config</string>
+    <string name="settings_remote_config_last_fetch">Último fetch: %1$s (%2$s)</string>
+    <string name="settings_remote_config_never">Nunca buscado</string>
+    <string name="settings_remote_config_status_success">sucesso</string>
+    <string name="settings_remote_config_status_throttled">limitado</string>
+    <string name="settings_remote_config_status_failed">falhou</string>
     <string name="settings_test_starry_loader">Testar Starry Loader</string>
     <string name="settings_test_starry_loader_message">Tecendo o próximo capítulo…</string>
     <string name="settings_test_starry_loader_subtitle">Isso pode levar alguns segundos</string>
