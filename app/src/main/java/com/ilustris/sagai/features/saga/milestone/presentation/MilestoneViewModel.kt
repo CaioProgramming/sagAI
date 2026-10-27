@@ -425,6 +425,13 @@ class MilestoneViewModel
             }
             when (_uiState.value) {
                 is MilestoneUiState.Loading, is MilestoneUiState.Error -> requestStuckExit()
+                // Leaving an introduction is the same as continuing it: it has no side effect to run,
+                // and a milestone left set is what makes the chat reopen this screen.
+                is MilestoneUiState.IntroductionStep -> {
+                    sagaContentManager.dismissMilestone()
+                    _finished.tryEmit(Unit)
+                }
+
                 else -> _finished.tryEmit(Unit)
             }
         }

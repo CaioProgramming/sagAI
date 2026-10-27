@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -58,6 +59,8 @@ import com.ilustris.sagai.ui.theme.themeVfx
  * for scene-setting text. A terminal has no icon either — it has a prompt — so the whole beat prints
  * as one command instead of standing next to one.
  */
+private const val REVEAL_FALLBACK_MS = 12_000L
+
 @Composable
 fun GenreStoryIntroduction(
     beat: StoryBeat,
@@ -73,6 +76,12 @@ fun GenreStoryIntroduction(
     // instant it lands. Terminal's own TerminalTypewriter drives revealed itself, through onFinished.
     var revealed by remember(beat.key) { mutableStateOf(!canAnimate || isComic) }
     LaunchedEffect(beat.key) { if (!canAnimate || isComic) revealed = true }
+    // A reveal that never reports back (a typewriter restarted by a recomposition, a genre that
+    // resolved late) must not take the only way forward with it.
+    LaunchedEffect(beat.key) {
+        delay(REVEAL_FALLBACK_MS)
+        revealed = true
+    }
 
     Box(modifier.fillMaxSize()) {
         GenreStoryBackground(Modifier.fillMaxSize(), genre)
