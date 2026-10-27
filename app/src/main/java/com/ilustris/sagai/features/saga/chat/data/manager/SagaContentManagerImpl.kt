@@ -490,6 +490,11 @@ class SagaContentManagerImpl
             lastObservedMessageCount = -1
         }
 
+        override fun clearSessionIfDifferent(sagaId: String) {
+            val held = content.value?.data?.id?.toString() ?: return
+            if (held != sagaId) resetSagaSession()
+        }
+
         override suspend fun loadSaga(sagaId: String) {
             lastObservedMessageCount = -1
             if (content.value

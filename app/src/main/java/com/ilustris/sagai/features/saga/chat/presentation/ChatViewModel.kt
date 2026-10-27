@@ -442,6 +442,11 @@ class ChatViewModel
             stateManager.updateLoading(true)
             enableDebugMode(isDebug)
 
+            // Before any observer below starts: they all read the manager's shared state, and a
+            // previous saga's content, milestone and narrative phase would otherwise reach them
+            // until loadSaga() (async, below) gets around to resetting it.
+            sagaContentManager.clearSessionIfDifferent(sagaId)
+
             // No resetSagaSession() call here on purpose: whether the shared session needs
             // tearing down is the manager's call, not this screen's. The guard above only knows
             // about THIS ViewModel's own (possibly blank, on a fresh instance) uiState, not
