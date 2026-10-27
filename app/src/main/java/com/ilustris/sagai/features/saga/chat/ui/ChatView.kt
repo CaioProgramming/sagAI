@@ -272,8 +272,16 @@ fun ChatView(
             requiredPermission = null
         }
 
-        AnimatedContent(uiState.chatState, transitionSpec = {
-            fadeIn(tween(500)) togetherWith fadeOut(tween(500))
+        // The view model is reused across sagas and initChat only runs after the first frame, so
+        // for a moment it still holds the previous saga's chat. Until the content is this saga's
+        // (or there is none), the waiting screen stands in for it instead of flashing the old one.
+        val heldSagaId = uiState.sagaContent?.data?.id?.toString()
+        val showsRequestedSaga = heldSagaId == null || sagaId == null || heldSagaId == sagaId
+        val effectiveChatState = if (showsRequestedSaga) uiState.chatState else ChatState.Loading
+
+        AnimatedContent(effectiveChatState, transitionSpec = {
+            (fadeIn(tween(500)) + scaleIn(tween(500), initialScale = 0.92f)) togetherWith
+                (fadeOut(tween(500)) + scaleOut(tween(500), targetScale = 0.92f))
         }) { state ->
             when (state) {
                 is ChatState.Loading -> {
