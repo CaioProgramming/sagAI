@@ -10,10 +10,15 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import timber.log.Timber
 import java.lang.reflect.Type
 
-/** [status] is one of the FirebaseRemoteConfig.LAST_FETCH_STATUS_* constants; [timeMillis] is -1 when nothing was fetched yet. */
+/**
+ * [status] is one of the FirebaseRemoteConfig.LAST_FETCH_STATUS_* constants; [timeMillis] is -1 when nothing was fetched yet.
+ * [configVersion] is the `config_version` value the app is actually running on (the activated one, so a stale cache shows
+ * up here even when the last fetch succeeded), null while the template has not published one.
+ */
 data class RemoteConfigFetchInfo(
     val timeMillis: Long,
     val status: Int,
+    val configVersion: String? = null,
 )
 
 class RemoteConfigService {
@@ -22,7 +27,13 @@ class RemoteConfigService {
     }
 
     fun lastFetchInfo(): RemoteConfigFetchInfo =
-        firebaseRemoteConfig.info.let { RemoteConfigFetchInfo(it.fetchTimeMillis, it.lastFetchStatus) }
+        firebaseRemoteConfig.info.let {
+            RemoteConfigFetchInfo(
+                timeMillis = it.fetchTimeMillis,
+                status = it.lastFetchStatus,
+                configVersion = firebaseRemoteConfig.getString(CONFIG_VERSION_KEY).takeIf { version -> version.isNotBlank() },
+            )
+        }
 
     suspend fun getString(
         key: String?,
@@ -122,3 +133,6 @@ suspend fun RemoteConfigService.getGenderPlaceholders() =
         com.ilustris.sagai.features.newsaga.data.model.GenderPlaceholders::class.java,
         false,
     ) ?: emptyMap()
+
+/** The template's own version, bumped on every publish — see the remote-config-version skill. */
+private const val CONFIG_VERSION_KEY = "config_version"

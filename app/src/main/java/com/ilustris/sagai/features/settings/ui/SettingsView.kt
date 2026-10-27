@@ -754,21 +754,27 @@ fun SettingsView(
                         val fetch by viewModel.remoteConfigFetch.collectAsStateWithLifecycle()
                         PreferencesContainer(
                             stringResource(R.string.settings_remote_config_title),
-                            if (fetch.timeMillis < 0) {
-                                stringResource(R.string.settings_remote_config_never)
-                            } else {
-                                stringResource(
-                                    R.string.settings_remote_config_last_fetch,
-                                    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(fetch.timeMillis)),
+                            (
+                                if (fetch.timeMillis < 0) {
+                                    stringResource(R.string.settings_remote_config_never)
+                                } else {
                                     stringResource(
-                                        when (fetch.status) {
-                                            FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS -> R.string.settings_remote_config_status_success
-                                            FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED -> R.string.settings_remote_config_status_throttled
-                                            else -> R.string.settings_remote_config_status_failed
-                                        },
-                                    ),
-                                )
-                            },
+                                        R.string.settings_remote_config_last_fetch,
+                                        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(fetch.timeMillis)),
+                                        stringResource(
+                                            when (fetch.status) {
+                                                FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS -> R.string.settings_remote_config_status_success
+                                                FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED -> R.string.settings_remote_config_status_throttled
+                                                else -> R.string.settings_remote_config_status_failed
+                                            },
+                                        ),
+                                    )
+                                }
+                            ) + "\n" +
+                                stringResource(
+                                    R.string.settings_remote_config_version,
+                                    fetch.configVersion ?: stringResource(R.string.settings_remote_config_version_none),
+                                ),
                             showSwitch = false,
                             isActivated = true,
                         )

@@ -786,6 +786,8 @@
     <string name="settings_remote_config_title">Remote Config</string>
     <string name="settings_remote_config_last_fetch">Último fetch: %1$s (%2$s)</string>
     <string name="settings_remote_config_never">Nunca buscado</string>
+    <string name="settings_remote_config_version">Versão da config: %1$s</string>
+    <string name="settings_remote_config_version_none">não publicada</string>
     <string name="settings_remote_config_status_success">sucesso</string>
     <string name="settings_remote_config_status_throttled">limitado</string>
     <string name="settings_remote_config_status_failed">falhou</string>
