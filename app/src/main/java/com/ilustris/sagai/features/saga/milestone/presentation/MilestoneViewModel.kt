@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.milestone.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.services.AdTier
 import com.ilustris.sagai.core.services.AdsService
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -15,6 +16,8 @@ import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.getChapterCovers
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
@@ -61,6 +64,7 @@ class MilestoneViewModel
         private val chapterUseCase: ChapterUseCase,
         private val sagaThemeManager: SagaThemeManager,
         private val stringResourceHelper: StringResourceHelper,
+        imageGenerationService: ImageGenerationService,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<MilestoneUiState>(MilestoneUiState.Loading())
         val uiState: StateFlow<MilestoneUiState> = _uiState.asStateFlow()
@@ -105,6 +109,14 @@ class MilestoneViewModel
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
         val bookGenerationState: StateFlow<BookGenerationUiState> = bookGenerationService.uiState
+
+        /** The chapter cover is generated fire-and-forget behind the closure and takes minutes to
+         * land; the image island that normally shows it sits under this full-screen, so the closure
+         * has to say it is happening itself. */
+        val coverGenerating: StateFlow<Boolean> =
+            imageGenerationService.uiState
+                .map { it is ImageGenerationUiState.Generating && it.imageType == ImageType.COVER }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
         private val _finished = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
         val finished: SharedFlow<Unit> = _finished

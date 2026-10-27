@@ -77,6 +77,7 @@ fun MilestoneScreen(
     val chapterCoverImage by viewModel.chapterCoverImage.collectAsStateWithLifecycle()
     val actChapterCovers by viewModel.actChapterCovers.collectAsStateWithLifecycle()
     val bookGenerationState by viewModel.bookGenerationState.collectAsStateWithLifecycle()
+    val coverGenerating by viewModel.coverGenerating.collectAsStateWithLifecycle()
     val showOnboarding by viewModel.showOnboarding.collectAsStateWithLifecycle()
     var digestMilestone by remember { mutableStateOf<SagaMilestone?>(null) }
 
@@ -155,6 +156,7 @@ fun MilestoneScreen(
                                             coverImage = chapterCoverImage,
                                             actCoverImages = actChapterCovers,
                                             bookGenerationState = bookGenerationState,
+                                            coverGenerating = coverGenerating,
                                             onContinue = viewModel::onContinue,
                                             onOpenDigest = { digestMilestone = state.milestone },
                                             onGenerateBook = viewModel::generateBook,

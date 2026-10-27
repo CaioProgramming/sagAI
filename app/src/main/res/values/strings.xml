@@ -703,6 +703,7 @@
     <string name="milestone_digest_expand">Read in full</string>
     <string name="milestone_generate_book">Generate book</string>
     <string name="milestone_generating_book">Generating book…</string>
+    <string name="milestone_generating_cover">Generating cover…</string>
     <string name="create_character">Continue to character</string>
 
     <string name="saga_intro_fallback">Welcome! Let\'s start creating your epic saga. What kind of story do you want to tell\?</string>

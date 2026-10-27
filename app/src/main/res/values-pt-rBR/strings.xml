@@ -550,6 +550,7 @@
     <string name="milestone_digest_expand">Ler na íntegra</string>
     <string name="milestone_generate_book">Gerar livro</string>
     <string name="milestone_generating_book">Gerando livro…</string>
+    <string name="milestone_generating_cover">Gerando capa…</string>
     <string name="create_character">Ver personagem</string>
 
     <string name="saga_intro_fallback">Bem-vindo! Vamos começar a criar sua saga épica. Que tipo de história você quer contar\?</string>

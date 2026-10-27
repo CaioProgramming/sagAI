@@ -31,9 +31,11 @@ import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.chatMessagesFingerprint
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
@@ -126,6 +128,10 @@ class ChatViewModel
         private var lastEventId: Int = 0
         private var lastMessageCount: Int = 0
         private var lastMessagesFingerprint: Long = 0L
+
+        // A chapter's cover (or title) lands after the chapter closes, without any new message, so
+        // the fingerprint above never sees it.
+        private var lastChapters: List<Chapter> = emptyList()
         private val viewedMessageIds = mutableSetOf<Int>()
         private var wikiObserverJob: kotlinx.coroutines.Job? = null
 
@@ -431,6 +437,7 @@ class ChatViewModel
             lastEventId = 0
             lastMessageCount = 0
             lastMessagesFingerprint = 0L
+            lastChapters = emptyList()
             stateManager.resetForNewSaga()
             stateManager.updateLoading(true)
             enableDebugMode(isDebug)
@@ -888,9 +895,11 @@ class ChatViewModel
                         val flatMessages = sagaContent.flatMessages()
                         val currentMessageCount = flatMessages.size
                         val messagesFingerprint = sagaContent.chatMessagesFingerprint()
+                        val chapters = sagaContent.flatChapters().map { it.data }
                         val messagesChanged =
                             messagesFingerprint != lastMessagesFingerprint ||
-                                currentMessageCount != lastMessageCount
+                                currentMessageCount != lastMessageCount ||
+                                chapters != lastChapters
 
                         val messages =
                             if (messagesChanged) {
@@ -923,6 +932,7 @@ class ChatViewModel
 
                         lastMessageCount = currentMessageCount
                         lastMessagesFingerprint = messagesFingerprint
+                        lastChapters = chapters
 
                         if (uiState.value.selectedCharacter == null) {
                             sagaContent.mainCharacter?.let { updateCharacter(it) }

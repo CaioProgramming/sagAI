@@ -37,6 +37,7 @@ fun MilestoneUiState.ClosureStep.toStoryBeat(
     coverImage: String?,
     actCoverImages: List<String>,
     bookGenerationState: BookGenerationUiState,
+    coverGenerating: Boolean = false,
     onContinue: () -> Unit,
     onOpenDigest: () -> Unit,
     onGenerateBook: (Act) -> Unit,
@@ -93,6 +94,16 @@ fun MilestoneUiState.ClosureStep.toStoryBeat(
                                 ),
                             busy = generating,
                             onClick = { onGenerateBook(milestone.act) },
+                        ),
+                    )
+                }
+                if (milestone is SagaMilestone.ChapterFinished && coverImage == null && coverGenerating) {
+                    add(
+                        StoryBeatAction(
+                            id = "generating_cover",
+                            label = stringResource(R.string.milestone_generating_cover),
+                            busy = true,
+                            onClick = {},
                         ),
                     )
                 }
