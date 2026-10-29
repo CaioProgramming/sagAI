@@ -239,7 +239,7 @@ class BackupService(
             // Use FileProvider to get a shareable URI
             androidx.core.content.FileProvider.getUriForFile(
                 context,
-                "com.ilustris.sagai.fileprovider",
+                "${context.packageName}.fileprovider",
                 zipFile,
             )
         }
@@ -477,4 +477,3 @@ class BackupService(
 }
 
 const val BACKUP_PREFRENCE_KEY = "BACKUP_PATH"
-const val BACKUP_PERMISSION = "BACKUP_SERVICE"

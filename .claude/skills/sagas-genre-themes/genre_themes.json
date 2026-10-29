@@ -1,0 +1,167 @@
+{
+  "_source": "Firebase Remote Config, parameterGroups.*.parameters.<genre>_visual_config",
+  "_remoteConfigVersion": 1113,
+  "_fetchedOn": "2026-10-11",
+  "_note": "Snapshot. Re-fetch from Remote Config before trusting it for anything that ships.",
+  "genres": {
+    "shinobi": {
+      "primaryColor": "#8B0000",
+      "iconColor": "#FFFFFF",
+      "colorPalette": [
+        "#5C2751",
+        "#431C3A",
+        "#7A336B",
+        "#F39237"
+      ],
+      "cornerSizeDp": 0,
+      "headerFontUrl": "https://file.garden/amRMSF7QPhVBh-Fa/Hoshita-KVGnA.otf",
+      "bodyFontUrl": "https://files.catbox.moe/ik7xgw.ttf",
+      "backgroundUrl": null,
+      "imageUrl": "https://i.imgur.com/y4Y1EWA.jpeg"
+    },
+    "cowboy": {
+      "primaryColor": "#8B4513",
+      "iconColor": "#FFFFFF",
+      "colorPalette": [
+        "#1a0a00",
+        "#a84520",
+        "#fce8a8",
+        "#ff99bb",
+        "#d4612f",
+        "#8b3a0f"
+      ],
+      "cornerSizeDp": 12,
+      "headerFontUrl": "https://files.catbox.moe/a06j2b.ttf",
+      "bodyFontUrl": "https://files.catbox.moe/pu1057.ttf",
+      "backgroundUrl": null,
+      "imageUrl": "https://i.imgur.com/yKdSTBO.jpeg"
+    },
+    "heroes": {
+      "primaryColor": "#2845D6",
+      "iconColor": null,
+      "colorPalette": [
+        "#020412",
+        "#0D1A63",
+        "#1A2CA3",
+        "#2845D6",
+        "#4169F5",
+        "#00D9FF",
+        "#FDC500",
+        "#E6E9FF"
+      ],
+      "cornerSizeDp": 4,
+      "headerFontUrl": "https://files.catbox.moe/nrhc26.otf",
+      "bodyFontUrl": "https://files.catbox.moe/a7jt6u.ttf",
+      "backgroundUrl": null,
+      "imageUrl": "https://i.imgur.com/yn8271G.jpeg"
+    },
+    "punk_rock": {
+      "primaryColor": "#729656",
+      "iconColor": "#FFFFFF",
+      "colorPalette": [
+        "#0A0C0F",
+        "#1A1F2A",
+        "#00E676",
+        "#FF7E00",
+        "#FAFF00"
+      ],
+      "cornerSizeDp": 2,
+      "headerFontUrl": "https://file.garden/amRMSF7QPhVBh-Fa/Incubus-R6j3.ttf",
+      "bodyFontUrl": "https://file.garden/amRMSF7QPhVBh-Fa/WastedPunk-2vlyo.ttf",
+      "backgroundUrl": null,
+      "imageUrl": "https://i.imgur.com/Ner0DFl.jpeg"
+    },
+    "horror": {
+      "primaryColor": "#748b97",
+      "iconColor": null,
+      "colorPalette": [
+        "#020408",
+        "#0B132B",
+        "#1C2541",
+        "#3A506B",
+        "#748B97",
+        "#4ADEFF",
+        "#6FFFE9",
+        "#E8FFFE"
+      ],
+      "cornerSizeDp": 6,
+      "headerFontUrl": "https://files.catbox.moe/pwqffs.ttf",
+      "bodyFontUrl": "https://files.catbox.moe/b1tjdq.ttf",
+      "backgroundUrl": null,
+      "imageUrl": "https://i.imgur.com/SMp3Jja.jpeg"
+    },
+    "fantasy": {
+      "primaryColor": "#8B2635",
+      "iconColor": "#FFFFF",
+      "colorPalette": [
+        "#050204",
+        "#1A0810",
+        "#5E1A24",
+        "#8B2635",
+        "#D44D63",
+        "#FFB4C2",
+        "#FFD166"
+      ],
+      "cornerSizeDp": 10,
+      "headerFontUrl": "https://file.garden/amRMSF7QPhVBh-Fa/BlackletterExtrabold-51DV.ttf",
+      "bodyFontUrl": "https://files.catbox.moe/3vl094.ttf",
+      "backgroundUrl": null,
+      "imageUrl": "https://i.imgur.com/SuIG3ez.jpeg"
+    },
+    "space_opera": {
+      "primaryColor": "#0081A7",
+      "iconColor": null,
+      "colorPalette": [
+        "#000510",
+        "#001219",
+        "#004E63",
+        "#0081A7",
+        "#00AFB9",
+        "#48CAE4",
+        "#90E0EF",
+        "#C9B1FF"
+      ],
+      "cornerSizeDp": 5,
+      "headerFontUrl": "https://files.catbox.moe/djyrz9.otf",
+      "bodyFontUrl": "https://files.catbox.moe/g8stx6.ttf",
+      "backgroundUrl": null,
+      "imageUrl": "https://i.imgur.com/QmyCY5D.jpeg"
+    },
+    "crime": {
+      "primaryColor": "#E91E63",
+      "iconColor": null,
+      "colorPalette": [
+        "#1A0F2E",
+        "#3D1B5C",
+        "#C2185B",
+        "#E91E63",
+        "#FF6B9D",
+        "#7FFFEE"
+      ],
+      "cornerSizeDp": 25,
+      "headerFontUrl": "https://file.garden/amRMSF7QPhVBh-Fa/VelomiJuiceRegular-YqRvv.ttf",
+      "bodyFontUrl": "https://files.catbox.moe/v8o2up.ttf",
+      "backgroundUrl": null,
+      "imageUrl": "https://i.imgur.com/rCsLkbZ.jpeg"
+    },
+    "cyberpunk": {
+      "primaryColor": "#6E48AA",
+      "iconColor": null,
+      "colorPalette": [
+        "#03020A",
+        "#0A0420",
+        "#1A0A3D",
+        "#6E48AA",
+        "#9D50BB",
+        "#00F5FF",
+        "#FF2EFF",
+        "#E8DCFF"
+      ],
+      "cornerSizeDp": 10,
+      "headerFontUrl": "https://files.catbox.moe/cwszcg.ttf",
+      "bodyFontUrl": "https://files.catbox.moe/2wdt1v.ttf",
+      "backgroundUrl": null,
+      "imageUrl": "https://i.imgur.com/gKCYrOd.jpeg"
+    }
+  }
+}

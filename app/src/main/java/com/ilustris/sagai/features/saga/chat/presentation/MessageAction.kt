@@ -30,10 +30,6 @@ sealed class MessageAction {
         val message: Message,
     ) : MessageAction()
 
-    data class ToggleSelection(
-        val messageId: Int,
-    ) : MessageAction()
-
     data class LongPress(
         val messageId: Int,
     ) : MessageAction()

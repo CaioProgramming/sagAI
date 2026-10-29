@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +41,9 @@ import com.ilustris.sagai.ui.genre.comic.ComicSpeechBalloon
 import com.ilustris.sagai.ui.genre.comic.ComicTag
 import com.ilustris.sagai.ui.genre.comic.SlantShape
 import com.ilustris.sagai.ui.genre.comic.comicNarrationBalloons
+import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryDigestCard
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
@@ -85,6 +88,7 @@ fun ComicStoryBeat(
     val fitsLoose =
         !hasAttachments &&
             beat.aside == null &&
+            beat.digest == null &&
             beat.body.orEmpty().length <= LOOSE_BODY_MAX_CHARS
 
     var revealed by remember(beat.key) { mutableStateOf(!canAnimate) }
@@ -100,7 +104,7 @@ fun ComicStoryBeat(
             // Actions ride inside this column's own scroll, not pinned over it — a beat with a
             // cover, two wikis and a cast is tall enough that a floating action row either
             // overlapped the last line of text or had nowhere honest to sit.
-            ComicPageColumn(beat, Modifier.fillMaxWidth(), embedded, revealed)
+            ComicPageColumn(beat, Modifier.fillMaxWidth(), embedded, revealed, canAnimate)
         } else {
             ComicLooseBeat(
                 beat = beat,
@@ -169,6 +173,7 @@ private fun ComicPageColumn(
     modifier: Modifier = Modifier,
     embedded: Boolean = false,
     revealed: Boolean = true,
+    canAnimate: Boolean = true,
 ) {
     var delay = 0
 
@@ -202,6 +207,10 @@ private fun ComicPageColumn(
             ComicFadeIn(delayMillis = nextDelay()) {
                 ComicCaptionBox(text = it, align = TextAlign.Start, modifier = Modifier.fillMaxWidth())
             }
+        }
+
+        beat.digest?.let { digest ->
+            ComicFadeIn(delayMillis = nextDelay()) { StoryDigestCard(digest) }
         }
 
         beat.figures.forEachIndexed { index, url ->
@@ -266,8 +275,17 @@ private fun ComicPageColumn(
         }
 
         beat.aside?.let { aside ->
-            ComicFadeIn(delayMillis = nextDelay()) {
-                ComicSpeechBalloon(text = aside.text, speaker = aside.label)
+            val delay = nextDelay()
+            ComicFadeIn(delayMillis = delay) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
+                    AsideMascot(
+                        aside,
+                        canAnimate = canAnimate,
+                        entranceDelayMillis = delay.toLong(),
+                        modifier = Modifier.size(52.dp),
+                    )
+                    ComicSpeechBalloon(text = aside.text, speaker = aside.label, modifier = Modifier.weight(1f))
+                }
             }
         }
 

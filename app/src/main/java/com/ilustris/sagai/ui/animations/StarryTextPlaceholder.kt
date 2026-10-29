@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -79,7 +78,11 @@ private fun StarryCanvas(
     val glowBlurFilters = remember { mutableMapOf<Int, BlurMaskFilter>() }
 
     val infiniteTransition = rememberInfiniteTransition(label = "starry_sky_transition")
-    val animationTrigger by infiniteTransition.animateFloat(
+    // Read only inside the Canvas below (draw phase), so each frame redraws without recomposing.
+    // It used to be read here in composition, which recomposed every frame but never redrew: the
+    // onDraw lambda captures only stable values, so strong skipping memoized it, and the stars
+    // only moved when something else invalidated the layer.
+    val animationTrigger = infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec =
@@ -94,10 +97,9 @@ private fun StarryCanvas(
         label = "star_trigger",
     )
 
-    @Suppress("UNUSED_VARIABLE")
-    val animationFrame = animationTrigger
-
     Canvas(modifier = Modifier.fillMaxSize()) {
+        // Subscribes the draw to the transition's frames; the value itself isn't needed.
+        animationTrigger.value
         if (stars.isEmpty() && size.width > 0 && size.height > 0) {
             repeat(starCount) {
                 stars.add(

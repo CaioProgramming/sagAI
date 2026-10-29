@@ -15,6 +15,10 @@ fun NarrativeAction.toUi(): NarrativeActionUi {
                 R.string.advance_evolve_timeline to R.string.releasing_evolve_timeline
             }
 
+            is NarrativeAction.GenerateChoiceCards -> {
+                R.string.advance_choice_cards to R.string.releasing_choice_cards
+            }
+
             is NarrativeAction.GenerateChapter -> {
                 R.string.advance_close_chapter to R.string.releasing_close_chapter
             }

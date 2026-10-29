@@ -54,9 +54,10 @@ class Navigator(
      */
     fun navigateAndDismissTopLevel(route: NavKey) {
         try {
-            // If the destination is a ChatKey we want to make sure it lives on the Home stack
-            // so that pressing back from chat returns the user to Home (and not the dismissed top-level).
-            if (route is ChatKey) {
+            // If the destination is a ChatKey (or the narrator picker that precedes it) we want to
+            // make sure it lives on the Home stack so that pressing back returns the user to Home
+            // (and not the dismissed top-level).
+            if (route is ChatKey || route is NarratorVoiceKey) {
                 // Ensure Home becomes the active top-level route
                 state.topLevelRoute = HomeKey
                 // Add the route to the Home stack if it's not already the current destination

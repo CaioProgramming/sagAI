@@ -36,6 +36,14 @@ interface SagaContentManager {
 
     suspend fun advanceNarrative()
 
+    /**
+     * Synchronously drops the session of a different saga that is still held, so nothing observing
+     * the manager can see the previous saga's content, milestone or narrative state while the new
+     * one loads. A no-op when [sagaId] is the saga already held (another screen may be mid-chain on
+     * it) or when nothing is held.
+     */
+    fun clearSessionIfDifferent(sagaId: String)
+
     suspend fun loadSaga(sagaId: String)
 
     suspend fun generateCharacter(
@@ -73,10 +81,6 @@ interface SagaContentManager {
 
     suspend fun reviewEvent(timelineContent: com.ilustris.sagai.features.home.data.model.TimelineMetadata)
 
-    suspend fun backupSaga()
-
-    suspend fun enableBackup(uri: Uri?)
-
     suspend fun reviewChapter(chapterContent: com.ilustris.sagai.features.home.data.model.ChapterMetadata)
 
     val isMilestoneActive: StateFlow<Boolean>
@@ -105,8 +109,6 @@ interface SagaContentManager {
     suspend fun getCurrentObjective(sceneSummary: SceneSummary)
 
     fun stopProcessing()
-
-    fun resetSagaSession()
 
     suspend fun updateSummary(sceneSummary: SceneSummary)
 

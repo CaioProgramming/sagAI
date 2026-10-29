@@ -46,13 +46,13 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.newsaga.ui.glassSurface
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.shimmerize
@@ -74,9 +74,7 @@ fun TimelineContentViewCard(
             modifier
                 .padding(16.dp)
                 .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), sagaShape())
-                .clip(sagaShape())
-                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f), sagaShape())
+                .glassSurface(sagaShape(), MaterialTheme.colorScheme.primary)
                 .clickable {
                     expanded = true
                 }.padding(16.dp),

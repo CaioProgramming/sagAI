@@ -30,6 +30,10 @@ object NarrativeActionMaterializer {
                 saga.findAct(intent.actId)?.let { NarrativeAction.CreateChapter(it) }
             }
 
+            is NarrativeProgressIntent.GenerateChoiceCards -> {
+                saga.findChapter(intent.chapterId)?.let { NarrativeAction.GenerateChoiceCards(it) }
+            }
+
             is NarrativeProgressIntent.GenerateChapter -> {
                 saga.findChapter(intent.chapterId)?.let { NarrativeAction.GenerateChapter(it) }
             }

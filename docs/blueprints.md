@@ -1,10 +1,10 @@
 # Sagas AI Prompt Blueprints
 
-This document tracks all the AI prompt blueprints used in the Sagas application. Each blueprint is stored in Firebase Remote Config with a `_blueprint` suffix and follows a modular structure: **Role**, **System Directives**, **Rules**, and **Template**.
+This document tracks all the AI prompt blueprints used in the Sagas application. Each blueprint is stored in Firebase Remote Config with a `_blueprint` suffix and follows a modular structure: **Role**, **System Directives** and **Rules**. The old **Template** section is deprecated.
 
 ## Design Principles
 - **Agnostic Core:** Role, Directives, and Rules should be context-free.
-- **Dynamic Templates:** All variable data (Saga context, history, character names) must be injected via the `template` section.
+- **Variables via args, no template:** All variable data (Saga context, history, character names) is passed as the args map/object to `buildSplitBlueprint`, which injects it as a `# TASK CONTEXT`. Don't write a `template` in new blueprints; the field is deprecated and only kept for blueprints already published with one.
 - **Tag-Based Expression:** Use `<action>`, `<think>`, and `<narrator>` tags for richer character prose.
 - **Consistent Nomenclature:** Firebase keys must end with `_blueprint`.
 
@@ -14,8 +14,9 @@ This document tracks all the AI prompt blueprints used in the Sagas application.
 | :--- | :--- | :--- | :---: |
 | `dynamic_saga_creation_blueprint` | Generates CTA cards to inspire new story creation. | Home | ✅ |
 | `reply_generation_blueprint` | The "Storyteller"—main narrative generation engine. Also receives `maxMessageLimit` (from the `chat_input_limit` parameter) and must compose within that character ceiling instead of writing long and cutting. | Chat | ✅ |
-| `epilogue_chat_intro_blueprint` | Ephemeral post-ending epilogue chat—character's opening line, warm reunion, never advances plot. | Chat | 📝 |
-| `epilogue_chat_reply_blueprint` | Ephemeral post-ending epilogue chat—ongoing replies, never advances plot, never persisted. | Chat | 📝 |
+| `epilogue_chat_intro_blueprint` | Epilogue chat (persisted per character)—the character opens the talk: a first meeting, or a reunion (`REUNION`) when `conversationHistory` + `timeSinceLastConversation` are present. Colored by `characterKnowledgeOfPlayer` (`WHAT_YOU_KNOW`, RC v1087). Never advances plot. | Chat | ✅ |
+| `epilogue_chat_reply_blueprint` | Epilogue chat replies, never advancing plot; reads `characterKnowledgeOfPlayer` (`WHAT_YOU_KNOW`, RC v1087) so the character keeps knowing the player after old turns leave the prompt. | Chat | ✅ |
+| `epilogue_knowledge_blueprint` | Rewrites (never appends) a character's `CharacterKnowledge` of the player — `impression`, `sharedMoments`, `openThreads` — from the previous knowledge + the turns since the last pass; runs every 10 turns and on leaving (≥4). Published as RC v1087 (2026-09-28). | Chat | ✅ |
 | `chat_writing_pal_blueprint` | The "Ghostwriter"—checks messages for character style/typos. | Chat | ✅ |
 | `chat_reaction_blueprint` | The "Emote"—quick NPC reactions (emojis and short thoughts). | Chat | ✅ |
 | `scene_summarization_blueprint` | The "Analyst"—extracts factual states for continuity. | Chat | ✅ |
@@ -31,7 +32,11 @@ This document tracks all the AI prompt blueprints used in the Sagas application.
 | `acts_overview_blueprint` | Summary of all completed acts for context. | Act | 📝 |
 | `chapter_introduction_blueprint` | Brief hook to introduce a new chapter. | Chapter | ✅ |
 | `chapter_generation_blueprint` | The "Cinematic Narrator"—full chapter prose generation. | Chapter | ✅ |
+| `chapter_synthesis_blueprint` | Chapter-close synthesis (continuity, wikis, arcs). The chapter `content` is a chronological record of every event in order (no invented dialogue); each event in `eventsOfThisChapter` carries the real chat it came from (`messages`: speaker and text, whole, in order). Runs after the player answers the chapter's choice cards: the picks weigh which events get more space, and the call also writes the player's next `playerSpectrum` (the `CHOICES_*` rules live in this blueprint, applied only when `playerChoicesOfThisChapter` is present). RC 2026-10-07. | Chapter | ✅ |
+| `chapter_choice_cards_blueprint` | The chapter-closure hand: a one-time `screenTitle`/`screenSubtitle` plus 3 dilemma cards (`choiceTitle`, `options[].text`/`.insight`/`.emotionalTone`/`.eventTitle`), dealt before the chapter synthesis. Cards adapt to the player's current read (code-side bucket, `PlayerSpectrumPrompts.cardsLensInstructions`) while staying plain on screen; each option is anchored to a chapter event. Insights stay hidden. RC v1082/v1083, insight/event rules published 2026-09-30. | Chapter | ✅ |
+| ~~`player_spectrum_rewrite_blueprint`~~ | Deprecated—the player's read is now written by `chapter_synthesis_blueprint`'s call (`playerSpectrum` field); the separate LOW call, and its 500-error failure mode, are gone. Safe to delete from Remote Config. | Chapter | 🗑️ |
 | `lore_generation_blueprint` | The "Chronicler"—translates chat into permanent lore. | Lore | ✅ |
+| `saga_creation_quiz_blueprint` | Opens saga creation: three dilemma cards (`choiceTitle`, `options[].text`/`.insight`/`.emotionalTone`) loosely tied to the player's idea, probing how complex/confronting a story they want. The player's current read from earlier sagas is merged code-side (`PlayerSpectrumPrompts.quizLensInstructions`) to make the dilemmas harder; the hidden insights are folded into the story prompt. Draft, not yet published. | Saga | 📝 |
 | `saga_end_credits_blueprint` | Synthesis of the entire saga's emotional and narrative arc. | Saga | ✅ |
 | `icon_description_blueprint` | The "Art Director"—generates visual prompts for AI art. | Saga | ✅ |
 | `review_generation_blueprint` | Aggregates metrics and feedback for a saga review. | Saga | ✅ |
@@ -63,11 +68,13 @@ This document tracks all the AI prompt blueprints used in the Sagas application.
 | `new_character_milestone_blueprint`| Narrative reaction to a character joining the team. | Milestone | ✅ |
 | `intro_milestone_blueprint` | Cinematic "Previously on" state synthesis. | Milestone | ✅ |
 | `share_playstyle_blueprint` | Catchy slogans for sharing playstyle cards. | Share | ✅ |
-| `share_emotional_blueprint` | Poetic reflection for shareable emotion cards. | Share | ✅ |
-| `share_history_blueprint` | Movie teaser style taglines for sharing. | Share | ✅ |
+| `share_emotional_blueprint` | A page the saga writes to the player (emotional card): title, text of at most 3 sentences, caption. | Share | ✅ |
+| `share_history_blueprint` | Back cover of the saga card: teaser title, one-sentence logline, hook caption. | Share | ✅ |
 | `share_relations_blueprint` | Taglines about relationship tension for sharing. | Share | ✅ |
-| `share_character_blueprint` | Impactful snapshot of a character for sharing. | Share | ✅ |
+| `share_character_blueprint` | Character card: epithet title, one-line tagline of at most 110 characters, hook caption. | Share | ✅ |
+| `share_player_blueprint` | Player portrait card (player profile screen): archetype title, text of at most 3 sentences, caption. | Share | ✅ |
 | `faq_ask_ai_blueprint` | The "Voice of Sagas" for technical and lore support. | FAQ | ✅ |
+| `widget_lines_blueprint` | Quote and Hook lines of the generated home widgets, written in a character's voice. Role and directives only; the task context (profile, arcs, events, bonds, objective, count, limit) is built in code. Remote-only: a missing key fails the request. Published to hmg first. | Widget | ✅ |
 
 **Legend:**
 - ✅ : Fully refactored to use `PromptService` and Remote Config.

@@ -3,6 +3,8 @@ package com.ilustris.sagai.features.wiki.data.usecase
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.WikiPrompts
+import com.ilustris.sagai.core.ai.rag.EmbeddingSourceType
+import com.ilustris.sagai.core.ai.rag.SemanticIndexService
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -28,13 +30,27 @@ class WikiUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
         private val genreConfigService: GenreConfigService,
+        private val semanticIndexService: SemanticIndexService,
     ) : WikiUseCase {
-        override suspend fun saveWiki(wiki: Wiki) = wikiRepository.insertWiki(wiki)
+        override suspend fun saveWiki(wiki: Wiki) =
+            wikiRepository.insertWiki(wiki).also { indexWiki(it) }
 
-        override suspend fun updateWiki(wiki: Wiki) = wikiRepository.updateWiki(wiki)
+        override suspend fun updateWiki(wiki: Wiki) =
+            wikiRepository.updateWiki(wiki).also { indexWiki(it) }
 
         override suspend fun deleteWiki(wikiId: Int) {
             wikiRepository.deleteWiki(wikiId)
+        }
+
+        /** Keeps the RAG index in step with the wiki table — retrieved via semantic search in
+         * [com.ilustris.sagai.core.ai.prompts.ChatPrompts.replyMessagePrompt]. */
+        private fun indexWiki(wiki: Wiki) {
+            semanticIndexService.index(
+                sagaId = wiki.sagaId,
+                sourceKey = "wiki:${wiki.id}",
+                sourceType = EmbeddingSourceType.WIKI,
+                text = "${wiki.title}\n${wiki.content}",
+            )
         }
 
         override suspend fun deleteWikisBySaga(sagaId: Int) {
@@ -107,16 +123,19 @@ class WikiUseCaseImpl
                         saga.wikis.find { it.title.contentEquals(mergeWiki.secondItem, true) }
 
                     firstWiki?.let { wiki ->
-                        wikiRepository.updateWiki(
-                            wiki.copy(
-                                title = mergeWiki.mergedItem.title,
-                                content = mergeWiki.mergedItem.content,
-                                type = mergeWiki.mergedItem.type,
-                                emojiTag = mergeWiki.mergedItem.emojiTag,
-                            ),
-                        )
+                        val merged =
+                            wikiRepository.updateWiki(
+                                wiki.copy(
+                                    title = mergeWiki.mergedItem.title,
+                                    content = mergeWiki.mergedItem.content,
+                                    type = mergeWiki.mergedItem.type,
+                                    emojiTag = mergeWiki.mergedItem.emojiTag,
+                                ),
+                            )
+                        indexWiki(merged)
                         secondWiki?.let {
                             wikiRepository.deleteWiki(it.id)
+                            semanticIndexService.removeSource(it.sagaId, "wiki:${it.id}")
                         }
                     }
                 }

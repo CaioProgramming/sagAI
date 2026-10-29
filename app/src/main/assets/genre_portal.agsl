@@ -1,0 +1,98 @@
+// Portal rim for the onboarding genre morph.
+//
+// Runs as a RenderEffect over the already-composed frame: the current genre image with the next one
+// clipped into an irregular circle on top (see GenrePortal.kt). So there is one input and no mask to
+// fetch; this shader only needs to know *where* that circle's edge is to dress it. Kotlin builds the
+// clip path and this shader evaluates the exact same radius function, which is why both read the
+// same seed / wobble / progress uniforms and must stay in step with `portalRadius` in Kotlin.
+//
+// What it adds around the edge:
+//  - lens: the frame is sampled slightly displaced along the radial direction, so the outgoing image
+//    stretches away from the rim and the incoming one is pulled in
+//  - chromatic split of the edge itself
+//  - a glowing ring whose colour cycles through the *incoming* genre's palette
+//  - a thin hot core in the genre's primary colour and a few sparks
+
+uniform shader composable_shader;
+
+uniform float2 iResolution;
+uniform float2 u_center;   // portal origin in px
+uniform float u_progress;  // 0..1, already eased
+uniform float u_maxR;      // radius that covers the farthest corner
+uniform float u_seed;
+uniform float u_wobble;    // 0 = perfect circle
+uniform float u_warp;      // lens / aberration strength
+uniform float u_rim;       // ring half-width in px
+
+uniform float3 u_c0;
+uniform float3 u_c1;
+uniform float3 u_c2;
+uniform float3 u_c3;
+uniform float3 u_prim;
+
+const float PI = 3.14159265;
+
+// Keep identical to portalRadius() in GenrePortal.kt.
+float portalRadius(float a, float p) {
+    float env = sin(PI * p);
+    float w = sin(2.0 * a + u_seed + p * 3.1) * 0.5
+            + sin(3.0 * a + u_seed * 1.7 - p * 2.3) * 0.3
+            + sin(5.0 * a + u_seed * 2.3 + p * 4.1) * 0.2;
+    return p * u_maxR * (1.0 + w * u_wobble * 0.22 * env);
+}
+
+float hash(float2 p) {
+    p = fract(p * float2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+}
+
+half4 main(float2 fc) {
+    float p = u_progress;
+    if (p <= 0.0 || p >= 1.0) {
+        return composable_shader.eval(fc);
+    }
+
+    float2 v = fc - u_center;
+    float d = length(v);
+    float2 dir = d > 0.5 ? v / d : float2(0.0);
+    float a = atan(v.y, v.x);
+
+    float env = sin(PI * p);
+    float sd = d - portalRadius(a, p);
+
+    float near = exp(-abs(sd) / (u_rim * 3.0));
+    float bend = u_warp * env * near * u_rim * 2.0;
+    float ca = u_warp * env * u_rim * 0.4 * exp(-abs(sd) / (u_rim * 2.5));
+
+    float2 s = fc - dir * bend;
+    half4 base = half4(
+        composable_shader.eval(s + dir * ca).r,
+        composable_shader.eval(s).g,
+        composable_shader.eval(s - dir * ca).b,
+        1.0
+    );
+
+    float t = p * 6.0;
+    float w0 = 0.5 + 0.5 * cos(a + t);
+    float w1 = 0.5 + 0.5 * cos(a + 1.57 + t);
+    float w2 = 0.5 + 0.5 * cos(a + 3.14 + t);
+    float w3 = 0.5 + 0.5 * cos(a + 4.71 + t);
+    float3 rc = (u_c0 * w0 + u_c1 * w1 + u_c2 * w2 + u_c3 * w3) / (w0 + w1 + w2 + w3 + 1e-4);
+    rc = mix(rc, u_c3, 0.35);
+    rc = rc * 1.3 + 0.12;
+
+    float ring = exp(-abs(sd) / u_rim) * 0.85;
+    float core = exp(-abs(sd) / (u_rim * 0.16)) * 1.5;
+    float bleed = exp(-max(-sd, 0.0) / (u_rim * 4.0)) * 0.22;
+
+    float3 col = base.rgb;
+    col *= 1.0 - 0.35 * env * exp(-max(sd, 0.0) / (iResolution.y * 0.2));
+    col += rc * (ring + bleed) * env;
+    col += mix(u_prim, float3(1.0), 0.55) * core * env;
+
+    float spark = step(0.987, hash(floor(fc / 3.0) + floor(p * 40.0))) * exp(-abs(sd) / (u_rim * 2.2));
+    col += rc * spark * 1.6 * env;
+
+    return half4(half3(clamp(col, 0.0, 1.0)), 1.0);
+}

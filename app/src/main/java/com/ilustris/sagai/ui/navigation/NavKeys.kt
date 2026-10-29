@@ -36,6 +36,15 @@ data class ChatKey(
     val isDebug: Boolean = false,
 ) : NavKey
 
+/**
+ * Where a freshly created saga lands before its chat: the player picks the narrator voice the saga
+ * keeps for good (chat narration, live mode and audiobook). Not reachable via deep link.
+ */
+@Serializable
+data class NarratorVoiceKey(
+    val sagaId: String,
+) : NavKey
+
 @Serializable
 data class SagaDetailKey(
     val sagaId: String,
@@ -54,6 +63,8 @@ data class SagaWikiKey(
 @Serializable
 data class SagaEventsKey(
     val sagaId: String,
+    /** The event to scroll to and light up, when arriving from an announcement. */
+    val focusId: Int? = null,
 ) : NavKey
 
 @Serializable
@@ -96,6 +107,8 @@ data class EpilogueChatKey(
 @Serializable
 data class SagaChaptersKey(
     val sagaId: String,
+    /** The chapter to scroll to, when arriving from an announcement. */
+    val focusId: Int? = null,
 ) : NavKey
 
 @Serializable
@@ -114,6 +127,25 @@ data class BookReaderKey(
 data class AudiobookPlayerKey(
     val sagaId: Int,
     val actId: Int,
+) : NavKey
+
+/**
+ * Live conversation over a saga: a full screen of its own, pushed on top of that saga's chat.
+ * Counts as "in the conversation" for everything the chat gates on (milestones, notifications).
+ */
+@Serializable
+data class LiveConversationKey(
+    val sagaId: Int,
+) : NavKey
+
+/**
+ * Live conversation with one character after their saga ended, pushed on top of that character's
+ * epilogue chat: the same persisted conversation, spoken.
+ */
+@Serializable
+data class EpilogueLiveKey(
+    val sagaId: Int,
+    val characterId: Int,
 ) : NavKey
 
 /**
@@ -137,7 +169,7 @@ fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
         this is SagaDetailKey && other is SagaDetailKey -> sagaId == other.sagaId
         this is SagaCharactersKey && other is SagaCharactersKey -> sagaId == other.sagaId
         this is SagaWikiKey && other is SagaWikiKey -> sagaId == other.sagaId
-        this is SagaEventsKey && other is SagaEventsKey -> sagaId == other.sagaId
+        this is SagaEventsKey && other is SagaEventsKey -> sagaId == other.sagaId && focusId == other.focusId
         this is SagaActsKey && other is SagaActsKey -> sagaId == other.sagaId
         this is SagaStoryReaderKey && other is SagaStoryReaderKey -> sagaId == other.sagaId
 
@@ -151,7 +183,7 @@ fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
             sagaId == other.sagaId && characterId == other.characterId
         }
 
-        this is SagaChaptersKey && other is SagaChaptersKey -> sagaId == other.sagaId
+        this is SagaChaptersKey && other is SagaChaptersKey -> sagaId == other.sagaId && focusId == other.focusId
         this is CharacterDetailKey && other is CharacterDetailKey -> characterId == other.characterId
         this is EpilogueChatKey && other is EpilogueChatKey ->
             sagaId == other.sagaId && characterId == other.characterId
@@ -228,7 +260,12 @@ fun String.findNavKey(): NavKey? {
         }
 
         this.startsWith("saga://saga_chapters/") -> {
-            SagaChaptersKey(this.removePrefix("saga://saga_chapters/"))
+            val parts = this.removePrefix("saga://saga_chapters/").split("/")
+            SagaChaptersKey(parts[0], parts.getOrNull(1)?.toIntOrNull())
+        }
+
+        this.startsWith("saga://saga_acts/") -> {
+            SagaActsKey(this.removePrefix("saga://saga_acts/"))
         }
 
         this.startsWith("saga://saga_wiki/") -> {
@@ -236,7 +273,8 @@ fun String.findNavKey(): NavKey? {
         }
 
         this.startsWith("saga://saga_events/") -> {
-            SagaEventsKey(this.removePrefix("saga://saga_events/"))
+            val parts = this.removePrefix("saga://saga_events/").split("/")
+            SagaEventsKey(parts[0], parts.getOrNull(1)?.toIntOrNull())
         }
 
         this.startsWith("saga://saga_characters/") -> {

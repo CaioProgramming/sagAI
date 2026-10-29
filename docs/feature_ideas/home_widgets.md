@@ -1,5 +1,10 @@
 # Home Widgets
 
+> **Built (first version).** See [`../features/home_widgets.md`](../features/home_widgets.md) for what
+> ships and what changed from this proposal: the launcher decides the pinned size (the size step is a
+> preview), discreet mode is per generated widget only, and the island/notification during generation
+> and per-line replace are not in yet.
+
 ## Concept
 
 Widgets that keep Sagas close to the player without being invasive. They sit on the Android home
@@ -31,7 +36,7 @@ The player adds the widget from the launcher and it keeps itself up to date.
 
 | Widget | Shows | Sizes | Data |
 |---|---|---|---|
-| **Continue** | Current objective over the saga artwork, with a play button. Becomes an invitation to write a new story when the saga ended or none is running | 1x1, 2x1, 4x1, 2x2, 4x2 | `Timeline.currentObjective` or `SceneSummary.immediateObjective`, `Saga.artwork`, `Saga.isEnded` |
+| **Continue** | Current objective over the saga artwork, with a play button. Becomes an invitation to write a new story when the saga ended or none is running | 1x1, 2x1, 4x1, 2x2, 4x2 | `Timeline.currentObjective` or `SceneSummary.immediateObjective`, `Saga.icon`, `Saga.isEnded` |
 | **Last message** | The last line from the chat, as written, with the speaker | 2x1, 4x1, 2x2, 4x2 | `Message.text`, `speakerName`, `Character.image` |
 | **Your stories** | A shelf of finished sagas: one book each, title below | 2x2, 4x2, 4x3 | `Saga.isEnded`, `title`, `icon`, `genre` |
 

@@ -5,6 +5,7 @@ billingKtx = "8.0.0"
 composeCharts = "0.1.10"
 datastorePreferences = "1.1.7"
 genaiPrompt = "1.0.0-beta2"
+glance = "1.1.1"
 generativeai = "0.9.0"
 googleGenai = "1.10.0"
 hiltWork = "1.2.0"
@@ -59,6 +60,7 @@ androidx-media3-session = { module = "androidx.media3:media3-session", version.r
 androidx-media3-transformer = { module = "androidx.media3:media3-transformer", version.ref = "media3" }
 androidx-media3-effect = { module = "androidx.media3:media3-effect", version.ref = "media3" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glance" }
 androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
 billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "billingKtx" }
 compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeCharts" }

@@ -1,6 +1,7 @@
 package com.ilustris.sagai.ui.components
 
 import android.content.res.Configuration
+import android.os.Build
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -55,6 +56,8 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
+import com.ilustris.sagai.ui.components.titlefx.GenreTitleFx
+import com.ilustris.sagai.ui.components.titlefx.usesTitleFx
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.HandwrittenText
 import com.ilustris.sagai.ui.theme.darker
@@ -380,14 +383,65 @@ private fun RansomLetter(
     }
 }
 
+/**
+ * Genre-styled title. FANTASY, HORROR, COWBOY, SHINOBI, CRIME and HEROES are drawn by an AGSL
+ * shader on API 33+ (see [GenreTitleFx]); below that, or if the shader cannot be built, they fall
+ * back to a plain styled text (font + shadow, the caller's shimmer still applies on top).
+ *
+ * The shader draws its own colour, so callers should pass the title colour in [color] instead of a
+ * `gradientFill` modifier (a gradient over the composable would tint the whole box); use
+ * [usesTitleFx] to keep the gradient only for the fallback and the other genres.
+ *
+ * @param interactive enables the touch easter egg (use on hero titles only).
+ * @param playEntry plays the genre's entry animation when the title first appears.
+ */
 @Composable
 fun Genre.stylisedText(
     text: String,
     modifier: Modifier = Modifier,
     fontSize: TextUnit = MaterialTheme.typography.displaySmall.fontSize,
+    color: Color? = null,
+    interactive: Boolean = false,
+    playEntry: Boolean = true,
 ) {
-    val resolvedColor = MaterialTheme.colorScheme.primary
-    val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
+    val titleColor = color ?: MaterialTheme.colorScheme.primary
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && usesTitleFx()) {
+        val fxStyle =
+            MaterialTheme.typography.displaySmall.copy(
+                fontSize = fontSize,
+                textAlign = TextAlign.Center,
+                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                fontWeight = if (this == Genre.HEROES) FontWeight.Black else FontWeight.Normal,
+            )
+        GenreTitleFx(
+            text = text,
+            genre = this,
+            color = titleColor,
+            style = fxStyle,
+            modifier = modifier,
+            interactive = interactive,
+            playEntry = playEntry,
+            tinted = color != null,
+        ) {
+            SimpleStylisedText(text, modifier, fontSize, titleColor)
+        }
+    } else {
+        SimpleStylisedText(text, modifier, fontSize, titleColor)
+    }
+}
+
+/**
+ * The classic (non-shader) genre title. Genres that have the AGSL title effect drop their
+ * `genreVfx` here: the effect, not an overlay, owns their look, and on old devices we only keep the
+ * font, the shadow and the caller's shimmer.
+ */
+@Composable
+private fun Genre.SimpleStylisedText(
+    text: String,
+    modifier: Modifier,
+    fontSize: TextUnit,
+    resolvedColor: Color,
+) {
     val palette = themeBrushColors()
     val style =
         MaterialTheme.typography.displaySmall.copy(
@@ -399,9 +453,7 @@ fun Genre.stylisedText(
         Genre.FANTASY -> {
             HandwrittenText(
                 text = text,
-                modifier =
-                    modifier
-                        .genreVfx(this, resolvedColor, resolvedIconColor),
+                modifier = modifier,
                 color = resolvedColor,
                 fontSize = fontSize,
                 isBold = true,
@@ -419,9 +471,7 @@ fun Genre.stylisedText(
         Genre.CRIME -> {
             HandwrittenText(
                 text = text,
-                modifier =
-                    modifier
-                        .genreVfx(this, resolvedColor, resolvedIconColor),
+                modifier = modifier,
                 color = resolvedColor,
                 fontSize = fontSize,
                 isBold = true,
@@ -455,10 +505,7 @@ fun Genre.stylisedText(
         Genre.HORROR -> {
             AutoResizeText(
                 text = text,
-                modifier =
-                    modifier
-                        .padding(2.dp)
-                        .genreVfx(this),
+                modifier = modifier.padding(2.dp),
                 style =
                     style.copy(
                         brush = Brush.verticalGradient(colorPalette()),
@@ -475,10 +522,7 @@ fun Genre.stylisedText(
         Genre.COWBOY -> {
             AutoResizeText(
                 text = text,
-                modifier =
-                    modifier
-                        .genreVfx(this)
-                        .padding(2.dp),
+                modifier = modifier.padding(2.dp),
                 style =
                     style.copy(
                         brush = Brush.verticalGradient(palette),
@@ -495,7 +539,7 @@ fun Genre.stylisedText(
         Genre.HEROES -> {
             WordArtText(
                 text = text,
-                modifier = modifier.padding(4.dp).genreVfx(this),
+                modifier = modifier.padding(4.dp),
                 fontSize = fontSize,
                 fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 topColor = resolvedColor.lighter(0.6f),
@@ -532,10 +576,7 @@ fun Genre.stylisedText(
         Genre.SHINOBI -> {
             AutoResizeText(
                 text = text,
-                modifier =
-                    modifier
-                        .padding(12.dp)
-                        .genreVfx(this, secondaryColor = resolvedIconColor),
+                modifier = modifier.padding(12.dp),
                 style =
                     style.copy(
                         brush = Brush.verticalGradient(palette),

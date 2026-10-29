@@ -8,13 +8,13 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.database.backup.SagasArchiveService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.data.isFlowCancellation
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.AVATAR_ICON_TARGET_PX
-import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.globalshell.BookReadyEffect
 import com.ilustris.sagai.core.globalshell.GlobalShellEffect
@@ -36,6 +36,7 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.chapter.data.usecase.ChoiceCardsReveal
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
@@ -63,6 +64,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
+import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionMaterializer
@@ -117,6 +119,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
+import javax.inject.Provider
 import kotlin.time.Duration.Companion.seconds
 
 class SagaContentManagerImpl
@@ -130,12 +133,12 @@ class SagaContentManagerImpl
         private val actUseCase: ActUseCase,
         private val emotionalUseCase: EmotionalUseCase,
         private val remoteConfig: RemoteConfigService,
-        private val backupService: BackupService,
         private val imageHelper: ImageHelper,
         private val genreConfigService: GenreConfigService,
         private val messageDao: MessageDao,
         private val database: SagaDatabase,
         private val sagaThemeManager: SagaThemeManager,
+        private val archiveService: SagasArchiveService,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val narrativeCoordinator: NarrativeCoordinator,
         private val narrativeActionExecutor: NarrativeActionExecutor,
@@ -145,6 +148,10 @@ class SagaContentManagerImpl
         private val bookGenerationService: BookGenerationService,
         private val chatIslandService: ChatIslandService,
         private val sagaNavigationTracker: SagaNavigationTracker,
+        // Provider, not a direct dependency: ChatGenerationService depends on MessageUseCase,
+        // which depends back on this class — a direct constructor reference would be a cycle.
+        // Only used to read activeGenerations, never called synchronously during construction.
+        private val chatGenerationServiceProvider: Provider<ChatGenerationService>,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -451,7 +458,23 @@ class SagaContentManagerImpl
             _showObjectiveOverlay.value = false
         }
 
-        override fun resetSagaSession() {
+        /**
+         * Tears the manager down to a blank slate for a genuinely new saga. Only [loadSaga] may
+         * call this, and only from its own "is this a different saga than the one already live"
+         * check — nulling `content`/`milestoneUpdate`/`isMilestoneActive` unconditionally is safe
+         * there because that guard has just confirmed nothing is relying on the current session.
+         *
+         * This used to also be callable directly from ChatViewModel.initChat(), which is what let
+         * a *second* ChatViewModel instance for a saga [MilestoneScreen] already had open — mid an
+         * unresolved milestone like the chapter-closure choice cards — wipe that shared state out
+         * from under it: with isMilestoneActive/milestoneUpdate gone, NarrativeCheck read a
+         * synthesized-but-unanswered chapter as fully complete and marched the saga into the next
+         * one before the player had even submitted a pick. A screen asking to load a saga has no
+         * business deciding whether the state is safe to discard; only the owner of that state
+         * does. Chat's whole authority here should end at "load this saga" — this method is now
+         * private specifically so nothing outside [loadSaga] can reach for it again.
+         */
+        private fun resetSagaSession() {
             Timber.d("resetSagaSession: clearing chat session state")
             sagaJob?.cancel()
             sagaJob = null
@@ -465,6 +488,11 @@ class SagaContentManagerImpl
             _showObjectiveOverlay.value = false
             content.value = null
             lastObservedMessageCount = -1
+        }
+
+        override fun clearSessionIfDifferent(sagaId: String) {
+            val held = content.value?.data?.id?.toString() ?: return
+            if (held != sagaId) resetSagaSession()
         }
 
         override suspend fun loadSaga(sagaId: String) {
@@ -665,23 +693,6 @@ class SagaContentManagerImpl
             }
         }
 
-        override suspend fun backupSaga() {
-            val sagaMetadata = content.value ?: return
-            Timber.d("Backing up saga ${sagaMetadata.data.id}")
-
-            val fullSaga = sagaHistoryUseCase.getSagaById(sagaMetadata.data.id).first() ?: return
-            val backup = sagaHistoryUseCase.backupSaga(fullSaga)
-            Timber.d("backupSaga: backup successfull? ${backup.isSuccess}")
-        }
-
-        override suspend fun enableBackup(uri: Uri?) {
-            uri?.let {
-                backupService.enableBackup(it)
-            } ?: run {
-                sagaThemeManager.showSnackBar(context.getString(R.string.backup_disabled))
-            }
-        }
-
         private suspend fun endChapter(currentAct: ActMetadata?) =
             executeRequest {
                 actUseCase
@@ -750,7 +761,7 @@ class SagaContentManagerImpl
 
                 combine(ready, content, sagaNavigationTracker.currentKey) { isReady, saga, _ ->
                     val sagaId = saga?.data?.id
-                    if (isReady && sagaId != null && sagaNavigationTracker.isOnChatForSaga(sagaId)) {
+                    if (isReady && sagaId != null && sagaNavigationTracker.isInConversation(sagaId)) {
                         sagaId
                     } else {
                         null
@@ -801,21 +812,47 @@ class SagaContentManagerImpl
          * (which is exactly the leaked case), that would spin the loop forever inside
          * progressionMutex instead of just leaving the trigger silently missed. A time-based
          * external clear has no such risk.
+         *
+         * "Leaked" only means one thing for the milestones the Milestone screen resolves through
+         * the player's own action ([isPlayerResolved]): pending while the player sits on this
+         * saga's chat and it still hasn't been presented. While the Milestone screen is open it
+         * owns that step and it's legitimately waiting on the player — a closure being read, the
+         * chapter-closure choice cards being weighed — so a wall-clock limit there isn't healing a
+         * leak, it's yanking the step out from under them: the cards got dismissed mid-pick and
+         * the chain marched into the next chapter with the answers never recorded. Away from the
+         * saga entirely it isn't leaked either — [observeMilestoneChainReadiness] reopens the
+         * Milestone screen for it the next time the chat is shown. Re-keyed on navigation, so
+         * arriving on the Milestone screen cancels a wait already in progress.
          */
         private fun observeMilestoneOverlayTimeout() =
             managerScope.launch {
-                milestoneUpdate.collectLatest { milestone ->
-                    if (milestone == null || !milestone.isIntrusive) return@collectLatest
-                    delay(MILESTONE_OVERLAY_TIMEOUT_MS)
-                    Timber.w(
-                        "Milestone ${milestone.javaClass.simpleName} stayed set for " +
-                            "${MILESTONE_OVERLAY_TIMEOUT_MS}ms with nothing clearing it — " +
-                            "force-dismissing so narrative progression can be checked again.",
-                    )
-                    dismissMilestone()
-                    checkNarrativeProgression(content.value)
-                }
+                combine(milestoneUpdate, sagaNavigationTracker.currentKey) { milestone, _ -> milestone }
+                    .collectLatest { milestone ->
+                        if (milestone == null || !milestone.isIntrusive) return@collectLatest
+                        val sagaId = content.value?.data?.id
+                        if (milestone.isPlayerResolved() &&
+                            (sagaId == null || !sagaNavigationTracker.isOnChatForSaga(sagaId))
+                        ) {
+                            return@collectLatest
+                        }
+                        delay(MILESTONE_OVERLAY_TIMEOUT_MS)
+                        Timber.w(
+                            "Milestone ${milestone.javaClass.simpleName} stayed set for " +
+                                "${MILESTONE_OVERLAY_TIMEOUT_MS}ms with nothing clearing it — " +
+                                "force-dismissing so narrative progression can be checked again.",
+                        )
+                        dismissMilestone()
+                        checkNarrativeProgression(content.value)
+                    }
             }
+
+        /** Milestones the Milestone screen resolves only through the player's own Continue/submit. */
+        private fun SagaMilestone.isPlayerResolved() =
+            this is SagaMilestone.Introduction ||
+                this is SagaMilestone.NewEvent ||
+                this is SagaMilestone.ChoiceCards ||
+                this is SagaMilestone.ChapterFinished ||
+                this is SagaMilestone.ActFinished
 
         override fun setAdvanceTriggerSuppressed(suppressed: Boolean) {
             _advanceTriggerSuppressed.value = suppressed
@@ -1194,14 +1231,45 @@ class SagaContentManagerImpl
                 }
 
                 is SagaMilestone.NewEvent -> {
-                    getSagaContent()?.currentActInfo?.currentChapterInfo?.let { chapter ->
-                        managerScope.launch {
+                    managerScope.launch {
+                        // A reply's own writes (see the comment in
+                        // MessageUseCaseImpl.generateMessage) target "the current timeline" as of
+                        // whenever they actually land, not whenever the turn started. Nulling
+                        // currentEventId — and CreateTimeline right behind it — while one of those
+                        // replies is still in flight is exactly what lets its
+                        // sceneSummary/message land on a timeline this saga has already moved
+                        // past, orphaning it with messages but no synthesized content. Generation
+                        // is expected to finish on its own (success, failure, or timeout all clear
+                        // this saga's entry), so waiting here just narrows the window instead of
+                        // risking it.
+                        chatGenerationServiceProvider
+                            .get()
+                            .activeGenerations
+                            .first { !it.containsKey(saga.data.id) }
+                        // Re-read fresh AFTER the wait, not captured before it: the wait can take
+                        // real time, and a concurrent progression run unblocked by that same
+                        // generation finishing (e.g. ChatViewModel's post-generation check) may
+                        // have already closed this exact timeline and moved currentEventId on to
+                        // a new one. Only close the pointer if it's still where it was when this
+                        // milestone was raised — otherwise there's nothing left for us to do, and
+                        // force-nulling an already-advanced pointer just makes CreateTimeline's
+                        // self-heal re-point back to it, landing on an intent-less reevaluate()
+                        // that never updates the Milestone screen out of Loading.
+                        val chapter = getSagaContent()?.currentActInfo?.currentChapterInfo
+                        if (chapter != null && chapter.data.currentEventId == milestone.timeline.id) {
                             chapterUseCase.updateChapter(
                                 chapter.data.copy(currentEventId = null),
                             )
-                            requestNarrativeProgression()
                         }
+                        requestNarrativeProgression()
                     }
+                }
+
+                // Nothing to do here on purpose: the executeNarrativeAction that dealt the cards is
+                // still suspended in awaitMilestoneDismissalIfNeeded, and chains into the chapter
+                // synthesis on its own the moment dismissMilestone() above clears it.
+                is SagaMilestone.ChoiceCards -> {
+                    doNothing()
                 }
 
                 is SagaMilestone.ChapterFinished -> {
@@ -1324,6 +1392,17 @@ class SagaContentManagerImpl
             setProcessing(false)
         }
 
+        /** An act just closed: a good moment to offer the full backup, at most once a week. */
+        private suspend fun remindFullBackup() {
+            if (!archiveService.shouldRemind()) return
+            archiveService.markReminded()
+            sagaThemeManager.showSnackBar(
+                context.getString(R.string.archive_reminder_message),
+                action = context.getString(R.string.archive_reminder_action) to { archiveService.requestExport() },
+                durationMs = 15_000L,
+            )
+        }
+
         private suspend fun handlePostAction(
             saga: SagaMetadata,
             action: NarrativeAction,
@@ -1345,7 +1424,7 @@ class SagaContentManagerImpl
                                 latest.copy(currentActId = a.id),
                             )
                         }
-                        backupSaga()
+                        remindFullBackup()
                         if (generatedContent != null) {
                             emitMilestone(
                                 SagaMilestone.Introduction(
@@ -1392,6 +1471,23 @@ class SagaContentManagerImpl
                             ),
                         )
                     } ?: dismissMilestone()
+                }
+
+                is NarrativeAction.GenerateChoiceCards -> {
+                    // An empty hand (nothing usable came back) shows nothing: the chain just moves
+                    // on to the synthesis. Otherwise this milestone blocks the chain — the
+                    // executeNarrativeAction that dealt it waits in awaitMilestoneDismissalIfNeeded
+                    // until the player submits, then chains straight into GenerateChapter.
+                    val reveal = resultValue as? ChoiceCardsReveal
+                    val chapter = reveal?.chapter
+                    if (chapter != null &&
+                        !chapter.playerChoiceCards.isNullOrEmpty() &&
+                        chapter.playerChoiceAnswers == null
+                    ) {
+                        emitMilestone(
+                            SagaMilestone.ChoiceCards(chapter, reveal.screenTitle, reveal.screenSubtitle),
+                        )
+                    }
                 }
 
                 is NarrativeAction.GenerateChapterIntro -> {

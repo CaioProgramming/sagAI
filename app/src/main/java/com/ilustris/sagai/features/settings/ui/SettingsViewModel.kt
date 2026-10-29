@@ -9,8 +9,11 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.database.backup.ArchiveManifest
+import com.ilustris.sagai.core.database.backup.SagasArchiveService
 import com.ilustris.sagai.core.services.AdTier
 import com.ilustris.sagai.core.services.AdsService
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.restartApp
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -42,16 +45,25 @@ class SettingsViewModel
         private val chatIslandService: ChatIslandService,
         val debugImageFallbackService: DebugImageFallbackService,
         private val adsService: AdsService,
+        private val archiveService: SagasArchiveService,
+        private val remoteConfigService: RemoteConfigService,
         @ApplicationContext private val context: Context,
     ) : ViewModel() {
+        private val _remoteConfigFetch = MutableStateFlow(remoteConfigService.lastFetchInfo())
+        val remoteConfigFetch = _remoteConfigFetch.asStateFlow()
+
+        fun refreshRemoteConfigFetch() {
+            _remoteConfigFetch.value = remoteConfigService.lastFetchInfo()
+        }
+
         val notificationsEnabled = settingsUseCase.getNotificationsEnabled()
 
         val smartSuggestionsEnabled = settingsUseCase.getSmartSuggestionsEnabled()
 
         val messageEffectsEnabled = settingsUseCase.getMessageEffectsEnabled()
+        val showProgression = settingsUseCase.getShowProgression()
         val showTutorials = settingsUseCase.getShowTutorials()
         val musicEnabled = settingsUseCase.getMusicEnabled()
-        val backupEnabled = settingsUseCase.backupEnabled()
 
         private val _memoryUsage = MutableStateFlow<Long?>(null)
         val memoryUsage = _memoryUsage.asStateFlow()
@@ -67,16 +79,13 @@ class SettingsViewModel
         private val _storageBreakdown = MutableStateFlow(StorageBreakdown(0L, 0L, 0L))
         val storageBreakdown = _storageBreakdown.asStateFlow()
         val isLoading = MutableStateFlow(false)
+        val loadingProgress = MutableStateFlow<Float?>(null)
         val loadingMessage = MutableStateFlow<String?>(null)
-
-        private val _hasSagasWithChapters = MutableStateFlow<Boolean?>(null)
-        val hasSagasWithChapters = _hasSagasWithChapters.asStateFlow()
 
         init {
             loadMemoryUsage()
             checkUserPro()
             loadStorageBreakdown()
-            checkHasSagasWithChapters()
             loadVisualConfigs()
         }
 
@@ -94,12 +103,6 @@ class SettingsViewModel
                         }
                     }
                 }
-            }
-        }
-
-        fun checkHasSagasWithChapters() {
-            viewModelScope.launch {
-                _hasSagasWithChapters.value = settingsUseCase.hasSagasWithChapters()
             }
         }
 
@@ -126,6 +129,12 @@ class SettingsViewModel
         fun setSmartSuggestionsEnabled(enabled: Boolean) {
             viewModelScope.launch {
                 settingsUseCase.setSmartSuggestionsEnabled(enabled)
+            }
+        }
+
+        fun setShowProgression(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsUseCase.setShowProgression(enabled)
             }
         }
 
@@ -166,25 +175,48 @@ class SettingsViewModel
             }
         }
 
-        fun disableBackup() {
+        /** A picked `.sagas` file waiting for the user to confirm the restore. */
+        data class PendingRestore(
+            val uri: Uri,
+            val manifest: ArchiveManifest,
+        )
+
+        val pendingRestore = MutableStateFlow<PendingRestore?>(null)
+
+        /** The archive callbacks fire per chunk; only a whole-percent step is worth a recomposition. */
+        private fun MutableStateFlow<Float?>.updatePercent(progress: Float) {
+            val current = value ?: 0f
+            if ((progress * 100).toInt() != (current * 100).toInt()) value = progress
+        }
+
+        fun exportArchive(destinationUri: Uri) {
             viewModelScope.launch {
-                settingsUseCase.disableBackup()
+                isLoading.value = true
+                loadingMessage.emit(stringHelper.getString(R.string.backup_loading_creating))
+                loadingProgress.value = 0f
+                archiveService
+                    .export(destinationUri) { loadingProgress.updatePercent(it) }
+                    .onSuccessAsync {
+                        loadingProgress.value = null
+                        loadingMessage.emit(stringHelper.getString(R.string.archive_export_success))
+                    }.onFailureAsync {
+                        loadingProgress.value = null
+                        loadingMessage.emit(stringHelper.getString(R.string.archive_export_failed))
+                    }
+                delay(3.seconds)
+                isLoading.value = false
+                loadingMessage.emit(null)
             }
         }
 
-        fun exportDatabase(destinationUri: Uri) {
+        fun previewArchive(sourceUri: Uri) {
             viewModelScope.launch {
-                isLoading.value = true
-                loadingMessage.emit(stringHelper.getString(R.string.settings_export_database_loading))
-                settingsUseCase
-                    .exportDatabase(destinationUri)
-                    .onSuccessAsync {
-                        loadingMessage.emit(stringHelper.getString(R.string.settings_export_database_success))
-                        delay(3.seconds)
-                        isLoading.value = false
-                        loadingMessage.emit(null)
-                    }.onFailureAsync {
-                        loadingMessage.emit(stringHelper.getString(R.string.settings_export_database_failed))
+                archiveService
+                    .peek(sourceUri)
+                    .onSuccessAsync { pendingRestore.value = PendingRestore(sourceUri, it) }
+                    .onFailureAsync {
+                        isLoading.value = true
+                        loadingMessage.emit(stringHelper.getString(R.string.archive_invalid))
                         delay(3.seconds)
                         isLoading.value = false
                         loadingMessage.emit(null)
@@ -192,26 +224,27 @@ class SettingsViewModel
             }
         }
 
-        fun importDatabase(sourceUri: Uri) {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    context.contentResolver.takePersistableUriPermission(
-                        sourceUri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                    )
-                } catch (_: SecurityException) {
-                    // OpenDocument grants one-shot read; tree URIs may not support persistable.
-                }
+        fun dismissPendingRestore() {
+            pendingRestore.value = null
+        }
+
+        fun restoreArchive() {
+            val pending = pendingRestore.value ?: return
+            pendingRestore.value = null
+            viewModelScope.launch {
                 isLoading.value = true
                 loadingMessage.emit(stringHelper.getString(R.string.backup_loading_restoring_database))
-                settingsUseCase
-                    .importDatabase(sourceUri)
+                loadingProgress.value = 0f
+                archiveService
+                    .restore(pending.uri) { loadingProgress.updatePercent(it) }
                     .onSuccessAsync {
+                        loadingProgress.value = null
                         loadingMessage.emit(stringHelper.getString(R.string.import_database_success))
                         delay(2.seconds)
                         context.restartApp()
                     }.onFailureAsync {
-                        loadingMessage.emit(stringHelper.getString(R.string.import_database_failed))
+                        loadingProgress.value = null
+                        loadingMessage.emit(stringHelper.getString(R.string.archive_restore_failed))
                         delay(3.seconds)
                         isLoading.value = false
                         loadingMessage.emit(null)

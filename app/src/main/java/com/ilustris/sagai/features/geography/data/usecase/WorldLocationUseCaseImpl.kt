@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.geography.data.usecase
 
+import com.ilustris.sagai.core.ai.rag.EmbeddingSourceType
+import com.ilustris.sagai.core.ai.rag.SemanticIndexService
 import com.ilustris.sagai.features.geography.data.model.WorldLocation
 import com.ilustris.sagai.features.geography.data.model.WorldLocationVisit
 import com.ilustris.sagai.features.geography.data.repository.WorldLocationRepository
@@ -12,6 +14,7 @@ class WorldLocationUseCaseImpl
     @Inject
     constructor(
         private val worldLocationRepository: WorldLocationRepository,
+        private val semanticIndexService: SemanticIndexService,
     ) : WorldLocationUseCase {
         override fun getBySaga(sagaId: Int): Flow<List<WorldLocation>> = worldLocationRepository.getBySaga(sagaId)
 
@@ -34,18 +37,31 @@ class WorldLocationUseCaseImpl
                         worldLocationRepository.findByName(sagaId, resolvedParentName)?.id
                             ?: worldLocationRepository
                                 .insert(WorldLocation(sagaId = sagaId, name = resolvedParentName))
+                                .also { indexLocation(it) }
                                 .id
                     }
 
-            return worldLocationRepository.insert(
-                WorldLocation(
-                    sagaId = sagaId,
-                    name = name,
-                    history = history.orEmpty(),
-                    parentLocationId = parentId,
-                    emojiTag = emojiTag,
-                    originChapterId = originChapterId,
-                ),
+            return worldLocationRepository
+                .insert(
+                    WorldLocation(
+                        sagaId = sagaId,
+                        name = name,
+                        history = history.orEmpty(),
+                        parentLocationId = parentId,
+                        emojiTag = emojiTag,
+                        originChapterId = originChapterId,
+                    ),
+                ).also { indexLocation(it) }
+        }
+
+        /** Keeps the RAG index in step with `world_locations` — retrieved via semantic search in
+         * [com.ilustris.sagai.core.ai.prompts.ChatPrompts.replyMessagePrompt]. */
+        private fun indexLocation(location: WorldLocation) {
+            semanticIndexService.index(
+                sagaId = location.sagaId,
+                sourceKey = "location:${location.id}",
+                sourceType = EmbeddingSourceType.LOCATION,
+                text = "${location.name}\n${location.history}",
             )
         }
 

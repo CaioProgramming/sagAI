@@ -57,6 +57,13 @@ object NarrativeCheck {
                 NarrativeProgressIntent.CreateChapter(currentAct.data.id)
             }
 
+            // The closing chapter's cards come before its synthesis, so the player's answers
+            // can shape how it's written — and the chain can't move on until they're answered.
+            currentChapter.events.count { it.narrativelyCompleteTimeline(rules) } >= rules.chapterUpdateLimit &&
+                currentChapter.awaitsPlayerChoices() -> {
+                NarrativeProgressIntent.GenerateChoiceCards(currentChapter.data.id)
+            }
+
             currentChapter.events.count { it.narrativelyCompleteTimeline(rules) } >= rules.chapterUpdateLimit -> {
                 NarrativeProgressIntent.GenerateChapter(currentChapter.data.id)
             }
@@ -149,6 +156,13 @@ object NarrativeCheck {
 @Suppress("UNUSED_PARAMETER")
 fun TimelineMetadata.narrativelyCompleteTimeline(rules: NarrativeRules): Boolean =
     data.title.isNotEmpty() && data.content.isNotEmpty()
+
+/**
+ * Cards not dealt yet, or dealt and still unanswered. An empty hand means dealing was tried and
+ * nothing usable came back — the chapter closes without cards rather than asking forever.
+ */
+private fun ChapterMetadata.awaitsPlayerChoices(): Boolean =
+    data.playerChoiceAnswers == null && data.playerChoiceCards?.isEmpty() != true
 
 @Suppress("UNUSED_PARAMETER")
 private fun ChapterMetadata.narrativelyCompleteChapter(rules: NarrativeRules): Boolean =

@@ -16,6 +16,9 @@ sealed interface ChatGenerationOutcome {
     data class Success(
         val sagaId: Int,
         val reply: AIReply,
+        /** The player's message after the reply was applied to it (corrected text, tone). */
+        val userMessage: Message,
+        val needsTranscription: Boolean = false,
     ) : ChatGenerationOutcome
 
     data class GuardrailBlocked(

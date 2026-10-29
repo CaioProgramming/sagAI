@@ -37,7 +37,7 @@ fun SenderType?.icon(): Int? =
     } else {
         when (this) {
             SenderType.USER -> R.drawable.ic_spark
-            SenderType.CHARACTER -> R.drawable.ic_spark
+            SenderType.CHARACTER -> R.drawable.talk_bubble
             SenderType.NARRATOR -> R.drawable.ic_feather
             SenderType.ACTION -> R.drawable.action_icon
             SenderType.THOUGHT -> R.drawable.think_icon

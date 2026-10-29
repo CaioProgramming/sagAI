@@ -4,12 +4,16 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.Artwork
+import com.ilustris.sagai.core.ai.model.MAX_COVER_CHARACTERS
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.GeneratedContentWithLore
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
+import com.ilustris.sagai.core.ai.prompts.PlayerSpectrumPrompts
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.ArtworkConceptService
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -24,6 +28,10 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.ChoiceOption
+import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
+import com.ilustris.sagai.features.chapter.data.model.isAnswerable
+import com.ilustris.sagai.features.chapter.data.model.GeneratedPlayerChoices
 import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.ArcSourceType
@@ -50,6 +58,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 class ChapterUseCaseImpl
@@ -70,6 +79,7 @@ class ChapterUseCaseImpl
         private val actRepository: com.ilustris.sagai.features.act.data.repository.ActRepository,
         private val artworkConceptService: ArtworkConceptService,
         private val worldLocationUseCase: WorldLocationUseCase,
+        private val semanticIndexService: com.ilustris.sagai.core.ai.rag.SemanticIndexService,
     ) : ChapterUseCase {
         private suspend fun fetchContext(chapterId: Int): Pair<SagaContent, ChapterContent> {
             val chapterContent =
@@ -83,7 +93,15 @@ class ChapterUseCaseImpl
 
         override suspend fun deleteChapter(chapter: Chapter) = chapterRepository.deleteChapter(chapter)
 
-        override suspend fun updateChapter(chapter: Chapter) = chapterRepository.updateChapter(chapter)
+        override suspend fun updateChapter(chapter: Chapter) =
+            chapterRepository.updateChapter(chapter).also { updated ->
+                updated.continuitySummary?.let { summary ->
+                    // Chapter carries no sagaId of its own — resolved through its act, same as
+                    // fetchContext() above.
+                    val sagaId = actRepository.getActById(updated.actId)?.sagaId ?: return@also
+                    semanticIndexService.indexContinuitySummary(sagaId, "chapter:${updated.id}:continuity", summary)
+                }
+            }
 
         override suspend fun deleteChapterById(chapterId: Int) = chapterRepository.deleteChapterById(chapterId)
 
@@ -105,7 +123,6 @@ class ChapterUseCaseImpl
                             promptSplit =
                                 prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
-                                    artworkConceptService.artworkInstructions(ImageType.COVER),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -114,6 +131,7 @@ class ChapterUseCaseImpl
                                     "coverImage",
                                     "createdAt",
                                     "actId",
+                                    "artwork",
                                 ),
                             requireTranslation = true,
                             requirement = ModelRequirement.HIGH,
@@ -127,7 +145,7 @@ class ChapterUseCaseImpl
                             introduction = chapterContent.data.introduction, // Keep existing introduction
                             featuredCharacters = genChapter.featuredCharacters.take(2),
                             emotionalReview = genChapter.emotionalReview,
-                            artwork = genChapter.artwork ?: chapterContent.data.artwork,
+                            artwork = chapterContent.data.artwork.takeIf { chapterContent.data.coverImage.isNotBlank() },
                             currentEventId = null,
                         ),
                     )
@@ -151,7 +169,6 @@ class ChapterUseCaseImpl
                             promptSplit =
                                 prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
-                                    artworkConceptService.artworkInstructions(ImageType.COVER),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -160,6 +177,7 @@ class ChapterUseCaseImpl
                                     "coverImage",
                                     "createdAt",
                                     "actId",
+                                    "artwork",
                                 ),
                             requireTranslation = true,
                             requirement = ModelRequirement.HIGH,
@@ -175,10 +193,8 @@ class ChapterUseCaseImpl
                                             coverImage = chapterContent.data.coverImage,
                                             introduction = chapterContent.data.introduction,
                                             createdAt = chapterContent.data.createdAt,
-                                            artwork =
-                                                genChapter.artwork
-                                                    ?: chapterContent.data.artwork,
-                                                ),
+                                            artwork = chapterContent.data.artwork.takeIf { chapterContent.data.coverImage.isNotBlank() },
+                                        ),
                                     )
                                 CoroutineScope(Dispatchers.IO).launch {
                                     generateChapterCover(updatedChapter.id)
@@ -238,54 +254,17 @@ class ChapterUseCaseImpl
                 // fallback for that tap, so the guard keeps it from re-enqueuing (and re-billing)
                 // a cover the background trigger already generated.
                 if (chapter.data.coverImage.isNotBlank()) return@executeRequest chapter.data
-                val chapterWithArtwork = ensureChapterArtwork(chapter.data, saga.data)
-                val characters =
-                    chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
-                val context =
-                    buildCoverPromptContext(
-                        chapterWithArtwork.narrativeGuide,
-                        chapterWithArtwork.artwork,
-                        characters,
-                        saga,
-                    )
-
-                imageGenerationService
-                    .enqueue(
-                        ImageGenerationRequest(
-                            genre = saga.data.genre,
-                            imageReference = null,
-                            context = context,
-                            imageType = ImageType.COVER,
-                            variationId = saga.data.variationId,
-                            label = chapterWithArtwork.title,
-                            showReveal = true,
-                        ),
-                    ) { bitmap ->
-                        val coverFile =
-                            fileHelper.saveFile(
-                                chapterWithArtwork.title,
-                                bitmap,
-                                path = "${saga.data.id}/chapters/",
-                            ) ?: error("Failed to save chapter cover")
-                        val newChapter = chapterWithArtwork.copy(coverImage = coverFile.path)
-                        chapterRepository.updateChapter(newChapter)
-                    }.getOrThrow()
-            }
-
-        @OptIn(PublicPreviewAPI::class)
-        override suspend fun generateChapterCoverStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
-            flow {
+                // The synthesis handler and the milestone's "continue" tap both land here for the same
+                // chapter, and the first image takes minutes to save its cover, so the coverImage guard
+                // above cannot tell the second call is redundant. One generation per chapter at a time.
+                if (!coversInFlight.add(chapterId)) return@executeRequest chapter.data
                 try {
-                    val (saga, chapter) = fetchContext(chapterId)
-                    val chapterWithArtwork = ensureChapterArtwork(chapter.data, saga.data)
-                    val characters =
-                        chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
+                    val chapterWithArtwork = ensureChapterArtwork(chapter, saga)
                     val context =
                         buildCoverPromptContext(
                             chapterWithArtwork.narrativeGuide,
                             chapterWithArtwork.artwork,
-                            characters,
-                            saga,
+                            coverCharacters(chapterWithArtwork, saga),
                         )
 
                     imageGenerationService
@@ -306,8 +285,45 @@ class ChapterUseCaseImpl
                                     bitmap,
                                     path = "${saga.data.id}/chapters/",
                                 ) ?: error("Failed to save chapter cover")
-                            val newChapter = chapterWithArtwork.copy(coverImage = coverFile.path)
-                            chapterRepository.updateChapter(newChapter)
+                            persistCover(chapterWithArtwork, coverFile.path)
+                        }.getOrThrow()
+                } finally {
+                    coversInFlight.remove(chapterId)
+                }
+            }
+
+        @OptIn(PublicPreviewAPI::class)
+        override suspend fun generateChapterCoverStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+            flow {
+                try {
+                    val (saga, chapter) = fetchContext(chapterId)
+                    val chapterWithArtwork = ensureChapterArtwork(chapter, saga)
+                    val context =
+                        buildCoverPromptContext(
+                            chapterWithArtwork.narrativeGuide,
+                            chapterWithArtwork.artwork,
+                            coverCharacters(chapterWithArtwork, saga),
+                        )
+
+                    imageGenerationService
+                        .enqueue(
+                            ImageGenerationRequest(
+                                genre = saga.data.genre,
+                                imageReference = null,
+                                context = context,
+                                imageType = ImageType.COVER,
+                                variationId = saga.data.variationId,
+                                label = chapterWithArtwork.title,
+                                showReveal = true,
+                            ),
+                        ) { bitmap ->
+                            val coverFile =
+                                fileHelper.saveFile(
+                                    chapterWithArtwork.title,
+                                    bitmap,
+                                    path = "${saga.data.id}/chapters/",
+                                ) ?: error("Failed to save chapter cover")
+                            persistCover(chapterWithArtwork, coverFile.path)
                         }.fold(
                             onSuccess = { updated ->
                                 emit(
@@ -333,59 +349,139 @@ class ChapterUseCaseImpl
                 }
             }
 
-        private suspend fun ensureChapterArtwork(
-            chapter: Chapter,
-            saga: Saga,
+        /**
+         * Cover generation runs for a long while off a snapshot of the chapter, so writing that
+         * snapshot back would erase whatever changed meanwhile (e.g. the player's spectrum answers).
+         * Only the cover is layered onto the freshest row.
+         */
+        private suspend fun persistCover(
+            snapshot: Chapter,
+            coverPath: String,
         ): Chapter {
-            if (!chapter.artwork.isNullOrBlank()) return chapter
-            val artwork =
+            val latest = chapterRepository.getChapterById(snapshot.id) ?: snapshot
+            return chapterRepository.updateChapter(
+                latest.copy(coverImage = coverPath, artwork = latest.artwork ?: snapshot.artwork),
+            )
+        }
+
+        /**
+         * The cover curator step: runs once per chapter before any image is generated, reading the
+         * whole chapter (not its last beat) to decide the concept, the characters on the cover and
+         * the story elements it draws on. Layered onto the freshest row, like [persistCover].
+         */
+        private suspend fun ensureChapterArtwork(
+            chapter: ChapterContent,
+            saga: SagaContent,
+        ): Chapter {
+            val current = chapter.data
+            if (current.artwork?.isBlank() == false) return current
+            val curated =
                 artworkConceptService
-                    .ensureArtwork(
-                        imageType = ImageType.COVER,
+                    .ensureCoverArtwork(
                         contentType = "Chapter",
-                        genre = saga.genre,
-                        context = chapterArtworkContext(chapter),
-                        currentArtwork = chapter.artwork,
+                        genre = saga.data.genre,
+                        context = chapterArtworkContext(chapter, saga),
+                        currentArtwork = current.artwork,
                     ).onFailure {
-                        Timber.w(
-                            it,
-                            "ensureChapterArtwork: failed to generate artwork for chapter ${chapter.id}",
-                        )
+                        Timber.w(it, "ensureChapterArtwork: failed to curate artwork for chapter ${current.id}")
                     }.getSuccess()
-                    ?.takeIf { it.isNotBlank() }
-                    ?: return chapter
-            val updatedChapter = chapter.copy(artwork = artwork)
-            chapterRepository.updateChapter(updatedChapter)
-            return updatedChapter
+                    ?.takeUnless { it.isBlank() }
+                    ?: return current
+            // The model picks ids from the index it was shown; anything else is dropped here.
+            val artwork =
+                curated.copy(
+                    characterIds =
+                        curated.characterIds
+                            .distinct()
+                            .filter { saga.findCharacter(it) != null }
+                            .take(MAX_COVER_CHARACTERS),
+                )
+            val latest = chapterRepository.getChapterById(current.id) ?: current
+            return chapterRepository.updateChapter(latest.copy(artwork = artwork))
         }
 
-        private fun chapterArtworkContext(chapter: Chapter): String =
-            buildString {
-                appendLine(chapter.content)
-                chapter.emotionalReview?.takeIf { it.isNotBlank() }?.let {
-                appendLine()
-                appendLine("EMOTIONAL ARC: $it")
-            }
-        }
-
-        private fun buildCoverPromptContext(
-            narrativeContext: String?,
-            artwork: String?,
-            characters: List<CharacterContent?>,
+        /**
+         * Everything the curator weighs, in chapter order, with who actually carried it: a character's
+         * presence is read from the chapter's own dialogue so a secondary that drove three events is
+         * as visible to the curator as the protagonist.
+         */
+        private fun chapterArtworkContext(
+            chapter: ChapterContent,
             saga: SagaContent,
         ): String =
             buildString {
-                artwork?.takeIf { it.isNotBlank() }?.let {
-                    appendLine("### CONCEPT ART DIRECTION")
-                    appendLine(it)
+                appendLine("### CHAPTER")
+                appendLine(chapter.data.title)
+                appendLine(chapter.data.content)
+                chapter.data.emotionalReview?.takeIf { it.isNotBlank() }?.let {
                     appendLine()
+                    appendLine("### EMOTIONAL ARC")
+                    appendLine(it)
+                }
+                if (chapter.events.isNotEmpty()) {
+                    appendLine()
+                    appendLine("### EVENTS (chronological; weigh each by consequence, never by position)")
+                    chapter.events.forEachIndexed { index, event ->
+                        appendLine("${index + 1}. ${event.data.title}: ${event.data.content}")
+                    }
                 }
 
-                val duo = characters.filterNotNull().take(2)
+                val speakersPerEvent = chapter.events.map { event -> event.messages.mapNotNull { it.message.characterId } }
+                val presence =
+                    saga.characters
+                        .mapNotNull { character ->
+                            val lines = speakersPerEvent.sumOf { ids -> ids.count { it == character.data.id } }
+                            val events = speakersPerEvent.count { ids -> character.data.id in ids }
+                            val featured = character.data.id in chapter.data.featuredCharacters
+                            if (lines == 0 && !featured) null else Triple(character.data, lines, events)
+                        }.sortedByDescending { it.second }
+
+                appendLine()
+                appendLine("### CHARACTERS (id: name, presence in this chapter)")
+                if (presence.isEmpty()) {
+                    appendLine(SagaPrompts.charactersSummary(saga))
+                } else {
+                    presence.forEach { (character, lines, events) ->
+                        appendLine("- ${character.id}: ${character.name}, $lines lines across $events of ${chapter.events.size} events")
+                    }
+                }
+            }
+
+        /** The characters the cover shows: the curator's pick, else the featured pair, else the protagonist. */
+        private fun coverCharacters(
+            chapter: Chapter,
+            saga: SagaContent,
+        ): List<CharacterContent> =
+            chapter.artwork
+                ?.characterIds
+                .orEmpty()
+                .ifEmpty { chapter.featuredCharacters }
+                .distinct()
+                .mapNotNull { saga.findCharacter(it) }
+                .take(MAX_COVER_CHARACTERS)
+                .ifEmpty { listOfNotNull(saga.mainCharacter) }
+
+        private fun buildCoverPromptContext(
+            narrativeContext: String?,
+            artwork: Artwork?,
+            characters: List<CharacterContent>,
+        ): String =
+            buildString {
+                artwork?.takeUnless { it.isBlank() }?.let {
+                    appendLine("### CONCEPT ART DIRECTION")
+                    appendLine(it.concept)
+                    appendLine()
+                    if (it.elements.isNotEmpty()) {
+                        appendLine("### STORY ELEMENTS TO DRAW ON")
+                        it.elements.forEach { element -> appendLine("- $element") }
+                        appendLine()
+                    }
+                }
+
                 appendLine("### CHARACTERS")
                 append("[")
                 appendLine(
-                    duo.joinToString {
+                    characters.joinToString {
                         buildString {
                             appendLine(it.data.fullName())
                             appendLine(it.data.profile.toAINormalize())
@@ -402,17 +498,22 @@ class ChapterUseCaseImpl
                 )
                 append("]")
 
-                if (duo.size > 1) {
+                val relationships =
+                    characters.flatMapIndexed { index, first ->
+                        characters.drop(index + 1).mapNotNull { second ->
+                            first.findRelationship(second.data.id)?.summarizeRelation(1)?.let {
+                                "${first.data.name} & ${second.data.name}: $it"
+                            }
+                        }
+                    }
+                if (relationships.isNotEmpty() || characters.size == 2) {
                     appendLine()
-                    appendLine("### RELATIONSHIP")
-                    val char1 = duo[0]
-                    val char2 = duo[1]
-                    appendLine(
-                        "${char1.data.name} & ${char2.data.name}: ${
-                            char1.findRelationship(char2.data.id)?.summarizeRelation(1)
-                                ?: "Complex dynamic connection."
-                        }",
-                    )
+                    appendLine("### RELATIONSHIPS")
+                    if (relationships.isEmpty()) {
+                        appendLine("${characters[0].data.name} & ${characters[1].data.name}: Complex dynamic connection.")
+                    } else {
+                        relationships.forEach { appendLine(it) }
+                    }
                 }
 
                 narrativeContext?.let {
@@ -472,17 +573,44 @@ class ChapterUseCaseImpl
                             remoteConfigService.getNarrativeRules(),
                         )
 
-                    reasoningSynthesizerService
-                        .synthesizeReasoning(
-                            gemmaClient
-                                .generateStreaming<GeneratedContent<String>>(
+                    // Deliberately the sync call, not generateStreaming — see MessageUseCaseImpl's
+                    // own generateMessage for why: the reply is one JSON object, so streaming
+                    // never rendered partial text, and reasoningSynthesizerService.synthesizeReasoning
+                    // already ignores the source flow's real Reasoning states in favor of its own
+                    // loading-line rotation (the whole reason this used to stream — summarising
+                    // the model's live thought stream — stopped applying once that moved to a
+                    // synthesized pool instead). Wrapped in a single-emission flow purely so the
+                    // synthesizer keeps working the same way for every other caller.
+                    val generateFlow =
+                        flow {
+                            val intro =
+                                gemmaClient.generate<GeneratedContent<String>>(
                                     promptSplit =
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
+                                            // First thing written after the player answers the
+                                            // previous chapter's cards — carry that read in.
+                                            PlayerSpectrumPrompts.lensInstructions(
+                                                PlayerSpectrumPrompts.latestSpectrum(saga),
+                                            ),
                                         ),
                                     requireTranslation = true,
                                     requirement = ModelRequirement.HIGH,
-                                ),
+                                )
+                            if (intro == null) {
+                                emit(
+                                    StreamingState.Error(
+                                        message = "Chapter introduction generation returned no result",
+                                        throwable = IllegalStateException("Chapter introduction generation failed"),
+                                    ),
+                                )
+                            } else {
+                                emit(StreamingState.Success(intro))
+                            }
+                        }
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            generateFlow,
                             "Generating chapter introduction...",
                             genre = saga.data.genre,
                         ).collect { state ->
@@ -518,6 +646,111 @@ class ChapterUseCaseImpl
                 }
             }
 
+        override suspend fun recordPlayerChoiceAnswers(
+            chapterId: Int,
+            answers: List<String>,
+        ): RequestResult<Chapter> =
+            executeRequest {
+                val chapter = fetchContext(chapterId).second.data
+                val cards = chapter.playerChoiceCards.orEmpty()
+                require(cards.isNotEmpty() && answers.size == cards.size) {
+                    "Expected ${cards.size} answers for chapter $chapterId, got ${answers.size}"
+                }
+                // Only the answers: they're what moves the chain on (NarrativeCheck stops asking for
+                // cards once they exist) and the synthesis that follows reads them — including to
+                // write the player's next read, so there is nothing else to generate here.
+                chapterRepository.updateChapter(chapter.copy(playerChoiceAnswers = answers))
+            }
+
+        override fun generateChoiceCardsStream(chapterId: Int): Flow<StreamingState<ChoiceCardsReveal?>> =
+            flow {
+                try {
+                    val (saga, chapterContent) = fetchContext(chapterId)
+                    val chapter = chapterContent.data
+                    // Already attempted (a resume after the app closed with cards pending, or a
+                    // retry): hand back what's there instead of dealing a different hand. The
+                    // framing wasn't persisted, so the screen falls back to a static one.
+                    if (chapter.playerChoiceCards != null) {
+                        emit(StreamingState.Success(ChoiceCardsReveal(chapter, screenTitle = "", screenSubtitle = "")))
+                        return@flow
+                    }
+
+                    val prompt =
+                        ChapterPrompts.choiceCardsPrompt(
+                            promptService = promptService,
+                            saga = saga,
+                            chapter = chapterContent,
+                        )
+                    val generateFlow =
+                        flow {
+                            // Null means a final failure (quota, missing blueprint, exhausted
+                            // retries) — carried as an empty hand below rather than an error.
+                            emit(
+                                StreamingState.Success(
+                                    gemmaClient.generate<GeneratedContent<GeneratedPlayerChoices>>(
+                                        promptSplit =
+                                            prompt.mergeInstructions(
+                                                genreConfigService.conversationInstructions(saga.data.genre),
+                                                PlayerSpectrumPrompts.cardsLensInstructions(
+                                                    PlayerSpectrumPrompts.latestSpectrum(saga),
+                                                ),
+                                            ),
+                                        requirement = ModelRequirement.MEDIUM,
+                                    ),
+                                ),
+                            )
+                        }
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            generateFlow,
+                            "Preparing the choices that close this chapter",
+                            genre = saga.data.genre,
+                        ).collect { state ->
+                            when (state) {
+                                is StreamingState.Success -> {
+                                    val dealt = state.data?.data
+                                    // Gson leaves an omitted list null despite the type. A partial
+                                    // hand (pairs dropped by isAnswerable()) is worse than none: the
+                                    // step is mandatory, and three forced choices read as a deliberate
+                                    // beat while one or two read as a bug. An empty list records "tried,
+                                    // nothing usable" so the chapter moves on instead of asking again.
+                                    val eventTitles = chapterContent.events.map { it.data.title }
+                                    val validCards =
+                                        (dealt?.cards as List<GeneratedChoiceCard>?)
+                                            .orEmpty()
+                                            .filter { it.isAnswerable() }
+                                            .map { it.withGroundedEvents(eventTitles) }
+                                    val hand =
+                                        if (validCards.size >= PLAYER_CHOICE_CARD_COUNT) {
+                                            validCards.take(PLAYER_CHOICE_CARD_COUNT)
+                                        } else {
+                                            emptyList()
+                                        }
+                                    // Layered onto the freshest row, not the pre-generation snapshot.
+                                    val latest = chapterRepository.getChapterById(chapterId) ?: chapter
+                                    val updated = updateChapter(latest.copy(playerChoiceCards = hand, playerChoiceAnswers = null))
+                                    emit(
+                                        StreamingState.Success(
+                                            ChoiceCardsReveal(
+                                                chapter = updated,
+                                                screenTitle = (dealt?.screenTitle as String?).orEmpty(),
+                                                screenSubtitle = (dealt?.screenSubtitle as String?).orEmpty(),
+                                            ),
+                                        ),
+                                    )
+                                }
+
+                                is StreamingState.Reasoning -> emit(state)
+
+                                is StreamingState.Error -> emit(state)
+                            }
+                        }
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    emit(StreamingState.Error(e.message ?: "Choice cards generation failed", e))
+                }
+            }
+
         override fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContentWithLore<Chapter>?>> =
             flow {
                 try {
@@ -536,18 +769,38 @@ class ChapterUseCaseImpl
                             emptyMap(),
                         )
 
-                    reasoningSynthesizerService
-                        .synthesizeReasoning(
-                            gemmaClient
-                                .generateStreaming<GeneratedContent<UnifiedChapterUpdate>>(
+                    // See generateChapterIntroductionStream's own comment on the same swap: sync
+                    // call, single-emission flow, reasoningSynthesizerService unaffected.
+                    val generateFlow =
+                        flow {
+                            val synthesized =
+                                gemmaClient.generate<GeneratedContent<UnifiedChapterUpdate>>(
                                     promptSplit =
                                         prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                             actContext.renderInstructions(),
-                                            artworkConceptService.artworkInstructions(ImageType.COVER),
+                                            // The cards are answered before this runs, so the
+                                            // chapter's own read is the latest one.
+                                            PlayerSpectrumPrompts.lensInstructions(
+                                                PlayerSpectrumPrompts.latestSpectrum(saga),
+                                            ),
                                         ),
                                     requirement = ModelRequirement.HIGH,
-                                ),
+                                )
+                            if (synthesized == null) {
+                                emit(
+                                    StreamingState.Error(
+                                        message = "Chapter synthesis returned no result",
+                                        throwable = IllegalStateException("Chapter synthesis generation failed"),
+                                    ),
+                                )
+                            } else {
+                                emit(StreamingState.Success(synthesized))
+                            }
+                        }
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            generateFlow,
                             "Generating new chapter...",
                             genre = saga.data.genre,
                         ).collect { state ->
@@ -572,6 +825,16 @@ class ChapterUseCaseImpl
                                                     synthesis.continuitySummary
                                                         ?: mergedChapter.continuitySummary,
                                                 closingCheckpoint = closingCheckpoint ?: mergedChapter.closingCheckpoint,
+                                                // Only asked for when the cards were answered. A model that
+                                                // skips it leaves the field blank rather than the read wrong:
+                                                // latestSpectrum() falls back to the last non-blank one.
+                                                playerSpectrum =
+                                                    if (chapterContent.data.playerChoiceAnswers.isNullOrEmpty()) {
+                                                        mergedChapter.playerSpectrum
+                                                    } else {
+                                                        (synthesis.playerSpectrum as String?)?.trim()?.takeIf { it.isNotBlank() }
+                                                            ?: mergedChapter.playerSpectrum
+                                                    },
                                             ),
                                         )
                                     closingCheckpoint?.locationId?.let {
@@ -655,3 +918,24 @@ class ChapterUseCaseImpl
                 }
             }
     }
+
+private const val PLAYER_CHOICE_CARD_COUNT = 3
+
+/** Chapters whose automatic cover generation is running, shared across use case instances. */
+private val coversInFlight = ConcurrentHashMap.newKeySet<Int>()
+
+/** Gson leaves omitted fields null despite the types, so every check here is null-safe. */
+/**
+ * Keeps an option's [ChoiceOption.eventTitle] only when it names a real event of the chapter (matched
+ * ignoring case and spacing), and stores the event's own spelling. A title the model got wrong just
+ * drops the anchor — the card stays valid.
+ */
+private fun GeneratedChoiceCard.withGroundedEvents(eventTitles: List<String>): GeneratedChoiceCard =
+    copy(
+        options =
+            options.map { option ->
+                val match = eventTitles.firstOrNull { it.trim().equals((option.eventTitle as String?).orEmpty().trim(), ignoreCase = true) }
+                option.copy(eventTitle = match.orEmpty())
+            },
+    )
+

@@ -13,12 +13,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -67,6 +72,7 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.formatDate
+import com.ilustris.sagai.features.brain.ui.components.ConstellationGlobe
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileCard
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
@@ -76,9 +82,12 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSectio
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
+import com.ilustris.sagai.ui.components.IosStyleMenuDivider
+import com.ilustris.sagai.ui.components.IosStyleMenuHost
+import com.ilustris.sagai.ui.components.IosStyleMenuItem
+import com.ilustris.sagai.ui.components.GlassWaveButton
 import com.ilustris.sagai.ui.components.stylisedText
-import com.ilustris.sagai.ui.components.views.HeroMenuAction
-import com.ilustris.sagai.ui.components.views.HeroOverflowMenu
+import com.ilustris.sagai.ui.components.titlefx.usesTitleFx
 import com.ilustris.sagai.ui.theme.PaletteTheme
 import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -124,6 +133,15 @@ fun SagaDetailInitialContent(
                 columns = GridCells.Fixed(columnCount),
                 modifier = Modifier.fillMaxSize(),
                 state = gridState,
+                contentPadding =
+                    PaddingValues(
+                        bottom =
+                            if (saga.review != null) {
+                                WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 80.dp
+                            } else {
+                                0.dp
+                            },
+                    ),
             ) {
                 item(span = { GridItemSpan(columnCount) }) {
                     sagaHeaderComponent(
@@ -255,22 +273,26 @@ fun SagaDetailInitialContent(
                 }
 
                 if (saga.isEnded) {
-                    item(span = { GridItemSpan(columnCount) }) {
-                        RecapHeroCard(
-                            saga = saga,
-                            chaptersCount = resume.chaptersCount,
-                            charactersCount = resume.charactersCount,
-                            messagesCount = resume.messagesCount,
-                            reviewGenerationState = reviewGenerationState,
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth()
-                                    .height(200.dp),
-                            onClick = {
-                                onAction(DetailAction.OpenReview)
-                            },
-                        )
+                    // while the review is being prepared this card shows the progress; once it exists the
+                    // fixed button at the bottom takes over
+                    if (saga.review == null) {
+                        item(span = { GridItemSpan(columnCount) }) {
+                            RecapHeroCard(
+                                saga = saga,
+                                chaptersCount = resume.chaptersCount,
+                                charactersCount = resume.charactersCount,
+                                messagesCount = resume.messagesCount,
+                                reviewGenerationState = reviewGenerationState,
+                                modifier =
+                                    Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                onClick = {
+                                    onAction(DetailAction.OpenReview)
+                                },
+                            )
+                        }
                     }
 
                     item(span = { GridItemSpan(columnCount) }) {
@@ -363,41 +385,67 @@ fun SagaDetailInitialContent(
 
                 Spacer(Modifier.weight(1f))
 
-                IconButton(
-                    onClick = { showSagaShare = true },
-                    colors =
-                        IconButtonDefaults.iconButtonColors().copy(
-                            containerColor = adaptiveColor.copy(alpha = .5f),
-                        ),
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_share),
-                        contentDescription = stringResource(R.string.share),
-                        tint = adaptiveTextColor,
-                    )
-                }
-
-                HeroOverflowMenu(
-                    tint = adaptiveTextColor,
-                    containerColor = adaptiveColor.copy(alpha = .5f),
-                    actions =
-                        listOfNotNull(
-                            if (BuildConfig.DEBUG) {
-                                HeroMenuAction(
-                                    label = stringResource(R.string.debug_regenerate_image),
-                                ) {
-                                    onAction(DetailAction.RegenerateIcon)
-                                }
-                            } else {
-                                null
+                var menuOpen by remember { mutableStateOf(false) }
+                IosStyleMenuHost(
+                    expanded = menuOpen,
+                    onDismissRequest = { menuOpen = false },
+                    anchor = Alignment.TopEnd,
+                    menu = {
+                        IosStyleMenuItem(
+                            text = stringResource(R.string.share),
+                            icon = painterResource(R.drawable.ic_share),
+                            onClick = {
+                                menuOpen = false
+                                showSagaShare = true
                             },
-                            HeroMenuAction(
-                                label = stringResource(R.string.saga_detail_delete_saga_button),
-                                destructive = true,
-                            ) {
+                        )
+                        if (BuildConfig.DEBUG) {
+                            IosStyleMenuItem(
+                                text = stringResource(R.string.debug_regenerate_image),
+                                onClick = {
+                                    menuOpen = false
+                                    onAction(DetailAction.RegenerateIcon)
+                                },
+                            )
+                        }
+                        IosStyleMenuDivider()
+                        IosStyleMenuItem(
+                            text = stringResource(R.string.saga_detail_delete_saga_button),
+                            destructive = true,
+                            onClick = {
+                                menuOpen = false
                                 onAction(DetailAction.Delete)
                             },
-                        ),
+                        )
+                    },
+                ) {
+                    IconButton(
+                        onClick = { menuOpen = true },
+                        colors =
+                            IconButtonDefaults.iconButtonColors().copy(
+                                containerColor = adaptiveColor.copy(alpha = .5f),
+                            ),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_more_vert),
+                            contentDescription = stringResource(R.string.character_card_options),
+                            tint = adaptiveTextColor,
+                        )
+                    }
+                }
+            }
+
+            if (saga.review != null) {
+                // A small glass pill, centred and quiet: found, not announced.
+                GlassWaveButton(
+                    text = stringResource(R.string.saga_detail_recap_cta).uppercase(),
+                    icon = themePainter(),
+                    onClick = { onAction(DetailAction.OpenReview) },
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding()
+                            .padding(vertical = 16.dp),
                 )
             }
         }
@@ -417,11 +465,15 @@ fun sagaHeaderComponent(
     modifier: Modifier,
     section: DetailSectionView.InitialSection? = null,
     imagePalette: ImagePalette? = null,
+    fadeColor: Color? = null,
     onAction: (DetailAction) -> Unit = {},
 ) {
     val genre = saga.genre
     // Already palette-animated by the enclosing PaletteTheme — plain reads stay smooth for free.
-    val adaptiveColor = MaterialTheme.colorScheme.primaryContainer
+    val themeContainer = MaterialTheme.colorScheme.primaryContainer
+    // Where the cover melts into whatever sits around it. Detail owns its own tinted backdrop;
+    // the chat passes the plain background so the cover blends into the conversation.
+    val adaptiveColor = fadeColor ?: themeContainer
     val adaptiveTextColor = MaterialTheme.colorScheme.onPrimary
     val accentColor by animateColorAsState(
         targetValue = imagePalette?.vibrant ?: imagePalette?.dominant ?: MaterialTheme.colorScheme.background,
@@ -462,14 +514,25 @@ fun sagaHeaderComponent(
                             .clickable(onClick = {
                                 onAction(DetailAction.RegenerateIcon)
                             })
-                            .gradientFill(
-                                adaptiveColor.gradientFade(),
-                            ).reactiveShimmer(
-                                true,
-                                shimmerColors = Color.White.shimmerize(),
-                                repeatMode = RepeatMode.Restart,
-                                duration = 10.seconds,
+                            .then(
+                                if (genre.usesTitleFx()) {
+                                    Modifier
+                                } else {
+                                    Modifier.gradientFill(themeContainer.gradientFade())
+                                },
+                            ).then(
+                                if (genre.usesTitleFx()) {
+                                    Modifier
+                                } else {
+                                    Modifier.reactiveShimmer(
+                                        true,
+                                        shimmerColors = Color.White.shimmerize(),
+                                        repeatMode = RepeatMode.Restart,
+                                        duration = 10.seconds,
+                                    )
+                                },
                             ),
+                    interactive = true,
                 )
             }
         } else {
@@ -503,6 +566,10 @@ fun sagaHeaderComponent(
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth(),
             ) {
+                ConstellationGlobe(
+                    onClick = { onAction(DetailAction.OpenSection(RequestSection.BRAIN)) },
+                    glow = MaterialTheme.colorScheme.primary,
+                )
                 EndedSagaTag(saga.isEnded)
 
                 genre.stylisedText(
@@ -512,122 +579,33 @@ fun sagaHeaderComponent(
                             .background(fadeGradientBottom(adaptiveColor))
                             .fillMaxWidth()
                             .padding(8.dp)
-                            .gradientFill(adaptiveColor.gradientFade())
-                            .reactiveShimmer(
-                                true,
-                                shimmerColors = Color.White.shimmerize(),
-                                duration = 10.seconds,
-                                repeatMode = RepeatMode.Restart,
+                            .then(
+                                if (genre.usesTitleFx()) {
+                                    Modifier
+                                } else {
+                                    Modifier.gradientFill(themeContainer.gradientFade())
+                                },
+                            ).then(
+                                if (genre.usesTitleFx()) {
+                                    Modifier
+                                } else {
+                                    Modifier.reactiveShimmer(
+                                        true,
+                                        shimmerColors = Color.White.shimmerize(),
+                                        duration = 10.seconds,
+                                        repeatMode = RepeatMode.Restart,
+                                    )
+                                },
                             ),
+                    interactive = true,
                 )
 
-                Column(
+                Spacer(
                     Modifier
                         .background(adaptiveColor)
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .15f), CircleShape)
-                                    .clickable {
-                                        onAction(DetailAction.OpenSection(RequestSection.BRAIN))
-                                    },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_cosmos),
-                                contentDescription = stringResource(R.string.saga_brain_title),
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .fillMaxSize(),
-                            )
-                        }
-
-                        saga.review?.let {
-                            val primary = MaterialTheme.colorScheme.primary
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .dropShadow(sagaShape()) {
-                                            color = primary
-                                            radius = 15f
-                                            spread = 1f
-                                            alpha = .7f
-                                        }.border(
-                                            1.dp,
-                                            MaterialTheme.colorScheme.primary.gradientFade(),
-                                            sagaShape(),
-                                        ).clip(sagaShape())
-                                        .clickable {
-                                            onAction(DetailAction.OpenReview)
-                                        }.background(
-                                            MaterialTheme.colorScheme.onBackground,
-                                            sagaShape(),
-                                        ).gradientFill(sagaBrush())
-                                        .padding(16.dp),
-                            ) {
-                                Icon(
-                                    themePainter(),
-                                    contentDescription = stringResource(R.string.saga_detail_recap_button),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier =
-                                        Modifier
-                                            .reactiveShimmer(
-                                                isPlaying = true,
-                                                repeatMode = RepeatMode.Restart,
-                                            ).size(24.dp),
-                                )
-
-                                Text(
-                                    stringResource(R.string.saga_detail_recap_cta),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier =
-                                        Modifier
-                                            .reactiveShimmer(
-                                                isPlaying = true,
-                                                repeatMode = RepeatMode.Restart,
-                                            ).padding(horizontal = 8.dp),
-                                )
-                            }
-                        }
-
-                        saga.emotionalProfile?.let {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .15f), CircleShape)
-                                        .clickable {
-                                            onAction(DetailAction.OpenEmotionalReview)
-                                        },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_emotional),
-                                    contentDescription = stringResource(R.string.emotional_card_title),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxSize(),
-                                )
-                            }
-                        }
-                    }
-                }
+                        .height(8.dp),
+                )
             }
         }
     }

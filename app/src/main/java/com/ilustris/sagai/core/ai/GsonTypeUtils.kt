@@ -1,6 +1,11 @@
 package com.ilustris.sagai.core.ai
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonToken
+import com.google.gson.stream.JsonWriter
 import com.google.gson.JsonParser
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
@@ -9,6 +14,8 @@ import com.ilustris.sagai.core.ai.model.AIGeneration
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.utils.toJsonMap
 import java.lang.reflect.Type
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 
@@ -28,6 +35,47 @@ fun gsonTypeOfIntList(): Type = TypeToken.getParameterized(List::class.java, Int
 fun gsonTypeOfList(itemClass: Class<*>): Type = TypeToken.getParameterized(List::class.java, itemClass).type
 
 inline fun <reified T> gsonTypeOfList(): Type = gsonTypeOfList(T::class.java)
+
+/**
+ * Gson for model output. Models drift on number types — a field declared `Int` comes back as
+ * `9.5` or `"9.5"` (a tension level, a score) — and plain Gson throws on that, failing every retry
+ * for the same reason. Integer fields here take any numeric value, number or string, rounded to
+ * the nearest whole; anything non-numeric still fails as before.
+ */
+val aiOutputGson: Gson =
+    GsonBuilder()
+        .registerTypeAdapter(Int::class.javaPrimitiveType, lenientNumberAdapter { it.roundToInt() })
+        .registerTypeAdapter(Int::class.javaObjectType, lenientNumberAdapter { it.roundToInt() })
+        .registerTypeAdapter(Long::class.javaPrimitiveType, lenientNumberAdapter { it.roundToLong() })
+        .registerTypeAdapter(Long::class.javaObjectType, lenientNumberAdapter { it.roundToLong() })
+        .create()
+
+private fun lenientNumberAdapter(toWhole: (Double) -> Number): TypeAdapter<Number> =
+    object : TypeAdapter<Number>() {
+        override fun write(
+            out: JsonWriter,
+            value: Number?,
+        ) {
+            out.value(value)
+        }
+
+        override fun read(reader: JsonReader): Number? =
+            when (reader.peek()) {
+                JsonToken.NULL -> {
+                    reader.nextNull()
+                    null
+                }
+
+                // nextDouble() reads both a JSON number and a numeric string. Wrapped like Gson's own
+                // number adapters, so callers keep seeing a JsonSyntaxException.
+                else ->
+                    try {
+                        toWhole(reader.nextDouble())
+                    } catch (e: NumberFormatException) {
+                        throw JsonSyntaxException(e)
+                    }
+            }
+    }
 
 /**
  * Parses `{ "reasoning": "...", "data": ... }` without resolving [AIGeneration] as a generic TypeToken.

@@ -135,6 +135,7 @@ object DesignSystemMocks {
                     id = 1,
                     chapterId = 1,
                     title = "The Signal in the Static",
+                    content = MOCK_DIGEST_CONTENT,
                     emotionalReview = "The Traveler's excitement curdles into dread the moment the static clears — this is the first real crack in their confidence all saga.",
                 ),
             messageText = "The static clears just long enough for you to make out a single word before the signal dies again.",
@@ -150,6 +151,7 @@ object DesignSystemMocks {
                     id = 1,
                     actId = 1,
                     title = "Ashes of the Old Guard",
+                    content = MOCK_DIGEST_CONTENT,
                     emotionalReview = "A chapter defined by loss dressed up as victory — every choice here cost more than it looked like at the time.",
                 ),
             messageText = "Every thread from this chapter converges here — nothing that happened was wasted.",
@@ -164,6 +166,7 @@ object DesignSystemMocks {
                 Act(
                     id = 1,
                     title = "The Fracture",
+                    content = MOCK_DIGEST_CONTENT,
                     emotionalReview = "This act asked what loyalty actually costs, and the Traveler paid every price without flinching once.",
                 ),
             messageText = "The dust settles on everything you fought for in this act.",
@@ -179,3 +182,9 @@ object DesignSystemMocks {
             number = "Chapter - II",
         )
 }
+
+private const val MOCK_DIGEST_CONTENT =
+    "The Traveler reached the relay tower at dusk, the static already thick in the air. " +
+        "A single word cut through the noise before the signal died, and nobody in the room agreed on what they had heard. " +
+        "By morning the crew had split into two camps: those who wanted to answer, and those who wanted the tower silent for good. " +
+        "Nothing was decided, but every choice that followed would be measured against that one word."

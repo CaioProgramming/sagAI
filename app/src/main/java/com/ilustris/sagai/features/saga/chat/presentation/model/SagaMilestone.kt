@@ -51,6 +51,20 @@ sealed class SagaMilestone(
             messageText,
         )
 
+    /**
+     * The closing chapter's forced-choice dilemmas. Answered before the chapter is synthesized —
+     * submitting them is this milestone's Continue, and the synthesis that follows reads them.
+     */
+    data class ChoiceCards(
+        val chapter: Chapter,
+        /** Framing shown once above the cards, in the story's own voice. Blank on a resumed hand. */
+        val screenTitle: String = "",
+        val screenSubtitle: String = "",
+    ) : SagaMilestone(
+            R.string.milestone_choice_cards_title,
+            chapter.title,
+        )
+
     data class ActFinished(
         val act: Act,
         val messageText: String? = null,

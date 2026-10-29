@@ -35,7 +35,7 @@ enum class ModelRequirement {
  *
  * [ModelRequirement.MINIMAL] maps to `minimal` rather than up to `low`. It used to map up, because
  * not every model offers `minimal` and a rejection broke the tier; that fear is now handled by
- * [GeminiAIClient.effectiveThinkingLevel], which learns the refusal and degrades on its own. The
+ * [ModelCatalog.thinkingConfig], which learns the refusal and degrades on its own. The
  * old mapping also had it backwards in practice — measured on `gemini-3.6-flash`, `low` spends 87
  * reasoning tokens against the model's own default of 69, so the cheapest tier was thinking the
  * hardest.
@@ -47,6 +47,10 @@ fun ModelRequirement.toGeminiThinkingLevel(): String =
         ModelRequirement.MEDIUM -> "medium"
         ModelRequirement.HIGH -> "high"
     }
+
+/** Bookkeeping flags the app owns; no model output ever carries them, whatever type it is built from. */
+private val SYSTEM_MANAGED_FIELDS =
+    listOf("progressionEnabled", "experienceGenerated", "honorsGenerated", "legacyGenerated")
 
 abstract class AIClient(
     protected val remoteConfigService: RemoteConfigService,
@@ -84,7 +88,7 @@ abstract class AIClient(
         type: Type,
     ): String =
         if (describeOutput) {
-            buildAIPromptOutputStructure(type, filterOutputFields)
+            buildAIPromptOutputStructure(type, filterOutputFields + SYSTEM_MANAGED_FIELDS)
         } else {
             dataTypeName
         }
@@ -300,6 +304,18 @@ abstract class AIClient(
      * is — same as before this existed, a single-candidate tier always returns that one candidate,
      * daily quota or not, and lets the normal 429 handling explain why.
      */
+    /**
+     * Optional `voiceThinkingLevel` on [requirement]'s `model_configs` entry: the thinking level to
+     * use on live-mode voice turns, where every second of latency shows. Null when unset or not a
+     * level the API accepts — the tier's normal level applies then.
+     */
+    suspend fun voiceThinkingLevel(requirement: ModelRequirement): String? =
+        ((remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap())[requirement.name] as? Map<*, *>)
+            ?.get("voiceThinkingLevel")
+            ?.let { it as? String }
+            ?.lowercase()
+            ?.takeIf { it in ACCEPTED_THINKING_LEVELS }
+
     suspend fun modelName(requirement: ModelRequirement): String {
         val candidates = candidateModelsFor(requirement)
         return candidates.firstOrNull { !quotaStatusService.isModelDailyExhausted(it) }

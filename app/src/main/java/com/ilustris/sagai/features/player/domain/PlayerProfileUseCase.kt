@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 interface PlayerProfileUseCase {
     fun observeProfile(): Flow<PlayerProfileData?>
 
+    /** The profile as it is right now, or null before the first act insight was recorded. */
+    suspend fun getProfile(): PlayerProfileData?
+
     suspend fun recordActInsight(
         saga: SagaContent,
         act: Act,

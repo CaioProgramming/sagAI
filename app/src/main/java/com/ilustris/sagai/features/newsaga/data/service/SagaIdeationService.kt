@@ -3,12 +3,19 @@ package com.ilustris.sagai.features.newsaga.data.service
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.mergeInstructions
+import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.features.progression.domain.ProgressionConfig
 import com.ilustris.sagai.core.ai.prompts.CosmicLibraryArgs
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
+import com.ilustris.sagai.core.ai.prompts.SagaQuizArgs
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
+import com.ilustris.sagai.features.chapter.data.model.GeneratedPlayerChoices
+import com.ilustris.sagai.features.chapter.data.model.isAnswerable
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.LibraryPitchesResponse
@@ -28,19 +35,19 @@ class SagaIdeationService
         suspend fun generateCosmicLibrary(
             userPrompt: String,
             excludedGenres: List<Genre> = emptyList(),
+            userTraits: String? = null,
         ): Flow<StreamingState<LibraryPitchesResponse?>> {
-            val availableGenres = Genre.entries - excludedGenres.toSet()
-            val themes = availableGenres.joinToString(", ") { it.name }
-            val genreAesthetics = genreConfigService.formatGenreAesthetics()
+            // Only the themes still on offer, once: a "load more" never re-sends the ones already shown.
             val splitPrompt =
-                promptService.buildSplitBlueprint(
-                    NewSagaPrompts.COSMIC_LIBRARY_BLUEPRINT,
-                    CosmicLibraryArgs(
-                        userPrompt = userPrompt,
-                        themes = genreConfigService.formatGenreAesthetics(),
-                        genreAesthetics = genreAesthetics,
-                    ),
-                )
+                promptService
+                    .buildSplitBlueprint(
+                        NewSagaPrompts.COSMIC_LIBRARY_BLUEPRINT,
+                        CosmicLibraryArgs(
+                            userPrompt = userPrompt,
+                            themes = genreConfigService.formatGenreAesthetics(Genre.entries - excludedGenres.toSet()),
+                            userTraits = userTraits,
+                        ),
+                    )
             return gemmaClient.generateStreaming<LibraryPitchesResponse>(
                 promptSplit = splitPrompt,
                 requirement = ModelRequirement.MEDIUM,
@@ -61,14 +68,42 @@ class SagaIdeationService
                     )
                 gemmaClient.generate<UniverseSuggestions>(
                     promptSplit = splitPrompt,
-                    temperatureRandomness = .5f,
+                    temperatureRandomness = 1f,
                     requirement = ModelRequirement.LOW,
                 )!!
             }
 
+        /**
+         * The three dilemmas asked before any story is proposed. [playerProfile] (the player's read
+         * from earlier sagas, if any) makes them harder; without it they probe the idea alone. Fewer
+         * than [QUIZ_CARD_COUNT] usable cards is a failure, never a partial quiz.
+         */
+        suspend fun generateCreationQuiz(
+            idea: String,
+            playerProfile: String?,
+        ) = executeRequest {
+            val splitPrompt =
+                promptService
+                    .buildSplitBlueprint(
+                        NewSagaPrompts.SAGA_QUIZ_BLUEPRINT,
+                        SagaQuizArgs(playerIdea = idea, playerProfile = playerProfile),
+                    )
+            val quiz =
+                gemmaClient
+                    .generate<GeneratedContent<GeneratedPlayerChoices>>(
+                        promptSplit = splitPrompt,
+                        requirement = ModelRequirement.MEDIUM,
+                        temperatureRandomness = .8f,
+                    )?.data
+            val cards = quiz?.cards.orEmpty().filter { it.isAnswerable() }
+            if (cards.size < QUIZ_CARD_COUNT) error("Quiz came back with ${cards.size} usable cards")
+            quiz!!.copy(cards = cards.take(QUIZ_CARD_COUNT))
+        }
+
         suspend fun sealSacredContract(
             sagaDraft: SagaDraft,
             characterInfo: CharacterInfo,
+            progression: ProgressionConfig? = null,
         ): Flow<StreamingState<SacredContract?>> {
             val splitPrompt =
                 NewSagaPrompts
@@ -77,7 +112,10 @@ class SagaIdeationService
                         sagaDraft,
                         characterInfo,
                         themeStyle = genreConfigService.aesthetic(sagaDraft.genre),
-                    ).mergeInstructions(genreConfigService.conversationInstructions(sagaDraft.genre))
+                    ).mergeInstructions(
+                        genreConfigService.conversationInstructions(sagaDraft.genre),
+                        progression?.let { mapOf("LEVEL_BANDS" to it.levelBands.toAINormalize()) }.orEmpty(),
+                    )
             return gemmaClient.generateStreaming<SacredContract>(
                 promptSplit = splitPrompt,
                 requirement = ModelRequirement.HIGH,
@@ -105,7 +143,15 @@ class SagaIdeationService
                         "image",
                         "emojified",
                         "emotionalProfile",
-                    ),
+                    ) +
+                        listOf("status", "statusNote", "statusTimelineId") +
+                        if (progression == null) {
+                            listOf("baseLevel", "levelRationale", "skills")
+                        } else {
+                            listOf("skillsAndProficiencies", "uniqueOrSignatureTalents")
+                        },
             )
         }
     }
+
+const val QUIZ_CARD_COUNT = 3

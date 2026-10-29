@@ -28,6 +28,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import java.text.DateFormat
+import java.util.Date
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,8 +62,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.file.backup.ui.BackupSheet
+import com.ilustris.sagai.core.database.backup.SagasArchive
 import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSettings
@@ -73,6 +77,7 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
+import com.ilustris.sagai.features.settings.ui.components.AppIconSheet
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -98,13 +103,8 @@ fun SettingsView(
     val smartSuggestionsEnabled by viewModel.smartSuggestionsEnabled.collectAsStateWithLifecycle(
         false,
     )
-    val backupEnabled by
-        viewModel.backupEnabled
-            .collectAsStateWithLifecycle(false)
-
-    val hasSagasWithChapters by viewModel.hasSagasWithChapters.collectAsStateWithLifecycle(null)
-
     val messageEffectsEnabled by viewModel.messageEffectsEnabled.collectAsStateWithLifecycle(true)
+    val showProgression by viewModel.showProgression.collectAsStateWithLifecycle(true)
     val showTutorials by viewModel.showTutorials.collectAsStateWithLifecycle(true)
     val musicEnabled by viewModel.musicEnabled.collectAsStateWithLifecycle(true)
 
@@ -124,19 +124,19 @@ fun SettingsView(
     val context = LocalActivity.current
     val permissionLauncher = rememberPermissionLauncher()
 
-    var showBackupSheet by remember { mutableStateOf(false) }
-    var showBackups by remember { mutableStateOf(true) }
     var showPremiumSheet by remember { mutableStateOf(false) }
+    var showIconSheet by remember { mutableStateOf(false) }
 
-    val exportLauncher =
-        PermissionService.rememberDatabaseExportLauncher { uri ->
-            uri?.let { viewModel.exportDatabase(it) }
+    val archiveExportLauncher =
+        PermissionService.rememberArchiveExportLauncher { uri ->
+            uri?.let { viewModel.exportArchive(it) }
         }
 
-    val importLauncher =
+    val archiveImportLauncher =
         PermissionService.rememberDatabaseImportLauncher { uri ->
-            uri?.let { viewModel.importDatabase(it) }
+            uri?.let { viewModel.previewArchive(it) }
         }
+    val pendingRestore by viewModel.pendingRestore.collectAsStateWithLifecycle()
     with(sharedTransitionScope) {
         LazyColumn(
             modifier =
@@ -449,79 +449,6 @@ fun SettingsView(
                     )
 
                     PreferencesContainer(
-                        stringResource(R.string.backup),
-                        stringResource(R.string.storage_permission_description),
-                        isActivated = backupEnabled,
-                        onClickSwitch = {
-                            if (backupEnabled) {
-                                viewModel.disableBackup()
-                            } else {
-                                showBackupSheet = true
-                            }
-                        },
-                    )
-
-                    if (backupEnabled) {
-                        Button(
-                            onClick = {
-                                showBackups = true
-                                showBackupSheet = true
-                            },
-                            modifier =
-                                Modifier
-                                    .align(Alignment.CenterHorizontally),
-                            colors = ButtonDefaults.textButtonColors(),
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_restore),
-                                null,
-                                modifier =
-                                    Modifier
-                                        .padding(horizontal = 8.dp)
-                                        .size(24.dp),
-                            )
-                            Text(
-                                stringResource(R.string.restore_sagas),
-                                style =
-                                    MaterialTheme.typography.labelLarge.copy(
-                                        fontWeight = FontWeight.Light,
-                                    ),
-                            )
-                        }
-                    }
-
-                    if (!backupEnabled && hasSagasWithChapters == true) {
-                        Column(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                stringResource(R.string.backup_disabled_warning_title),
-                                style =
-                                    MaterialTheme.typography.labelLarge.copy(
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                                color = MaterialColor.Red600,
-                            )
-
-                            Text(
-                                stringResource(R.string.backup_disabled_warning_message),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Light,
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
-                        thickness = 1.dp,
-                    )
-
-                    PreferencesContainer(
                         stringResource(R.string.smart_fix),
                         stringResource(R.string.smart_fix_description),
                         isActivated = smartSuggestionsEnabled,
@@ -542,6 +469,21 @@ fun SettingsView(
                         isActivated = messageEffectsEnabled,
                         onClickSwitch = {
                             viewModel.setMessageEffectsEnabled(!it)
+                        },
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                        thickness = 1.dp,
+                    )
+
+                    PreferencesContainer(
+                        stringResource(R.string.settings_show_progression),
+                        stringResource(R.string.settings_show_progression_description),
+                        isActivated = showProgression,
+                        onClickSwitch = {
+                            viewModel.setShowProgression(!it)
                         },
                     )
 
@@ -573,6 +515,20 @@ fun SettingsView(
                         onClickSwitch = {
                             viewModel.setMusicEnabled(!it)
                         },
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                        thickness = 1.dp,
+                    )
+
+                    PreferencesContainer(
+                        stringResource(R.string.settings_app_icon_title),
+                        stringResource(R.string.settings_app_icon_description),
+                        isActivated = true,
+                        showSwitch = false,
+                        onClickSwitch = { showIconSheet = true },
                     )
                 }
             }
@@ -664,18 +620,18 @@ fun SettingsView(
 
                     Button(
                         onClick = {
-                            exportLauncher.launch("sagai_database_backup.db")
+                            archiveExportLauncher.launch(SagasArchive.suggestedFileName())
                         },
                         colors =
                             ButtonDefaults.buttonColors().copy(
-                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = .2f),
+                                containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary,
                             ),
                         shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            stringResource(R.string.export_database_button),
+                            stringResource(R.string.archive_export_button),
                             textAlign = TextAlign.Start,
                             modifier =
                                 Modifier
@@ -685,15 +641,13 @@ fun SettingsView(
                     }
 
                     Button(
-                        onClick = {
-                            importLauncher.launch(PermissionService.SQLITE_MIME_TYPES)
-                        },
+                        onClick = { archiveImportLauncher.launch(arrayOf("*/*")) },
                         colors = ButtonDefaults.textButtonColors(),
                         shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            stringResource(R.string.import_database_button),
+                            stringResource(R.string.archive_restore_button),
                             textAlign = TextAlign.Start,
                             modifier =
                                 Modifier
@@ -790,6 +744,40 @@ fun SettingsView(
                                 { _: Boolean -> viewModel.testAd(AdTier.CHAPTER_OR_ACT) }.takeIf { adTestLoading == null },
                             isActivated = true,
                         )
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                            thickness = 1.dp,
+                        )
+
+                        LaunchedEffect(Unit) { viewModel.refreshRemoteConfigFetch() }
+                        val fetch by viewModel.remoteConfigFetch.collectAsStateWithLifecycle()
+                        PreferencesContainer(
+                            stringResource(R.string.settings_remote_config_title),
+                            (
+                                if (fetch.timeMillis < 0) {
+                                    stringResource(R.string.settings_remote_config_never)
+                                } else {
+                                    stringResource(
+                                        R.string.settings_remote_config_last_fetch,
+                                        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(fetch.timeMillis)),
+                                        stringResource(
+                                            when (fetch.status) {
+                                                FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS -> R.string.settings_remote_config_status_success
+                                                FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED -> R.string.settings_remote_config_status_throttled
+                                                else -> R.string.settings_remote_config_status_failed
+                                            },
+                                        ),
+                                    )
+                                }
+                            ) + "\n" +
+                                stringResource(
+                                    R.string.settings_remote_config_version,
+                                    fetch.configVersion ?: stringResource(R.string.settings_remote_config_version_none),
+                                ),
+                            showSwitch = false,
+                            isActivated = true,
+                        )
                     }
                 }
             }
@@ -835,17 +823,42 @@ fun SettingsView(
         )
     }
 
-    StarryLoader(isWiping, loadingMessage)
+    pendingRestore?.let { pending ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissPendingRestore,
+            title = { Text(stringResource(R.string.archive_restore_dialog_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.archive_restore_dialog_message,
+                        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(pending.manifest.createdAt)),
+                        pending.manifest.sagaCount,
+                        pending.manifest.messageCount,
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::restoreArchive) {
+                    Text(stringResource(R.string.archive_restore_dialog_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissPendingRestore) {
+                    Text(stringResource(R.string.clear_data_dialog_cancel))
+                }
+            },
+        )
+    }
+
+    val loadingProgress by viewModel.loadingProgress.collectAsStateWithLifecycle()
+    StarryLoader(isWiping, loadingMessage, progress = loadingProgress)
 
     PermissionComponent(requestedPermission, {
         openAppSettings(context)
     }, { requestedPermission = null })
 
-    if (showBackupSheet) {
-        BackupSheet(showBackups, onDismiss = {
-            showBackupSheet = false
-            showBackups = false
-        })
+    if (showIconSheet) {
+        AppIconSheet(onDismiss = { showIconSheet = false })
     }
 
     if (showPremiumSheet && isWiping.not()) {

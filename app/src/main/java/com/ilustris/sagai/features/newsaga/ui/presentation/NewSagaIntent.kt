@@ -39,6 +39,23 @@ sealed interface NewSagaIntent {
         val echo: UniverseEcho,
     ) : NewSagaIntent
 
+    data class QuizSelect(
+        val cardIndex: Int,
+        val optionIndex: Int,
+    ) : NewSagaIntent
+
+    data object QuizNext : NewSagaIntent
+
+    data object QuizPrevious : NewSagaIntent
+
+    /** The story page now centered in the pager; drives the screen's genre theme. */
+    data class FocusStory(
+        val index: Int,
+    ) : NewSagaIntent
+
+    /** Back to the idea screen from the stories, keeping the quiz answers out of the way. */
+    data object ChangeIdea : NewSagaIntent
+
     data object LoadMore : NewSagaIntent
 
     data object NavigateBack : NewSagaIntent

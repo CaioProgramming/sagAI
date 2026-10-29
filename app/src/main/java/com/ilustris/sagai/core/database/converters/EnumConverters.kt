@@ -5,6 +5,7 @@ import androidx.room.TypeConverter
 import com.ilustris.sagai.features.narrative.data.model.TimeGapMagnitude
 import com.ilustris.sagai.features.narrative.data.model.TimeOfDay
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+import com.ilustris.sagai.features.saga.chat.data.model.InputMode
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 
 /**
@@ -41,6 +42,14 @@ object EnumConverters {
 
     @TypeConverter
     @JvmStatic
+    fun inputModeToString(value: InputMode?): String? = value?.name
+
+    @TypeConverter
+    @JvmStatic
+    fun stringToInputMode(value: String?): InputMode? = InputMode.fromString(value)
+
+    @TypeConverter
+    @JvmStatic
     fun emotionalToneToString(value: EmotionalTone?): String? = value?.name
 
     @TypeConverter
@@ -69,4 +78,14 @@ object EnumConverters {
     @JvmStatic
     fun stringToTimeGapMagnitude(value: String?): TimeGapMagnitude? =
         if (value == null) null else runCatching { TimeGapMagnitude.valueOf(value) }.getOrNull()
+
+    @TypeConverter
+    @JvmStatic
+    fun embeddingSourceTypeToString(value: com.ilustris.sagai.core.ai.rag.EmbeddingSourceType): String = value.name
+
+    @TypeConverter
+    @JvmStatic
+    fun stringToEmbeddingSourceType(value: String): com.ilustris.sagai.core.ai.rag.EmbeddingSourceType =
+        runCatching { com.ilustris.sagai.core.ai.rag.EmbeddingSourceType.valueOf(value) }
+            .getOrDefault(com.ilustris.sagai.core.ai.rag.EmbeddingSourceType.UNKNOWN)
 }

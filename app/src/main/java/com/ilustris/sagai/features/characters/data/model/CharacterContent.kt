@@ -82,7 +82,10 @@ private fun Character.displayNameTokens(): List<String> {
         ?.lowercase()
         ?.split(" ")
         ?.let { tokens.addAll(it) }
-    nicknames?.forEach { nickname -> tokens.addAll(nickname.lowercase().split(" ")) }
+    // Nicknames are deliberately not tokenised: they are phrases that name *other* people and
+    // carry connectors ("Cão de guarda de Tamiko"), so a single-word query such as "Tamiko" used to
+    // resolve to that nickname's owner and the reply was saved as his line. A whole nickname still
+    // resolves through matchesDisplayNameStrict.
     return tokens.filter { it.isNotBlank() }
 }
 

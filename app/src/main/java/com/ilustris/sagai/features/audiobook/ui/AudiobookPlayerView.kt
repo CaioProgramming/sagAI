@@ -33,12 +33,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -75,12 +75,12 @@ import com.ilustris.sagai.features.audiobook.data.usecase.NarrationProgress
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.AutoResizeText
-import com.ilustris.sagai.ui.components.IosStyleMenu
+import com.ilustris.sagai.ui.components.IosStyleMenuHost
 import com.ilustris.sagai.ui.components.IosStyleMenuItem
 import com.ilustris.sagai.ui.components.QuotaLimitNotice
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -186,7 +186,7 @@ fun AudiobookPlayerView(
     val isPlaying = audiobook?.isPlaying == true
     LaunchedEffect(isPlaying, audiobook?.playingSectionKey, audiobook?.error, showQueue, touches) {
         controlsVisible = true
-        if (isPlaying && audiobook?.error == null && !showQueue) {
+        if (isPlaying && audiobook.error == null && !showQueue) {
             delay(CONTROLS_HIDE_DELAY_MS)
             controlsVisible = false
         }
@@ -201,13 +201,15 @@ fun AudiobookPlayerView(
 
     Box(
         modifier =
-            Modifier.fillMaxSize().pointerInput(Unit) {
-                // Watches every touch without consuming it, so buttons and scrolling still work.
-                awaitEachGesture {
-                    awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                    touches++
-                }
-            },
+            Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    // Watches every touch without consuming it, so buttons and scrolling still work.
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                        touches++
+                    }
+                },
     ) {
         // Dark and only lightly tinted on purpose: all the color lives in the aurora, which would
         // otherwise be the same hue as what sits behind it and lose its contrast.
@@ -232,7 +234,12 @@ fun AudiobookPlayerView(
                     )
                 }
 
-                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Column(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(end = 16.dp),
+                ) {
                     // Shrinks to fit instead of truncating: the genre's display fonts are wide, and a cut-off
                     // "O PREÇO DA CAR…" hides the one thing this header is for.
                     AutoResizeText(
@@ -256,15 +263,10 @@ fun AudiobookPlayerView(
                 if (audiobook?.showDebug == true) {
                     var showMenu by remember { mutableStateOf(false) }
                     val playingSectionKey = audiobook.playingSectionKey
-                    Box {
-                        IconButton(onClick = { showMenu = true }, modifier = Modifier.padding(8.dp)) {
-                            Icon(
-                                painterResource(R.drawable.ic_more_vert),
-                                contentDescription = stringResource(R.string.book_options_cd),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-                        IosStyleMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    IosStyleMenuHost(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        menu = {
                             IosStyleMenuItem(
                                 text = "Sync: ${audiobook.syncSource}",
                                 icon = painterResource(R.drawable.ic_sync),
@@ -282,6 +284,17 @@ fun AudiobookPlayerView(
                                     playingSectionKey?.let { onAction(AudiobookAction.Realign(it)) }
                                 },
                             )
+                        },
+                    ) {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.padding(8.dp),
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_more_vert),
+                                contentDescription = stringResource(R.string.book_options_cd),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                            )
                         }
                     }
                 }
@@ -290,11 +303,19 @@ fun AudiobookPlayerView(
             val isGenerating = audiobook?.narration != null
             val error = audiobook?.error
             val quotaResetAt = audiobook?.quotaResetAt
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+            ) {
                 when {
                     quotaResetAt != null -> {
                         Column(
-                            modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .padding(horizontal = 32.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                         ) {
@@ -303,8 +324,10 @@ fun AudiobookPlayerView(
                                 onClick = { onAction(AudiobookAction.DismissFailure) },
                                 modifier =
                                     Modifier
-                                        .background(MaterialTheme.colorScheme.errorContainer, shape = CircleShape)
-                                        .padding(4.dp),
+                                        .background(
+                                            MaterialTheme.colorScheme.errorContainer,
+                                            shape = CircleShape,
+                                        ).padding(4.dp),
                             ) {
                                 Icon(
                                     painterResource(R.drawable.round_close_24),
@@ -317,7 +340,10 @@ fun AudiobookPlayerView(
 
                     error != null -> {
                         Column(
-                            modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .padding(horizontal = 32.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
@@ -343,7 +369,7 @@ fun AudiobookPlayerView(
                             )
                             TextButton(
                                 onClick = {
-                                    val sectionKey = audiobook?.narration?.sectionKey
+                                    val sectionKey = audiobook.narration?.sectionKey
                                     onAction(AudiobookAction.DismissFailure)
                                     if (sectionKey != null) onAction(AudiobookAction.Listen(sectionKey, 0))
                                 },
@@ -365,12 +391,15 @@ fun AudiobookPlayerView(
                     isGenerating -> {
                         val fallback = stringResource(R.string.audiobook_generating_cd)
                         Column(
-                            modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .padding(horizontal = 32.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(20.dp),
                         ) {
                             AnimatedContent(
-                                targetState = audiobook?.narratingReasoningText ?: fallback,
+                                targetState = audiobook.narratingReasoningText ?: fallback,
                                 label = "audiobookReasoning",
                                 transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
                             ) { text ->
@@ -385,7 +414,7 @@ fun AudiobookPlayerView(
                                     modifier = Modifier.reactiveShimmer(true, saga.data.genre.shimmerColors()),
                                 )
                             }
-                            NarrationStepProgress(audiobook?.narration?.progress)
+                            NarrationStepProgress(audiobook.narration?.progress)
                         }
                     }
 
@@ -404,7 +433,6 @@ fun AudiobookPlayerView(
                     }
                 }
             }
-
         }
 
         // Drawn over the lyrics, not behind them: near-opaque at the bottom edge so the text coming
@@ -464,7 +492,10 @@ fun AudiobookPlayerView(
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -523,7 +554,10 @@ fun AudiobookPlayerView(
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 20.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -607,7 +641,11 @@ private fun NarrationStepProgress(progress: NarrationProgress?) {
         )
         LinearProgressIndicator(
             progress = { fraction },
-            modifier = Modifier.width(160.dp).height(3.dp).clip(RoundedCornerShape(50)),
+            modifier =
+                Modifier
+                    .width(160.dp)
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(50)),
             color = MaterialTheme.colorScheme.onPrimary,
             trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = .15f),
         )

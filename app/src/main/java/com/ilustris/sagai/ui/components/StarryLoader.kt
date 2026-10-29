@@ -8,6 +8,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -78,6 +79,8 @@ fun StarryLoader(
             textAlign = TextAlign.Center,
         ),
     subtitle: String? = null,
+    /** 0..1; rendered as a percentage that counts up on its own, so [loadingMessage] does not have to change with it. */
+    progress: Float? = null,
     subtitleStyle: TextStyle =
         MaterialTheme.typography.bodySmall.copy(
             textAlign = TextAlign.Center,
@@ -211,6 +214,7 @@ fun StarryLoader(
                                 )
                             }
                         }
+                        progress?.let { LoaderProgress(it) }
                         AnimatedContent(
                             subtitle,
                             transitionSpec = {
@@ -291,6 +295,7 @@ fun StarryLoader(
                             )
                         }
                     }
+                    progress?.let { LoaderProgress(it) }
                     AnimatedContent(
                         subtitle,
                         transitionSpec = {
@@ -320,6 +325,26 @@ fun StarryLoader(
             }
         }
     }
+}
+
+@Composable
+private fun LoaderProgress(progress: Float) {
+    val percent by animateIntAsState(
+        targetValue = (progress.coerceIn(0f, 1f) * 100).toInt(),
+        animationSpec = tween(300, easing = LinearEasing),
+        label = "loader_progress",
+    )
+    Text(
+        "$percent%",
+        style =
+            MaterialTheme.typography.labelLarge.copy(
+                textAlign = TextAlign.Center,
+                // tabular digits keep the text from jittering while it counts
+                fontFeatureSettings = "tnum",
+                shadow = Shadow(MaterialTheme.colorScheme.primary, blurRadius = 5f),
+            ),
+        modifier = Modifier.padding(top = 8.dp).alpha(.6f),
+    )
 }
 
 @Composable

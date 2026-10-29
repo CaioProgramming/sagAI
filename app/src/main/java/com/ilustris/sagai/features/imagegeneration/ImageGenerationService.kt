@@ -4,11 +4,14 @@ import android.graphics.Bitmap
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
+import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.file.insetCropBitmap
 import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.globalshell.ImageGenerationWorkEffect
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.imagegeneration.model.IslandExpansion
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,9 +25,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -38,10 +41,14 @@ class ImageGenerationService
         private val globalShellService: GlobalShellService,
     ) {
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    
+
         private companion object {
             // Auto-dismiss reveal after a short time so the queue can't get stuck.
             private const val RevealDismissTimeoutMs = 15_000L
+
+            // Crime's vintage print look makes the model draw a frame and a paper margin around
+            // covers, against the full-bleed rule. Measured on sample outputs at 3-5% per edge.
+            private const val CrimeCoverInsetFraction = 0.055f
         }
 
         private val _uiState = MutableStateFlow<ImageGenerationUiState>(ImageGenerationUiState.Idle)
@@ -52,10 +59,10 @@ class ImageGenerationService
         private var currentJob: Job? = null
         private var activeRequest: ImageGenerationRequest? = null
         private var activeLabel: String? = null
-        private var activeImageType: com.ilustris.sagai.core.ai.model.ImageType? = null
+        private var activeImageType: ImageType? = null
 
         private var persistentWorkActive: Boolean = false
-        private var persistentWorkGenre: com.ilustris.sagai.features.newsaga.data.model.Genre? = null
+        private var persistentWorkGenre: Genre? = null
         private var persistentWorkMessage: String = ""
 
         private val queueMutex = Mutex()
@@ -118,7 +125,9 @@ class ImageGenerationService
         ): Result<T> {
             val deferred = CompletableDeferred<Result<T>>()
             pendingCount.update { it + 1 }
-            Timber.d("ImageGenerationService: enqueue request label=${request.label} showReveal=${request.showReveal} pending=${pendingCount.value}")
+            Timber.d(
+                "ImageGenerationService: enqueue request label=${request.label} showReveal=${request.showReveal} pending=${pendingCount.value}",
+            )
             try {
                 if (workChannel.isClosedForSend) {
                     val ex = IllegalStateException("ImageGenerationService: work channel is closed for send")
@@ -149,12 +158,13 @@ class ImageGenerationService
             pendingCount.update { it + 1 }
             Timber.d("ImageGenerationService: enqueueAsync request label=${request.label} pending=${pendingCount.value}")
             val queued = QueuedWork(request, onBitmap, deferred)
-            val result = try {
-                workChannel.trySend(queued)
-            } catch (e: Exception) {
-                Timber.e(e, "ImageGenerationService: enqueueAsync trySend failed")
-                null
-            }
+            val result =
+                try {
+                    workChannel.trySend(queued)
+                } catch (e: Exception) {
+                    Timber.e(e, "ImageGenerationService: enqueueAsync trySend failed")
+                    null
+                }
             if (result == null || result.isFailure) {
                 val ex = IllegalStateException("ImageGenerationService: failed to enqueue work (trySend)")
                 Timber.e(ex)
@@ -176,13 +186,17 @@ class ImageGenerationService
             islandExpansion = expansion
             _uiState.update { state ->
                 when (state) {
-                    is ImageGenerationUiState.Generating ->
+                    is ImageGenerationUiState.Generating -> {
                         state.copy(expansion = expansion)
+                    }
 
-                    is ImageGenerationUiState.AwaitingManualFallback ->
+                    is ImageGenerationUiState.AwaitingManualFallback -> {
                         state.copy(expansion = expansion)
+                    }
 
-                    else -> state
+                    else -> {
+                        state
+                    }
                 }
             }
         }
@@ -231,8 +245,8 @@ class ImageGenerationService
                                 debugImageFallbackService.isAwaitingUser.collectLatest { awaiting ->
                                     if (awaiting) {
                                         val prompt = debugImageFallbackService.pendingPrompt.value.orEmpty()
-                                    // Auto-expand while waiting for manual fallback.
-                                    islandExpansion = IslandExpansion.Expanded
+                                        // Auto-expand while waiting for manual fallback.
+                                        islandExpansion = IslandExpansion.Expanded
                                         _uiState.value =
                                             ImageGenerationUiState.AwaitingManualFallback(
                                                 prompt = prompt,
@@ -272,9 +286,16 @@ class ImageGenerationService
 
                         fallbackObserver.cancelAndJoin()
 
-                        val bitmap =
+                        val generatedBitmap =
                             resultBitmap
                                 ?: throw (error ?: IllegalStateException("Image generation produced no bitmap"))
+
+                        val bitmap =
+                            if (request.genre == Genre.CRIME && request.imageType == ImageType.COVER) {
+                                insetCropBitmap(generatedBitmap, CrimeCoverInsetFraction)
+                            } else {
+                                generatedBitmap
+                            }
 
                         val persisted = work.onBitmap(bitmap)
 

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.model.PromptBlueprint

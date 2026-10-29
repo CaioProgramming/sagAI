@@ -33,6 +33,7 @@ fun SagaCharactersView(
     viewModel: CharacterViewModel = hiltViewModel(),
 ) {
     val saga by viewModel.saga.collectAsStateWithLifecycle()
+    val badges by viewModel.badges.collectAsStateWithLifecycle()
 
     BackHandler {
         onBack()
@@ -65,6 +66,7 @@ fun SagaCharactersView(
                     saga = sagaContent,
                     characters = sagaContent.characters,
                     relationships = sagaContent.relationships,
+                    badges = badges,
                     onOpenCharacter = onCharacterDetails,
                     onBackClick = onBack,
                     sharedTransitionScope = sharedTransitionScope,

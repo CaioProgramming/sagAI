@@ -46,6 +46,16 @@ class FindByDisplayNameTest {
         assertEquals(4, characters.findByDisplayName("Sofi")?.id)
     }
 
+    @Test
+    fun `a name inside someone else's nickname does not resolve to that person`() {
+        val characters =
+            listOf(
+                character(id = 5, name = "Ren", lastName = "Vargas", nicknames = listOf("O Muralha", "Cão de guarda de Tamiko")),
+            )
+        assertNull(characters.findByDisplayName("Tamiko"))
+        assertEquals(5, characters.findByDisplayName("Cão de guarda de Tamiko")?.id)
+    }
+
     private fun character(
         id: Int,
         name: String,

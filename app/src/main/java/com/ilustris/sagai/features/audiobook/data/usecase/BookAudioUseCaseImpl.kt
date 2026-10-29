@@ -4,6 +4,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.QuotaExhaustedException
 import com.ilustris.sagai.core.ai.TranscribeClient
+import com.ilustris.sagai.core.ai.VoiceCatalog
 import com.ilustris.sagai.core.ai.key.QuotaStatus
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.PromptBlueprint
@@ -42,6 +43,7 @@ class BookAudioUseCaseImpl
         private val remoteConfigService: RemoteConfigService,
         private val fileHelper: FileHelper,
         private val stringResourceHelper: StringResourceHelper,
+        private val voiceCatalog: VoiceCatalog,
     ) : BookAudioUseCase {
         override suspend fun config(): BookAudioConfig? {
             val settings = remoteConfigService.getJson<BookAudioConfig>(CONFIG_KEY)?.takeIf { it.isValid() } ?: return null
@@ -55,10 +57,12 @@ class BookAudioUseCaseImpl
          * request wants, instead of going through [com.ilustris.sagai.core.ai.GemmaClient]'s
          * system-instruction split.
          */
-        private suspend fun narrationInstruction(): String? {
+        private suspend fun narrationInstruction(voice: Voice? = null): String? {
             val blueprint = remoteConfigService.getJson<PromptBlueprint>(NARRATION_BLUEPRINT_KEY) ?: return null
             val lines = (blueprint.directives + blueprint.rules).entries.map { (key, value) -> "$key: $value" }
-            return lines.joinToString("\n").takeIf { it.isNotBlank() }
+            // The voice's own delivery goes last so it reads as the more specific instruction.
+            val persona = voice?.narratorDirection?.trim()?.takeIf { it.isNotBlank() }?.let { "$VOICE_DELIVERY_KEY: $it" }
+            return (lines + listOfNotNull(persona)).joinToString("\n").takeIf { it.isNotBlank() }
         }
 
         override fun sections(act: ActContent): List<AudioSection> {
@@ -190,7 +194,7 @@ class BookAudioUseCaseImpl
                     AudioConfig(
                         voice = voice,
                         prompt = plan.text,
-                        instruction = narrationInstruction() ?: error("$NARRATION_BLUEPRINT_KEY is not configured"),
+                        instruction = narrationInstruction(voice) ?: error("$NARRATION_BLUEPRINT_KEY is not configured"),
                     ),
                 ) ?: error("Narration returned no audio")
 
@@ -282,7 +286,7 @@ class BookAudioUseCaseImpl
          * One narrator voice per saga, not per volume — otherwise each book picks its own random
          * voice the first time it is narrated, and the same saga ends up sounding like a different
          * person book to book. Priority: this book already has one (its own narration existed
-         * before the saga-wide field did) > the saga's persisted voice, if still a known one > pick
+         * before the saga-wide field did) > the saga's persisted voice (chosen by the player, or picked on first use) > pick
          * a random voice and persist it on the saga so every future book reuses it.
          */
         private suspend fun narratorVoice(
@@ -290,12 +294,13 @@ class BookAudioUseCaseImpl
             book: Book,
             config: BookAudioConfig,
         ): Voice {
-            Voice.findByName(book.narrationVoice)?.let { return it }
-            val knownVoices = config.voices.mapNotNull { Voice.findByName(it) }
-            Voice.findByName(saga.narratorVoice)?.takeIf { it in knownVoices }?.let { voice ->
+            voiceCatalog.find(book.narrationVoice)?.let { return it }
+            // The saga's own voice wins even when book_audio_config doesn't list it: the player chose it.
+            voiceCatalog.find(saga.narratorVoice)?.let { voice ->
                 bookAudioDao.setNarrationVoice(book.id, voice.id)
                 return voice
             }
+            val knownVoices = config.voices.mapNotNull { voiceCatalog.find(it) }
             val voice = knownVoices.randomOrNull() ?: error("book_audio_config has no known voices")
             bookAudioDao.setNarrationVoice(book.id, voice.id)
             sagaRepository.updateSaga(saga.copy(narratorVoice = voice.id))
@@ -334,6 +339,7 @@ class BookAudioUseCaseImpl
             private const val TAG = "🎧 Audiobook"
             const val CONFIG_KEY = "book_audio_config"
             const val NARRATION_BLUEPRINT_KEY = "book_audio_narration_blueprint"
+            private const val VOICE_DELIVERY_KEY = "VOICE_DELIVERY"
             private const val WAV_HEADER_BYTES = 44
 
             /** 24 kHz, 16-bit mono PCM. */

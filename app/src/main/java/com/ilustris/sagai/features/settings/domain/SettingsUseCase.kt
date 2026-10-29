@@ -8,7 +8,6 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.database.backup.DatabaseBackupService
 import com.ilustris.sagai.core.datastore.DataStorePreferences
-import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.FileManager
 import com.ilustris.sagai.core.permissions.PermissionService
@@ -32,9 +31,17 @@ interface SettingsUseCase {
 
     fun getMessageEffectsEnabled(): Flow<Boolean>
 
-    fun getShowTutorials(): Flow<Boolean>
+    /** Whether levels, medals and legacies are shown; the power directive keeps working underneath either way. */
+    fun getShowProgression(): Flow<Boolean>
 
-    fun backupEnabled(): Flow<Boolean>
+    suspend fun setShowProgression(enabled: Boolean)
+
+    /** Whether the one-time explanation of levels was already shown with the first level-up. */
+    fun getProgressionExplained(): Flow<Boolean>
+
+    suspend fun setProgressionExplained()
+
+    fun getShowTutorials(): Flow<Boolean>
 
     suspend fun setSmartSuggestionsEnabled(enabled: Boolean)
 
@@ -56,16 +63,6 @@ interface SettingsUseCase {
 
     suspend fun clearCache()
 
-    suspend fun disableBackup()
-
-    suspend fun enableBackup(uri: Uri?): RequestResult<Unit>
-
-    suspend fun hasSagasWithChapters(): Boolean
-
-    suspend fun exportDatabase(destinationUri: Uri): RequestResult<Unit>
-
-    suspend fun importDatabase(sourceUri: Uri): RequestResult<Unit>
-
     suspend fun clearPreferences()
 
     fun getMusicEnabled(): Flow<Boolean>
@@ -85,7 +82,6 @@ class SettingsUseCaseImpl
         private val billingService: BillingService,
         private val fileHelper: FileHelper,
         private val permissionService: PermissionService,
-        private val backupService: BackupService,
         private val fileManager: FileManager,
         private val databaseBackupService: DatabaseBackupService,
         private val database: SagaDatabase,
@@ -94,6 +90,8 @@ class SettingsUseCaseImpl
             const val SMART_SUGGESTIONS_ENABLED_KEY = "smart_suggestions_enabled"
             const val MESSAGE_EFFECTS_ENABLED_KEY = "message_effects_enabled"
             const val TUTORIALS_ENABLED_KEY = "tutorials_enabled"
+            const val SHOW_PROGRESSION_KEY = "show_progression"
+            const val PROGRESSION_EXPLAINED_KEY = "progression_explained"
             const val MUSIC_ENABLED_KEY = "music_enabled"
         }
 
@@ -106,9 +104,15 @@ class SettingsUseCaseImpl
 
         override fun getMessageEffectsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(MESSAGE_EFFECTS_ENABLED_KEY, true)
 
-        override fun getShowTutorials(): Flow<Boolean> = dataStorePreferences.getBoolean(TUTORIALS_ENABLED_KEY, true)
+        override fun getProgressionExplained(): Flow<Boolean> = dataStorePreferences.getBoolean(PROGRESSION_EXPLAINED_KEY, false)
 
-        override fun backupEnabled() = backupService.backupEnabled()
+        override suspend fun setProgressionExplained() = dataStorePreferences.setBoolean(PROGRESSION_EXPLAINED_KEY, true)
+
+        override fun getShowProgression(): Flow<Boolean> = dataStorePreferences.getBoolean(SHOW_PROGRESSION_KEY, true)
+
+        override suspend fun setShowProgression(enabled: Boolean) = dataStorePreferences.setBoolean(SHOW_PROGRESSION_KEY, enabled)
+
+        override fun getShowTutorials(): Flow<Boolean> = dataStorePreferences.getBoolean(TUTORIALS_ENABLED_KEY, true)
 
         override suspend fun setSmartSuggestionsEnabled(enabled: Boolean) =
             dataStorePreferences.setBoolean(SMART_SUGGESTIONS_ENABLED_KEY, enabled)
@@ -147,34 +151,6 @@ class SettingsUseCaseImpl
         override suspend fun clearCache() {
             context.cacheDir.deleteRecursively()
         }
-
-        override suspend fun disableBackup() = backupService.deleteBackup()
-
-        override suspend fun enableBackup(uri: Uri?) = backupService.enableBackup(uri)
-
-        override suspend fun hasSagasWithChapters(): Boolean =
-            withContext(Dispatchers.IO) {
-                val sagas =
-                    sagaRepository.getSagaSummaries().firstOrNull() ?: return@withContext false
-                sagas.any { saga -> saga.chaptersCount > 1 }
-            }
-
-        override suspend fun exportDatabase(destinationUri: Uri): RequestResult<Unit> =
-            executeRequest {
-                database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)")
-
-                val dbFile = context.getDatabasePath(SagaDatabase.NAME)
-                if (!dbFile.exists()) error("Database file not found")
-
-                context.contentResolver.openOutputStream(destinationUri, "w")?.use { output ->
-                    dbFile.inputStream().use { input ->
-                        input.copyTo(output)
-                    }
-                } ?: error("Could not open output stream for destination URI")
-            }
-
-        override suspend fun importDatabase(sourceUri: Uri) =
-            databaseBackupService.importDatabaseFromUri(sourceUri)
 
         override suspend fun clearPreferences() {
             dataStorePreferences.clearAll()

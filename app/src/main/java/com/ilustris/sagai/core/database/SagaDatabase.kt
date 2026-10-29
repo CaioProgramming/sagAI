@@ -3,17 +3,26 @@ package com.ilustris.sagai.core.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.ilustris.sagai.core.database.converters.ArtworkConverter
 import com.ilustris.sagai.core.database.converters.BookConverters
 import com.ilustris.sagai.core.database.converters.CharacterPresenceListConverter
+import com.ilustris.sagai.core.database.converters.ChoiceCardListConverter
 import com.ilustris.sagai.core.database.converters.TimelineConverters
 import com.ilustris.sagai.core.database.converters.EnumConverters
 import com.ilustris.sagai.core.database.converters.FarewellListConverter
+import com.ilustris.sagai.core.database.converters.FloatArrayConverter
 import com.ilustris.sagai.core.database.converters.IntListConverter
 import com.ilustris.sagai.core.database.converters.StringListConverter
 import com.ilustris.sagai.core.database.model.ApiUsageDay
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.ApiUsageDao
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
+import com.ilustris.sagai.core.ai.rag.EmbeddingDao
+import com.ilustris.sagai.core.ai.rag.EmbeddingEntry
+import com.ilustris.sagai.features.characters.data.model.CharacterKnowledge
+import com.ilustris.sagai.features.characters.data.source.CharacterKnowledgeDao
+import com.ilustris.sagai.features.saga.chat.data.model.EpilogueMessage
+import com.ilustris.sagai.features.saga.datasource.EpilogueMessageDao
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.model.BookChapterPages
@@ -34,6 +43,9 @@ import com.ilustris.sagai.features.characters.relations.data.model.RelationshipU
 import com.ilustris.sagai.features.characters.relations.data.source.CharacterRelationDao
 import com.ilustris.sagai.features.characters.relations.data.source.RelationshipUpdateEventDao
 import com.ilustris.sagai.features.geography.data.model.WorldLocation
+import com.ilustris.sagai.features.progression.data.model.CharacterFeat
+import com.ilustris.sagai.features.progression.data.model.CharacterHonor
+import com.ilustris.sagai.features.progression.data.source.ProgressionDao
 import com.ilustris.sagai.features.geography.data.model.WorldLocationVisit
 import com.ilustris.sagai.features.geography.data.source.WorldLocationDao
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -68,8 +80,13 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         CharacterArc::class,
         WorldLocation::class,
         WorldLocationVisit::class,
+        EmbeddingEntry::class,
+        EpilogueMessage::class,
+        CharacterKnowledge::class,
+        CharacterFeat::class,
+        CharacterHonor::class,
     ],
-    version = 35,
+    version = 42,
     exportSchema = true,
 )
 @TypeConverters(
@@ -80,6 +97,9 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
     FarewellListConverter::class,
     CharacterPresenceListConverter::class,
     TimelineConverters::class,
+    ChoiceCardListConverter::class,
+    FloatArrayConverter::class,
+    ArtworkConverter::class,
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
@@ -115,6 +135,14 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun characterArcDao(): CharacterArcDao
 
     abstract fun worldLocationDao(): WorldLocationDao
+
+    abstract fun embeddingDao(): EmbeddingDao
+
+    abstract fun epilogueMessageDao(): EpilogueMessageDao
+
+    abstract fun characterKnowledgeDao(): CharacterKnowledgeDao
+
+    abstract fun progressionDao(): ProgressionDao
 
     companion object {
         const val NAME = "SagaDatabase"

@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
 import android.util.Base64
+import com.ilustris.sagai.core.ai.model.AudioAttachment
 import com.ilustris.sagai.core.ai.model.GeminiContent
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
 import com.ilustris.sagai.core.ai.model.GeminiInlineData
@@ -29,10 +30,11 @@ class GeminiRequestBuilder internal constructor() {
     private var taskPrompt: String = ""
     private var systemInstruction: String = ""
     private var references: List<ImageReference> = emptyList()
+    private var audio: AudioAttachment? = null
     private var requirement: ModelRequirement = ModelRequirement.MEDIUM
     private var temperatureRandomness: Float = 0.5f
     private var includeSystemInFullPrompt: Boolean = true
-    private var thinkingLevel: String? = null
+    private var thinkingConfig: GeminiThinkingConfig? = null
 
     fun task(value: String) {
         taskPrompt = value
@@ -46,6 +48,11 @@ class GeminiRequestBuilder internal constructor() {
         references = values.filterNotNull()
     }
 
+    /** Inline audio after the task prompt; null (the default) sends none. */
+    fun audio(value: AudioAttachment?) {
+        audio = value
+    }
+
     fun generation(
         requirement: ModelRequirement,
         temperatureRandomness: Float = 0.5f,
@@ -55,12 +62,12 @@ class GeminiRequestBuilder internal constructor() {
     }
 
     /**
-     * The Gemini `thinkingLevel` for this request, already resolved to a value the API accepts.
-     * Null omits `thinkingConfig` entirely — for a tier with thinking switched off, or a model
-     * that doesn't support it.
+     * The thinking control for this request, already shaped for the model's family (see
+     * [ModelCatalog.thinkingConfig]). Null omits `thinkingConfig` entirely — for a tier with
+     * thinking switched off, or a model whose default is what we want.
      */
-    fun thinking(level: String?) {
-        thinkingLevel = level
+    fun thinking(config: GeminiThinkingConfig?) {
+        thinkingConfig = config
     }
 
     /** Whether [buildFullPromptText] should embed the system instruction (token diagnostics). */
@@ -71,10 +78,10 @@ class GeminiRequestBuilder internal constructor() {
     fun build(): GeminiRequestAssembly {
         require(taskPrompt.isNotBlank()) { "Gemini request requires a task prompt" }
 
-        val contentParts = buildGeminiContentParts(taskPrompt, references)
+        val contentParts = buildGeminiContentParts(taskPrompt, references, audio)
         val fullPromptText =
             buildFullPromptText(
-                taskPrompt = taskPrompt,
+                taskPrompt = if (audio != null) "$taskPrompt\n\n[player audio attached]" else taskPrompt,
                 referenceDescriptions = references.map { it.description },
                 systemInstruction = systemInstruction.takeIf { includeSystemInFullPrompt },
             )
@@ -93,15 +100,7 @@ class GeminiRequestBuilder internal constructor() {
                                 requirement,
                                 temperatureRandomness,
                             ),
-                        thinkingConfig =
-                            thinkingLevel?.let { level ->
-                                GeminiThinkingConfig(
-                                    // No point asking for summaries of reasoning we just asked the
-                                    // model not to do — `minimal` returns zero thought tokens.
-                                    includeThoughts = level != "minimal",
-                                    thinkingLevel = level,
-                                )
-                            },
+                        thinkingConfig = thinkingConfig,
                     ),
             )
 
@@ -120,9 +119,14 @@ fun geminiRequest(block: GeminiRequestBuilder.() -> Unit): GeminiRequestAssembly
 fun buildGeminiContentParts(
     taskPrompt: String,
     references: List<ImageReference> = emptyList(),
+    audio: AudioAttachment? = null,
 ): List<GeminiPart> =
     buildList {
         add(GeminiPart(text = taskPrompt))
+        audio?.let {
+            add(GeminiPart(text = "PLAYER AUDIO: the player's latest turn, spoken. Listen to it as latestMessage."))
+            add(GeminiPart(inlineData = GeminiInlineData(mimeType = it.mimeType, data = it.toBase64())))
+        }
         references.forEach { reference ->
             add(
                 GeminiPart(

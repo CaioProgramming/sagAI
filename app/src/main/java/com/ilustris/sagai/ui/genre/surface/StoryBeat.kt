@@ -60,6 +60,8 @@ data class StoryBeat(
     /** A second voice commenting on the beat, distinct from the story telling it. */
     val aside: StoryAside? = null,
     val progress: StoryProgress? = null,
+    /** A preview of the long text the beat's subject generated; opening it in full is the host's. */
+    val digest: StoryDigest? = null,
     val actions: List<StoryBeatAction> = emptyList(),
     /**
      * Hold [actions] back until the surface has finished revealing itself. Keeps a cold-open beat
@@ -87,6 +89,13 @@ data class StoryAside(
      * with simply ignore it, and a beat with no tone still has its text.
      */
     val tone: EmotionalTone? = null,
+)
+
+@Immutable
+data class StoryDigest(
+    val text: String,
+    val expandLabel: String,
+    val onClick: () -> Unit,
 )
 
 @Immutable

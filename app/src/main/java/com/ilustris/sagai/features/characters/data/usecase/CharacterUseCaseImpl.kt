@@ -20,6 +20,8 @@ import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.progression.domain.ProgressionConfigProvider
+import com.ilustris.sagai.features.progression.domain.withPlacement
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
@@ -41,6 +43,7 @@ import com.ilustris.sagai.features.home.data.model.hasConflictingCharacterIdenti
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.saga.chat.data.voicing.VoiceCastingUseCase
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -70,6 +73,9 @@ class CharacterUseCaseImpl
         private val promptService: PromptService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val artworkConceptService: ArtworkConceptService,
+        private val voiceCastingUseCase: VoiceCastingUseCase,
+        private val semanticIndexService: com.ilustris.sagai.core.ai.rag.SemanticIndexService,
+        private val progressionConfigProvider: ProgressionConfigProvider,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
 
@@ -81,7 +87,7 @@ class CharacterUseCaseImpl
                     image = emptyString(),
                     voice = null,
                 ),
-            )
+            ).also { voiceCastingUseCase.castInBackground(it) }
 
         override suspend fun updateCharacter(character: Character) = repository.updateCharacter(character)
 
@@ -234,6 +240,19 @@ class CharacterUseCaseImpl
                 )
             }
 
+        /** The progression config when this saga takes part in it, null otherwise. */
+        private suspend fun activeProgression(saga: SagaContent) =
+            progressionConfigProvider.activeConfig()?.takeIf { saga.data.progressionEnabled }
+
+        /** Level placement and skills replace the abilities text in sagas with progression, and do not exist outside them. */
+        private fun placementFilter(progression: com.ilustris.sagai.features.progression.domain.ProgressionConfig?) =
+            listOf("status", "statusNote", "statusTimelineId") +
+                if (progression == null) {
+                    listOf("baseLevel", "levelRationale", "skills")
+                } else {
+                    listOf("skillsAndProficiencies", "uniqueOrSignatureTalents")
+                }
+
         private fun assertCharacterNotAlreadyInSaga(
             sagaContent: SagaContent,
             candidateName: String?,
@@ -254,6 +273,7 @@ class CharacterUseCaseImpl
             executeRequest {
                 assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
                 val themeColor = getRandomColorHex()
+                val progression = activeProgression(sagaContent)
                 val prompt =
                     CharacterPrompts.characterGeneration(
                         promptService,
@@ -262,6 +282,7 @@ class CharacterUseCaseImpl
                         themeColor,
                         sceneSummary,
                         genreConfigService.aesthetic(sagaContent.data.genre),
+                        levelBands = progression?.levelBands.orEmpty(),
                     )
                 Timber.d(
                     "generateCharacter: Starting character generation with theme color $themeColor...",
@@ -282,8 +303,9 @@ class CharacterUseCaseImpl
                                 "voice",
                                 "hexColor",
                                 "firstSceneId",
-                            ),
+                            ) + placementFilter(progression),
                         requirement = ModelRequirement.HIGH,
+                        temperatureRandomness = 1f,
                     )!!
 
                 if (sagaContent.hasConflictingCharacterIdentity(newCharacter)) {
@@ -291,14 +313,15 @@ class CharacterUseCaseImpl
                 }
                 val characterTransaction =
                     insertCharacter(
-                        newCharacter.copy(
-                            id = 0,
-                            sagaId = sagaContent.data.id,
-                            firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
-                            joinedAt = System.currentTimeMillis(),
-                            image = emptyString(),
-                            hexColor = themeColor,
-                        ),
+                        newCharacter
+                            .copy(
+                                id = 0,
+                                sagaId = sagaContent.data.id,
+                                firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
+                                joinedAt = System.currentTimeMillis(),
+                                image = emptyString(),
+                                hexColor = themeColor,
+                            ).withPlacement(progression, isProtagonist = false),
                     )
                 CoroutineScope(Dispatchers.IO).launch {
                     generateCharacterImage(
@@ -320,6 +343,7 @@ class CharacterUseCaseImpl
                     assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
                     val bannedNames = repository.getAllCharacterNames()
                     val themeColor = getRandomColorHex()
+                    val progression = activeProgression(sagaContent)
                     val prompt =
                         CharacterPrompts.characterGeneration(
                             promptService,
@@ -328,6 +352,7 @@ class CharacterUseCaseImpl
                             themeColor,
                             sceneSummary,
                             genreConfigService.aesthetic(sagaContent.data.genre),
+                            levelBands = progression?.levelBands.orEmpty(),
                         )
 
                     val request =
@@ -346,8 +371,9 @@ class CharacterUseCaseImpl
                                         "sagaId",
                                         "voice",
                                         "firstSceneId",
-                                    ),
+                                    ) + placementFilter(progression),
                                 requirement = ModelRequirement.HIGH,
+                                temperatureRandomness = 1f,
                             )
 
                     reasoningSynthesizerService
@@ -367,14 +393,15 @@ class CharacterUseCaseImpl
                                 }
                                 val characterTransaction =
                                     insertCharacter(
-                                        newCharacter.copy(
-                                            id = 0,
-                                            sagaId = sagaContent.data.id,
-                                            firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
-                                            joinedAt = System.currentTimeMillis(),
-                                            image = emptyString(),
-                                            hexColor = themeColor,
-                                        ),
+                                        newCharacter
+                                            .copy(
+                                                id = 0,
+                                                sagaId = sagaContent.data.id,
+                                                firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
+                                                joinedAt = System.currentTimeMillis(),
+                                                image = emptyString(),
+                                                hexColor = themeColor,
+                                            ).withPlacement(progression, isProtagonist = false),
                                     )
                                 CoroutineScope(Dispatchers.IO).launch {
                                     generateCharacterImage(characterTransaction, sagaContent.data)
@@ -576,10 +603,16 @@ class CharacterUseCaseImpl
                     }
                 }
 
+                // Every status change needs the reason that caused it; without one the model is guessing.
+                val statusChanged =
+                    saga.data.progressionEnabled && update.status != null && !update.statusReason.isNullOrBlank()
                 updateCharacter(
                     character.copy(
                         knowledge = update.knowledgeUpdate.orEmpty().ifEmpty { character.knowledge },
                         nicknames = update.nickNames.orEmpty().ifEmpty { character.nicknames },
+                        status = if (statusChanged) update.status else character.status,
+                        statusNote = if (statusChanged) update.statusNote?.trim()?.takeIf { it.isNotEmpty() } else character.statusNote,
+                        statusTimelineId = if (statusChanged) timelineId else character.statusTimelineId,
                     ),
                 )
             }
@@ -629,10 +662,33 @@ class CharacterUseCaseImpl
             }
 
         override suspend fun insertCharacterEvent(characterEvent: CharacterEvent): CharacterEvent =
-            eventsRepository.insertCharacterEvent(characterEvent)
+            eventsRepository.insertCharacterEvent(characterEvent).also { indexCharacterEvent(it) }
 
         override suspend fun insertCharacterEvents(characterEvents: List<CharacterEvent>) =
-            eventsRepository.insertCharacterEvents(characterEvents)
+            eventsRepository.insertCharacterEvents(characterEvents).also {
+                characterEvents.forEach { indexCharacterEvent(it) }
+            }
+
+        /**
+         * Keeps the RAG index in step with `character_events` — [CharacterEvent] itself carries no
+         * `sagaId`, so it's resolved from the character it belongs to. Retrieved via semantic
+         * search in [com.ilustris.sagai.core.ai.prompts.ChatPrompts.replyMessagePrompt], replacing
+         * the old `takeLast(3)` recency cut for this character's event history.
+         *
+         * Keyed off (character, timeline, title) rather than the row id: the batch insert path
+         * ([insertCharacterEvents]) doesn't get autogenerated ids back from Room, and this triple is
+         * already how the app treats an event as unique (see the "already exists for this
+         * timeline" check above it).
+         */
+        private suspend fun indexCharacterEvent(event: CharacterEvent) {
+            val sagaId = repository.getCharacterById(event.characterId)?.sagaId ?: return
+            semanticIndexService.index(
+                sagaId = sagaId,
+                sourceKey = "characterEvent:${event.characterId}:${event.gameTimelineId}:${event.title.hashCode()}",
+                sourceType = com.ilustris.sagai.core.ai.rag.EmbeddingSourceType.CHARACTER_EVENT,
+                text = "${event.title}\n${event.summary}",
+            )
+        }
 
         override suspend fun insertCharacterArc(characterArc: CharacterArc) = characterArcDao.insertArc(characterArc)
 

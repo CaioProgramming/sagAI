@@ -39,7 +39,6 @@ fun MessageOptionsSheet(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onCopy: () -> Unit,
-    onSelect: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState()
@@ -70,13 +69,6 @@ fun MessageOptionsSheet(
                 label = stringResource(R.string.copy_message),
                 genre = genre,
                 onClick = onCopy,
-            )
-
-            OptionItem(
-                icon = painterResource(R.drawable.ic_check_circle),
-                label = stringResource(R.string.select_message),
-                genre = genre,
-                onClick = onSelect,
             )
 
             if (isSafeToEdit) { // We can delete anytime unless loading

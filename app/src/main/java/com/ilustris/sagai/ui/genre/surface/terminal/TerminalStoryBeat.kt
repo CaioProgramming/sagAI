@@ -28,12 +28,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.ui.genre.surface.AsideMascot
 import com.ilustris.sagai.ui.genre.surface.StoryActionEmphasis
+import com.ilustris.sagai.ui.genre.surface.StoryDigestCard
 import com.ilustris.sagai.ui.genre.surface.StoryBeat
-import com.ilustris.sagai.ui.genre.surface.StoryBody
-import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.surface.StoryBeatAction
+import com.ilustris.sagai.ui.genre.surface.StoryBody
 import com.ilustris.sagai.ui.genre.surface.StoryProgress
+import com.ilustris.sagai.ui.genre.surface.storyRoot
 import com.ilustris.sagai.ui.genre.terminal.TerminalCommandButton
 import com.ilustris.sagai.ui.genre.terminal.TerminalLine
 import com.ilustris.sagai.ui.genre.terminal.TerminalPortraitPlate
@@ -80,7 +82,10 @@ fun TerminalStoryBeat(
             .padding(contentPadding)
             .padding(horizontal = 24.dp, vertical = 24.dp),
     ) {
-        StoryBody(embedded, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        // Centred in the weighted body rather than top-packed: the actions sit pinned below, so a
+        // short beat (a new event) otherwise leaves its content stuck at the top with a hole above
+        // the command buttons.
+        StoryBody(embedded, verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically)) {
             // The opening command and its output — the beat itself.
             val head = next()
             TerminalTypewriter(
@@ -148,13 +153,24 @@ fun TerminalStoryBeat(
                 }
             }
 
+            beat.digest?.let { digest ->
+                val s = next()
+                TerminalOutput(visible = printed >= s, host = host, command = "cat details.log", accent = accent, canAnimate = canAnimate, onFinished = { if (printed == s) printed = s + 1 }) {
+                    StoryDigestCard(digest)
+                }
+            }
+
             beat.aside?.let { aside ->
                 val s = next()
                 TerminalOutput(visible = printed >= s, host = host, command = "cat emotional.log", accent = accent, canAnimate = canAnimate, onFinished = { if (printed == s) printed = s + 1 }) {
-                    Text(
-                        text = "  ${aside.text}",
-                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, color = normal.copy(alpha = .55f)),
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
+                        AsideMascot(aside, color = accent, canAnimate = canAnimate, modifier = Modifier.size(28.dp))
+                        Text(
+                            text = aside.text,
+                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, color = normal.copy(alpha = .55f)),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }
