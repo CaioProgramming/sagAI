@@ -13,6 +13,7 @@ import com.ilustris.sagai.core.database.backup.ArchiveManifest
 import com.ilustris.sagai.core.database.backup.SagasArchiveService
 import com.ilustris.sagai.core.services.AdTier
 import com.ilustris.sagai.core.services.AdsService
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.restartApp
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -45,8 +46,16 @@ class SettingsViewModel
         val debugImageFallbackService: DebugImageFallbackService,
         private val adsService: AdsService,
         private val archiveService: SagasArchiveService,
+        private val remoteConfigService: RemoteConfigService,
         @ApplicationContext private val context: Context,
     ) : ViewModel() {
+        private val _remoteConfigFetch = MutableStateFlow(remoteConfigService.lastFetchInfo())
+        val remoteConfigFetch = _remoteConfigFetch.asStateFlow()
+
+        fun refreshRemoteConfigFetch() {
+            _remoteConfigFetch.value = remoteConfigService.lastFetchInfo()
+        }
+
         val notificationsEnabled = settingsUseCase.getNotificationsEnabled()
 
         val smartSuggestionsEnabled = settingsUseCase.getSmartSuggestionsEnabled()

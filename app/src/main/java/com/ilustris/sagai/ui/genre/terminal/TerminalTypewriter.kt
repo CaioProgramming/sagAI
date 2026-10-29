@@ -61,24 +61,29 @@ fun TerminalTypewriter(
     spacing: Dp = 10.dp,
     onFinished: () -> Unit = {},
 ) {
+    // An empty line never animates — its target index is already 0, so the typewriter's finish
+    // callback never fires and the printer would sit on it forever, holding back everything
+    // gated on [onFinished]. There is nothing to type in one, so it is not a line at all.
+    val printable = remember(lines) { lines.filter { it.text.isNotBlank() } }
+
     // Keyed on the content so a page whose text streams in restarts its print-out rather than
     // resuming into lines that no longer exist.
-    var typedCount by remember(lines, canAnimate) {
-        mutableIntStateOf(if (canAnimate) 0 else lines.size)
+    var typedCount by remember(printable, canAnimate) {
+        mutableIntStateOf(if (canAnimate) 0 else printable.size)
     }
 
-    LaunchedEffect(typedCount, lines.size) {
-        if (typedCount >= lines.size) onFinished()
+    LaunchedEffect(typedCount, printable.size) {
+        if (typedCount >= printable.size) onFinished()
     }
 
     // One rhythm for the whole run, owned above the lines so moving the cursor down doesn't
     // restart it — and so it survives the printer finishing, where there is no active line left
     // for it to belong to.
     val caretVisible = rememberCaretBlink()
-    val caretLine = typedCount.coerceAtMost(lines.lastIndex)
+    val caretLine = typedCount.coerceAtMost(printable.lastIndex)
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(spacing)) {
-        lines.forEachIndexed { index, line ->
+        printable.forEachIndexed { index, line ->
             // Lines the printer has not reached yet simply do not exist on screen.
             if (index > typedCount) return@forEachIndexed
 

@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.milestone.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.services.AdTier
 import com.ilustris.sagai.core.services.AdsService
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -15,6 +16,8 @@ import com.ilustris.sagai.features.act.data.model.BookGenerationUiState
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.getChapterCovers
+import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
+import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
@@ -61,6 +64,7 @@ class MilestoneViewModel
         private val chapterUseCase: ChapterUseCase,
         private val sagaThemeManager: SagaThemeManager,
         private val stringResourceHelper: StringResourceHelper,
+        imageGenerationService: ImageGenerationService,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<MilestoneUiState>(MilestoneUiState.Loading())
         val uiState: StateFlow<MilestoneUiState> = _uiState.asStateFlow()
@@ -105,6 +109,14 @@ class MilestoneViewModel
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
         val bookGenerationState: StateFlow<BookGenerationUiState> = bookGenerationService.uiState
+
+        /** The chapter cover is generated fire-and-forget behind the closure and takes minutes to
+         * land; the image island that normally shows it sits under this full-screen, so the closure
+         * has to say it is happening itself. */
+        val coverGenerating: StateFlow<Boolean> =
+            imageGenerationService.uiState
+                .map { it is ImageGenerationUiState.Generating && it.imageType == ImageType.COVER }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
         private val _finished = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
         val finished: SharedFlow<Unit> = _finished
@@ -392,8 +404,11 @@ class MilestoneViewModel
 
         /**
          * The close button's tap. A generation genuinely in flight isn't stuck, so it gets told
-         * that instead of a reevaluation that would just be queued behind it; anything else goes
-         * through [requestStuckExit], which leaves only if nothing is actually left pending.
+         * that instead of a reevaluation that would just be queued behind it. Loading and Error
+         * have no action of their own, so they go through [requestStuckExit], which leaves only if
+         * nothing is actually left pending. Every other step is showing content the player can
+         * read, so there is nothing to reevaluate: the exit is theirs to take, and it also covers
+         * a step whose own controls never showed up.
          */
         fun onCloseRequested() {
             val narrativeState = sagaContentManager.narrativeUiState.value
@@ -408,7 +423,17 @@ class MilestoneViewModel
                 )
                 return
             }
-            requestStuckExit()
+            when (_uiState.value) {
+                is MilestoneUiState.Loading, is MilestoneUiState.Error -> requestStuckExit()
+                // Leaving an introduction is the same as continuing it: it has no side effect to run,
+                // and a milestone left set is what makes the chat reopen this screen.
+                is MilestoneUiState.IntroductionStep -> {
+                    sagaContentManager.dismissMilestone()
+                    _finished.tryEmit(Unit)
+                }
+
+                else -> _finished.tryEmit(Unit)
+            }
         }
 
         fun onContinue() {

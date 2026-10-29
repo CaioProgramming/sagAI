@@ -554,6 +554,14 @@
     <string name="settings_debug_section">Debug</string>
     <string name="settings_audit_logs_subtitle">Inspect AI requests</string>
     <string name="settings_design_system_subtitle">Validate design system</string>
+    <string name="settings_remote_config_title">Remote Config</string>
+    <string name="settings_remote_config_last_fetch">Last fetch: %1$s (%2$s)</string>
+    <string name="settings_remote_config_never">Never fetched</string>
+    <string name="settings_remote_config_version">Config version: %1$s</string>
+    <string name="settings_remote_config_version_none">not published</string>
+    <string name="settings_remote_config_status_success">success</string>
+    <string name="settings_remote_config_status_throttled">throttled</string>
+    <string name="settings_remote_config_status_failed">failed</string>
     <string name="test_ad_event_subtitle">Standard interstitial</string>
     <string name="test_ad_chapter_act_subtitle">Rewarded interstitial (video)</string>
     <string name="loading">Loading…</string>
@@ -695,6 +703,7 @@
     <string name="milestone_digest_expand">Read in full</string>
     <string name="milestone_generate_book">Generate book</string>
     <string name="milestone_generating_book">Generating book…</string>
+    <string name="milestone_generating_cover">Generating cover…</string>
     <string name="create_character">Continue to character</string>
 
     <string name="saga_intro_fallback">Welcome! Let\'s start creating your epic saga. What kind of story do you want to tell\?</string>

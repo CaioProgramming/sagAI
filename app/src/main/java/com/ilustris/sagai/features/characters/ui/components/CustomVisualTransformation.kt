@@ -229,6 +229,10 @@ private fun transformExpressiveTags(
         thinkTagSurfaceColor
             ?: tagBackgroundColor.copy(alpha = 0.4f)
 
+    // tagBackgroundColor is the theme background on the chat input, so the narrator tag has to
+    // borrow the text colour or it vanishes into the field.
+    val narratorTint = textColor.takeIf { it != Color.Unspecified } ?: tagBackgroundColor
+
     val annotatedString =
         buildAnnotatedString {
             for (match in filteredMatches) {
@@ -253,14 +257,14 @@ private fun transformExpressiveTags(
                             } else {
                                 Color.LightGray
                             }
-                        else -> tagBackgroundColor
+                        else -> narratorTint.copy(alpha = 0.85f)
                     }
 
                 val markerBackground =
                     when (match.type) {
                         "action" -> MaterialColor.Amber400.copy(alpha = 0.12f)
                         "think" -> thinkSurface
-                        else -> tagBackgroundColor.copy(alpha = 0.12f)
+                        else -> narratorTint.copy(alpha = 0.16f)
                     }
 
                 val markerStartInTransformed = transformedBuilder.length
@@ -323,7 +327,7 @@ private fun transformExpressiveTags(
                                 addStyle(
                                     SpanStyle(
                                         fontStyle = FontStyle.Italic,
-                                        background = tagBackgroundColor.copy(alpha = 0.12f),
+                                        background = narratorTint.copy(alpha = 0.08f),
                                     ),
                                     startStyle,
                                     endStyle,
