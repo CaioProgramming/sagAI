@@ -82,7 +82,10 @@ fun TerminalStoryBeat(
             .padding(contentPadding)
             .padding(horizontal = 24.dp, vertical = 24.dp),
     ) {
-        StoryBody(embedded, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        // Centred in the weighted body rather than top-packed: the actions sit pinned below, so a
+        // short beat (a new event) otherwise leaves its content stuck at the top with a hole above
+        // the command buttons.
+        StoryBody(embedded, verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically)) {
             // The opening command and its output — the beat itself.
             val head = next()
             TerminalTypewriter(

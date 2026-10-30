@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.database.backup.SagasArchive
 import com.ilustris.sagai.core.permissions.PermissionComponent
@@ -740,6 +742,40 @@ fun SettingsView(
                             showSwitch = false,
                             onClickSwitch =
                                 { _: Boolean -> viewModel.testAd(AdTier.CHAPTER_OR_ACT) }.takeIf { adTestLoading == null },
+                            isActivated = true,
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                            thickness = 1.dp,
+                        )
+
+                        LaunchedEffect(Unit) { viewModel.refreshRemoteConfigFetch() }
+                        val fetch by viewModel.remoteConfigFetch.collectAsStateWithLifecycle()
+                        PreferencesContainer(
+                            stringResource(R.string.settings_remote_config_title),
+                            (
+                                if (fetch.timeMillis < 0) {
+                                    stringResource(R.string.settings_remote_config_never)
+                                } else {
+                                    stringResource(
+                                        R.string.settings_remote_config_last_fetch,
+                                        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(fetch.timeMillis)),
+                                        stringResource(
+                                            when (fetch.status) {
+                                                FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS -> R.string.settings_remote_config_status_success
+                                                FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED -> R.string.settings_remote_config_status_throttled
+                                                else -> R.string.settings_remote_config_status_failed
+                                            },
+                                        ),
+                                    )
+                                }
+                            ) + "\n" +
+                                stringResource(
+                                    R.string.settings_remote_config_version,
+                                    fetch.configVersion ?: stringResource(R.string.settings_remote_config_version_none),
+                                ),
+                            showSwitch = false,
                             isActivated = true,
                         )
                     }

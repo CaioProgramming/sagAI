@@ -272,7 +272,14 @@ fun ChatView(
             requiredPermission = null
         }
 
-        AnimatedContent(uiState.chatState, transitionSpec = {
+        // The view model is reused across sagas and initChat only runs after the first frame, so
+        // for a moment it still holds the previous saga's chat. Until the content is this saga's
+        // (or there is none), the waiting screen stands in for it instead of flashing the old one.
+        val heldSagaId = uiState.sagaContent?.data?.id?.toString()
+        val showsRequestedSaga = heldSagaId == null || sagaId == null || heldSagaId == sagaId
+        val effectiveChatState = if (showsRequestedSaga) uiState.chatState else ChatState.Loading
+
+        AnimatedContent(effectiveChatState, transitionSpec = {
             fadeIn(tween(500)) togetherWith fadeOut(tween(500))
         }) { state ->
             when (state) {
@@ -1216,15 +1223,26 @@ private fun SagaChatSparkPlaceholder(modifier: Modifier = Modifier) {
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            themeIconVector(),
-            null,
-            modifier =
-                Modifier
-                    .size(100.dp)
-                    .gradientFill(sagaBrush()),
-            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-        )
+        // Keyed on the icon itself: a saga with another genre swaps it with a slow scale instead
+        // of cutting, and an unchanged icon (same genre) is left alone.
+        AnimatedContent(
+            targetState = themeIconVector(),
+            transitionSpec = {
+                (fadeIn(tween(1500, easing = EaseIn)) + scaleIn(tween(1500, easing = EaseIn), initialScale = 0.6f)) togetherWith
+                    (fadeOut(tween(1500, easing = EaseIn)) + scaleOut(tween(1500, easing = EaseIn), targetScale = 0.6f))
+            },
+            label = "placeholder_icon",
+        ) { icon ->
+            Icon(
+                icon,
+                null,
+                modifier =
+                    Modifier
+                        .size(100.dp)
+                        .gradientFill(sagaBrush()),
+                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+            )
+        }
     }
 }
 

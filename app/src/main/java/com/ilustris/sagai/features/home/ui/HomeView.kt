@@ -693,6 +693,7 @@ private fun LastBackupNotice(
     Text(
         text,
         style = MaterialTheme.typography.labelMedium,
+        textAlign = TextAlign.Center,
         color =
             if (stale) {
                 MaterialTheme.colorScheme.error
