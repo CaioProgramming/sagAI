@@ -13,10 +13,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -37,6 +39,8 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import com.ilustris.sagai.ui.theme.rememberReduceMotion
 
 /**
  * The comic idiom's drawing kit — ink, paper, boxes and balloons, with no idea what a review page
@@ -167,8 +171,31 @@ fun ComicShoutBlock(
 }
 
 /**
- * Staggers a frame's own reveal. Panels are only composed once the camera reaches them, so a delay
- * here plays out as the reader arrives rather than having already finished off-screen.
+ * Whether the comic page this content sits on has settled in front of the reader. Content that
+ * animates in waits for it, so a page turning into view shows its empty frames first and fills
+ * them on arrival instead of finishing its entrance while still half off-screen.
+ *
+ * A function rather than a value so the page can flip it without recomposing everything beneath
+ * it. The default — always armed — leaves every other comic surface exactly as it was.
+ */
+val LocalComicPlayback = compositionLocalOf<() -> Boolean> { { true } }
+
+/** Extra wait (ms) before a frame's own content starts, so frames on one page land in reading order. */
+val LocalComicFrameDelay = compositionLocalOf { 0 }
+
+/** [LocalComicPlayback] as plain state, for content that has to branch on it rather than wait for it. */
+@Composable
+fun rememberComicArmed(): Boolean {
+    val armed = LocalComicPlayback.current
+    var value by remember(armed) { mutableStateOf(armed()) }
+    LaunchedEffect(armed) { snapshotFlow(armed).collect { value = it } }
+    return value
+}
+
+/**
+ * Staggers a frame's own reveal. Waits for the page to settle ([LocalComicPlayback]) before its
+ * delay starts, so a delay here plays out as the reader arrives rather than having already
+ * finished off-screen.
  */
 @Composable
 fun ComicFadeIn(
@@ -177,14 +204,18 @@ fun ComicFadeIn(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    val armed = LocalComicPlayback.current
+    val frameDelay = LocalComicFrameDelay.current
+    val reduceMotion = rememberReduceMotion()
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        delay(delayMillis.toLong())
+        snapshotFlow(armed).first { it }
+        if (!reduceMotion) delay((frameDelay + delayMillis).toLong())
         visible = true
     }
     val alpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(durationMillis),
+        animationSpec = tween(if (reduceMotion) 0 else durationMillis),
         label = "comicFadeIn",
     )
     Box(modifier.alpha(alpha)) { content() }

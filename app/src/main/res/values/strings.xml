@@ -794,6 +794,11 @@
     <string name="milestone_overlay_important_characters_title">Most Important Characters</string>
     <string name="review_restart_button">Restart</string>
     <string name="review_regenerate_button">Regenerate review</string>
+    <string name="review_comic_page_indicator">Page %1$d of %2$d</string>
+    <string name="review_comic_next_page">Next page</string>
+    <string name="review_comic_previous_page">Previous page</string>
+    <string name="review_comic_the_end">The end</string>
+    <string name="review_comic_close">Close</string>
 
     <!-- Review Summary Page -->
     <string name="review_summary_title">Our Story, Retold</string>

@@ -644,6 +644,11 @@
     <string name="milestone_overlay_important_characters_title">Personagens mais importantes</string>
     <string name="review_restart_button">Recomeçar</string>
     <string name="review_regenerate_button">Regerar review</string>
+    <string name="review_comic_page_indicator">Página %1$d de %2$d</string>
+    <string name="review_comic_next_page">Próxima página</string>
+    <string name="review_comic_previous_page">Página anterior</string>
+    <string name="review_comic_the_end">Fim</string>
+    <string name="review_comic_close">Fechar</string>
 
     <!-- Review Summary Page -->
     <string name="review_summary_title">Nossa História, Recontada</string>
