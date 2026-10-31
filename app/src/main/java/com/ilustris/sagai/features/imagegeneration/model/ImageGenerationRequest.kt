@@ -12,4 +12,6 @@ data class ImageGenerationRequest(
     val imageReference: Pair<Bitmap, String>? = null,
     val label: String? = null,
     val showReveal: Boolean = true,
+    /** Set when a screen shows this image, so it can follow the request through [ImageTargetState]. */
+    val target: ImageTarget? = null,
 )

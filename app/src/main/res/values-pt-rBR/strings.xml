@@ -748,6 +748,15 @@
     <string name="chat_generation_reasoning_placeholder">Pensando em uma resposta…</string>
     <string name="image_generation_reveal_icon">Ícone do personagem pronto</string>
     <string name="image_generation_reveal_cover">Capa pronta</string>
+    <string name="image_generation_cta">Gerar imagem</string>
+    <string name="image_generation_failed">Não consegui desenhar essa</string>
+    <string-array name="image_generation_phrases">
+        <item>Misturando as tintas…</item>
+        <item>Esboçando os primeiros traços…</item>
+        <item>Procurando a luz certa…</item>
+        <item>Caprichando nos detalhes…</item>
+        <item>Quase lá…</item>
+    </string-array>
     <string name="image_generation_reveal_dismiss">Continuar</string>
     <string name="image_generation_fallback_cancel">Cancelar</string>
     <string name="image_generation_character_icon">Gerando ícone de %1$s…</string>
@@ -768,7 +777,20 @@
     <string name="share_book_pdf_chooser">Compartilhar PDF do livro</string>
     <string name="share_book_pdf_subject">Compartilhando %1$s do Sagas</string>
     <string name="regenerate_book_cd">Regenerar livro</string>
-    <string name="share_pdf_cd">Compartilhar PDF</string>
+    <string name="book_export_cd">Exportar livro</string>
+    <string name="book_export_title">Exportar este volume</string>
+    <string name="book_export_subtitle">Escolha o formato. Quando ficar pronto, você pode enviar ou guardar no dispositivo.</string>
+    <string name="book_export_pdf_title">PDF</string>
+    <string name="book_export_pdf_description">Abre em qualquer lugar e mantém cada página igual ao que você vê.</string>
+    <string name="book_export_epub_title">EPUB</string>
+    <string name="book_export_epub_description">Texto que se ajusta à sua tela. Precisa de um app leitor, como o Google Play Livros.</string>
+    <string name="book_export_ready_title">Seu livro está pronto</string>
+    <string name="book_export_send">Enviar</string>
+    <string name="book_export_save">Salvar no dispositivo</string>
+    <string name="book_export_saved">Salvo no seu dispositivo</string>
+    <string name="book_export_save_failed">Não foi possível salvar o arquivo</string>
+    <string name="book_export_done">Concluir</string>
+    <string name="book_export_failed_title">A exportação não funcionou</string>
     <string name="book_writing_prologue">Escrevendo o prólogo…</string>
     <string name="book_writing_chapter">Escrevendo capítulo %1$d de %2$d: %3$s…</string>
     <string name="book_writing_closure">Escrevendo a nota do autor…</string>
@@ -778,6 +800,9 @@
     <string name="book_share_preparing">Preparando sua crônica para compartilhar…</string>
     <string name="book_share_error_uri">Falha ao obter URI do arquivo</string>
     <string name="book_share_error_pdf">Falha ao gerar PDF</string>
+    <string name="share_book_epub_chooser">Compartilhar EPUB do livro</string>
+    <string name="book_share_error_epub">Falha ao gerar EPUB</string>
+    <string name="book_characters_title">Personagens</string>
     <string name="act_not_found">Ato não encontrado</string>
 
     <!-- Settings -->

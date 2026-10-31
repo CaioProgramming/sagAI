@@ -3,10 +3,10 @@ package com.ilustris.sagai.features.chapter.ui
 import com.ilustris.sagai.features.progression.data.model.HonorKind
 import com.ilustris.sagai.features.progression.ui.ScopeHonors
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,10 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -40,13 +36,15 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.ilustris.sagai.BuildConfig
-import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.ChapterInfo
 import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.imagegeneration.model.ImageTarget
+import com.ilustris.sagai.features.imagegeneration.ui.ImageGenerationSlot
+import com.ilustris.sagai.features.imagegeneration.ui.imageReveal
+import com.ilustris.sagai.features.imagegeneration.ui.rememberImageTargetState
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -55,7 +53,6 @@ import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFill
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -88,50 +85,44 @@ fun ChapterContentView(
                 chapter.featuredCharacters.map { sagaContent?.findCharacter(it) }.filterNotNull()
             }
 
-        if (chapter.coverImage.isEmpty()) {
-            Image(
-                painterResource(genre.icon),
-                null,
+        val target = remember(chapter.id) { ImageTarget.Chapter(chapter.id) }
+        var coverHeight by remember { mutableStateOf(imageSize) }
+        val coverMissing = chapter.coverImage.isEmpty()
+
+        Box(
+            modifier =
                 Modifier
-                    .clickable {
-                        viewModel.generateIcon(chapter.id)
-                    }.size(100.dp)
-                    .gradientFill(genre.gradient())
-                    .padding(16.dp),
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
-            )
-
-            if (BuildConfig.DEBUG) {
-                OutlinedButton(
-                    onClick = { viewModel.generateIcon(chapter.id) },
-                    modifier = Modifier.padding(top = 8.dp),
-                ) {
-                    Text(stringResource(R.string.debug_regenerate_image))
-                }
-            }
-        } else {
-            var imageSize by remember {
-                mutableStateOf(imageSize)
-            }
-
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(imageSize)
-                        .animateContentSize(),
+                    .fillMaxWidth()
+                    .height(coverHeight)
+                    .animateContentSize(),
+        ) {
+            // Qualified: inside this Column the ColumnScope overload would otherwise win and refuse the call.
+            androidx.compose.animation.AnimatedVisibility(
+                visible = coverMissing,
+                exit = fadeOut(tween(700)),
+                modifier = Modifier.fillMaxSize(),
             ) {
+                ImageGenerationSlot(
+                    target = target,
+                    genre = genre,
+                    onGenerate = { viewModel.generateIcon(chapter.id) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
+            if (!coverMissing) {
                 AsyncImage(
                     model = chapter.coverImage,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     onError = {
-                        imageSize = 0.dp
+                        coverHeight = 0.dp
                     },
                     modifier =
                         Modifier
                             .background(MaterialTheme.colorScheme.background)
                             .fillMaxSize()
+                            .imageReveal(target)
                             .effectForGenre(genre, enableSelectiveHighlight = true),
                 )
 
@@ -142,18 +133,15 @@ fun ChapterContentView(
                         .align(Alignment.BottomCenter),
                 )
 
-                IconButton(
+                RegenerateCoverButton(
+                    target = target,
+                    genre = genre,
                     onClick = { viewModel.generateIcon(chapter.id) },
                     modifier =
                         Modifier
                             .align(Alignment.TopEnd)
                             .padding(16.dp),
-                ) {
-                    SparkIcon(
-                        brush = genre.gradient(),
-                        modifier = Modifier.size(32.dp),
-                    )
-                }
+                )
             }
         }
 
@@ -213,4 +201,24 @@ fun ChapterContentView(
         isGeneratingState || isGenerating,
         brushColors = genre.colorPalette(),
     )
+}
+
+@Composable
+private fun RegenerateCoverButton(
+    target: ImageTarget,
+    genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val state by rememberImageTargetState(target)
+    IconButton(
+        onClick = onClick,
+        enabled = !state.isActive,
+        modifier = modifier,
+    ) {
+        SparkIcon(
+            brush = genre.gradient(),
+            modifier = Modifier.size(32.dp),
+        )
+    }
 }

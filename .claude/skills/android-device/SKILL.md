@@ -9,7 +9,7 @@ Android Studio is **not needed**. `adb` talks to the phone and Gradle builds and
 
 ## Before any heavy build
 
-Run `.claude/skills/android-device/scripts/preflight.sh`. It prints memory and swap pressure, how many Gradle clients are running, and warns when a build would thrash. **One Gradle invocation at a time**: a second `./gradlew` waits on the same daemon, doubles the load and times out. If the swap is full, quit heavy apps first (`osascript -e 'quit app "Android Studio"'`).
+Run `.claude/skills/android-device/scripts/preflight.sh`. It prints memory and swap pressure, how many Gradle clients are running, and warns when a build would thrash. **One Gradle invocation at a time, across all sessions**: a second `./gradlew` waits on the same daemon, doubles the load and times out. If the preflight reports another Gradle client (it may belong to a different session or worktree), do not start your build: run `.claude/skills/android-device/scripts/wait-for-gradle.sh` first (run it in the background, it polls until the other build ends or 20 minutes pass) and build only after it exits 0. Never launch `./gradlew` while that warning is showing, and never run two of your own at once. If the swap is full, quit heavy apps first (`osascript -e 'quit app "Android Studio"'`).
 
 ## Connect the phone
 

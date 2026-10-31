@@ -513,6 +513,15 @@
     <string name="chat_generation_reasoning_placeholder">Thinking of a reply…</string>
     <string name="image_generation_reveal_icon">Character icon ready</string>
     <string name="image_generation_reveal_cover">Cover image ready</string>
+    <string name="image_generation_cta">Generate image</string>
+    <string name="image_generation_failed">Couldn\'t draw this one</string>
+    <string-array name="image_generation_phrases">
+        <item>Mixing the paints…</item>
+        <item>Sketching the first strokes…</item>
+        <item>Finding the right light…</item>
+        <item>Polishing the details…</item>
+        <item>Almost there…</item>
+    </string-array>
     <string name="image_generation_reveal_dismiss">Continue</string>
     <string name="image_generation_fallback_cancel">Cancel</string>
     <string name="image_generation_character_icon">Generating %1$s icon…</string>
@@ -533,7 +542,20 @@
     <string name="share_book_pdf_chooser">Share Book PDF</string>
     <string name="share_book_pdf_subject">Sharing %1$s from Sagas</string>
     <string name="regenerate_book_cd">Regenerate Book</string>
-    <string name="share_pdf_cd">Share PDF</string>
+    <string name="book_export_cd">Export book</string>
+    <string name="book_export_title">Export this volume</string>
+    <string name="book_export_subtitle">Pick the format. You can send it or keep it on your device when it is ready.</string>
+    <string name="book_export_pdf_title">PDF</string>
+    <string name="book_export_pdf_description">Opens anywhere and keeps every page exactly as you see it.</string>
+    <string name="book_export_epub_title">EPUB</string>
+    <string name="book_export_epub_description">Text that reflows to your screen. Needs a reader app such as Google Play Books.</string>
+    <string name="book_export_ready_title">Your book is ready</string>
+    <string name="book_export_send">Send</string>
+    <string name="book_export_save">Save to device</string>
+    <string name="book_export_saved">Saved to your device</string>
+    <string name="book_export_save_failed">Could not save the file</string>
+    <string name="book_export_done">Done</string>
+    <string name="book_export_failed_title">The export did not work</string>
     <string name="book_writing_prologue">Writing the prologue…</string>
     <string name="book_writing_chapter">Writing chapter %1$d of %2$d: %3$s…</string>
     <string name="book_writing_closure">Writing the author\'s note…</string>
@@ -543,6 +565,9 @@
     <string name="book_share_preparing">Preparing your chronicle for sharing…</string>
     <string name="book_share_error_uri">Failed to get file URI</string>
     <string name="book_share_error_pdf">Failed to generate PDF</string>
+    <string name="share_book_epub_chooser">Share Book EPUB</string>
+    <string name="book_share_error_epub">Failed to generate EPUB</string>
+    <string name="book_characters_title">Characters</string>
     <string name="act_not_found">Act not found</string>
 
     <!-- Settings -->

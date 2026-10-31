@@ -17,13 +17,15 @@ import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.share.domain.SharePlayUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 sealed class BookReaderState {
@@ -44,11 +46,37 @@ sealed class BookReaderState {
     data class Error(
         val message: String,
     ) : BookReaderState()
+}
 
-    data class PDFGenerated(
+enum class BookShareFormat(
+    val mimeType: String,
+) {
+    PDF("application/pdf"),
+    EPUB("application/epub+zip"),
+}
+
+enum class BookSaveStatus { Idle, Saved, Failed }
+
+/** The export sheet's steps; no state at all means the sheet is closed. */
+sealed interface BookExportState {
+    data object Choosing : BookExportState
+
+    data class Generating(
+        val format: BookShareFormat,
+    ) : BookExportState
+
+    data class Ready(
+        val file: File,
         val uri: Uri,
         val title: String,
-    ) : BookReaderState()
+        val format: BookShareFormat,
+        val saveStatus: BookSaveStatus = BookSaveStatus.Idle,
+    ) : BookExportState
+
+    data class Failed(
+        val format: BookShareFormat,
+        val message: String,
+    ) : BookExportState
 }
 
 @HiltViewModel
@@ -66,8 +94,10 @@ class BookReaderViewModel
         private val _state = MutableStateFlow<BookReaderState>(BookReaderState.Loading)
         val state = _state.asStateFlow()
 
-        private val _pdfEvent = MutableSharedFlow<BookReaderState.PDFGenerated>(extraBufferCapacity = 1)
-        val pdfEvent = _pdfEvent.asSharedFlow()
+        private val _exportState = MutableStateFlow<BookExportState?>(null)
+        val exportState = _exportState.asStateFlow()
+
+        private var exportJob: Job? = null
 
         private var sagaContent: SagaContent? = null
         private var currentActIndex: Int = 0
@@ -154,41 +184,80 @@ class BookReaderViewModel
             }
         }
 
-        fun shareCurrentBook() {
+        fun openExport() {
+            _exportState.value = BookExportState.Choosing
+        }
+
+        /** Closing the sheet also abandons a file that is still being written. */
+        fun dismissExport() {
+            exportJob?.cancel()
+            exportJob = null
+            _exportState.value = null
+        }
+
+        fun exportBook(format: BookShareFormat) {
             val saga = sagaContent ?: return
             val act = saga.acts.getOrNull(currentActIndex) ?: return
-            val book = act.book?.takeIf { it.isSealed() } ?: return
-            viewModelScope.launch {
-                _state.value =
-                    BookReaderState.Generating(
-                        book.actTitle,
-                        stringResourceHelper.getString(R.string.book_share_preparing),
-                    )
-
-                val pages = pageMapper.buildPages(saga, act, saga.characters)
-                val volumeNumber = saga.actNumber(act.data).toRoman()
-                val result =
-                    sharePlayUseCase.generateBookPDF(
-                        book,
-                        saga.data.genre,
-                        volumeNumber,
-                        pages,
-                    )
-
-                if (result is RequestResult.Success) {
-                    val uriResult = sharePlayUseCase.loadWithFileProvider(result.value)
-                    if (uriResult is RequestResult.Success) {
-                        val event = BookReaderState.PDFGenerated(uriResult.value, book.actTitle)
-                        _pdfEvent.tryEmit(event)
-                        renderCurrentAct(saga)
-                    } else {
-                        _state.value = BookReaderState.Error(stringResourceHelper.getString(R.string.book_share_error_uri))
+            val book = act.book?.takeIf { it.isSealed() }
+            exportJob?.cancel()
+            exportJob =
+                viewModelScope.launch {
+                    if (book == null) {
+                        _exportState.value = BookExportState.Failed(format, exportError(format))
+                        return@launch
                     }
-                } else {
-                    _state.value = BookReaderState.Error(stringResourceHelper.getString(R.string.book_share_error_pdf))
+                    _exportState.value = BookExportState.Generating(format)
+
+                    val pages = pageMapper.buildPages(saga, act, saga.characters)
+                    val volumeNumber = saga.actNumber(act.data).toRoman()
+                    val fileResult =
+                        when (format) {
+                            BookShareFormat.PDF ->
+                                sharePlayUseCase.generateBookPDF(book, saga.data.genre, volumeNumber, pages)
+                            BookShareFormat.EPUB ->
+                                sharePlayUseCase.generateBookEpub(book, saga.data.genre, volumeNumber, pages)
+                        }
+                    // The sheet may have been closed while the file was being written.
+                    ensureActive()
+
+                    _exportState.value =
+                        when (fileResult) {
+                            is RequestResult.Success -> {
+                                val uriResult = sharePlayUseCase.loadWithFileProvider(fileResult.value)
+                                if (uriResult is RequestResult.Success) {
+                                    BookExportState.Ready(fileResult.value, uriResult.value, book.actTitle, format)
+                                } else {
+                                    BookExportState.Failed(
+                                        format,
+                                        stringResourceHelper.getString(R.string.book_share_error_uri),
+                                    )
+                                }
+                            }
+
+                            else -> BookExportState.Failed(format, exportError(format))
+                        }
+                }
+        }
+
+        fun saveExport(destination: Uri) {
+            val ready = _exportState.value as? BookExportState.Ready ?: return
+            viewModelScope.launch {
+                val saved = sharePlayUseCase.saveToDocument(ready.file, destination) is RequestResult.Success
+                _exportState.update { current ->
+                    (current as? BookExportState.Ready)?.copy(
+                        saveStatus = if (saved) BookSaveStatus.Saved else BookSaveStatus.Failed,
+                    ) ?: current
                 }
             }
         }
+
+        private fun exportError(format: BookShareFormat): String =
+            stringResourceHelper.getString(
+                when (format) {
+                    BookShareFormat.PDF -> R.string.book_share_error_pdf
+                    BookShareFormat.EPUB -> R.string.book_share_error_epub
+                },
+            )
 
         // ---------------------------------------------------------------------------
         // Private helpers
