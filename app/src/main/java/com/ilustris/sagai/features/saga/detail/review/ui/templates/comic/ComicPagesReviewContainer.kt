@@ -4,6 +4,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animate
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -42,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
@@ -82,6 +84,16 @@ private const val TURN_MS = 650
 private const val TURN_DEGREES = 90f
 
 private val BAR_HEIGHT = 44.dp
+
+/** Room kept at the sides of the paper, so the desk shows all round it. */
+private val PAPER_SIDE = 22.dp
+
+/** How small, and how askew, the closed issue lies on the desk before it is opened. */
+private const val CLOSED_SCALE = 0.8f
+private const val CLOSED_TILT = -3f
+
+private val DESK_LIGHT = Color(0xFF3B3028)
+private val DESK_DARK = Color(0xFF120E0B)
 
 /**
  * Container for [com.ilustris.sagai.features.saga.detail.review.ui.ReviewNavigationStyle.ComicPages]:
@@ -129,6 +141,11 @@ fun ComicPagesReviewContainer(
         turn?.cancel()
         turn =
             scope.launch {
+                // A jump across the issue (a back-cover card, "read again") turns the last page
+                // only: flipping through every page in between would be a blur.
+                if (abs(position - target) > 1f) {
+                    position = if (target > position) target - 1f else target + 1f
+                }
                 animate(
                     initialValue = position,
                     targetValue = target.toFloat(),
@@ -179,8 +196,11 @@ fun ComicPagesReviewContainer(
         }
     }
 
+    // The page is a sheet of paper lying on a desk: the room around it is what stops the review
+    // reading as one more app screen.
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 36.dp
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + BAR_HEIGHT
+    val desk = remember { Brush.radialGradient(listOf(DESK_LIGHT, DESK_DARK)) }
 
     val pageLabel = stringResource(R.string.review_comic_page_indicator, settledPage + 1, sheetCount)
     val nextLabel = stringResource(R.string.review_comic_next_page)
@@ -189,7 +209,7 @@ fun ComicPagesReviewContainer(
     Box(
         Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(desk)
             .themeFilter()
             .semantics {
                 stateDescription = pageLabel
@@ -227,31 +247,43 @@ fun ComicPagesReviewContainer(
         // content of the pages being turned.
         val lower by remember { derivedStateOf { position.toInt().coerceIn(0, lastIndex) } }
 
-        // Upper page first so the lower one — the one being turned — draws over it.
-        listOf(lower + 1, lower).filter { it <= lastIndex }.forEach { index ->
-            val sheet = sheets.getOrNull(index)
-            key(sheet?.key ?: LOADING_KEY) {
-                val armed = remember(index) { { settledPage == index } }
-                CompositionLocalProvider(LocalComicPlayback provides armed) {
-                    TurningPage(
-                        index = index,
-                        position = { position },
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        if (sheet != null) {
-                            ComicSheetView(
-                                sheet = sheet,
-                                pages = pages,
-                                borderColor = MaterialTheme.colorScheme.onBackground,
-                                panelBackground = MaterialTheme.colorScheme.surfaceContainer,
-                                topInset = if (index == 0) 0.dp else topInset,
-                                bottomInset = if (index == 0) 0.dp else bottomInset,
-                                modifier = Modifier.fillMaxSize(),
-                                onAction = ::handle,
-                            )
-                        } else {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                ReviewLoadingIcon()
+        Box(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    // The issue starts closed, lying small and a little askew on the desk, and
+                    // draws in to be read as its cover opens.
+                    val opened = FastOutSlowInEasing.transform(position.coerceIn(0f, 1f))
+                    val scale = CLOSED_SCALE + (1f - CLOSED_SCALE) * opened
+                    scaleX = scale
+                    scaleY = scale
+                    rotationZ = CLOSED_TILT * (1f - opened)
+                }.padding(start = PAPER_SIDE, end = PAPER_SIDE, top = topInset, bottom = bottomInset),
+        ) {
+            // Upper page first so the lower one — the one being turned — draws over it.
+            listOf(lower + 1, lower).filter { it <= lastIndex }.forEach { index ->
+                val sheet = sheets.getOrNull(index)
+                key(sheet?.key ?: LOADING_KEY) {
+                    val armed = remember(index) { { settledPage == index } }
+                    CompositionLocalProvider(LocalComicPlayback provides armed) {
+                        TurningPage(
+                            index = index,
+                            position = { position },
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            if (sheet != null) {
+                                ComicSheetView(
+                                    sheet = sheet,
+                                    pages = pages,
+                                    borderColor = MaterialTheme.colorScheme.onBackground,
+                                    panelBackground = MaterialTheme.colorScheme.surfaceContainer,
+                                    modifier = Modifier.fillMaxSize(),
+                                    onAction = ::handle,
+                                )
+                            } else {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    ReviewLoadingIcon()
+                                }
                             }
                         }
                     }
@@ -332,7 +364,8 @@ private fun TurningPage(
                     scaleX = scale
                     scaleY = scale
                 }
-            }.drawWithContent {
+            }.shadow(10.dp)
+            .drawWithContent {
                 drawContent()
                 val away = position() - index
                 if (away > 0f && away < 1f && !reduceMotion) {
@@ -348,7 +381,8 @@ private fun TurningPage(
                     // The page underneath, dimmed until the one above is out of the way.
                     drawRect(Color.Black.copy(alpha = 0.4f * -away))
                 }
-            }.background(pageColor),
+            }.background(pageColor)
+            .border(1.dp, Color.White.copy(alpha = 0.14f)),
     ) {
         content()
     }

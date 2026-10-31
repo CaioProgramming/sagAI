@@ -24,6 +24,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.ui.genre.comic.ComicBalloonSpec
 import com.ilustris.sagai.ui.genre.comic.ComicCaptionBox
 import com.ilustris.sagai.ui.genre.comic.ComicFadeIn
+import com.ilustris.sagai.ui.genre.comic.ComicShoutBlock
 import com.ilustris.sagai.ui.genre.comic.ComicTag
 
 internal const val CAST_GROUP = "cast"
@@ -60,6 +61,15 @@ class ComicCastLeadPanel(
                         ) { ComicFadeIn { ComicTag(text = title) } },
                     )
                 }
+
+                // Who the lead is, set under the stage's title like the verdict on the emotion page.
+                add(
+                    ComicBalloonSpec(
+                        alignment = Alignment.TopStart,
+                        widthFraction = 0.7f,
+                        offset = DpOffset(8.dp, 44.dp),
+                    ) { ComicFadeIn(delayMillis = 150) { ComicShoutBlock(text = character.name) } },
+                )
 
                 add(
                     ComicBalloonSpec(
@@ -118,6 +128,11 @@ class ComicCastMemberPanel(
     override val balloons: List<ComicBalloonSpec>
         get() =
             listOf(
+                ComicBalloonSpec(
+                    alignment = Alignment.TopStart,
+                    widthFraction = 0.94f,
+                    offset = DpOffset(6.dp, 6.dp),
+                ) { ComicFadeIn { ComicTag(text = character.name) } },
                 ComicBalloonSpec(
                     alignment = Alignment.BottomStart,
                     widthFraction = 0.94f,

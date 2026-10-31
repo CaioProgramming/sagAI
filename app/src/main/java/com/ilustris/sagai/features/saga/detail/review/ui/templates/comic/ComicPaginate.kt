@@ -14,6 +14,12 @@ internal enum class SheetBody {
     /** Text only — the sheet is nothing but caption strips. */
     TEXT,
 
+    /**
+     * A full-bleed picture with the page's caption strips laid *over* it rather than stacked above
+     * it — the text is spread across the art instead of being cut away from it.
+     */
+    SPLASH,
+
     /** One frame owns the body. */
     SINGLE,
 
@@ -99,7 +105,7 @@ internal fun paginate(requests: List<PanelRequest>): List<ComicSheet> {
                 val isCover = sheets.isEmpty() && strips.isEmpty()
                 sheets +=
                     ComicSheet(
-                        body = if (isCover) SheetBody.COVER else SheetBody.SINGLE,
+                        body = if (isCover) SheetBody.COVER else SheetBody.SPLASH,
                         strips = if (isCover) emptyList() else takeStrips(),
                         panels = listOf(index),
                     )

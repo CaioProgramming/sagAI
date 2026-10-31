@@ -54,7 +54,17 @@ class ComicPaginateTest {
 
         assertEquals(SheetBody.COVER, sheets[0].body)
         assertEquals(listOf(0), sheets[0].panels)
-        assertEquals(SheetBody.SINGLE, sheets[1].body)
+        assertEquals(SheetBody.SPLASH, sheets[1].body)
+    }
+
+    @Test
+    fun `strips before a splash lie over it instead of taking a page`() {
+        val sheets = paginate(listOf(splash(), band(), splash()))
+
+        assertEquals(2, sheets.size)
+        assertEquals(SheetBody.SPLASH, sheets[1].body)
+        assertEquals(listOf(1), sheets[1].strips)
+        assertEquals(listOf(2), sheets[1].panels)
     }
 
     @Test

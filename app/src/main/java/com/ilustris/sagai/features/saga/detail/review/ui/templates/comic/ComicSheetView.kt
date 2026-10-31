@@ -15,7 +15,6 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
@@ -38,6 +37,10 @@ private val SHEET_MARGIN = 10.dp
 
 /** Caption strips take this share of the page each. */
 private const val STRIP_FRACTION = 0.19f
+
+/** Where the caption band sits on a full-bleed splash, as shares of the page height. */
+private const val SPLASH_TEXT_TOP = 0.56f
+private const val SPLASH_TEXT_HEIGHT = 0.24f
 
 /** A cast lead takes this share of its page; its companions share the rest. */
 private const val LEAD_FRACTION = 0.52f
@@ -66,17 +69,29 @@ internal fun sheetRects(
     height: Int,
     gutter: Int,
     margin: Int,
-    topInset: Int,
-    bottomInset: Int,
 ): List<SheetRect> {
     if (sheet.body == SheetBody.COVER) {
         return List(sheet.panels.size) { SheetRect(0, 0, width, height) }
     }
 
+    if (sheet.body == SheetBody.SPLASH) {
+        // The picture takes the whole page; the caption strips share a band across it, chosen to
+        // sit between the picture's own labels at the top and its banked captions at the bottom.
+        val count = sheet.strips.size
+        val bandTop = (height * SPLASH_TEXT_TOP).roundToInt()
+        val bandHeight = (height * SPLASH_TEXT_HEIGHT).roundToInt()
+        val rowHeight = (bandHeight - gutter * (count - 1)) / count.coerceAtLeast(1)
+        val strips =
+            List(count) {
+                SheetRect(margin, bandTop + it * (rowHeight + gutter), width - margin * 2, rowHeight)
+            }
+        return strips + List(sheet.panels.size) { SheetRect(0, 0, width, height) }
+    }
+
     val left = margin
     val areaWidth = width - margin * 2
-    var top = topInset
-    val areaHeight = height - topInset - bottomInset
+    var top = margin
+    val areaHeight = height - margin * 2
     val rects = mutableListOf<SheetRect>()
 
     val stripCount = sheet.strips.size
@@ -94,7 +109,7 @@ internal fun sheetRects(
         rects += SheetRect(left, top, areaWidth, stripHeight)
         top += stripHeight + gutter
     }
-    val bodyHeight = height - bottomInset - top
+    val bodyHeight = height - margin - top
     val count = sheet.panels.size
 
     /** One row of frames splitting [areaWidth] by [fractions]. */
@@ -179,7 +194,7 @@ internal fun sheetRects(
             }
         }
 
-        SheetBody.COVER, SheetBody.TEXT -> Unit
+        SheetBody.COVER, SheetBody.TEXT, SheetBody.SPLASH -> Unit
     }
     return rects
 }
@@ -197,8 +212,6 @@ internal fun ComicSheetView(
     pages: List<ReviewPage>,
     borderColor: Color,
     panelBackground: Color,
-    topInset: Dp,
-    bottomInset: Dp,
     modifier: Modifier = Modifier,
     onAction: (ReviewAction) -> Unit,
 ) {
@@ -210,7 +223,7 @@ internal fun ComicSheetView(
         val canvasHeight = (realHeight * SHEET_CANVAS_FACTOR).roundToInt()
 
         val rects =
-            remember(sheet, canvasWidth, canvasHeight, density, topInset, bottomInset) {
+            remember(sheet, canvasWidth, canvasHeight, density) {
                 with(density) {
                     sheetRects(
                         sheet = sheet,
@@ -218,8 +231,6 @@ internal fun ComicSheetView(
                         height = canvasHeight,
                         gutter = SHEET_GUTTER.roundToPx(),
                         margin = SHEET_MARGIN.roundToPx(),
-                        topInset = (topInset.toPx() * SHEET_CANVAS_FACTOR).roundToInt(),
-                        bottomInset = (bottomInset.toPx() * SHEET_CANVAS_FACTOR).roundToInt(),
                     )
                 }
             }
