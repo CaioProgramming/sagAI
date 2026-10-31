@@ -76,6 +76,22 @@ class GenreFontService
             }
         }
 
+        /**
+         * The downloaded header and body font files of [genre], for exporters that must embed the font
+         * bytes (EPUB) instead of drawing with a [Typeface]. A missing file means that role is not
+         * available; callers fall back the same way [getTypefaces] does.
+         */
+        suspend fun getFontFiles(
+            genre: Genre,
+            config: GenreVisualConfig?,
+        ): Pair<File?, File?> =
+            withContext(Dispatchers.IO) {
+                ensureLoaded(genre, config)
+                fun cached(url: String?) =
+                    url?.trim()?.takeIf { it.isNotEmpty() }?.let { fileCacheService.getCachedFile(it, extensionForUrl(it)) }
+                cached(config?.headerFontUrl) to cached(config?.bodyFontUrl)
+            }
+
         suspend fun getTypefaces(
             genre: Genre,
             config: GenreVisualConfig?,

@@ -1,11 +1,13 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -75,6 +77,9 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.brain.ui.components.ConstellationGlobe
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileCard
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.imagegeneration.model.ImageTarget
+import com.ilustris.sagai.features.imagegeneration.ui.ImageGenerationSlot
+import com.ilustris.sagai.features.imagegeneration.ui.imageReveal
 import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
@@ -148,11 +153,9 @@ fun SagaDetailInitialContent(
                         saga = saga,
                         section = section,
                         imagePalette = imagePalette,
-                        modifier =
-                            Modifier.clickable(enabled = saga.icon.isBlank()) {
-                                onAction(DetailAction.RegenerateIcon)
-                            },
+                        modifier = Modifier,
                         onAction = onAction,
+                        onGenerateIcon = { onAction(DetailAction.RegenerateIcon) },
                     )
                 }
 
@@ -467,6 +470,8 @@ fun sagaHeaderComponent(
     imagePalette: ImagePalette? = null,
     fadeColor: Color? = null,
     onAction: (DetailAction) -> Unit = {},
+    /** Offers the generate-cover call to action while the saga has no cover; null where it can't be triggered (chat, previews). */
+    onGenerateIcon: (() -> Unit)? = null,
 ) {
     val genre = saga.genre
     // Already palette-animated by the enclosing PaletteTheme — plain reads stay smooth for free.
@@ -498,6 +503,23 @@ fun sagaHeaderComponent(
         val statusTag =
             if (saga.isEnded) stringResource(R.string.saga_detail_ended_tag) else null
 
+        val coverTarget = remember(saga.id) { ImageTarget.Saga(saga.id) }
+        if (onGenerateIcon != null) {
+            AnimatedVisibility(
+                visible = saga.icon.isBlank(),
+                exit = fadeOut(tween(700)),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                ImageGenerationSlot(
+                    target = coverTarget,
+                    genre = genre,
+                    onGenerate = onGenerateIcon,
+                    contentAlignment = Alignment.BottomCenter,
+                    modifier = Modifier.fillMaxSize().padding(bottom = 24.dp),
+                )
+            }
+        }
+
         if (saga.icon.isBlank()) {
             Column(
                 Modifier.align(Alignment.Center),
@@ -511,9 +533,6 @@ fun sagaHeaderComponent(
                             .statusBarsPadding()
                             .padding(32.dp)
                             .fillMaxWidth()
-                            .clickable(onClick = {
-                                onAction(DetailAction.RegenerateIcon)
-                            })
                             .then(
                                 if (genre.usesTitleFx()) {
                                     Modifier
@@ -542,6 +561,7 @@ fun sagaHeaderComponent(
                 modifier =
                     Modifier
                         .fillMaxSize()
+                        .imageReveal(coverTarget)
                         .effectForGenre(
                             genre = genre,
                             progressiveBlurRadius = 160f,

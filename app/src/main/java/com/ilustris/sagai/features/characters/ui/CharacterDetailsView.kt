@@ -24,6 +24,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -106,6 +107,9 @@ import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.widgets.ui.WidgetCreatorSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttachment
+import com.ilustris.sagai.features.imagegeneration.model.ImageTarget
+import com.ilustris.sagai.features.imagegeneration.ui.ImageGenerationSlot
+import com.ilustris.sagai.features.imagegeneration.ui.imageReveal
 import com.ilustris.sagai.ui.animations.imageStroke
 import com.ilustris.sagai.ui.animations.rememberStopMotionFrame
 import com.ilustris.sagai.ui.components.views.DepthLayout
@@ -254,6 +258,7 @@ private fun CharacterDetailsLoaded(
             },
         ) { characterData ->
             var imageError by remember { mutableStateOf(false) }
+            val portraitTarget = remember(characterData.id) { ImageTarget.Character(characterData.id) }
             val characterColor = characterData.hexColor.hexToColor() ?: resolvedColor
             val titleGradient =
                 remember(adaptiveTextColor, characterColor) {
@@ -335,6 +340,7 @@ private fun CharacterDetailsLoaded(
                             modifier =
                                 Modifier
                                     .fillMaxSize()
+                                    .imageReveal(portraitTarget)
                                     .blur(headerBlurRadius),
                         ) {
                             DepthLayout(
@@ -411,7 +417,22 @@ private fun CharacterDetailsLoaded(
                         state = listState,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        item { Spacer(Modifier.height(heroHeightDp)) }
+                        item {
+                            Box(Modifier.fillMaxWidth().height(heroHeightDp)) {
+                                AnimatedVisibility(
+                                    visible = characterData.image.isBlank() || imageError,
+                                    exit = fadeOut(tween(700)),
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    ImageGenerationSlot(
+                                        target = portraitTarget,
+                                        genre = genre,
+                                        onGenerate = { viewModel.regenerate(sagaInfo, characterData) },
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                }
+                            }
+                        }
 
                         item {
                             Column(

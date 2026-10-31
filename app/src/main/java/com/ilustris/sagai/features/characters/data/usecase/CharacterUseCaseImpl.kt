@@ -42,6 +42,7 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.hasConflictingCharacterIdentity
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
+import com.ilustris.sagai.features.imagegeneration.model.ImageTarget
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.voicing.VoiceCastingUseCase
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
@@ -100,43 +101,10 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest(true) {
-                val characterWithArtwork = ensureCharacterArtwork(character, saga)
-                val contextString = characterImageContext(characterWithArtwork)
                 val result =
-                    imageGenerationService.enqueue(
-                        ImageGenerationRequest(
-                            genre = saga.genre,
-                            imageReference = null,
-                            context = contextString,
-                            imageType = ImageType.ICON,
-                            variationId = saga.variationId,
-                            label = characterWithArtwork.name,
-                            showReveal = true,
-                        ),
-                    ) { bitmap ->
-                        val file =
-                            fileHelper.saveFile(
-                                characterWithArtwork.name,
-                                bitmap,
-                                path = "${saga.id}/characters/",
-                            ) ?: error("Failed to save generated image")
-                        val newCharacter = characterWithArtwork.copy(image = file.path)
-                        repository.updateCharacter(newCharacter)
-                        newCharacter
-                    }
-                val updatedCharacter = result.getOrThrow()
-                updatedCharacter to ""
-            }
-
-        override suspend fun generateCharacterImageStream(
-            character: Character,
-            saga: Saga,
-        ): Flow<StreamingState<GeneratedContent<Pair<Character, String>>>> =
-            flow {
-                try {
-                    val characterWithArtwork = ensureCharacterArtwork(character, saga)
-                    val contextString = characterImageContext(characterWithArtwork)
-                    val result =
+                    imageGenerationService.track(ImageTarget.Character(character.id)) {
+                        val characterWithArtwork = ensureCharacterArtwork(character, saga)
+                        val contextString = characterImageContext(characterWithArtwork)
                         imageGenerationService.enqueue(
                             ImageGenerationRequest(
                                 genre = saga.genre,
@@ -146,6 +114,7 @@ class CharacterUseCaseImpl
                                 variationId = saga.variationId,
                                 label = characterWithArtwork.name,
                                 showReveal = true,
+                                target = ImageTarget.Character(character.id),
                             ),
                         ) { bitmap ->
                             val file =
@@ -157,6 +126,44 @@ class CharacterUseCaseImpl
                             val newCharacter = characterWithArtwork.copy(image = file.path)
                             repository.updateCharacter(newCharacter)
                             newCharacter
+                        }
+                    }
+                val updatedCharacter = result.getOrThrow()
+                updatedCharacter to ""
+            }
+
+        override suspend fun generateCharacterImageStream(
+            character: Character,
+            saga: Saga,
+        ): Flow<StreamingState<GeneratedContent<Pair<Character, String>>>> =
+            flow {
+                try {
+                    val result =
+                        imageGenerationService.track(ImageTarget.Character(character.id)) {
+                            val characterWithArtwork = ensureCharacterArtwork(character, saga)
+                            val contextString = characterImageContext(characterWithArtwork)
+                            imageGenerationService.enqueue(
+                                ImageGenerationRequest(
+                                    genre = saga.genre,
+                                    imageReference = null,
+                                    context = contextString,
+                                    imageType = ImageType.ICON,
+                                    variationId = saga.variationId,
+                                    label = characterWithArtwork.name,
+                                    showReveal = true,
+                                    target = ImageTarget.Character(character.id),
+                                ),
+                            ) { bitmap ->
+                                val file =
+                                    fileHelper.saveFile(
+                                        characterWithArtwork.name,
+                                        bitmap,
+                                        path = "${saga.id}/characters/",
+                                    ) ?: error("Failed to save generated image")
+                                val newCharacter = characterWithArtwork.copy(image = file.path)
+                                repository.updateCharacter(newCharacter)
+                                newCharacter
+                            }
                         }
 
                     result.fold(

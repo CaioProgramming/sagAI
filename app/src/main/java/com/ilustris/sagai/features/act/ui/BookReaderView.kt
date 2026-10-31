@@ -75,6 +75,7 @@ fun BookReaderView(
     audiobookViewModel: AudiobookViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val exportState by viewModel.exportState.collectAsStateWithLifecycle()
     val audiobook by audiobookViewModel.state.collectAsStateWithLifecycle()
     val audiobookWaveform by audiobookViewModel.waveform.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -86,22 +87,6 @@ fun BookReaderView(
 
     LaunchedEffect(sagaId, initialActId) {
         viewModel.load(sagaId, initialActId)
-    }
-
-    // PDF share intent — emitted as a one-shot SharedFlow event
-    LaunchedEffect(Unit) {
-        viewModel.pdfEvent.collect { event ->
-            val intent =
-                Intent(Intent.ACTION_SEND).apply {
-                    type = "application/pdf"
-                    putExtra(Intent.EXTRA_STREAM, event.uri)
-                    putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.share_book_pdf_subject, event.title))
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-            context.startActivity(
-                Intent.createChooser(intent, context.getString(R.string.share_book_pdf_chooser)),
-            )
-        }
     }
 
     LaunchedEffect(Unit) {
@@ -192,11 +177,6 @@ fun BookReaderView(
                             )
                         }
                     }
-
-                    // PDFGenerated is dispatched as a SharedFlow event; nothing to render here
-                    is BookReaderState.PDFGenerated -> {
-                        Unit
-                    }
                 }
             }
 
@@ -240,11 +220,11 @@ fun BookReaderView(
                             onDismissRequest = { showBookMenu = false },
                             menu = {
                                 IosStyleMenuItem(
-                                    text = stringResource(R.string.share_pdf_cd),
+                                    text = stringResource(R.string.book_export_cd),
                                     icon = painterResource(R.drawable.ic_share),
                                     onClick = {
                                         showBookMenu = false
-                                        viewModel.shareCurrentBook()
+                                        viewModel.openExport()
                                     },
                                 )
                                 IosStyleMenuItem(
@@ -279,6 +259,16 @@ fun BookReaderView(
                     }
                 },
             )
+
+            exportState?.let { export ->
+                BookExportSheet(
+                    state = export,
+                    genre = (state as? BookReaderState.Ready)?.saga?.data?.genre,
+                    onChoose = viewModel::exportBook,
+                    onSave = viewModel::saveExport,
+                    onDismiss = viewModel::dismissExport,
+                )
+            }
 
             val readyState = state as? BookReaderState.Ready
             val activeAudiobook = audiobook?.takeIf { it.bookId == readyState?.currentAct?.book?.id }

@@ -18,6 +18,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
+import com.ilustris.sagai.features.imagegeneration.model.ImageTarget
 import com.ilustris.sagai.features.saga.datasource.SagaDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -78,28 +79,31 @@ class SagaRepositoryImpl
             saga: Saga,
             characters: List<Character>,
         ) = executeRequest {
-            val sagaWithArtwork = ensureSagaArtwork(saga, characters)
-            val context = generateIconContext(sagaWithArtwork, characters)
-            imageGenerationService
-                .enqueue(
-                    ImageGenerationRequest(
-                        genre = sagaWithArtwork.genre,
-                        imageReference = null,
-                        context = context,
-                        imageType = ImageType.COVER,
-                        variationId = sagaWithArtwork.variationId,
-                        label = sagaWithArtwork.title,
-                        showReveal = true,
-                    ),
-                ) { bitmap ->
-                    val file =
-                        fileHelper.saveFile(
-                            fileName = sagaWithArtwork.title,
-                            data = bitmap,
-                            path = "${sagaWithArtwork.id}",
-                        ) ?: error("Failed to save saga icon")
-                    updateSaga(sagaWithArtwork.copy(icon = file.absolutePath))
-                }.getOrThrow()
+            imageGenerationService.track(ImageTarget.Saga(saga.id)) {
+                val sagaWithArtwork = ensureSagaArtwork(saga, characters)
+                val context = generateIconContext(sagaWithArtwork, characters)
+                imageGenerationService
+                    .enqueue(
+                        ImageGenerationRequest(
+                            genre = sagaWithArtwork.genre,
+                            imageReference = null,
+                            context = context,
+                            imageType = ImageType.COVER,
+                            variationId = sagaWithArtwork.variationId,
+                            label = sagaWithArtwork.title,
+                            showReveal = true,
+                            target = ImageTarget.Saga(saga.id),
+                        ),
+                    ) { bitmap ->
+                        val file =
+                            fileHelper.saveFile(
+                                fileName = sagaWithArtwork.title,
+                                data = bitmap,
+                                path = "${sagaWithArtwork.id}",
+                            ) ?: error("Failed to save saga icon")
+                        updateSaga(sagaWithArtwork.copy(icon = file.absolutePath))
+                    }.getOrThrow()
+            }
         }
 
         override fun generateSagaIconStream(
@@ -108,40 +112,43 @@ class SagaRepositoryImpl
         ): Flow<StreamingState<Saga>> =
             kotlinx.coroutines.flow.flow {
                 try {
-                    val sagaWithArtwork = ensureSagaArtwork(saga, characters)
-                    val context = generateIconContext(sagaWithArtwork, characters)
-                    imageGenerationService
-                        .enqueue(
-                            ImageGenerationRequest(
-                                genre = sagaWithArtwork.genre,
-                                imageReference = null,
-                                context = context,
-                                imageType = ImageType.COVER,
-                                variationId = sagaWithArtwork.variationId,
-                                label = sagaWithArtwork.title,
-                                showReveal = true,
-                            ),
-                        ) { bitmap ->
-                            val file =
-                                fileHelper.saveFile(
-                                    fileName = sagaWithArtwork.title,
-                                    data = bitmap,
-                                    path = "${sagaWithArtwork.id}",
-                                ) ?: error("Failed to save saga icon")
-                            updateSaga(sagaWithArtwork.copy(icon = file.absolutePath))
-                        }.fold(
-                            onSuccess = { updatedSaga ->
-                                emit(StreamingState.Success(updatedSaga))
-                            },
-                            onFailure = { error ->
-                                emit(
-                                    StreamingState.Error(
-                                        error.message ?: "Failed to generate saga icon stream",
-                                        error,
-                                    ),
-                                )
-                            },
-                        )
+                    imageGenerationService.track(ImageTarget.Saga(saga.id)) {
+                        val sagaWithArtwork = ensureSagaArtwork(saga, characters)
+                        val context = generateIconContext(sagaWithArtwork, characters)
+                        imageGenerationService
+                            .enqueue(
+                                ImageGenerationRequest(
+                                    genre = sagaWithArtwork.genre,
+                                    imageReference = null,
+                                    context = context,
+                                    imageType = ImageType.COVER,
+                                    variationId = sagaWithArtwork.variationId,
+                                    label = sagaWithArtwork.title,
+                                    showReveal = true,
+                                    target = ImageTarget.Saga(saga.id),
+                                ),
+                            ) { bitmap ->
+                                val file =
+                                    fileHelper.saveFile(
+                                        fileName = sagaWithArtwork.title,
+                                        data = bitmap,
+                                        path = "${sagaWithArtwork.id}",
+                                    ) ?: error("Failed to save saga icon")
+                                updateSaga(sagaWithArtwork.copy(icon = file.absolutePath))
+                            }
+                    }.fold(
+                        onSuccess = { updatedSaga ->
+                            emit(StreamingState.Success(updatedSaga))
+                        },
+                        onFailure = { error ->
+                            emit(
+                                StreamingState.Error(
+                                    error.message ?: "Failed to generate saga icon stream",
+                                    error,
+                                ),
+                            )
+                        },
+                    )
                 } catch (e: Exception) {
                     emit(StreamingState.Error(e.message ?: "Failed to generate saga icon stream", e))
                 }
