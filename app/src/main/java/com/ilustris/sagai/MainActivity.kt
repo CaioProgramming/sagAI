@@ -8,11 +8,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -38,11 +40,13 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -77,6 +81,7 @@ import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.AdsConsentService
 import com.ilustris.sagai.core.services.AdsService
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.act.BookGenerationService
@@ -95,6 +100,7 @@ import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
 import com.ilustris.sagai.ui.components.ApiKeyTroubleSheet
 import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.components.BlurTarget
+import com.ilustris.sagai.ui.components.UnexpectedErrorScreen
 import com.ilustris.sagai.ui.components.FeatureNeedsBillingSheet
 import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.core.database.backup.SagasArchive
@@ -132,6 +138,9 @@ import com.ilustris.sagai.ui.navigation.rememberNavigationState
 import com.ilustris.sagai.ui.navigation.toEntries
 import com.ilustris.sagai.ui.theme.SAGA_THEME_TRANSITION_MS
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.sagaShape
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
@@ -157,6 +166,7 @@ import javax.inject.Inject
 private enum class AppGate {
     Resolving,
     Offline,
+    ConfigUnavailable,
     NeedsApiKey,
     Ready,
 }
@@ -202,6 +212,9 @@ class MainActivity : ComponentActivity() {
     lateinit var archiveService: SagasArchiveService
 
     @Inject
+    lateinit var remoteConfigService: RemoteConfigService
+
+    @Inject
     lateinit var sagaNavigationTracker: SagaNavigationTracker
 
     @Inject
@@ -214,7 +227,8 @@ class MainActivity : ComponentActivity() {
     lateinit var chatIslandService: ChatIslandService
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        var holdSplash by mutableStateOf(true)
+        installSplashScreen().setKeepOnScreenCondition { holdSplash }
         super.onCreate(savedInstanceState)
         printFirebaseInstallationAuthToken()
         enableEdgeToEdge()
@@ -242,13 +256,29 @@ class MainActivity : ComponentActivity() {
             val apiKeyState by userApiKeyStore
                 .observeState()
                 .collectAsState(initial = null)
+            // A fresh install has no config until its first fetch lands, and everything past this
+            // gate reads config. Null until the fetch answers. Keyed on the connection because a
+            // fetch that started offline never retries by itself.
+            var remoteConfigAvailable by remember { mutableStateOf<Boolean?>(null) }
+            var fetchAttempt by remember { mutableIntStateOf(0) }
+            LaunchedEffect(isOnline, fetchAttempt) {
+                if (isOnline && remoteConfigAvailable != true) {
+                    remoteConfigAvailable = null
+                    remoteConfigAvailable = remoteConfigService.awaitFirstFetch()
+                }
+            }
             val appGate =
                 when {
                     apiKeyState == null -> AppGate.Resolving
                     !isOnline -> AppGate.Offline
+                    remoteConfigAvailable == null -> AppGate.Resolving
+                    remoteConfigAvailable == false -> AppGate.ConfigUnavailable
                     apiKeyState is ApiKeyState.Missing -> AppGate.NeedsApiKey
                     else -> AppGate.Ready
                 }
+            LaunchedEffect(appGate) {
+                if (appGate != AppGate.Resolving) holdSplash = false
+            }
 
             val navigationState =
                 rememberNavigationState(
@@ -728,6 +758,13 @@ class MainActivity : ComponentActivity() {
                                         }
                                     } else if (gate == AppGate.Offline) {
                                         NoInternetScreen()
+                                    } else if (gate == AppGate.ConfigUnavailable) {
+                                        UnexpectedErrorScreen(
+                                            onRetry = {
+                                                remoteConfigAvailable = null
+                                                fetchAttempt++
+                                            },
+                                        )
                                     } else if (gate == AppGate.NeedsApiKey) {
                                         // The sheet is meant to be undismissable while there is no
                                         // key, but nothing here can fully guarantee that: an error
@@ -751,6 +788,8 @@ class MainActivity : ComponentActivity() {
                                             )
                                         }
                                         ApiKeyNamePrompt()
+                                    } else {
+                                        AppGateLoading()
                                     }
                                 }
                             }
@@ -908,6 +947,27 @@ class MainActivity : ComponentActivity() {
                     Timber.tag("FirebaseInstallations").e(task.exception, "Failed to get Installation Auth Token")
                 }
             }
+    }
+}
+
+/**
+ * The splash covers [AppGate.Resolving] on launch. This is for a first fetch that only starts after
+ * reconnecting from [AppGate.Offline], when the splash is already gone.
+ */
+@Composable
+private fun AppGateLoading() {
+    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
+    AnimatedVisibility(
+        visibleState = visibleState,
+        enter = fadeIn(tween(durationMillis = 400, delayMillis = 400)),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            SparkLoader(
+                brush = gradientAnimation(holographicGradient, targetValue = 1000f),
+                modifier = Modifier.size(80.dp),
+            )
+        }
     }
 }
 
