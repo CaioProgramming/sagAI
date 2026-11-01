@@ -133,7 +133,7 @@ def blueprint_parts(prefix, paths, body):
     if prefix == "cowboy_":
         return body.replace(eyes, ""), eyes
     if prefix == "heroes_":
-        return body.replace(mono.NOSTRILS, ""), mono.NOSTRILS
+        return body.replace(mono.NOSTRILS, ""), ""  # no nostrils: alone under the mask they read as a piercing
     if prefix == "space_opera_":
         shell = f'<path fill-rule="evenodd" d="M-20,-20 H1044 V1044 H-20 Z {space.OPENING}" fill="{W}"/>'
         vents = "".join(f'<rect x="{x}" y="930" width="70" height="20" rx="10" fill="{B}"/>' for x in (377, 477, 577))

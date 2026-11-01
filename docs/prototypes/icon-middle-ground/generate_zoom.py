@@ -4,7 +4,7 @@
 The user's brief, after two wrong turns (a silhouette on a ground, then invented eyes, snout and mouth that lost
 the look): take the CURRENT icon and imagine the head outline no longer exists. The entire tile is the dragon's
 skin, the way the pumpkin and the mummy fill theirs. So nothing here is invented: the eyes are the shipped eyes
-(traced from `res/drawable-nodpi/ic_dragon_fg_light.png`) scaled up about 6x, on the shipped skin (the dark glossy
+(traced from `reference/shipped_gota_fg_light.png`) scaled up about 6x, on the shipped skin (the dark glossy
 head in light mode, the lilac head in dark mode), with the same soft gloss and rim light.
 
   A  pure zoom       skin + 2 eyes                                                       = 3 shapes (what the icon has now)
@@ -38,7 +38,7 @@ DARK = dict(top="#F0E6FF", mid="#C6A8FF", bottom="#9360F6", rim="#FFFFFF", rim_o
 
 def shipped_eyes():
     """The two eye outlines of the shipped icon, in the 432px art's own coordinates."""
-    fg = m.RES / "ic_dragon_fg_light.png"
+    fg = HERE / "reference" / "shipped_gota_fg_light.png"  # not the app's file: this pack replaced it
     tmp = pathlib.Path(HERE / ".eyes.pgm")
     subprocess.run(["magick", str(fg), "-fx", "min(r,min(g,b))*a", "-colorspace", "gray", "-resize", "400%",
                     "-blur", "0x3", "-threshold", "62%", "-depth", "8", f"pgm:{tmp}"], check=True)
