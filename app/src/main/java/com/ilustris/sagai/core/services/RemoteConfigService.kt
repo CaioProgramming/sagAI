@@ -43,23 +43,23 @@ class RemoteConfigService {
         }
 
     /**
-     * Returns once there is a template to read, or after [timeout] if the first fetch cannot finish.
+     * Whether there is a template to read, fetching it first if there is none yet.
      *
      * Config is remote-only, so a fresh install has nothing at all until its first fetch lands, and
-     * every read until then answers empty. With a template on disk this returns right away and the
-     * regular background fetch in SagaApp refreshes it. Never throws: the caller has to move on
-     * whether or not the config arrived.
+     * every read until then answers empty. With a template on disk this answers right away and the
+     * regular background fetch in SagaApp refreshes it. A failed fetch, a [timeout] or a template
+     * that is still empty all answer false; calling this again fetches again.
      */
-    suspend fun awaitFirstFetch(timeout: Duration = FIRST_FETCH_TIMEOUT) {
+    suspend fun awaitFirstFetch(timeout: Duration = FIRST_FETCH_TIMEOUT): Boolean =
         executeRequest(reportCrash = false) {
             firebaseRemoteConfig.ensureInitialized().await()
             if (firebaseRemoteConfig.all.isEmpty()) {
                 withTimeoutOrNull(timeout) { firebaseRemoteConfig.fetchAndActivate().await() }
             }
+            firebaseRemoteConfig.all.isNotEmpty()
         }.onFailure {
             Timber.tag("RemoteConfigService").e("First fetch failed: ${it.message}")
-        }
-    }
+        }.getSuccess() == true
 
     suspend fun getString(
         key: String?,

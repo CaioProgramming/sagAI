@@ -86,17 +86,15 @@ fun ApiKeyInputContent(page: OnboardingPage) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (page.title.isNotBlank()) {
-            Text(
-                page.title,
-                style =
-                    MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                    ),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+        Text(
+            page.title,
+            style =
+                MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                ),
+            color = MaterialTheme.colorScheme.onBackground,
+        )
 
         ApiKeyField(
             value = apiKey,

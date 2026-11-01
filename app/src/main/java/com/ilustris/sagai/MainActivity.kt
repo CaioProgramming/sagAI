@@ -46,6 +46,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -99,6 +100,7 @@ import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
 import com.ilustris.sagai.ui.components.ApiKeyTroubleSheet
 import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.components.BlurTarget
+import com.ilustris.sagai.ui.components.UnexpectedErrorScreen
 import com.ilustris.sagai.ui.components.FeatureNeedsBillingSheet
 import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.core.database.backup.SagasArchive
@@ -164,6 +166,7 @@ import javax.inject.Inject
 private enum class AppGate {
     Resolving,
     Offline,
+    ConfigUnavailable,
     NeedsApiKey,
     Ready,
 }
@@ -254,20 +257,22 @@ class MainActivity : ComponentActivity() {
                 .observeState()
                 .collectAsState(initial = null)
             // A fresh install has no config until its first fetch lands, and everything past this
-            // gate reads config. Keyed on the connection because a fetch that started offline never
-            // retries by itself.
-            var remoteConfigSettled by remember { mutableStateOf(false) }
-            LaunchedEffect(isOnline) {
-                if (isOnline && !remoteConfigSettled) {
-                    remoteConfigService.awaitFirstFetch()
-                    remoteConfigSettled = true
+            // gate reads config. Null until the fetch answers. Keyed on the connection because a
+            // fetch that started offline never retries by itself.
+            var remoteConfigAvailable by remember { mutableStateOf<Boolean?>(null) }
+            var fetchAttempt by remember { mutableIntStateOf(0) }
+            LaunchedEffect(isOnline, fetchAttempt) {
+                if (isOnline && remoteConfigAvailable != true) {
+                    remoteConfigAvailable = null
+                    remoteConfigAvailable = remoteConfigService.awaitFirstFetch()
                 }
             }
             val appGate =
                 when {
                     apiKeyState == null -> AppGate.Resolving
                     !isOnline -> AppGate.Offline
-                    !remoteConfigSettled -> AppGate.Resolving
+                    remoteConfigAvailable == null -> AppGate.Resolving
+                    remoteConfigAvailable == false -> AppGate.ConfigUnavailable
                     apiKeyState is ApiKeyState.Missing -> AppGate.NeedsApiKey
                     else -> AppGate.Ready
                 }
@@ -753,6 +758,13 @@ class MainActivity : ComponentActivity() {
                                         }
                                     } else if (gate == AppGate.Offline) {
                                         NoInternetScreen()
+                                    } else if (gate == AppGate.ConfigUnavailable) {
+                                        UnexpectedErrorScreen(
+                                            onRetry = {
+                                                remoteConfigAvailable = null
+                                                fetchAttempt++
+                                            },
+                                        )
                                     } else if (gate == AppGate.NeedsApiKey) {
                                         // The sheet is meant to be undismissable while there is no
                                         // key, but nothing here can fully guarantee that: an error
