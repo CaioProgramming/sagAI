@@ -125,22 +125,39 @@ class OnboardingViewModel
                         onboardingUseCase
                             .getContent(type, genre)
                             .onSuccessAsync { content ->
-                                cachedContent[cacheKey] = content
-                                emitOnboardingState(type, content, genre, saga)
-                                onboardingUseCase.markSeen(type)
+                                when {
+                                    content.pages.isNotEmpty() -> {
+                                        cachedContent[cacheKey] = content
+                                        emitOnboardingState(type, content, genre, saga)
+                                        onboardingUseCase.markSeen(type)
+                                    }
+
+                                    // No config yet. Not cached and not marked seen, so the next
+                                    // check reads it again instead of keeping this until a restart.
+                                    // The key setup still opens: it is the way into the app.
+                                    type == OnboardingType.API_KEY_SETUP -> {
+                                        emitOnboardingState(type, content, genre, saga)
+                                    }
+
+                                    else -> {
+                                        emitOnboardingError(type, "No content configured for $type")
+                                    }
+                                }
                             }.onFailureAsync {
-                                _onboardingState.emit(
-                                    OnboardingUiState.Error(
-                                        type,
-                                        it.message ?: "Unknown error",
-                                    ),
-                                )
-                                currentType = null
-                                currentGenre = null
-                                currentSaga = null
+                                emitOnboardingError(type, it.message ?: "Unknown error")
                             }
                     }
                 }
+        }
+
+        private suspend fun emitOnboardingError(
+            type: OnboardingType,
+            message: String,
+        ) {
+            _onboardingState.emit(OnboardingUiState.Error(type, message))
+            currentType = null
+            currentGenre = null
+            currentSaga = null
         }
 
         private suspend fun emitOnboardingState(

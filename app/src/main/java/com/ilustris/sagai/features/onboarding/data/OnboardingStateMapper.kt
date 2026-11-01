@@ -17,6 +17,7 @@ import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.model.OnboardingContent
+import com.ilustris.sagai.features.onboarding.data.model.OnboardingPage
 import com.ilustris.sagai.features.onboarding.ui.MorphingGenresBackground
 import com.ilustris.sagai.features.onboarding.ui.OnboardingAction
 import com.ilustris.sagai.features.onboarding.ui.OnboardingButton
@@ -90,8 +91,15 @@ class OnboardingStateMapper
             val isKeyOnboarding = type == OnboardingType.API_KEY_SETUP
             val isPremiumOnboarding = type == OnboardingType.PREMIUM_GUIDE
 
-            return content.pages.mapIndexed { index, page ->
-                val isLastPage = index == content.pages.size - 1
+            // The key field cannot depend on config having arrived: without a page it would not
+            // exist, and there is no way into the app without it. Missing config costs the pitch only.
+            val pages =
+                content.pages.ifEmpty {
+                    if (isKeyOnboarding) listOf(OnboardingPage()) else emptyList()
+                }
+
+            return pages.mapIndexed { index, page ->
+                val isLastPage = index == pages.size - 1
                 val mascotUrl =
                     when (type) {
                         OnboardingType.APP_INTRO -> {

@@ -6,9 +6,16 @@ import com.ilustris.sagai.core.ai.gsonTypeOfList
 import com.ilustris.sagai.core.ai.gsonTypeOfMapString
 import com.ilustris.sagai.core.ai.gsonTypeOfMapStringString
 import com.ilustris.sagai.core.ai.gsonTypeOfStringAnyMap
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import java.lang.reflect.Type
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
+private val FIRST_FETCH_TIMEOUT = 10.seconds
 
 /**
  * [status] is one of the FirebaseRemoteConfig.LAST_FETCH_STATUS_* constants; [timeMillis] is -1 when nothing was fetched yet.
@@ -34,6 +41,25 @@ class RemoteConfigService {
                 configVersion = firebaseRemoteConfig.getString(CONFIG_VERSION_KEY).takeIf { version -> version.isNotBlank() },
             )
         }
+
+    /**
+     * Returns once there is a template to read, or after [timeout] if the first fetch cannot finish.
+     *
+     * Config is remote-only, so a fresh install has nothing at all until its first fetch lands, and
+     * every read until then answers empty. With a template on disk this returns right away and the
+     * regular background fetch in SagaApp refreshes it. Never throws: the caller has to move on
+     * whether or not the config arrived.
+     */
+    suspend fun awaitFirstFetch(timeout: Duration = FIRST_FETCH_TIMEOUT) {
+        executeRequest(reportCrash = false) {
+            firebaseRemoteConfig.ensureInitialized().await()
+            if (firebaseRemoteConfig.all.isEmpty()) {
+                withTimeoutOrNull(timeout) { firebaseRemoteConfig.fetchAndActivate().await() }
+            }
+        }.onFailure {
+            Timber.tag("RemoteConfigService").e("First fetch failed: ${it.message}")
+        }
+    }
 
     suspend fun getString(
         key: String?,
