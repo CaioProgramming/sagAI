@@ -6,9 +6,16 @@ import com.ilustris.sagai.core.ai.gsonTypeOfList
 import com.ilustris.sagai.core.ai.gsonTypeOfMapString
 import com.ilustris.sagai.core.ai.gsonTypeOfMapStringString
 import com.ilustris.sagai.core.ai.gsonTypeOfStringAnyMap
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import java.lang.reflect.Type
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
+private val FIRST_FETCH_TIMEOUT = 10.seconds
 
 /**
  * [status] is one of the FirebaseRemoteConfig.LAST_FETCH_STATUS_* constants; [timeMillis] is -1 when nothing was fetched yet.
@@ -34,6 +41,25 @@ class RemoteConfigService {
                 configVersion = firebaseRemoteConfig.getString(CONFIG_VERSION_KEY).takeIf { version -> version.isNotBlank() },
             )
         }
+
+    /**
+     * Whether there is a template to read, fetching it first if there is none yet.
+     *
+     * Config is remote-only, so a fresh install has nothing at all until its first fetch lands, and
+     * every read until then answers empty. With a template on disk this answers right away and the
+     * regular background fetch in SagaApp refreshes it. A failed fetch, a [timeout] or a template
+     * that is still empty all answer false; calling this again fetches again.
+     */
+    suspend fun awaitFirstFetch(timeout: Duration = FIRST_FETCH_TIMEOUT): Boolean =
+        executeRequest(reportCrash = false) {
+            firebaseRemoteConfig.ensureInitialized().await()
+            if (firebaseRemoteConfig.all.isEmpty()) {
+                withTimeoutOrNull(timeout) { firebaseRemoteConfig.fetchAndActivate().await() }
+            }
+            firebaseRemoteConfig.all.isNotEmpty()
+        }.onFailure {
+            Timber.tag("RemoteConfigService").e("First fetch failed: ${it.message}")
+        }.getSuccess() == true
 
     suspend fun getString(
         key: String?,
