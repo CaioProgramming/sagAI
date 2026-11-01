@@ -125,22 +125,30 @@ class OnboardingViewModel
                         onboardingUseCase
                             .getContent(type, genre)
                             .onSuccessAsync { content ->
-                                cachedContent[cacheKey] = content
-                                emitOnboardingState(type, content, genre, saga)
-                                onboardingUseCase.markSeen(type)
+                                if (content.pages.isNotEmpty()) {
+                                    cachedContent[cacheKey] = content
+                                    emitOnboardingState(type, content, genre, saga)
+                                    onboardingUseCase.markSeen(type)
+                                } else {
+                                    // Not cached and not marked seen, so the next check reads the
+                                    // config again instead of keeping this until a restart.
+                                    emitOnboardingError(type, "No content configured for $type")
+                                }
                             }.onFailureAsync {
-                                _onboardingState.emit(
-                                    OnboardingUiState.Error(
-                                        type,
-                                        it.message ?: "Unknown error",
-                                    ),
-                                )
-                                currentType = null
-                                currentGenre = null
-                                currentSaga = null
+                                emitOnboardingError(type, it.message ?: "Unknown error")
                             }
                     }
                 }
+        }
+
+        private suspend fun emitOnboardingError(
+            type: OnboardingType,
+            message: String,
+        ) {
+            _onboardingState.emit(OnboardingUiState.Error(type, message))
+            currentType = null
+            currentGenre = null
+            currentSaga = null
         }
 
         private suspend fun emitOnboardingState(
