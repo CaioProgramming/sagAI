@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- Dev harness: broadcast action REVIEW_CHARACTER with int extra characterId and string extra seed; see CharacterReviewHarnessReceiver -->
+        <receiver
+            android:name="com.ilustris.sagai.debug.CharacterReviewHarnessReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.ilustris.sagai.debug.REVIEW_CHARACTER" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

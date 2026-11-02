@@ -24,8 +24,10 @@ import com.ilustris.sagai.features.progression.domain.ProgressionConfigProvider
 import com.ilustris.sagai.features.progression.domain.withPlacement
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterDesignReview
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
 import com.ilustris.sagai.features.characters.data.model.NickNameGen
+import com.ilustris.sagai.features.characters.data.model.withDesignReview
 import com.ilustris.sagai.features.characters.data.source.CharacterArcDao
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
@@ -260,6 +262,36 @@ class CharacterUseCaseImpl
                     listOf("skillsAndProficiencies", "uniqueOrSignatureTalents")
                 }
 
+        /**
+         * Second pass over a fresh sheet: audits it against the saga's cast and the seed that asked for it
+         * and rewrites only the fields that failed. A failed review never blocks the creation, the sheet
+         * stays as it was generated.
+         */
+        override suspend fun reviewCharacterDesign(
+            sagaContent: SagaContent,
+            character: Character,
+            description: String,
+        ): Character =
+            executeRequest(reportCrash = false) {
+                val genre = sagaContent.data.genre
+                val review =
+                    gemmaClient.generate<CharacterDesignReview>(
+                        promptSplit =
+                            CharacterPrompts
+                                .characterDesignReview(promptService, sagaContent, character, description)
+                                .mergeInstructions(
+                                    genreConfigService.buildAesthetic(genre),
+                                    genreConfigService.appearanceInstructions(genre),
+                                ),
+                        requirement = ModelRequirement.LOW,
+                        temperatureRandomness = .7f,
+                    )!!
+                Timber.d("reviewCharacterDesign: ${character.name} -> ${review.rationale}")
+                character.withDesignReview(review)
+            }.onFailure {
+                Timber.w(it, "reviewCharacterDesign: keeping the sheet as generated for ${character.name}")
+            }.getSuccess() ?: character
+
         private fun assertCharacterNotAlreadyInSaga(
             sagaContent: SagaContent,
             candidateName: String?,
@@ -320,7 +352,7 @@ class CharacterUseCaseImpl
                 }
                 val characterTransaction =
                     insertCharacter(
-                        newCharacter
+                        reviewCharacterDesign(sagaContent, newCharacter, description)
                             .copy(
                                 id = 0,
                                 sagaId = sagaContent.data.id,
@@ -400,7 +432,7 @@ class CharacterUseCaseImpl
                                 }
                                 val characterTransaction =
                                     insertCharacter(
-                                        newCharacter
+                                        reviewCharacterDesign(sagaContent, newCharacter, description)
                                             .copy(
                                                 id = 0,
                                                 sagaId = sagaContent.data.id,

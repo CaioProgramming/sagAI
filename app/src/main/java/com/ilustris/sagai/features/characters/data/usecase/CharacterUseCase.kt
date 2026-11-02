@@ -22,6 +22,17 @@ interface CharacterUseCase {
 
     suspend fun insertCharacter(character: Character): Character
 
+    /**
+     * Audits a freshly generated [character] against the saga's cast and the seed [description] that
+     * asked for it, rewriting only the fields that fail. Never throws: when the review fails, the
+     * sheet comes back untouched.
+     */
+    suspend fun reviewCharacterDesign(
+        sagaContent: SagaContent,
+        character: Character,
+        description: String,
+    ): Character
+
     suspend fun updateCharacter(character: Character): Character
 
     suspend fun deleteCharacter(characterId: Int)
