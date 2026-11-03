@@ -8,7 +8,8 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="com.ilustris.sagai.debug.REVIEW_CHARACTER" />
-                <action android:name="com.ilustris.sagai.debug.GENERATE_CHARACTERS" />
+                <action android:name="com.ilustris.sagai.debug.PREVIEW_GENERATE" />
+                <action android:name="com.ilustris.sagai.debug.PREVIEW_REVIEW" />
             </intent-filter>
         </receiver>
     </application>

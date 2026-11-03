@@ -40,10 +40,16 @@ class CharacterPreviewGenerator
             genre: Genre,
             cast: List<Character>,
         ): CharacterPreview {
-            val sagaContent =
-                DesignSystemMocks.mockSagaContent(genre).let { mock ->
-                    mock.copy(characters = cast.map { CharacterContent(data = it) })
-                }
+            val generated = generateSheet(genre, cast)
+            return CharacterPreview(generated = generated, reviewed = review(genre, cast, generated))
+        }
+
+        /** Only the generation half of [generate]: the sheet as the model first produced it. */
+        suspend fun generateSheet(
+            genre: Genre,
+            cast: List<Character>,
+        ): Character {
+            val sagaContent = mockSaga(genre, cast)
             val themeColor = getRandomColorHex()
             val prompt =
                 CharacterPrompts.characterGeneration(
@@ -54,24 +60,33 @@ class CharacterPreviewGenerator
                     sceneSummary = null,
                     aesthetic = genreConfigService.aesthetic(genre),
                 )
-            val generated =
-                gemmaClient
-                    .generate<Character>(
-                        promptSplit =
-                            prompt.mergeInstructions(
-                                genreConfigService.buildAesthetic(genre),
-                                genreConfigService.appearanceInstructions(genre),
-                            ),
-                        filterOutputFields =
-                            listOf("id", "image", "joinedAt", "sagaId", "voice", "hexColor", "firstSceneId"),
-                        requirement = ModelRequirement.HIGH,
-                        temperatureRandomness = 1f,
-                    )!!
-                    .copy(hexColor = themeColor, image = emptyString())
-            return CharacterPreview(
-                generated = generated,
-                reviewed = characterUseCase.reviewCharacterDesign(sagaContent, generated, PREVIEW_DESCRIPTION),
-            )
+            return gemmaClient
+                .generate<Character>(
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.buildAesthetic(genre),
+                            genreConfigService.appearanceInstructions(genre),
+                        ),
+                    filterOutputFields =
+                        listOf("id", "image", "joinedAt", "sagaId", "voice", "hexColor", "firstSceneId"),
+                    requirement = ModelRequirement.HIGH,
+                    temperatureRandomness = 1f,
+                )!!
+                .copy(hexColor = themeColor, image = emptyString())
+        }
+
+        /** Only the review half of [generate], for a sheet already produced against the same [cast]. */
+        suspend fun review(
+            genre: Genre,
+            cast: List<Character>,
+            generated: Character,
+        ): Character = characterUseCase.reviewCharacterDesign(mockSaga(genre, cast), generated, PREVIEW_DESCRIPTION)
+
+        private fun mockSaga(
+            genre: Genre,
+            cast: List<Character>,
+        ) = DesignSystemMocks.mockSagaContent(genre).let { mock ->
+            mock.copy(characters = cast.map { CharacterContent(data = it) })
         }
 
         private companion object {

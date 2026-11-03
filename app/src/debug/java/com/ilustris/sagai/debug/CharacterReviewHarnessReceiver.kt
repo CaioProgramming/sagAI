@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.features.characters.data.model.designChangesTo
 import com.ilustris.sagai.features.characters.data.model.designFields
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -16,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 /**
@@ -36,8 +39,8 @@ class CharacterReviewHarnessReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
-        if (intent.action == ACTION_GENERATE) {
-            generateBatch(intent)
+        if (intent.action == STEP_GENERATE || intent.action == STEP_REVIEW) {
+            previewStep(context, intent)
             return
         }
         val characterId = intent.getIntExtra("characterId", -1)
@@ -66,35 +69,53 @@ class CharacterReviewHarnessReceiver : BroadcastReceiver() {
         }
     }
 
-    /** Generates and reviews `count` characters of `genre` in a row, each against the ones before it, and logs them. */
-    private fun generateBatch(intent: Intent) {
+    /**
+     * One half of a preview character per broadcast, so each stays under the 60 s a broadcast is allowed
+     * and the app keeps its network: STEP_GENERATE writes the sheet as generated to a file, STEP_REVIEW
+     * reviews it against the cast so far and adds it to the cast file. `reset` clears the cast.
+     */
+    private fun previewStep(
+        context: Context,
+        intent: Intent,
+    ) {
         val genre = Genre.valueOf(intent.getStringExtra("genre") ?: Genre.HEROES.name)
-        val count = intent.getIntExtra("count", 3)
+        val castFile = File(context.cacheDir, "preview_cast.json")
+        val pendingFile = File(context.cacheDir, "preview_pending.json")
+        if (intent.getBooleanExtra("reset", false)) castFile.delete()
+        val gson = Gson()
+        val cast: List<Character> =
+            if (castFile.exists()) gson.fromJson(castFile.readText(), object : TypeToken<List<Character>>() {}.type) else emptyList()
+        val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
-            val cast = mutableListOf<Character>()
-            repeat(count) { index ->
-                try {
-                    val preview = characterPreviewGenerator.generate(genre, cast)
-                    val sheet = preview.generated
+            try {
+                if (intent.action == STEP_GENERATE) {
+                    val sheet = characterPreviewGenerator.generateSheet(genre, cast)
+                    pendingFile.writeText(gson.toJson(sheet))
                     Log.i(
                         TAG,
-                        "#${index + 1} ${sheet.name} ${sheet.lastName.orEmpty()} GENERATED\n" +
+                        "#${cast.size + 1} ${sheet.name} ${sheet.lastName.orEmpty()} GENERATED\n" +
                             sheet.designFields().filter { it.first != "artwork" }.joinToString("\n") { "  ${it.first}: ${it.second}" },
                     )
-                    val changes = sheet.designChangesTo(preview.reviewed)
-                    Log.i(TAG, "#${index + 1} REVIEW: ${changes.size} field(s) rewritten")
+                } else {
+                    val sheet = gson.fromJson(pendingFile.readText(), Character::class.java)
+                    val reviewed = characterPreviewGenerator.review(genre, cast, sheet)
+                    val changes = sheet.designChangesTo(reviewed)
+                    Log.i(TAG, "#${cast.size + 1} REVIEW: ${changes.size} field(s) rewritten")
                     changes.filter { it.first != "artwork" }.forEach { (field, _, after) -> Log.i(TAG, "  $field -> $after") }
-                    cast.add(preview.reviewed)
-                } catch (e: Exception) {
-                    Log.e(TAG, "#${index + 1} failed: ${e.message}")
+                    castFile.writeText(gson.toJson(cast + reviewed))
                 }
+                Log.i(TAG, "step ${intent.action} done")
+            } catch (e: Exception) {
+                Log.e(TAG, "step ${intent.action} failed: ${e.message}", e)
+            } finally {
+                pending.finish()
             }
-            Log.i(TAG, "=== batch done: ${cast.size}/$count ===")
         }
     }
 
     private companion object {
         const val TAG = "CharacterReviewHarness"
-        const val ACTION_GENERATE = "com.ilustris.sagai.debug.GENERATE_CHARACTERS"
+        const val STEP_GENERATE = "com.ilustris.sagai.debug.PREVIEW_GENERATE"
+        const val STEP_REVIEW = "com.ilustris.sagai.debug.PREVIEW_REVIEW"
     }
 }
