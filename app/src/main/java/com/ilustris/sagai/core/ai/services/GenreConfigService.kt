@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.ai.services
 
-import com.ilustris.sagai.core.ai.model.CharacterExamples
 import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -56,28 +55,7 @@ class GenreConfigService
             promptService
                 .buildSplitBlueprint(
                     "${genre.name.lowercase()}_appearance_blueprint",
-                ).renderInstructions() + characterExamples(genre)
-
-        /**
-         * A few concrete looks and temperaments of the genre, a different draw on every call so the
-         * model sees the level of specificity wanted without a fixed set to copy. Empty when the genre
-         * has none in Remote Config.
-         */
-        suspend fun characterExamples(genre: Genre): Map<String, Any> {
-            val examples =
-                remoteConfigService.getJson<CharacterExamples>(
-                    "${genre.name.lowercase()}_character_examples",
-                    logEnabled = false,
-                ) ?: return emptyMap()
-            val looks = examples.looks.shuffled().take(LOOKS_PER_CALL)
-            val temperaments = examples.temperaments.shuffled().take(TEMPERAMENTS_PER_CALL)
-            if (looks.isEmpty() && temperaments.isEmpty()) return emptyMap()
-            return buildMap {
-                if (examples.note.isNotBlank()) put("ExamplesNote", examples.note)
-                if (looks.isNotEmpty()) put("ExampleLooks", looks.toAINormalize())
-                if (temperaments.isNotEmpty()) put("ExampleTemperaments", temperaments.toAINormalize())
-            }
-        }
+                ).renderInstructions()
 
         suspend fun buildAesthetic(genre: Genre) = mapOf("ThemeAesthetic" to getGenreConfig(genre).aesthetic)
 
@@ -97,9 +75,4 @@ class GenreConfigService
             promptService
                 .buildSplitBlueprint("${genre.name.lowercase()}_conversation_blueprint")
                 .processedTemplate
-
-        private companion object {
-            const val LOOKS_PER_CALL = 4
-            const val TEMPERAMENTS_PER_CALL = 3
-        }
     }

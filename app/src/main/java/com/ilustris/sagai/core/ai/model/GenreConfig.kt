@@ -38,13 +38,3 @@ data class GenreConfig(
         val conversationDirective: String? = null,
     )
 }
-
-/**
- * Concrete [looks] and [temperaments] of a genre and how to read them ([note]); a few of each are
- * drawn on every character generation.
- */
-data class CharacterExamples(
-    val note: String = "",
-    val looks: List<String> = emptyList(),
-    val temperaments: List<String> = emptyList(),
-)
