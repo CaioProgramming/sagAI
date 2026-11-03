@@ -17,6 +17,9 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.designChangesTo
+import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -29,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class CharacterPreviewState(
@@ -43,6 +47,7 @@ data class CharacterPreviewState(
 class DesignSystemViewModel @Inject constructor(
     private val chatIslandService: ChatIslandService,
     private val promptService: PromptService,
+    private val characterUseCase: CharacterUseCase,
     private val genreConfigService: GenreConfigService,
     private val gemmaClient: GemmaClient,
     private val artworkConceptService: ArtworkConceptService,
@@ -53,6 +58,10 @@ class DesignSystemViewModel @Inject constructor(
     fun testIsland(content: IslandContent?) {
         chatIslandService.setTop(content)
     }
+
+    /** Characters generated so far for [previewCastGenre]: the cast the next preview is generated against and reviewed with. */
+    private val previewCast = mutableListOf<Character>()
+    private var previewCastGenre: Genre? = null
 
     private val _characterPreviewState = MutableStateFlow(CharacterPreviewState())
     val characterPreviewState: StateFlow<CharacterPreviewState> = _characterPreviewState.asStateFlow()
@@ -65,15 +74,21 @@ class DesignSystemViewModel @Inject constructor(
     fun generateRandomCharacterPreview(genre: Genre) {
         viewModelScope.launch {
             _characterPreviewState.value = CharacterPreviewState(isGeneratingCharacter = true)
-            val sagaContent = DesignSystemMocks.mockSagaContent(genre)
+            if (previewCastGenre != genre) previewCast.clear()
+            previewCastGenre = genre
+            val sagaContent =
+                DesignSystemMocks.mockSagaContent(genre).let { mock ->
+                    mock.copy(characters = previewCast.map { CharacterContent(data = it) })
+                }
             val themeColor = getRandomColorHex()
             val result =
                 executeRequest {
+                    val description = "A new character who could believably exist in this world."
                     val prompt =
                         CharacterPrompts.characterGeneration(
                             promptService,
                             sagaContent,
-                            description = "A new character who could believably exist in this world.",
+                            description = description,
                             themeColor = themeColor,
                             sceneSummary = null,
                             aesthetic = genreConfigService.aesthetic(genre),
@@ -88,8 +103,14 @@ class DesignSystemViewModel @Inject constructor(
                             listOf("id", "image", "joinedAt", "sagaId", "voice", "hexColor", "firstSceneId"),
                         requirement = ModelRequirement.HIGH,
                         temperatureRandomness = 1f,
-                    )!!.copy(hexColor = themeColor, image = emptyString())
-                }
+                    )!!.copy(hexColor = themeColor, image = emptyString()).let { generated ->
+                        val reviewed = characterUseCase.reviewCharacterDesign(sagaContent, generated, description)
+                        generated.designChangesTo(reviewed).forEach { (field, before, after) ->
+                            Timber.tag("DesignReview").i("[$field]\n  BEFORE: $before\n  AFTER:  $after")
+                        }
+                        reviewed
+                    }
+                }.onSuccess { previewCast.add(it) }
             _characterPreviewState.value =
                 when (result) {
                     is RequestResult.Success -> CharacterPreviewState(character = result.value)

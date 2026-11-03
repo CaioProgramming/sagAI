@@ -9,6 +9,7 @@ import com.ilustris.sagai.features.characters.data.model.Clothing
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.data.model.FacialFeatures
 import com.ilustris.sagai.features.characters.data.model.PhysicalTraits
+import com.ilustris.sagai.features.characters.data.model.designChangesTo
 import com.ilustris.sagai.features.characters.data.model.withDesignReview
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -69,6 +70,14 @@ class CharacterDesignReviewTest {
         assertEquals(original.details.physicalTraits.facialDetails.jawline, result.details.physicalTraits.facialDetails.jawline)
         assertEquals(original.details.clothing.carriedItems, result.details.clothing.carriedItems)
         assertEquals("sobretudo de oleado amarelo", result.details.clothing.outfitDescription)
+    }
+
+    @Test
+    fun `changes list only the rewritten fields with before and after`() {
+        val original = sheet(hair = "coque")
+        val reviewed = original.withDesignReview(CharacterDesignReview(hair = "pompadour grisalho"))
+        assertEquals(listOf(Triple("hair", "coque", "pompadour grisalho")), original.designChangesTo(reviewed))
+        assertEquals(emptyList<Triple<String, String, String>>(), original.designChangesTo(original))
     }
 
     @Test

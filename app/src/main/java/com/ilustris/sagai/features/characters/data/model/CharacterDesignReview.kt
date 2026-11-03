@@ -54,3 +54,24 @@ fun Character.withDesignReview(review: CharacterDesignReview): Character {
         artwork = review.artwork.orKeep(artwork.orEmpty()),
     )
 }
+
+/** The sheet fields the design review can rewrite, by name, to show what a review changed. */
+fun Character.designFields() =
+    listOf(
+        "hair" to details.physicalTraits.facialDetails.hair,
+        "eyes" to details.physicalTraits.facialDetails.eyes,
+        "mouth" to details.physicalTraits.facialDetails.mouth,
+        "distinctiveMarks" to details.physicalTraits.facialDetails.distinctiveMarks,
+        "distinguishFeatures" to details.physicalTraits.bodyFeatures.distinguishFeatures,
+        "buildAndPosture" to details.physicalTraits.bodyFeatures.buildAndPosture,
+        "outfitDescription" to details.clothing.outfitDescription,
+        "accessories" to details.clothing.accessories,
+        "personality" to profile.personality,
+        "artwork" to artwork.orEmpty(),
+    )
+
+/** The [designFields] that differ between this sheet and its [reviewed] version, as (name, before, after). */
+fun Character.designChangesTo(reviewed: Character) =
+    designFields().zip(reviewed.designFields()).filter { it.first.second != it.second.second }.map { (before, after) ->
+        Triple(before.first, before.second, after.second)
+    }
