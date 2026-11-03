@@ -72,6 +72,13 @@ class CharacterDesignReviewTest {
     }
 
     @Test
+    fun `null fields from the model keep the original`() {
+        val original = sheet()
+        val result = original.withDesignReview(CharacterDesignReview(hair = null, personality = null, rationale = null))
+        assertEquals(original, result)
+    }
+
+    @Test
     fun `a missing artwork is not turned into text`() {
         val result = sheet().copy(artwork = null).withDesignReview(CharacterDesignReview())
         assertEquals("", result.artwork)

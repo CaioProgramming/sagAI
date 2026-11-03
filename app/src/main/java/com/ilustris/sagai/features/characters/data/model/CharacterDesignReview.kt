@@ -2,26 +2,27 @@ package com.ilustris.sagai.features.characters.data.model
 
 /**
  * What the design reviewer sends back after auditing a freshly generated sheet: only the fields it
- * rewrote. A blank field means the original passed the audit and stays as it is.
+ * rewrote. A blank or null field (the model leaves either) means the original passed the audit and
+ * stays as it is.
  */
 data class CharacterDesignReview(
-    val hair: String = "",
-    val eyes: String = "",
-    val mouth: String = "",
-    val distinctiveMarks: String = "",
-    val distinguishFeatures: String = "",
-    val buildAndPosture: String = "",
-    val outfitDescription: String = "",
-    val accessories: String = "",
-    val personality: String = "",
-    val artwork: String = "",
+    val hair: String? = null,
+    val eyes: String? = null,
+    val mouth: String? = null,
+    val distinctiveMarks: String? = null,
+    val distinguishFeatures: String? = null,
+    val buildAndPosture: String? = null,
+    val outfitDescription: String? = null,
+    val accessories: String? = null,
+    val personality: String? = null,
+    val artwork: String? = null,
     /** One line on what failed and what changed; only for logs. */
-    val rationale: String = "",
+    val rationale: String? = null,
 )
 
 /** Applies the rewritten fields of [review] on this sheet; blank fields keep what the sheet already says. */
 fun Character.withDesignReview(review: CharacterDesignReview): Character {
-    fun String.orKeep(current: String) = trim().ifBlank { current }
+    fun String?.orKeep(current: String) = this?.trim().orEmpty().ifBlank { current }
     val facial = details.physicalTraits.facialDetails
     val body = details.physicalTraits.bodyFeatures
     val clothing = details.clothing
