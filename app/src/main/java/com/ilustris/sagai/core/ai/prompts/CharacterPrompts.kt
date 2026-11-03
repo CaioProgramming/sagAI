@@ -138,6 +138,13 @@ object CharacterPrompts {
                 "hair" to it.details.physicalTraits.facialDetails.hair.take(DESIGN_ROSTER_FIELD_MAX_CHARS),
                 "outfit" to it.details.clothing.outfitDescription.take(DESIGN_ROSTER_FIELD_MAX_CHARS),
                 "accessories" to it.details.clothing.accessories.take(DESIGN_ROSTER_FIELD_MAX_CHARS),
+                "marks" to
+                    listOf(
+                        it.details.physicalTraits.facialDetails.distinctiveMarks,
+                        it.details.physicalTraits.bodyFeatures.distinguishFeatures,
+                    ).filter { mark -> mark.isNotBlank() }
+                        .joinToString("; ")
+                        .take(DESIGN_ROSTER_FIELD_MAX_CHARS),
                 "personality" to it.profile.personality.take(DESIGN_ROSTER_FIELD_MAX_CHARS),
             )
         }

@@ -87,5 +87,6 @@ class CharacterDesignReviewTest {
         assertEquals(160, roster.first()["outfit"]!!.length)
         assertEquals(160, roster.first()["personality"]!!.length)
         assertEquals("brincos", roster.first()["accessories"])
+        assertEquals("expressão de impaciência; elegância", roster.first()["marks"])
     }
 }
