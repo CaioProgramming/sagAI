@@ -22,7 +22,7 @@ SHEET_FIELDS = ["name", "lastName", "nicknames", "backstory", "race", "gender", 
                 "uniqueOrSignatureTalents", "occupation", "personality", "artwork"]
 REVIEW_FIELDS = ["hair", "eyes", "mouth", "distinctiveMarks", "distinguishFeatures", "buildAndPosture",
                  "outfitDescription", "accessories", "personality", "artwork", "rationale"]
-SHOWN = ["hair", "outfitDescription", "accessories", "distinctiveMarks", "personality"]
+SHOWN = ["gender", "hair", "outfitDescription", "accessories", "distinctiveMarks", "personality"]
 COLORS = ["coral", "teal", "mustard", "violet", "emerald", "crimson", "indigo", "amber", "magenta", "forest green"]
 
 
@@ -53,12 +53,34 @@ def draw_examples(bp):
     return random.sample(ex, min(n, len(ex))) if n else ex
 
 
+def draw_pools(bp):
+    """bp['pools'] is {name: [items]}; each call shows bp['poolsPerCall'] random items of every pool."""
+    n = bp.get("poolsPerCall")
+    return {k: (random.sample(v, min(n, len(v))) if n else v) for k, v in bp.get("pools", {}).items()}
+
+
 def render(value, level=2):
     if isinstance(value, dict):
         return "\n".join(f"{'#' * level} {k}\n{render(v, level + 1)}" for k, v in value.items())
     if isinstance(value, list):
         return "\n".join(f"- {render(v, level + 1)}" if not isinstance(v, dict) else "- " + "; ".join(f"{k}: {x}" for k, x in v.items()) for v in value)
     return str(value)
+
+
+NEG = r"(never|forbidden|avoid|not |no |fail|redo|stock|default|cliche|don't|nunca)"
+
+
+def strip_negatives(bp):
+    """Ablation: drop every sentence of the directives and rules that forbids or warns."""
+    import re
+    def clean(text):
+        sentences = re.split(r"(?<=[.!?])\s+", text)
+        kept = [x for x in sentences if not re.search(NEG, x, re.I)]
+        return " ".join(kept)
+    out = dict(bp)
+    for key in ("directives", "rules"):
+        out[key] = {k: c for k, c in ((k, clean(v)) for k, v in bp.get(key, {}).items()) if c.strip()}
+    return out
 
 
 def system_text(*blueprints, extra=None):
@@ -73,6 +95,9 @@ def system_text(*blueprints, extra=None):
         examples = draw_examples(bp)
         if examples:
             parts.append(f"# examples\n{render(examples)}")
+        pools = draw_pools(bp)
+        if pools:
+            parts.append(f"# pools\n{render(pools)}")
     if extra:
         parts.append(extra)
     return "\n\n".join(parts)
@@ -116,6 +141,9 @@ def main():
     ap.add_argument("--generation-file")
     ap.add_argument("--review-file")
     ap.add_argument("--no-review", action="store_true")
+    ap.add_argument("--no-cast-looks", action="store_true", help="ablation: the generation sees the cast names but not their looks")
+    ap.add_argument("--minimal", action="store_true", help="ablation: only the persona, the theme aesthetic and the seed")
+    ap.add_argument("--strip-negatives", action="store_true", help="ablation: drop the sentences that forbid or warn")
     ap.add_argument("--model", default="gemini-3.5-flash-lite")
     ap.add_argument("--dry-run", action="store_true", help="print the prompts and exit, no network")
     args = ap.parse_args()
@@ -132,10 +160,15 @@ def main():
     for i in range(args.count):
         appearance = blueprint(template, f"{args.genre}_appearance_blueprint", args.appearance_file)
         theme = f"# ThemeAesthetic\n{aesthetic}"
-        gen_system = system_text(gen, appearance, extra=theme)
+        if args.minimal:
+            gen_system = f"# Persona\n{gen['role']}\n\n{theme}"
+        elif args.strip_negatives:
+            gen_system = system_text(strip_negatives(gen), strip_negatives(appearance), extra=theme)
+        else:
+            gen_system = system_text(gen, appearance, extra=theme)
         gen_user = ("# TASK CONTEXT\ncontext:\n  SagaContext: A mock saga set in this world.\n"
                     f"  CharactersCast: {', '.join(c.get('name', '') for c in cast) or 'none yet'}\n"
-                    f"  CastLooks: {json.dumps(cast_looks(cast), ensure_ascii=False)}\n"
+                    f"{'' if args.no_cast_looks else '  CastLooks: ' + json.dumps(cast_looks(cast), ensure_ascii=False) + chr(10)}"
                     f"  NewCharacterContext: {args.seed}\n  NewCharacterFavoriteColor: {random.choice(COLORS)}")
         if args.dry_run:
             print(f"===== GENERATION SYSTEM ({len(gen_system)} chars)\n{gen_system}\n\n===== GENERATION USER\n{gen_user}\n")
