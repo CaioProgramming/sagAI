@@ -39,8 +39,12 @@ data class GenreConfig(
     )
 }
 
-/** Concrete looks of a genre ([looks]) and how to read them ([note]); a few are drawn on every generation. */
-data class AppearanceExamples(
+/**
+ * Concrete [looks] and [temperaments] of a genre and how to read them ([note]); a few of each are
+ * drawn on every character generation.
+ */
+data class CharacterExamples(
     val note: String = "",
     val looks: List<String> = emptyList(),
+    val temperaments: List<String> = emptyList(),
 )
