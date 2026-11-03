@@ -139,10 +139,10 @@ def judge(key, model, cast, thinking):
 EXCLUDED_FROM_IMAGE_CONTEXT = {"artwork"}
 
 
-def image_prompt(template, genre, aesthetic, sheet, key, model, thinking):
+def image_prompt(template, genre, aesthetic, sheet, key, model, thinking, icon_file=None):
     """The app's two image stages: a text model writes the final prompt from the icon blueprint, the theme's rendering
     blueprint and the sheet; the caller then sends that prompt to the image model."""
-    unified = blueprint(template, "unified_icon_blueprint")
+    unified = blueprint(template, "unified_icon_blueprint", icon_file)
     rendering = blueprint(template, f"{genre}_rendering_blueprint")
     sheet_text = "\n".join(f"{k}: {v}" for k, v in sheet.items() if k not in EXCLUDED_FROM_IMAGE_CONTEXT and v)
     context = f"### CONCEPT ART DIRECTION\n{sheet.get('artwork', '')}\n\n### CHARACTER\n{sheet_text}"
@@ -197,6 +197,7 @@ def main():
     ap.add_argument("--image-prompts", metavar="DIR", help="also build the final image prompt of every sheet and write it to DIR")
     ap.add_argument("--image", action="store_true", help="with --image-prompts, also render it with the image model")
     ap.add_argument("--image-model", default="gemini-3.1-flash-image")
+    ap.add_argument("--icon-file", help="local json replacing the unified icon blueprint used for the final image prompt")
     ap.add_argument("--minimal", action="store_true", help="ablation: only the persona, the theme aesthetic and the seed")
     ap.add_argument("--strip-negatives", action="store_true", help="ablation: drop the sentences that forbid or warn")
     ap.add_argument("--model", default="gemini-3.5-flash-lite")
@@ -256,7 +257,7 @@ def main():
         if args.image_prompts and not args.dry_run:
             os.makedirs(args.image_prompts, exist_ok=True)
             slug = f"{args.seed[:18].strip().replace(' ', '_')}_{i + 1}_{reviewed.get('name', 'x').split()[0]}"
-            final = image_prompt(template, args.genre, aesthetic, reviewed, key, args.model, args.thinking)
+            final = image_prompt(template, args.genre, aesthetic, reviewed, key, args.model, args.thinking, args.icon_file)
             open(os.path.join(args.image_prompts, slug + ".txt"), "w").write(final)
             print(f"  IMAGE PROMPT -> {slug}.txt ({len(final)} chars)")
             if args.image:
