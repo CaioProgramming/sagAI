@@ -280,7 +280,7 @@ class CharacterUseCaseImpl
                             CharacterPrompts
                                 .characterDesignReview(promptService, sagaContent, character, description)
                                 .mergeInstructions(genreConfigService.buildAesthetic(genre)),
-                        requirement = ModelRequirement.LOW,
+                        requirement = ModelRequirement.MEDIUM,
                         temperatureRandomness = .7f,
                     )!!
                 Timber.d("reviewCharacterDesign: ${character.name} -> ${review.rationale}")
