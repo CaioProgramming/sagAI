@@ -2,12 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>
-        <!-- Dev harness: broadcast action REVIEW_CHARACTER with int extra characterId and string extra seed; see CharacterReviewHarnessReceiver -->
+        <!-- Dev harness actions and extras are documented on CharacterReviewHarnessReceiver -->
         <receiver
             android:name="com.ilustris.sagai.debug.CharacterReviewHarnessReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.ilustris.sagai.debug.REVIEW_CHARACTER" />
+                <action android:name="com.ilustris.sagai.debug.GENERATE_CHARACTERS" />
             </intent-filter>
         </receiver>
     </application>

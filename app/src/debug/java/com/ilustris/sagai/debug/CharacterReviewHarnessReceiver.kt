@@ -5,7 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.ilustris.sagai.features.characters.data.model.designChangesTo
+import com.ilustris.sagai.features.characters.data.model.designFields
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.debug.data.CharacterPreviewGenerator
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -26,10 +30,16 @@ class CharacterReviewHarnessReceiver : BroadcastReceiver() {
 
     @Inject lateinit var sagaHistoryUseCase: SagaHistoryUseCase
 
+    @Inject lateinit var characterPreviewGenerator: CharacterPreviewGenerator
+
     override fun onReceive(
         context: Context,
         intent: Intent,
     ) {
+        if (intent.action == ACTION_GENERATE) {
+            generateBatch(intent)
+            return
+        }
         val characterId = intent.getIntExtra("characterId", -1)
         val seed = intent.getStringExtra("seed").orEmpty()
         val pending = goAsync()
@@ -56,7 +66,35 @@ class CharacterReviewHarnessReceiver : BroadcastReceiver() {
         }
     }
 
+    /** Generates and reviews `count` characters of `genre` in a row, each against the ones before it, and logs them. */
+    private fun generateBatch(intent: Intent) {
+        val genre = Genre.valueOf(intent.getStringExtra("genre") ?: Genre.HEROES.name)
+        val count = intent.getIntExtra("count", 3)
+        CoroutineScope(Dispatchers.IO).launch {
+            val cast = mutableListOf<Character>()
+            repeat(count) { index ->
+                try {
+                    val preview = characterPreviewGenerator.generate(genre, cast)
+                    val sheet = preview.generated
+                    Log.i(
+                        TAG,
+                        "#${index + 1} ${sheet.name} ${sheet.lastName.orEmpty()} GENERATED\n" +
+                            sheet.designFields().filter { it.first != "artwork" }.joinToString("\n") { "  ${it.first}: ${it.second}" },
+                    )
+                    val changes = sheet.designChangesTo(preview.reviewed)
+                    Log.i(TAG, "#${index + 1} REVIEW: ${changes.size} field(s) rewritten")
+                    changes.filter { it.first != "artwork" }.forEach { (field, _, after) -> Log.i(TAG, "  $field -> $after") }
+                    cast.add(preview.reviewed)
+                } catch (e: Exception) {
+                    Log.e(TAG, "#${index + 1} failed: ${e.message}")
+                }
+            }
+            Log.i(TAG, "=== batch done: ${cast.size}/$count ===")
+        }
+    }
+
     private companion object {
         const val TAG = "CharacterReviewHarness"
+        const val ACTION_GENERATE = "com.ilustris.sagai.debug.GENERATE_CHARACTERS"
     }
 }
