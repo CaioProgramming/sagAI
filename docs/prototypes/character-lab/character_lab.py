@@ -136,6 +136,45 @@ def judge(key, model, cast, thinking):
     return out
 
 
+EXCLUDED_FROM_IMAGE_CONTEXT = {"artwork"}
+
+
+def image_prompt(template, genre, aesthetic, sheet, key, model, thinking):
+    """The app's two image stages: a text model writes the final prompt from the icon blueprint, the theme's rendering
+    blueprint and the sheet; the caller then sends that prompt to the image model."""
+    unified = blueprint(template, "unified_icon_blueprint")
+    rendering = blueprint(template, f"{genre}_rendering_blueprint")
+    sheet_text = "\n".join(f"{k}: {v}" for k, v in sheet.items() if k not in EXCLUDED_FROM_IMAGE_CONTEXT and v)
+    context = f"### CONCEPT ART DIRECTION\n{sheet.get('artwork', '')}\n\n### CHARACTER\n{sheet_text}"
+    system = system_text(unified, rendering, extra=f"# ThemeAesthetic\n{aesthetic}")
+    user = f"# TASK CONTEXT\ncontext:\n  context: {context}\n  aesthetic: {aesthetic}\n  genre: {genre.upper()}"
+    body = {"systemInstruction": {"parts": [{"text": system}]}, "contents": [{"role": "user", "parts": [{"text": user}]}],
+            "generationConfig": {"temperature": 1.0}}
+    if thinking:
+        body["generationConfig"]["thinkingConfig"] = {"thinkingLevel": thinking}
+    req = urllib.request.Request(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                                 json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": key})
+    data = json.load(urllib.request.urlopen(req, timeout=180))
+    return data["candidates"][0]["content"]["parts"][-1]["text"].strip()
+
+
+def render_image(key, model, prompt, path):
+    """Sends the final prompt to the image model as the app does; returns None when the key cannot use image models."""
+    import base64
+    body = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}}
+    req = urllib.request.Request(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                                 json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": key})
+    try:
+        data = json.load(urllib.request.urlopen(req, timeout=240))
+    except urllib.error.HTTPError as e:
+        return f"HTTP {e.code}: {e.read().decode()[:200]}"
+    for part in data["candidates"][0]["content"]["parts"]:
+        if "inlineData" in part:
+            open(path, "wb").write(base64.b64decode(part["inlineData"]["data"]))
+            return path
+    return "no image in the response"
+
+
 def cast_looks(cast):
     return [{"name": f"{c.get('name', '')} {c.get('lastName', '')}".strip(), "hair": c.get("hair", "")[:160],
              "outfit": c.get("outfitDescription", "")[:160], "accessories": c.get("accessories", "")[:160],
@@ -155,6 +194,9 @@ def main():
     ap.add_argument("--review-file")
     ap.add_argument("--no-review", action="store_true")
     ap.add_argument("--no-cast-looks", action="store_true", help="ablation: the generation sees the cast names but not their looks")
+    ap.add_argument("--image-prompts", metavar="DIR", help="also build the final image prompt of every sheet and write it to DIR")
+    ap.add_argument("--image", action="store_true", help="with --image-prompts, also render it with the image model")
+    ap.add_argument("--image-model", default="gemini-3.1-flash-image")
     ap.add_argument("--minimal", action="store_true", help="ablation: only the persona, the theme aesthetic and the seed")
     ap.add_argument("--strip-negatives", action="store_true", help="ablation: drop the sentences that forbid or warn")
     ap.add_argument("--model", default="gemini-3.5-flash-lite")
@@ -211,6 +253,14 @@ def main():
                 if f != "artwork":
                     print(f"    {f} -> {reviewed[f]}")
         cast.append(reviewed)
+        if args.image_prompts and not args.dry_run:
+            os.makedirs(args.image_prompts, exist_ok=True)
+            slug = f"{args.seed[:18].strip().replace(' ', '_')}_{i + 1}_{reviewed.get('name', 'x').split()[0]}"
+            final = image_prompt(template, args.genre, aesthetic, reviewed, key, args.model, args.thinking)
+            open(os.path.join(args.image_prompts, slug + ".txt"), "w").write(final)
+            print(f"  IMAGE PROMPT -> {slug}.txt ({len(final)} chars)")
+            if args.image:
+                print("  IMAGE ->", render_image(key, args.image_model, final, os.path.join(args.image_prompts, slug + ".png")))
         if args.judge and (i + 1) == args.count:
             verdict = judge(key, args.model, cast, args.thinking)
             print(f"JUDGE scores={verdict.get('scores')} confusable={verdict.get('confusable_pairs')}")
