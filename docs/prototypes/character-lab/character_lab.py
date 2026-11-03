@@ -103,13 +103,15 @@ def system_text(*blueprints, extra=None):
     return "\n\n".join(parts)
 
 
-def call(key, model, system, user, temperature, fields):
+def call(key, model, system, user, temperature, fields, thinking=None):
     body = {
         "systemInstruction": {"parts": [{"text": system + f"\n\nAnswer with one JSON object whose keys are exactly: {', '.join(fields)}. "
                                                          "Write the values in Brazilian Portuguese."}]},
         "contents": [{"role": "user", "parts": [{"text": user}]}],
         "generationConfig": {"temperature": temperature, "responseMimeType": "application/json"},
     }
+    if thinking:
+        body["generationConfig"]["thinkingConfig"] = {"thinkingLevel": thinking}
     req = urllib.request.Request(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                                  json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": key})
     for attempt in range(4):
@@ -121,6 +123,17 @@ def call(key, model, system, user, temperature, fields):
             if e.code in (429, 500, 503) and attempt < 3:
                 import time; time.sleep(8 * (attempt + 1)); continue
             raise SystemExit(f"HTTP {e.code}: {e.read().decode()[:300]}")
+
+
+def judge(key, model, cast, thinking):
+    """LLM judge: how recognizable is each sheet from across a room, and which pairs could be confused."""
+    sheets = [{"n": i + 1, "hair": c.get("hair", ""), "outfit": c.get("outfitDescription", ""),
+               "accessories": c.get("accessories", ""), "marks": c.get("distinctiveMarks", "")} for i, c in enumerate(cast)]
+    system = ("You are a comic-book art director. For each character sheet, rate from 1 to 5 how recognizable the character is "
+              "from across a room by silhouette, dominant color and one iconic element alone (1 = a forgettable extra, "
+              "5 = instantly iconic). Also list the pairs of characters that could be confused at a distance. Be strict.")
+    out = call(key, model, system, json.dumps(sheets, ensure_ascii=False), 0.2, ["scores", "confusable_pairs"], thinking)
+    return out
 
 
 def cast_looks(cast):
@@ -145,6 +158,8 @@ def main():
     ap.add_argument("--minimal", action="store_true", help="ablation: only the persona, the theme aesthetic and the seed")
     ap.add_argument("--strip-negatives", action="store_true", help="ablation: drop the sentences that forbid or warn")
     ap.add_argument("--model", default="gemini-3.5-flash-lite")
+    ap.add_argument("--thinking", choices=["minimal", "low", "medium", "high"], help="thinking level, as the app's HIGH tier sets it")
+    ap.add_argument("--judge", action="store_true", help="ask the model to rate how recognizable each sheet of a cast is from afar")
     ap.add_argument("--dry-run", action="store_true", help="print the prompts and exit, no network")
     args = ap.parse_args()
 
@@ -172,7 +187,7 @@ def main():
                     f"  NewCharacterContext: {args.seed}\n  NewCharacterFavoriteColor: {random.choice(COLORS)}")
         if args.dry_run:
             print(f"===== GENERATION SYSTEM ({len(gen_system)} chars)\n{gen_system}\n\n===== GENERATION USER\n{gen_user}\n")
-        sheet = {} if args.dry_run else call(key, args.model, gen_system, gen_user, 1.0, SHEET_FIELDS)
+        sheet = {} if args.dry_run else call(key, args.model, gen_system, gen_user, 1.0, SHEET_FIELDS, args.thinking)
         reviewed = dict(sheet)
         if not args.no_review:
             rev_system = system_text(review, appearance)
@@ -181,7 +196,7 @@ def main():
             if args.dry_run:
                 print(f"===== REVIEW SYSTEM ({len(rev_system)} chars)\n{rev_system}\n")
                 break
-            changes = call(key, args.model, rev_system, rev_user, 0.7, REVIEW_FIELDS)
+            changes = call(key, args.model, rev_system, rev_user, 0.7, REVIEW_FIELDS, args.thinking)
             reviewed.update({k: v for k, v in changes.items() if k != "rationale" and v})
             rationale = changes.get("rationale") or "-"
         if args.dry_run:
@@ -196,6 +211,9 @@ def main():
                 if f != "artwork":
                     print(f"    {f} -> {reviewed[f]}")
         cast.append(reviewed)
+        if args.judge and (i + 1) == args.count:
+            verdict = judge(key, args.model, cast, args.thinking)
+            print(f"JUDGE scores={verdict.get('scores')} confusable={verdict.get('confusable_pairs')}")
 
 
 if __name__ == "__main__":
