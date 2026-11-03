@@ -279,10 +279,7 @@ class CharacterUseCaseImpl
                         promptSplit =
                             CharacterPrompts
                                 .characterDesignReview(promptService, sagaContent, character, description)
-                                .mergeInstructions(
-                                    genreConfigService.buildAesthetic(genre),
-                                    genreConfigService.appearanceInstructions(genre),
-                                ),
+                                .mergeInstructions(genreConfigService.buildAesthetic(genre)),
                         requirement = ModelRequirement.LOW,
                         temperatureRandomness = .7f,
                     )!!
