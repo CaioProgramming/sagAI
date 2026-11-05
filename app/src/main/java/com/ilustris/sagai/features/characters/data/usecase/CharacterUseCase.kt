@@ -50,7 +50,7 @@ interface CharacterUseCase {
         description: String,
         sceneSummary: SceneSummary? = null,
         candidateName: String? = null,
-    ): Flow<StreamingState<GeneratedContent<Character>?>>
+    ): Flow<StreamingState<Character?>>
 
     suspend fun generateCharactersUpdate(
         timeline: Timeline,

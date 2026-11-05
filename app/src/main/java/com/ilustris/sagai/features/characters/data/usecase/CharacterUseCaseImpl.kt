@@ -337,7 +337,7 @@ class CharacterUseCaseImpl
             description: String,
             sceneSummary: SceneSummary?,
             candidateName: String?,
-        ): Flow<StreamingState<GeneratedContent<Character>?>> =
+        ): Flow<StreamingState<Character?>> =
             flow {
                 try {
                     assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
@@ -357,7 +357,7 @@ class CharacterUseCaseImpl
 
                     val request =
                         gemmaClient
-                            .generateStreaming<GeneratedContent<Character>>(
+                            .generateStreaming<Character>(
                                 promptSplit =
                                     prompt.mergeInstructions(
                                         genreConfigService.buildAesthetic(sagaContent.data.genre),
@@ -383,7 +383,7 @@ class CharacterUseCaseImpl
                             genre = sagaContent.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val newCharacter = state.data!!.data
+                                val newCharacter = state.data!!
                                 if (sagaContent.hasConflictingCharacterIdentity(newCharacter)) {
                                     emit(
                                         StreamingState
@@ -407,12 +407,7 @@ class CharacterUseCaseImpl
                                     generateCharacterImage(characterTransaction, sagaContent.data)
                                 }
                                 emit(
-                                    StreamingState.Success(
-                                        GeneratedContent(
-                                            characterTransaction,
-                                            state.data.finalMessage,
-                                        ),
-                                    ),
+                                    StreamingState.Success(characterTransaction),
                                 )
                             } else {
                                 emit(state)

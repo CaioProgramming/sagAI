@@ -1664,7 +1664,7 @@ class SagaContentManagerImpl
                         )
                         fakeCharacter
                     } else {
-                        var generated: GeneratedContent<Character>? = null
+                        var generated: Character? = null
                         characterUseCase
                             .generateCharacterStream(
                                 currentSaga,
@@ -1690,7 +1690,7 @@ class SagaContentManagerImpl
                             }
 
                         val generatedCharacter =
-                            generated?.data ?: error("Failed to generate character")
+                            generated ?: error("Failed to generate character")
 
                         sagaThemeManager.showSnackBar(
                             context.getString(
@@ -1702,7 +1702,6 @@ class SagaContentManagerImpl
                         emitMilestone(
                             SagaMilestone.NewCharacter(
                                 generatedCharacter,
-                                generated!!.finalMessage,
                                 saga = currentSaga.data,
                             ),
                         )
