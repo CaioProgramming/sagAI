@@ -234,7 +234,7 @@ class ProgressionIslandContent(
                         Text(row.detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f), maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                     if (row.extra > 0) Text("+${row.extra}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f))
-                    Icon(painterResource(R.drawable.round_arrow_forward_ios_24), null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onBackground.copy(alpha = .4f))
+                    Icon(painterResource(R.drawable.ic_chevron_right), null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onBackground.copy(alpha = .4f))
                 }
             }
         }

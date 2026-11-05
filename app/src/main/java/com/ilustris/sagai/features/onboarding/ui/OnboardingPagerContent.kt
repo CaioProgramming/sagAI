@@ -105,7 +105,7 @@ fun OnboardingPagerContent(
             ) {
                 IconButton(onClick = onDismiss) {
                     Icon(
-                        painterResource(R.drawable.round_close_24),
+                        painterResource(R.drawable.ic_close),
                         contentDescription = "Close",
                         tint = MaterialTheme.colorScheme.onBackground,
                     )

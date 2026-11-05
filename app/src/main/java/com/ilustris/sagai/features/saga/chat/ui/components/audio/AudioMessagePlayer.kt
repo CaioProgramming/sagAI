@@ -93,7 +93,7 @@ fun AudioMessagePlayer(
                     Icon(
                         painter =
                             painterResource(
-                                if (playing) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24,
+                                if (playing) R.drawable.ic_pause else R.drawable.ic_play,
                             ),
                         contentDescription = if (playing) "Pause" else "Play",
                         tint = contentColor,

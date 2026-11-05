@@ -237,7 +237,7 @@ private fun MilestoneCloseButton(
         modifier = modifier.statusBarsPadding().padding(8.dp),
     ) {
         Icon(
-            painter = painterResource(R.drawable.round_close_24),
+            painter = painterResource(R.drawable.ic_close),
             contentDescription = stringResource(R.string.milestone_close_description),
             tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
         )

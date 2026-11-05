@@ -39,7 +39,7 @@ class AdvanceIslandContent(
                 },
             iconRes = genre?.icon,
             isLoading = isProcessing,
-            actionIconRes = if (isProcessing) null else R.drawable.round_arrow_forward_ios_24,
+            actionIconRes = if (isProcessing) null else R.drawable.ic_chevron_right,
             genre = genre,
             backgroundColor = IslandBackgroundColor.ThemePrimary,
         )

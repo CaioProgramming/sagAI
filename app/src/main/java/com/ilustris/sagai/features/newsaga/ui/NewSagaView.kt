@@ -387,7 +387,7 @@ fun TopBarContent(
     ) {
         IconButton(onClick = navigateBack) {
             Icon(
-                painter = painterResource(R.drawable.ic_back_left),
+                painter = painterResource(R.drawable.ic_chevron_left),
                 contentDescription = "Back",
                 tint = MaterialTheme.colorScheme.onBackground,
             )

@@ -89,7 +89,7 @@ fun CosmicEditorSheet(
             ) {
                 IconButton(onClick = onDismiss) {
                     Icon(
-                        painter = painterResource(R.drawable.round_close_24),
+                        painter = painterResource(R.drawable.ic_close),
                         contentDescription = "Close",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

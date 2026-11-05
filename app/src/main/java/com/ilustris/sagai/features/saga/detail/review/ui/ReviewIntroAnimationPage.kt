@@ -206,7 +206,7 @@ class ReviewIntroAnimationPage(
                     )
 
                     Image(
-                        painterResource(R.drawable.ic_arrow_down),
+                        painterResource(R.drawable.ic_chevron_down),
                         null,
                         Modifier.size(24.dp),
                     )

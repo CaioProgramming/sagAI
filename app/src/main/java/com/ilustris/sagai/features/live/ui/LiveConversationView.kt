@@ -353,7 +353,7 @@ private fun TopBar(
     ) {
         IconButton(onClick = onBack) {
             Icon(
-                painterResource(R.drawable.round_close_24),
+                painterResource(R.drawable.ic_close),
                 contentDescription = stringResource(R.string.live_close),
                 tint = MaterialTheme.colorScheme.onBackground,
             )

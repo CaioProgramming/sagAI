@@ -128,7 +128,7 @@ fun AudiobookBar(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = { onAction(AudiobookAction.TogglePlayback) }) {
                             Icon(
-                                painterResource(if (playing.second) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24),
+                                painterResource(if (playing.second) R.drawable.ic_pause else R.drawable.ic_play),
                                 contentDescription =
                                     stringResource(if (playing.second) R.string.audiobook_pause_cd else R.string.audiobook_play_cd),
                                 tint = MaterialTheme.colorScheme.primary,
@@ -152,7 +152,7 @@ fun AudiobookBar(
                             colors = ButtonDefaults.textButtonColors().copy(contentColor = MaterialTheme.colorScheme.primary),
                         ) {
                             Icon(
-                                painterResource(R.drawable.round_play_arrow_24),
+                                painterResource(R.drawable.ic_play),
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
                             )
