@@ -44,7 +44,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.key.ApiKeyShape
 import com.ilustris.sagai.features.onboarding.data.model.OnboardingPage
-import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
 
 /** Where a Gemini key is created. Used by the onboarding page's secondary button. */
 const val AI_STUDIO_URL = "https://aistudio.google.com/apikey"
@@ -166,30 +165,6 @@ internal fun ApiKeySetupUiState.errorMessage(): Int? =
         ApiKeySetupUiState.Empty -> R.string.api_key_setup_error_empty
         else -> null
     }
-
-/**
- * The name question, hosted outside the pager.
- *
- * Kept out of the page content deliberately, though not for the reason first suspected: the
- * `Cannot disable reuse` crash came from [SparkBackground], not from here. It stays hoisted anyway,
- * because a modal opened from inside a page the pager may be prefetching is a sub-composition built
- * under machinery that does not expect one — a hazard worth not having, even unproven.
- *
- * Shares the ViewModel with the field through the activity's store, so answering here is what makes
- * [ApiKeySetupViewModel.needsName] fall away for both.
- */
-@Composable
-fun ApiKeyNamePrompt() {
-    val viewModel: ApiKeySetupViewModel = hiltViewModel()
-    val needsName by viewModel.needsName.collectAsStateWithLifecycle()
-
-    if (needsName) {
-        UserNamePromptDialog(
-            onSaveName = viewModel::saveName,
-            onDismiss = viewModel::skipName,
-        )
-    }
-}
 
 /**
  * The key field itself, shared by the onboarding page and the settings sheet.

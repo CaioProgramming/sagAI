@@ -13,7 +13,6 @@ import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.data.model.OnboardingContent
 import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
-import com.ilustris.sagai.features.player.domain.UserIdentityUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +44,6 @@ class ApiKeySetupViewModel
     constructor(
         private val userApiKeyStore: UserApiKeyStore,
         private val geminiApiClient: GeminiApiClient,
-        private val userIdentityUseCase: UserIdentityUseCase,
         private val onboardingUseCase: OnboardingUseCase,
         private val verificationService: ApiKeyVerificationService,
     ) : ViewModel() {
@@ -72,23 +70,6 @@ class ApiKeySetupViewModel
 
 
         /**
-         * Ask for a name before asking for a key.
-         *
-         * The name is a warm, no-stakes question; the key is the one that needs the user to leave
-         * for Google AI Studio. Leading with the harder ask, to someone who has seen nothing of the
-         * app yet, is how you lose them at the door. Skipped for migrations — those users named
-         * themselves long ago.
-         */
-        private val _needsName = MutableStateFlow(false)
-        val needsName: StateFlow<Boolean> = _needsName.asStateFlow()
-
-        init {
-            viewModelScope.launch {
-                _needsName.value = userIdentityUseCase.shouldPromptName()
-            }
-        }
-
-        /**
          * The explanatory pages, from `onboarding_fallbacks` in Remote Config.
          *
          * Empty is a valid state, not an error: the key field is the part that cannot be skipped,
@@ -112,17 +93,6 @@ class ApiKeySetupViewModel
                     .getContent(OnboardingType.API_KEY_SETUP, null)
                     .onSuccess { _pages.value = it }
             }
-        }
-
-        fun saveName(name: String) {
-            viewModelScope.launch {
-                if (name.isNotBlank()) userIdentityUseCase.setName(name.trim())
-                _needsName.value = false
-            }
-        }
-
-        fun skipName() {
-            _needsName.value = false
         }
 
         fun submit(rawKey: String) {

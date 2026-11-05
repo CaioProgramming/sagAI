@@ -94,9 +94,7 @@ import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.live.data.LiveSessionTracker
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
-import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
-import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyNamePrompt
+import com.ilustris.sagai.features.onboarding.ui.SetupOnboardingHost
 import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyRequiredScreen
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
@@ -774,15 +772,10 @@ class MainActivity : ComponentActivity() {
                                             onConfigureClick = { showApiKeySheet = true },
                                         )
                                         if (showApiKeySheet) {
-                                            OnboardingHost(
-                                                type = OnboardingType.API_KEY_SETUP,
-                                                presentation = OnboardingPresentation.Sheet,
-                                                force = true,
-                                                dismissible = false,
+                                            SetupOnboardingHost(
                                                 onDismiss = { showApiKeySheet = false },
                                             )
                                         }
-                                        ApiKeyNamePrompt()
                                     } else {
                                         AppGateLoading()
                                     }

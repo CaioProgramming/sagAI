@@ -85,7 +85,6 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.features.player.ui.onboarding.UserNamePromptDialog
 import com.ilustris.sagai.features.premium.MiniPremiumCard
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
@@ -113,12 +112,6 @@ fun HomeView(
     val viewModel: HomeViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val userName by viewModel.userName.collectAsStateWithLifecycle("")
-    var showNamePrompt by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        // Check if player name prompt should be shown
-        showNamePrompt = viewModel.shouldPromptName()
-    }
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -182,15 +175,6 @@ fun HomeView(
         uiState.isLoading,
         uiState.loadingMessage,
     )
-
-    OnboardingDialog(type = OnboardingType.APP_INTRO)
-
-    if (showNamePrompt) {
-        UserNamePromptDialog(
-            onSaveName = { viewModel.handleAction(HomeUiAction.SaveName(it)) },
-            onDismiss = { showNamePrompt = false },
-        )
-    }
 
     if (uiState.showPremiumOnboarding) {
         OnboardingDialog(
