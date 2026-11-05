@@ -16,6 +16,13 @@ sealed class HomeUiAction {
 
 
     data object CreateFakeSaga : HomeUiAction()
+
+    data object AddWidget : HomeUiAction()
+
+    data object DismissWidgetInvite : HomeUiAction()
+
+    /** The player came back to home, possibly from the launcher, so the widget state may have changed. */
+    data object RefreshWidgetInvite : HomeUiAction()
 }
 
 sealed class HomeNavigationEvent {

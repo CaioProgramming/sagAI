@@ -1353,6 +1353,11 @@
     <string name="widget_discreet_objective">Your saga is waiting for you.</string>
     <string name="widget_discreet_character">Someone</string>
 
+    <string name="widget_invite_card_title">Keep your stories close</string>
+    <string name="widget_invite_card_subtitle">Add a widget and pick up any saga from your home screen.</string>
+    <string name="widget_invite_card_action">Add</string>
+    <string name="widget_invite_card_dismiss">Dismiss</string>
+    <string name="widget_invite_rewards_link">Keep %1$s on your home screen</string>
     <string name="widget_create_menu">Create widget</string>
     <string name="widget_create_title">Create widget</string>
     <string name="widget_create_style_title">What kind of widget?</string>

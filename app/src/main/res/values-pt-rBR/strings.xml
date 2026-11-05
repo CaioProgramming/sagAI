@@ -1341,6 +1341,11 @@
     <string name="widget_discreet_objective">Sua saga espera por você.</string>
     <string name="widget_discreet_character">Alguém</string>
 
+    <string name="widget_invite_card_title">Suas histórias por perto</string>
+    <string name="widget_invite_card_subtitle">Adicione um widget e retome qualquer saga pela tela inicial.</string>
+    <string name="widget_invite_card_action">Adicionar</string>
+    <string name="widget_invite_card_dismiss">Dispensar</string>
+    <string name="widget_invite_rewards_link">Deixar %1$s na tela inicial</string>
     <string name="widget_create_menu">Criar widget</string>
     <string name="widget_create_title">Criar widget</string>
     <string name="widget_create_style_title">Que tipo de widget?</string>

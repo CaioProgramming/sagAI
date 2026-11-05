@@ -80,6 +80,7 @@ import com.ilustris.sagai.core.navigation.SagaNavigationTracker
 import com.ilustris.sagai.core.globalshell.isMilestoneReveal
 import com.ilustris.sagai.features.progression.domain.CharacterRewardsService
 import com.ilustris.sagai.features.progression.ui.CharacterRewardsHost
+import com.ilustris.sagai.features.widgets.data.WidgetInvites
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.AdsConsentService
@@ -227,6 +228,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var characterRewardsService: CharacterRewardsService
+
+    @Inject
+    lateinit var widgetInvites: WidgetInvites
 
     override fun onCreate(savedInstanceState: Bundle?) {
         var holdSplash by mutableStateOf(true)
@@ -812,6 +816,8 @@ class MainActivity : ComponentActivity() {
                             navigationTracker = sagaNavigationTracker,
                             blocked = chatTopIsland.isMilestoneReveal(),
                             onOpenCharacter = { id -> navigateDeepLink("saga://character_detail/$id") },
+                            widgetInvites = widgetInvites,
+                            onAddWidget = { id -> navigateDeepLink("saga://character_widget/$id") },
                         )
 
                         if (activeSideEffect == SideEffect.ShowPremiumOnboarding) {

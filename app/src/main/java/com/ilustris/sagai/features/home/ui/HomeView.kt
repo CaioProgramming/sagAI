@@ -43,6 +43,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -69,6 +70,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
@@ -112,6 +114,12 @@ fun HomeView(
     val viewModel: HomeViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val userName by viewModel.userName.collectAsStateWithLifecycle("")
+
+    // Coming back from the launcher's dialog (or from removing a widget) changes what the card should say.
+    LifecycleResumeEffect(Unit) {
+        viewModel.handleAction(HomeUiAction.RefreshWidgetInvite)
+        onPauseOrDispose {}
+    }
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -364,6 +372,16 @@ private fun ChatList(
                     completedSagas = state.completedSagas,
                     onCompletedSagaClicked = { onAction(HomeUiAction.SelectSaga(it.data)) },
                 )
+            }
+
+            if (state.showWidgetInvite) {
+                item(key = "widget_invite") {
+                    WidgetInviteCard(
+                        onAdd = { onAction(HomeUiAction.AddWidget) },
+                        onDismiss = { onAction(HomeUiAction.DismissWidgetInvite) },
+                        modifier = Modifier.animateItem().padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
             }
 
             items(
@@ -693,3 +711,42 @@ private fun LastBackupNotice(
 }
 
 private const val BACKUP_STALE_DAYS = 14
+
+/** A small, closable nudge to keep the stories on the home screen. Closing it retires it for good. */
+@Composable
+internal fun WidgetInviteCard(
+    onAdd: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .08f))
+                .clickable(onClick = onAdd)
+                .padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+            Text(
+                stringResource(R.string.widget_invite_card_title),
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            )
+            Text(
+                stringResource(R.string.widget_invite_card_subtitle),
+                modifier = Modifier.alpha(.7f),
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+        TextButton(onClick = onAdd) { Text(stringResource(R.string.widget_invite_card_action)) }
+        IconButton(onClick = onDismiss) {
+            Icon(
+                painterResource(R.drawable.ic_close),
+                contentDescription = stringResource(R.string.widget_invite_card_dismiss),
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}

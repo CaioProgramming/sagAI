@@ -78,6 +78,22 @@ object WidgetPinner {
         return manager.getGlanceIds(QuoteWidget::class.java).size + manager.getGlanceIds(HookWidget::class.java).size
     }
 
+    /** Every widget of ours on the home screen, whatever its kind. */
+    suspend fun installedCount(context: Context): Int {
+        val manager = GlanceAppWidgetManager(context)
+        return listOf(
+            ContinueWidget::class.java,
+            LastMessageWidget::class.java,
+            StoriesWidget::class.java,
+            QuoteWidget::class.java,
+            HookWidget::class.java,
+        ).sumOf { manager.getGlanceIds(it).size }
+    }
+
+    /** The stories widget needs no setup, so it can be pinned without a callback. */
+    suspend fun pinStories(context: Context): Boolean =
+        GlanceAppWidgetManager(context).requestPinGlanceAppWidget(receiver = StoriesWidgetReceiver::class.java)
+
     /** True when the launcher showed its confirmation dialog. */
     suspend fun pin(
         context: Context,
