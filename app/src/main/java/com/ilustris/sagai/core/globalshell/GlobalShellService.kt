@@ -37,12 +37,9 @@ class GlobalShellService
         private val appLifecycleManager: AppLifecycleManager,
         private val navigationTracker: SagaNavigationTracker,
         private val overlayVisibilityTracker: OverlayVisibilityTracker,
-        private val chatIslandService: ChatIslandService,
     ) {
         companion object {
             private val AutoDismissSeconds = 15.seconds
-            private const val MILESTONE_POLL_MS = 1_000L
-            private const val MILESTONE_WAIT_MS = 90_000L
         }
 
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -70,27 +67,10 @@ class GlobalShellService
         }
 
         private suspend fun handlePost(effect: GlobalShellEffect) {
-            // Only effects that can turn into a system notification are tied to its permission; the progression
-            // announcements live in the island and answer to the "Levels and experience" setting instead.
             if (effect.priority == GlobalShellPriority.Transient && effect.deliversSystemNotification) {
                 if (!settingsUseCaseProvider.get().getNotificationsEnabled().first()) {
                     Timber.d("GlobalShellService: transient suppressed (notifications disabled)")
                     return
-                }
-            }
-
-            if (effect is ProgressionEffect && !settingsUseCaseProvider.get().getShowProgression().first()) {
-                Timber.d("GlobalShellService: progression effect suppressed (setting off)")
-                return
-            }
-
-            // A level-up, medal or legacy must not pre-empt a milestone that is still open (a transient wins the top slot
-            // over it): wait for the milestone to be dismissed, so the announcements queue behind it one at a time.
-            if (effect is ProgressionEffect) {
-                var waitedMs = 0L
-                while (chatIslandService.top.value.isMilestoneReveal() && waitedMs < MILESTONE_WAIT_MS) {
-                    delay(MILESTONE_POLL_MS)
-                    waitedMs += MILESTONE_POLL_MS
                 }
             }
 
@@ -231,4 +211,4 @@ class GlobalShellService
         }
     }
 
-private fun IslandContent?.isMilestoneReveal(): Boolean = this is NarrativeMilestoneIslandContent || this is IntroductionIslandContent
+internal fun IslandContent?.isMilestoneReveal(): Boolean = this is NarrativeMilestoneIslandContent || this is IntroductionIslandContent

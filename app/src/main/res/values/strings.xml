@@ -1296,6 +1296,22 @@
     <string name="archive_reminder_action">Back up</string>
     <string name="home_last_backup">Last backup: %1$s</string>
     <string name="home_last_backup_never">You haven\'t backed up your sagas yet. Tap to do it.</string>
+    <string name="progression_rewards_continue">Continue</string>
+    <string name="progression_rewards_skip">Skip</string>
+    <string name="progression_rewards_done">Done</string>
+    <string name="progression_rewards_caught_up">All caught up</string>
+    <string name="progression_rewards_open_hint">Tap a character to open their sheet</string>
+    <string name="progression_new_medal">New medal</string>
+    <string name="progression_new_bond">New bond</string>
+    <string name="progression_level_change">LV %1$d → LV %2$d</string>
+    <plurals name="progression_summary_medals">
+        <item quantity="one">%1$d medal</item>
+        <item quantity="other">%1$d medals</item>
+    </plurals>
+    <plurals name="progression_summary_bonds">
+        <item quantity="one">%1$d bond</item>
+        <item quantity="other">%1$d bonds</item>
+    </plurals>
     <string name="progression_new_level">New level</string>
     <string name="progression_level_up_caption">leveled up</string>
     <string name="progression_medal_single">%1$s · new medal</string>
@@ -1306,7 +1322,7 @@
     <string name="progression_legacies_gained">Legacies earned</string>
     <string name="progression_chapter_short">Ch. %1$d</string>
     <string name="progression_act_short">Act %1$d</string>
-    <string name="progression_explainer">Every character has a level that grows with what they live through: bonds, risks, losses and choices, not only fights. Medals mark the deeds of a chapter and the legacy marks who changed an act. Tap See more to read what earned each point. You can hide all of this in Settings.</string>
+    <string name="progression_explainer">Every character has a level that grows with what they live through: bonds, risks, losses and choices, not only fights. Medals mark the deeds of a chapter and the legacy marks who changed an act. Tap a character at the end to read what earned each point. You can hide all of this in Settings.</string>
 
     <!-- Home screen widgets -->
     <string name="widget_continue_name">Continue saga</string>
