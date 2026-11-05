@@ -1430,7 +1430,7 @@ class SagaContentManagerImpl
                                 SagaMilestone.Introduction(
                                     type = IntroductionType.ACT,
                                     titleText = a.title,
-                                    introduction = message ?: a.introduction,
+                                    introduction = resolveIntroductionText(message, a.introduction),
                                     number = saga.actNumber(a.id).toRoman(),
                                     messageText = message,
                                 ),
@@ -1448,7 +1448,7 @@ class SagaContentManagerImpl
                             SagaMilestone.Introduction(
                                 type = IntroductionType.ACT,
                                 titleText = a.title,
-                                introduction = message ?: act.introduction,
+                                introduction = resolveIntroductionText(message, act.introduction),
                                 number = saga.actNumber(a.id).toRoman(),
                                 messageText = message,
                             ),
@@ -1465,7 +1465,7 @@ class SagaContentManagerImpl
                             SagaMilestone.Introduction(
                                 type = IntroductionType.CHAPTER,
                                 titleText = c.title,
-                                introduction = message ?: emptyString(),
+                                introduction = resolveIntroductionText(message, c.introduction),
                                 number = saga.chapterNumber(c.id).toRoman(),
                                 messageText = message,
                             ),
@@ -1499,7 +1499,7 @@ class SagaContentManagerImpl
                             SagaMilestone.Introduction(
                                 type = IntroductionType.CHAPTER,
                                 titleText = c.title,
-                                introduction = message ?: emptyString(),
+                                introduction = resolveIntroductionText(message, c.introduction),
                                 number = saga.chapterNumber(c.id).toRoman(),
                                 messageText = message,
                             ),
@@ -1569,7 +1569,12 @@ class SagaContentManagerImpl
                             // spending the cover's image generation call. handleChapterPostActions
                             // still calls generateChapterCover on continue as a fallback; its own
                             // guard skips it once this has already filled coverImage in.
-                            managerScope.launch { chapterUseCase.generateChapterCover(c.id) }
+                            managerScope.launch {
+                                chapterUseCase.generateChapterCover(c.id).onFailure {
+                                    // The story never waits on the cover; the continue tap retries it.
+                                    Timber.w(it, "Chapter ${c.id} cover generation failed")
+                                }
+                            }
                         }
                     } ?: dismissMilestone()
                 }
