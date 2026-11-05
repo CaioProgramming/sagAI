@@ -11,7 +11,9 @@ import com.ilustris.sagai.features.characters.data.model.FacialFeatures
 import com.ilustris.sagai.features.characters.data.model.PhysicalTraits
 import com.ilustris.sagai.features.characters.data.model.designChangesTo
 import com.ilustris.sagai.features.characters.data.model.withDesignReview
+import com.google.gson.Gson
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class CharacterDesignReviewTest {
@@ -85,6 +87,20 @@ class CharacterDesignReviewTest {
         val original = sheet()
         val result = original.withDesignReview(CharacterDesignReview(hair = null, personality = null, rationale = null))
         assertEquals(original, result)
+    }
+
+    @Test
+    fun `a sheet parsed with null image and hexColor still takes the review`() {
+        // Gson skips constructor defaults, so fields the generation filters out arrive as null.
+        val parsed =
+            Gson().fromJson(
+                Gson().toJson(sheet()).replace("\"image\":\"\",", "").replace(Regex("\"hexColor\":\"[^\"]*\","), ""),
+                Character::class.java,
+            )
+        assertNull(parsed.image as String?)
+        val result = parsed.withDesignReview(CharacterDesignReview(hair = "pompadour grisalho"))
+        assertEquals("pompadour grisalho", result.details.physicalTraits.facialDetails.hair)
+        assertEquals("", result.image)
     }
 
     @Test

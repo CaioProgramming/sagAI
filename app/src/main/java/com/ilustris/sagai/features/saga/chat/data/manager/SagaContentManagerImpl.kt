@@ -1297,6 +1297,14 @@ class SagaContentManagerImpl
                     postMilestoneEffect(milestone)
                 }
                 milestoneUpdate.emit(milestone)
+                // A new character is a passive toast: no screen resolves it, so without this it would hold
+                // the milestone gate until the overlay watchdog force-clears it 45s later.
+                if (milestone is SagaMilestone.NewCharacter) {
+                    managerScope.launch {
+                        delay(milestone.delay)
+                        if (milestoneUpdate.value === milestone) dismissMilestone()
+                    }
+                }
             }
         }
 

@@ -274,7 +274,7 @@ class CharacterUseCaseImpl
         ): Character =
             requestCharacterDesignReview(sagaContent, character, description)
                 .onFailure {
-                    Timber.w(it, "reviewCharacterDesign: keeping the sheet as generated for ${character.name}")
+                    Timber.e(it, "reviewCharacterDesign: keeping the sheet as generated for ${character.name}")
                 }.getSuccess() ?: character
 
         override suspend fun requestCharacterDesignReview(

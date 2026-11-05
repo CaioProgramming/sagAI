@@ -26,7 +26,12 @@ fun Character.withDesignReview(review: CharacterDesignReview): Character {
     val facial = details.physicalTraits.facialDetails
     val body = details.physicalTraits.bodyFeatures
     val clothing = details.clothing
+    // A sheet parsed from the model is built by Gson without constructor defaults, so the fields the
+    // generation filters out (image, hexColor) are null at runtime despite their non-null type, and
+    // copy() would throw on them. They are re-set by the caller anyway; keep them safe here.
     return copy(
+        image = (image as String?).orEmpty(),
+        hexColor = (hexColor as String?).orEmpty(),
         details =
             details.copy(
                 physicalTraits =
