@@ -124,6 +124,10 @@ class NarrativeActionExecutorImpl
          * The book is written silently behind the narrative: every step that produces book material
          * (act intro → prologue, chapter synthesis → chapter pages, act synthesis → volume closure)
          * nudges the background writer, which fills whatever is missing in reading order.
+         *
+         * The writer's long HIGH calls share the model queue with the next chapter's introduction,
+         * so a finished chapter does not nudge it: the nudge comes once that introduction has been
+         * written (CreateChapter / GenerateChapterIntro), when the queue is free again.
          */
         private suspend fun onBookMaterialProduced(
             action: NarrativeAction,
@@ -140,8 +144,12 @@ class NarrativeActionExecutorImpl
                     is NarrativeAction.GenerateChapter -> {
                         // A re-synthesized chapter no longer matches its old pages.
                         if (action.chapter.bookPages != null) bookUseCase.invalidateChapter(action.chapter.data.id)
-                        true
+                        false
                     }
+
+                    is NarrativeAction.CreateChapter,
+                    is NarrativeAction.GenerateChapterIntro,
+                    -> true
 
                     else -> false
                 }
