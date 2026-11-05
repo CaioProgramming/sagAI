@@ -602,6 +602,7 @@ fun DesignSystemPreviewView(
         visible = showRewardsPreview,
         onFinish = { showRewardsPreview = false },
         onOpenCharacter = {},
+        onAddWidget = {},
     )
 
     if (showVoicePicker) {

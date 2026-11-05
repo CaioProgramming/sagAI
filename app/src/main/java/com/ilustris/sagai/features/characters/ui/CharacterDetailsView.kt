@@ -129,6 +129,7 @@ import com.ilustris.sagai.ui.theme.shimmerize
 @Composable
 fun CharacterDetailsView(
     characterId: Int? = null,
+    openWidgetCreator: Boolean = false,
     onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     onOpenEpilogueChat: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
@@ -151,6 +152,9 @@ fun CharacterDetailsView(
         onDispose { viewModel.onCharacterScreenHidden() }
     }
 
+    // Asked once: a later re-emission of the data must not reopen the creator the player already closed.
+    var creatorRequested by remember(characterId) { mutableStateOf(openWidgetCreator) }
+
     SagAITheme(genre = genre) {
         AnimatedContent(detailData, transitionSpec = {
             fadeIn() togetherWith fadeOut()
@@ -158,6 +162,8 @@ fun CharacterDetailsView(
             if (it != null) {
                 CharacterDetailsContent(
                     it,
+                    openWidgetCreator = creatorRequested,
+                    onWidgetCreatorHandled = { creatorRequested = false },
                     onBack = onBack,
                     onOpenCharacterBrain = onOpenCharacterBrain,
                     onOpenEpilogueChat = onOpenEpilogueChat,
@@ -176,6 +182,8 @@ fun CharacterDetailsView(
 @Composable
 fun CharacterDetailsContent(
     detailData: CharacterDetailData,
+    openWidgetCreator: Boolean = false,
+    onWidgetCreatorHandled: () -> Unit = {},
     onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     onOpenEpilogueChat: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
@@ -188,6 +196,8 @@ fun CharacterDetailsContent(
 
     CharacterDetailsLoaded(
         detailData = detailData,
+        openWidgetCreator = openWidgetCreator,
+        onWidgetCreatorHandled = onWidgetCreatorHandled,
         openEvent = openEvent,
         onBack = onBack,
         onOpenCharacterBrain = onOpenCharacterBrain,
@@ -215,6 +225,8 @@ fun CharacterDetailsContent(
 @Composable
 private fun CharacterDetailsLoaded(
     detailData: CharacterDetailData,
+    openWidgetCreator: Boolean,
+    onWidgetCreatorHandled: () -> Unit,
     viewModel: CharacterDetailsViewModel,
     onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
@@ -243,7 +255,8 @@ private fun CharacterDetailsLoaded(
         var honorSheet by remember { mutableStateOf<Pair<List<CharacterHonor>, Int>?>(null) }
         val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
         var showCharacterShare by remember { mutableStateOf(false) }
-        var showWidgetCreator by remember { mutableStateOf(false) }
+        var showWidgetCreator by remember { mutableStateOf(openWidgetCreator) }
+        LaunchedEffect(Unit) { if (openWidgetCreator) onWidgetCreatorHandled() }
 
         // Lite wrapper to satisfy legacy components that still need SagaContent
         val liteSagaContent =

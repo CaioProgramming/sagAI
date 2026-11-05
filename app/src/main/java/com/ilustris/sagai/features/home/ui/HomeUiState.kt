@@ -3,6 +3,8 @@ package com.ilustris.sagai.features.home.ui
 import androidx.compose.runtime.Immutable
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.SagaSummary
+import com.ilustris.sagai.features.widgets.domain.WidgetInviteEnv
+import com.ilustris.sagai.features.widgets.domain.WidgetInvitePolicy
 
 sealed interface HomeScreen {
     data object Splash : HomeScreen
@@ -24,7 +26,14 @@ data class HomeUiState(
     val lastBackupAt: Long? = null,
     val isLoading: Boolean = false,
     val loadingMessage: String? = null,
+    val widgetEnv: WidgetInviteEnv = WidgetInviteEnv(),
 ) {
+    /** The small "add a widget" card. Not while the premium guide or the loader owns the screen. */
+    val showWidgetInvite: Boolean
+        get() =
+            screen == HomeScreen.Content &&
+                WidgetInvitePolicy.showHomeCard(activeSagas.size, widgetEnv, showPremiumOnboarding || isLoading)
+
     val isLoadingDynamicPrompts: Boolean
         get() = dynamicNewSagaTexts == null
 }

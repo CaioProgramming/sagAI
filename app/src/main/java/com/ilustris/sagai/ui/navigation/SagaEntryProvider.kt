@@ -258,6 +258,7 @@ fun createSagaEntryProvider(
     entry<CharacterDetailKey> { key ->
         CharacterDetailsView(
             characterId = key.characterId,
+            openWidgetCreator = key.openWidgetCreator,
             onBack = { navigator.goBack() },
             onOpenCharacterBrain = { sagaId, characterId ->
                 navigator.navigate(CharacterBrainKey(sagaId.toString(), characterId))

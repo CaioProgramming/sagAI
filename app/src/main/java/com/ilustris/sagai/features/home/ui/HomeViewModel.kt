@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.database.backup.SagasArchiveService
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.utils.StringResourceHelper
+import com.ilustris.sagai.features.widgets.data.WidgetInvites
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -43,6 +44,7 @@ class HomeViewModel
         private val archiveService: SagasArchiveService,
         private val stringResourceHelper: StringResourceHelper,
         private val appLifecycleManager: AppLifecycleManager,
+        private val widgetInvites: WidgetInvites,
         private val _userIdentityUseCase: com.ilustris.sagai.features.player.domain.UserIdentityUseCase,
     ) : ViewModel() {
         private val stateManager = HomeStateManager()
@@ -70,6 +72,7 @@ class HomeViewModel
             observeVisibleSagas()
             observePremiumState()
             observeLastBackup()
+            viewModelScope.launch { refreshWidgetEnv() }
         }
 
         private fun observeLastBackup() {
@@ -102,8 +105,21 @@ class HomeViewModel
                 HomeUiAction.OpenPremium -> stateManager.setShowPremiumOnboarding(true)
                 HomeUiAction.DismissPremiumOnboarding -> stateManager.setShowPremiumOnboarding(false)
                 HomeUiAction.CreateFakeSaga -> createFakeSaga()
+                HomeUiAction.AddWidget ->
+                    viewModelScope.launch {
+                        widgetInvites.pinStories()
+                        refreshWidgetEnv()
+                    }
+                HomeUiAction.DismissWidgetInvite ->
+                    viewModelScope.launch {
+                        widgetInvites.dismiss()
+                        refreshWidgetEnv()
+                    }
+                HomeUiAction.RefreshWidgetInvite -> viewModelScope.launch { refreshWidgetEnv() }
             }
         }
+
+        private suspend fun refreshWidgetEnv() = stateManager.setWidgetEnv(widgetInvites.env())
 
         private fun onCreateNewSaga() {
             // No cap any more. Three active sagas was a limit on our own inference bill, and that

@@ -82,6 +82,8 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.progression.domain.CharacterRewards
 import com.ilustris.sagai.features.progression.domain.CharacterRewardsService
 import com.ilustris.sagai.features.progression.domain.RewardStep
+import com.ilustris.sagai.features.widgets.data.WidgetInvites
+import com.ilustris.sagai.features.widgets.domain.WidgetInvitePolicy
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.gradient
 import kotlinx.coroutines.delay
@@ -100,6 +102,8 @@ fun CharacterRewardsHost(
     navigationTracker: SagaNavigationTracker,
     blocked: Boolean,
     onOpenCharacter: (Int) -> Unit,
+    widgetInvites: WidgetInvites,
+    onAddWidget: (Int) -> Unit,
 ) {
     val rewards by service.pending.collectAsState()
     val key by navigationTracker.currentKey.collectAsState()
@@ -112,8 +116,18 @@ fun CharacterRewardsHost(
     val visible = pending != null && !blocked && key.belongsToSagaFlow(pending.sagaId, pending.characters.keys)
     LaunchedEffect(visible) { if (visible) service.markStarted() }
 
+    // Read when the flow opens, so the link on the last page is ready by the time the player gets there.
+    var widgetLink by remember { mutableStateOf(false) }
+    LaunchedEffect(visible) { if (visible) widgetLink = WidgetInvitePolicy.showRewardsLink(widgetInvites.env()) }
+
     val current = shown ?: return
-    RewardsOverlay(current, visible, onFinish = service::finish, onOpenCharacter = onOpenCharacter)
+    RewardsOverlay(
+        current,
+        visible,
+        onFinish = service::finish,
+        onOpenCharacter = onOpenCharacter,
+        onAddWidget = onAddWidget.takeIf { widgetLink },
+    )
 }
 
 /** Scrim and sheet for one flow. Shared by the host and the design-system preview, which has no service behind it. */
@@ -123,6 +137,8 @@ fun RewardsOverlay(
     visible: Boolean,
     onFinish: () -> Unit,
     onOpenCharacter: (Int) -> Unit,
+    /** Offered on the last page for one character; null keeps it out. */
+    onAddWidget: ((Int) -> Unit)? = null,
 ) {
     var index by remember(current) { mutableIntStateOf(0) }
     val steps = current.steps
@@ -162,6 +178,13 @@ fun RewardsOverlay(
                             onFinish()
                             onOpenCharacter(id)
                         },
+                        onAddWidget =
+                            onAddWidget?.let { add ->
+                                { id ->
+                                    onFinish()
+                                    add(id)
+                                }
+                            },
                     )
                 }
             }
@@ -178,6 +201,7 @@ private fun RewardsSheet(
     onContinue: () -> Unit,
     onClose: () -> Unit,
     onOpenCharacter: (Int) -> Unit,
+    onAddWidget: ((Int) -> Unit)?,
 ) {
     val genre = rewards.genre
     val steps = rewards.steps
@@ -245,6 +269,18 @@ private fun RewardsSheet(
         ) {
             TextButton(onClick = onClose) {
                 Text(stringResource(R.string.progression_rewards_skip), color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f))
+            }
+        }
+        val widgetTarget = if (last && onAddWidget != null) step.widgetCharacter(rewards) else null
+        if (widgetTarget != null && onAddWidget != null) {
+            TextButton(
+                onClick = { onAddWidget(widgetTarget.id) },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            ) {
+                Text(
+                    stringResource(R.string.widget_invite_rewards_link, widgetTarget.name),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f),
+                )
             }
         }
     }
@@ -539,4 +575,17 @@ private fun FeatLine(
         Text(title, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
         Text(stringResource(R.string.character_card_xp_chip, xp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
     }
+}
+
+/** The one character the closing page is about, for the widget link. A summary of several picks its first row. */
+private fun RewardStep.widgetCharacter(rewards: CharacterRewards): Character? {
+    val id =
+        when (this) {
+            is RewardStep.LevelUp -> characterId
+            is RewardStep.Medal -> characterId
+            is RewardStep.Legacy -> characterId
+            is RewardStep.Relationship -> characterOneId
+            is RewardStep.Summary -> rows.firstOrNull()?.characterId
+        }
+    return id?.let { rewards.characters[it] }
 }

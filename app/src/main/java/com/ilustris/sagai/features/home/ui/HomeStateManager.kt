@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.home.ui
 
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.SagaSummary
+import com.ilustris.sagai.features.widgets.domain.WidgetInviteEnv
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,6 +44,10 @@ class HomeStateManager {
 
     fun setShowPremiumOnboarding(show: Boolean) {
         _uiState.update { it.copy(showPremiumOnboarding = show) }
+    }
+
+    fun setWidgetEnv(env: WidgetInviteEnv) {
+        _uiState.update { it.copy(widgetEnv = env) }
     }
 
     fun setLastBackupAt(timestamp: Long) {

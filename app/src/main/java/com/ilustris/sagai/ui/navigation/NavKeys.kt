@@ -96,6 +96,8 @@ data class CharacterBrainKey(
 @Serializable
 data class CharacterDetailKey(
     val characterId: Int,
+    /** Opens the widget creator over the screen, for the invite on the rewards sheet. */
+    val openWidgetCreator: Boolean = false,
 ) : NavKey
 
 @Serializable
@@ -257,6 +259,10 @@ fun String.findNavKey(): NavKey? {
             } else {
                 null
             }
+        }
+
+        this.startsWith("saga://character_widget/") -> {
+            CharacterDetailKey(this.removePrefix("saga://character_widget/").toIntOrNull() ?: 0, openWidgetCreator = true)
         }
 
         this.startsWith("saga://saga_chapters/") -> {
