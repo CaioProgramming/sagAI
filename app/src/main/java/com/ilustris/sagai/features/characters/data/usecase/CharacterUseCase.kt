@@ -33,6 +33,16 @@ interface CharacterUseCase {
         description: String,
     ): Character
 
+    /**
+     * The same audit as [reviewCharacterDesign], but a failure comes back as a failed result instead of the
+     * untouched sheet, so a screen that asked for the review can tell "passed" from "could not run".
+     */
+    suspend fun requestCharacterDesignReview(
+        sagaContent: SagaContent,
+        character: Character,
+        description: String,
+    ): RequestResult<Character>
+
     suspend fun updateCharacter(character: Character): Character
 
     suspend fun deleteCharacter(characterId: Int)

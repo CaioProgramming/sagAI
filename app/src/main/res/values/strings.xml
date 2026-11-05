@@ -1380,4 +1380,23 @@
     <string name="widget_stories_empty">Start a saga and it will show up here.</string>
     <string name="widget_continue">Continue</string>
     <string name="widget_resize_hint">You can resize it on the home screen.</string>
+    <string name="character_design_review_menu">Review design</string>
+    <string name="character_design_review_title">Design review</string>
+    <string name="character_design_review_running">Reviewing the look against the rest of the cast…</string>
+    <string name="character_design_review_proposal">The review suggests these changes. Nothing is saved until you apply them.</string>
+    <string name="character_design_review_apply_redraw">Apply and redraw the art</string>
+    <string name="character_design_review_apply">Apply</string>
+    <string name="character_design_review_discard">Discard</string>
+    <string name="character_design_review_passed">This design stands out on its own. Nothing to change.</string>
+    <string name="character_design_review_failed">The review could not run right now. Try again in a moment.</string>
+    <string name="character_design_field_hair">Hair</string>
+    <string name="character_design_field_eyes">Eyes</string>
+    <string name="character_design_field_mouth">Mouth</string>
+    <string name="character_design_field_marks">Distinctive marks</string>
+    <string name="character_design_field_features">Distinguishing features</string>
+    <string name="character_design_field_build">Build and posture</string>
+    <string name="character_design_field_outfit">Outfit</string>
+    <string name="character_design_field_accessories">Accessories</string>
+    <string name="character_design_field_personality">Personality</string>
+    <string name="character_design_field_artwork">Artwork</string>
 </resources>

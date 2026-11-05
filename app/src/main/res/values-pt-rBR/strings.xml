@@ -1368,4 +1368,23 @@
     <string name="widget_stories_empty">Comece uma saga e ela aparece aqui.</string>
     <string name="widget_continue">Continuar</string>
     <string name="widget_resize_hint">Você pode redimensionar na tela inicial.</string>
+    <string name="character_design_review_menu">Avaliar design</string>
+    <string name="character_design_review_title">Avaliação do design</string>
+    <string name="character_design_review_running">Comparando o visual com o resto do elenco…</string>
+    <string name="character_design_review_proposal">A avaliação sugere estas mudanças. Nada é salvo até você aplicar.</string>
+    <string name="character_design_review_apply_redraw">Aplicar e redesenhar a arte</string>
+    <string name="character_design_review_apply">Aplicar</string>
+    <string name="character_design_review_discard">Descartar</string>
+    <string name="character_design_review_passed">Esse design se destaca por conta própria. Nada a mudar.</string>
+    <string name="character_design_review_failed">Não foi possível avaliar agora. Tente de novo daqui a pouco.</string>
+    <string name="character_design_field_hair">Cabelo</string>
+    <string name="character_design_field_eyes">Olhos</string>
+    <string name="character_design_field_mouth">Boca</string>
+    <string name="character_design_field_marks">Marcas distintivas</string>
+    <string name="character_design_field_features">Traços marcantes</string>
+    <string name="character_design_field_build">Porte e postura</string>
+    <string name="character_design_field_outfit">Roupa</string>
+    <string name="character_design_field_accessories">Acessórios</string>
+    <string name="character_design_field_personality">Personalidade</string>
+    <string name="character_design_field_artwork">Arte</string>
 </resources>

@@ -272,6 +272,16 @@ class CharacterUseCaseImpl
             character: Character,
             description: String,
         ): Character =
+            requestCharacterDesignReview(sagaContent, character, description)
+                .onFailure {
+                    Timber.w(it, "reviewCharacterDesign: keeping the sheet as generated for ${character.name}")
+                }.getSuccess() ?: character
+
+        override suspend fun requestCharacterDesignReview(
+            sagaContent: SagaContent,
+            character: Character,
+            description: String,
+        ): RequestResult<Character> =
             executeRequest(reportCrash = false) {
                 val genre = sagaContent.data.genre
                 val review =
@@ -285,9 +295,7 @@ class CharacterUseCaseImpl
                     )!!
                 Timber.d("reviewCharacterDesign: ${character.name} -> ${review.rationale}")
                 character.withDesignReview(review)
-            }.onFailure {
-                Timber.w(it, "reviewCharacterDesign: keeping the sheet as generated for ${character.name}")
-            }.getSuccess() ?: character
+            }
 
         private fun assertCharacterNotAlreadyInSaga(
             sagaContent: SagaContent,
