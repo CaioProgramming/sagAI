@@ -11,6 +11,9 @@ import com.ilustris.sagai.features.characters.data.model.Clothing
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.data.model.FacialFeatures
 import com.ilustris.sagai.features.characters.data.model.PhysicalTraits
+import com.ilustris.sagai.features.progression.domain.CharacterRewards
+import com.ilustris.sagai.features.progression.domain.RewardStep
+import com.ilustris.sagai.features.progression.domain.SummaryRow
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
@@ -106,6 +109,31 @@ object DesignSystemMocks {
             data = Timeline(id = 1, chapterId = 1),
             messages = emptyList(),
         )
+
+    /** One of each page the rewards flow can show, over two mock characters, so the sheet can be judged without earning anything. */
+    fun mockCharacterRewards(genre: Genre): CharacterRewards {
+        val bianca = mockCharacter(1, "Bianca")
+        val tereza = mockCharacter(2, "Tereza")
+        val steps =
+            listOf(
+                RewardStep.LevelUp(1, from = 21, to = 23, featTitle = "The Mansion Escape", xp = 78, explainer = true),
+                RewardStep.Medal(1, honorId = 1, name = "Cold Nerves", emoji = "🧊", detail = "Kept her composure when the lights went out."),
+                RewardStep.Legacy(1, honorId = 2, name = "The Quiet Blade", detail = "She turned every escape into a lesson.", memorial = false),
+                RewardStep.Relationship(1, 2, relationId = 1, title = "Partners in crime", emoji = "🤝", description = "They now trust each other with their lives."),
+                RewardStep.Summary(
+                    listOf(
+                        SummaryRow(1, level = 23, medals = 1, legacies = 1, relationships = 1),
+                        SummaryRow(2, level = 12, medals = 0, legacies = 0, relationships = 1),
+                    ),
+                ),
+            )
+        return CharacterRewards(
+            saga = mockSaga(genre),
+            characters = mapOf(1 to bianca, 2 to tereza),
+            steps = steps,
+            onSeen = {},
+        )
+    }
 
     fun mockSagaContent(genre: Genre) = SagaContent(data = mockSaga(genre))
 

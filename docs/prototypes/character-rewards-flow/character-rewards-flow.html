@@ -1,0 +1,137 @@
+<title>Character Rewards Flow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root{--bg:#f3f1f4;--fg:#1b1820;--mut:#6b6573;--line:#d9d4de;--card:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121016;--fg:#ece9f0;--mut:#9a93a4;--line:#2a2531;--card:#1b1820;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121016;--fg:#ece9f0;--mut:#9a93a4;--line:#2a2531;--card:#1b1820;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif;margin:0;padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:900px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;align-items:start}
+@media(max-width:760px){.wrap{grid-template-columns:minmax(0,1fr)}}
+h1{font-size:22px;margin:0 0 4px}
+p.sub{color:var(--mut);margin:0 0 16px;max-width:60ch}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--fg);padding:6px 11px;border-radius:99px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed=true]{border-color:var(--g);box-shadow:inset 0 0 0 1px var(--g)}
+.notes{display:grid;gap:10px;margin-top:18px}
+.notes div{border-top:1px solid var(--line);padding-top:8px}
+.notes b{display:block;font-size:13px}
+.notes span{color:var(--mut);font-size:13px}
+.queue{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0;padding:0;list-style:none}
+.queue li{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:3px 7px;color:var(--mut)}
+.queue li.on{color:var(--fg);border-color:var(--g)}
+button.replay{margin-top:10px;font:inherit;font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
+/* phone */
+.phone{width:340px;max-width:100%;height:680px;border-radius:34px;border:8px solid #000;background:#000;position:relative;overflow:hidden;margin:0 auto;--p:#8B2635;--g1:#D44D63;--g2:#FFD166;--bg0:#1A0810;--r:10px}
+.chat{position:absolute;inset:0;background:linear-gradient(#0c0c10,#16161c);padding:44px 14px;display:flex;flex-direction:column;gap:10px}
+.bub{max-width:78%;padding:9px 12px;border-radius:14px;background:#262630;color:#cfcfd8;font-size:13px}
+.bub.me{align-self:flex-end;background:#3a3a48}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:120px;height:26px;border-radius:99px;background:#000;z-index:5;transition:.3s}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:.3s;z-index:6}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:34px;z-index:7;border-radius:calc(var(--r) + 14px) calc(var(--r) + 14px) 0 0;background:radial-gradient(120% 60% at 50% 0%,color-mix(in srgb,var(--p) 55%,var(--bg0)),var(--bg0) 70%);color:#fff;transform:translateY(105%);transition:transform .45s cubic-bezier(.2,.9,.2,1);display:flex;flex-direction:column;padding:14px 20px 22px}
+.open .sheet{transform:none}.open .scrim{opacity:1;pointer-events:auto}
+.dots{display:flex;gap:4px}
+.dots i{flex:1;height:5px;border-radius:9px;background:rgba(255,255,255,.2);overflow:hidden}
+.dots i.done{background:var(--g1)}
+.dots i.cur{background:linear-gradient(90deg,var(--g1),var(--g2))}
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;min-height:0}
+.step{display:none;flex-direction:column;align-items:center;gap:10px;width:100%}
+.step.show{display:flex;animation:in .5s cubic-bezier(.2,.9,.2,1)}
+@keyframes in{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:none}}
+.pair{display:flex;align-items:center;position:relative}.pair .av{width:104px;height:104px;font-size:40px}.pair .av+.av{margin-left:-18px}.heart{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-style:normal;font-size:24px;background:#1a1a20;border-radius:50%;padding:8px;animation:in .6s .3s both}
+.av{width:128px;height:128px;border-radius:50%;display:grid;place-items:center;font-size:48px;font-weight:700;border:2px solid var(--g1);background:rgba(255,255,255,.08)}
+.who{font-size:15px;opacity:.9}
+.lvl{font-size:56px;font-weight:800;line-height:1;background:linear-gradient(var(--g2),var(--g1));-webkit-background-clip:text;background-clip:text;color:transparent;padding:6px 10px}
+.lvl.pop{animation:pop .7s .15s both cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+.from{font-size:13px;opacity:.7}
+.cap{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.feat{background:rgba(255,255,255,.08);border-radius:var(--r);padding:8px 12px;font-size:13px;display:flex;gap:10px;justify-content:space-between;width:100%;text-align:left}
+.feat b{color:var(--g2);white-space:nowrap}
+.coin{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;font-size:36px;background:radial-gradient(circle at 35% 30%,var(--g2),var(--p) 70%);box-shadow:0 0 0 4px rgba(255,255,255,.12),0 0 40px var(--g1);animation:spin .9s cubic-bezier(.2,.9,.2,1) both}
+@keyframes spin{from{transform:rotateY(-240deg) scale(.4);opacity:0}to{transform:none;opacity:1}}
+.badge{width:72px;height:84px;background:linear-gradient(160deg,var(--g2),var(--g1),var(--p));clip-path:polygon(50% 0,100% 18%,100% 62%,50% 100%,0 62%,0 18%);display:grid;place-items:center;font-size:30px;animation:float 3s ease-in-out infinite,in .6s both}
+@keyframes float{50%{transform:translateY(-6px)}}
+.title{font-size:22px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;background:linear-gradient(var(--g2),var(--g1));-webkit-background-clip:text;background-clip:text;color:transparent;padding:4px 6px}
+.why{font-size:13px;opacity:.85;font-style:italic;max-width:26ch}
+.final{display:flex;flex-direction:column;gap:6px;width:100%}
+.final .row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);border-radius:var(--r);padding:8px 10px;text-align:left;font-size:13px}
+.final .row{cursor:pointer}
+.final .row .av{width:40px;height:40px;font-size:16px;border-width:1px}
+.final .row span{margin-left:auto;opacity:.85;font-size:12px}
+.btns{display:flex;flex-direction:column;gap:6px}
+.go{border:0;border-radius:var(--r);padding:13px;font:inherit;font-weight:700;background:var(--p);color:#fff;cursor:pointer;box-shadow:0 4px 0 color-mix(in srgb,var(--p) 55%,#000);border:1px solid rgba(255,255,255,.2)}
+.go:active{transform:translateY(3px);box-shadow:none}
+.ghost{background:none;border:0;color:#fff;opacity:.65;font:inherit;font-size:13px;padding:6px;cursor:pointer}
+.islandnote{position:absolute;bottom:14px;left:14px;right:14px;z-index:4;font-size:11px;color:#8a8a96;text-align:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<div class="wrap">
+<div>
+  <h1>Character rewards flow</h1>
+  <p class="sub">Replaces the top island for character level-ups, medals and legacies. Everything earned since the last time the player was here opens as one full sheet, one step per achievement, grouped by character.</p>
+  <div class="chips" id="chips" role="group" aria-label="Genre"></div>
+  <div>Queue built for this example</div>
+  <ul class="queue" id="queue"></ul>
+  <button class="replay" id="replay">Replay the flow</button>
+  <div class="notes">
+    <div><b>When it opens</b><span>On the chat or home screen, after a milestone has closed and no image or book generation is running. In the background nothing is marked as told.</span></div>
+    <div><b>Order</b><span>Highest level first. Per character: level, then medals, then legacy, then new bonds with other characters. The character avatar is always the largest element. One step per achievement, no row cap.</span></div>
+    <div><b>Marked as told</b><span>Only when the player reaches the last step or closes the sheet. If the app dies midway, the whole queue comes back.</span></div>
+    <div><b>Island</b><span>No longer used for these events. Tap the island preview in the phone to see what it does today is gone.</span></div>
+  </div>
+  <p class="sub" style="margin-top:16px;font-size:12px">Colors and corner radius are the real Remote Config values (snapshot v1113). Genre fonts are not embedded here, so titles use a system face.</p>
+</div>
+<div class="phone" id="phone">
+  <div class="island"></div>
+  <div class="chat" aria-hidden="true">
+    <div class="bub">Tereza lowers the lantern. “Say it again, slowly.”</div>
+    <div class="bub me">The bridge was never meant to hold us both.</div>
+    <div class="bub">Bruno laughs, but nobody follows.</div>
+  </div>
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" role="dialog" aria-label="Character rewards" id="sheet">
+    <div class="dots" id="dots"></div>
+    <div class="stage" id="stage"></div>
+    <div class="btns"><button class="go" id="next">Continue</button><button class="ghost" id="skip">Skip</button></div>
+  </div>
+</div>
+</div>
+<script>
+var G={fantasy:{n:"Fantasy",p:"#8B2635",pal:["#D44D63","#FFD166"],bg:"#1A0810",r:10},
+crime:{n:"Crime",p:"#E91E63",pal:["#FF6B9D","#7FFFEE"],bg:"#1A0F2E",r:25},
+cyberpunk:{n:"Cyberpunk",p:"#6E48AA",pal:["#00F5FF","#FF2EFF"],bg:"#0A0420",r:10},
+shinobi:{n:"Shinobi",p:"#8B0000",pal:["#7A336B","#F39237"],bg:"#431C3A",r:0},
+heroes:{n:"Heroes",p:"#2845D6",pal:["#00D9FF","#FDC500"],bg:"#0D1A63",r:4},
+punk:{n:"Punk Rock",p:"#729656",pal:["#00E676","#FF7E00"],bg:"#1A1F2A",r:2}};
+var STEPS=[
+{t:"lvl",who:"Tereza",from:2,to:3,feat:"Crossed the burning bridge",xp:120},
+{t:"medal",who:"Tereza",emoji:"🛡️",name:"Held the line",why:"She covered the villagers' escape alone."},
+{t:"legacy",who:"Tereza",name:"The Lantern Bearer",why:"Remembered for lighting the way when all else failed."},
+{t:"lvl",who:"Bruno",from:4,to:5,feat:"Won the council's trust",xp:90},
+{t:"bond",a:"Bruno",b:"Tereza",emoji:"🤝",name:"Uneasy allies",why:"They crossed the bridge together and neither forgot it."},
+{t:"sum"}];
+var cur=0,gk="fantasy",ph=document.getElementById("phone");
+function theme(){var g=G[gk];ph.style.setProperty("--p",g.p);ph.style.setProperty("--g1",g.pal[0]);ph.style.setProperty("--g2",g.pal[1]);ph.style.setProperty("--bg0",g.bg);ph.style.setProperty("--r",g.r+"px");document.getElementById("chips").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.k===gk);b.style.setProperty("--g",G[b.dataset.k].p)})}
+function av(n){return '<div class="av">'+n[0]+'</div>'}
+function render(){var d=document.getElementById("dots");d.innerHTML=STEPS.map(function(_,i){return '<i class="'+(i<cur?'done':i==cur?'cur':'')+'"></i>'}).join("");
+var s=STEPS[cur],h="";
+if(s.t=="lvl")h=av(s.who)+'<div class="who">'+s.who+'</div><div class="cap">Level up</div><div class="lvl pop">'+s.to+'</div><div class="from">LV '+s.from+' → LV '+s.to+'</div><div class="feat"><span>'+s.feat+'</span><b>+'+s.xp+' XP</b></div>';
+if(s.t=="medal")h=av(s.who)+'<div class="who">'+s.who+'</div><div class="cap">New medal</div><div class="coin">'+s.emoji+'</div><div class="title">'+s.name+'</div><div class="why">'+s.why+'</div>';
+if(s.t=="legacy")h=av(s.who)+'<div class="who">'+s.who+'</div><div class="cap">Legacy earned</div><div class="badge">✦</div><div class="title">'+s.name+'</div><div class="why">'+s.why+'</div>';
+if(s.t=="bond")h='<div class="pair">'+av(s.a)+av(s.b)+'<i class="heart">'+s.emoji+'</i></div><div class="who">'+s.a+' & '+s.b+'</div><div class="cap">New bond</div><div class="title">'+s.name+'</div><div class="why">'+s.why+'</div>';
+if(s.t=="sum")h='<div class="cap">All caught up</div><div class="final"><div class="row" role="button" tabindex="0">'+av("Tereza")+'Tereza<span>LV 3 · 1 medal · 1 legacy ›</span></div><div class="row" role="button" tabindex="0">'+av("Bruno")+'Bruno<span>LV 5 · 1 bond ›</span></div></div><div class="from">Tap a character to open their sheet</div>';
+var st=document.getElementById("stage");st.innerHTML='<div class="step show">'+h+'</div>';
+document.getElementById("next").textContent=s.t=="sum"?"Done":"Continue";
+document.getElementById("skip").hidden=s.t=="sum";
+document.getElementById("skip").textContent="Skip";
+document.getElementById("queue").innerHTML=STEPS.slice(0,5).map(function(x,i){var l=x.t=="lvl"?x.who+" LV "+x.to:x.t=="medal"?x.who+" medal":x.t=="bond"?x.a+" & "+x.b:x.who+" legacy";return '<li class="'+(i==cur?'on':'')+'" style="--g:'+G[gk].p+'">'+l+'</li>'}).join("")}
+function open_(){cur=0;render();ph.classList.add("open")}
+function close_(){ph.classList.remove("open")}
+document.getElementById("next").onclick=function(){if(cur>=STEPS.length-1)return close_();cur++;render()};
+document.getElementById("skip").onclick=close_;
+document.getElementById("scrim").onclick=close_;
+document.getElementById("replay").onclick=open_;
+var c=document.getElementById("chips");Object.keys(G).forEach(function(k){var b=document.createElement("button");b.className="chip";b.dataset.k=k;b.textContent=G[k].n;b.onclick=function(){gk=k;theme();if(!ph.classList.contains("open"))open_();else render()};c.appendChild(b)});
+theme();setTimeout(open_,300);
+</script>

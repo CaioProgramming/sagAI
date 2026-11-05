@@ -1284,6 +1284,22 @@
     <string name="archive_reminder_action">Fazer backup</string>
     <string name="home_last_backup">Último backup: %1$s</string>
     <string name="home_last_backup_never">Você ainda não fez backup das suas sagas. Toque para fazer.</string>
+    <string name="progression_rewards_continue">Continuar</string>
+    <string name="progression_rewards_skip">Pular</string>
+    <string name="progression_rewards_done">Concluir</string>
+    <string name="progression_rewards_caught_up">Tudo em dia</string>
+    <string name="progression_rewards_open_hint">Toque em um personagem para abrir a ficha</string>
+    <string name="progression_new_medal">Nova medalha</string>
+    <string name="progression_new_bond">Novo vínculo</string>
+    <string name="progression_level_change">LV %1$d → LV %2$d</string>
+    <plurals name="progression_summary_medals">
+        <item quantity="one">%1$d medalha</item>
+        <item quantity="other">%1$d medalhas</item>
+    </plurals>
+    <plurals name="progression_summary_bonds">
+        <item quantity="one">%1$d vínculo</item>
+        <item quantity="other">%1$d vínculos</item>
+    </plurals>
     <string name="progression_new_level">Novo nível</string>
     <string name="progression_level_up_caption">subiu de nível</string>
     <string name="progression_medal_single">%1$s · nova medalha</string>
@@ -1294,7 +1310,7 @@
     <string name="progression_legacies_gained">Legados conquistados</string>
     <string name="progression_chapter_short">Cap. %1$d</string>
     <string name="progression_act_short">Ato %1$d</string>
-    <string name="progression_explainer">Cada personagem tem um nível que cresce com o que ele vive: vínculos, riscos, perdas e escolhas, não só lutas. Medalhas marcam os feitos de um capítulo e o legado marca quem mudou um ato. Toque em Ver mais para ler o que rendeu cada ponto. Dá para esconder tudo isso em Configurações.</string>
+    <string name="progression_explainer">Cada personagem tem um nível que cresce com o que ele vive: vínculos, riscos, perdas e escolhas, não só lutas. Medalhas marcam os feitos de um capítulo e o legado marca quem mudou um ato. Toque em um personagem no final para ler o que rendeu cada ponto. Dá para esconder tudo isso em Configurações.</string>
 
     <!-- Widgets da tela inicial -->
     <string name="widget_continue_name">Continuar saga</string>
