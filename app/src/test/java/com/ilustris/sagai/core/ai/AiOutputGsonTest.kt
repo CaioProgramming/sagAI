@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai
 
 import com.google.gson.JsonSyntaxException
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -62,5 +63,28 @@ class AiOutputGsonTest {
         val json = """{"reasoning":"r","data":{"tensionLevel":"9.5"}}"""
         val result = parseAIGenerationFromJson<SceneSummary>(aiOutputGson, json)
         assertEquals(10, result.data?.tensionLevel)
+    }
+
+    private val generatedNumbers =
+        com.google.gson.reflect.TypeToken
+            .getParameterized(GeneratedContent::class.java, Numbers::class.java)
+            .type
+
+    @Test
+    fun `a nested GeneratedContent envelope parses`() {
+        val json = """{"data":{"data":{"label":"Helena"},"finalMessage":"msg"}}"""
+        val result = parseAIGenerationFromJson<GeneratedContent<Numbers>>(aiOutputGson, json, generatedNumbers)
+        assertEquals("Helena", result.data?.data?.label)
+        assertEquals("msg", result.data?.finalMessage)
+    }
+
+    @Test
+    fun `a GeneratedContent flattened into the root still parses`() {
+        // The real failure: the model returned the character straight under "data" with
+        // "finalMessage" beside it, leaving GeneratedContent.data null.
+        val json = """{"data":{"label":"Helena"},"finalMessage":"msg"}"""
+        val result = parseAIGenerationFromJson<GeneratedContent<Numbers>>(aiOutputGson, json, generatedNumbers)
+        assertEquals("Helena", result.data?.data?.label)
+        assertEquals("msg", result.data?.finalMessage)
     }
 }
