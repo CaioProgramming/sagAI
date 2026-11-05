@@ -40,8 +40,6 @@ data class ProgressionConfig(
     val maxMedalsPerChapter: Int = 5,
     @SerializedName("MAX_TITLES_PER_ACT")
     val maxTitlesPerAct: Int = 2,
-    @SerializedName("LEVEL_UP_ROWS_MAX")
-    val levelUpRowsMax: Int = 4,
     @SerializedName("LEVEL_BANDS")
     val levelBands: List<LevelBand> = emptyList(),
     @SerializedName("POWER_GAP_BANDS")

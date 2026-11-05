@@ -1244,7 +1244,6 @@
     <string name="progression_messages">Mensagens</string>
     <string name="progression_xp_progress">%1$d / %2$d XP para o próximo nível</string>
     <string name="progression_xp_max">Nível máximo</string>
-    <string name="progression_see_more_action">Ver mais</string>
     <string name="progression_feat_log_title">Registro de feitos</string>
     <string name="progression_legacy_title">Legado</string>
     <string name="progression_skills_title">Habilidades</string>
@@ -1301,13 +1300,8 @@
         <item quantity="other">%1$d vínculos</item>
     </plurals>
     <string name="progression_new_level">Novo nível</string>
-    <string name="progression_level_up_caption">subiu de nível</string>
-    <string name="progression_medal_single">%1$s · nova medalha</string>
-    <string name="progression_medals_n">%1$s · %2$d medalhas</string>
-    <string name="progression_medals_gained">Medalhas conquistadas</string>
     <string name="progression_legacy_single">%1$s · legado</string>
     <string name="progression_legacy_gained">Legado conquistado</string>
-    <string name="progression_legacies_gained">Legados conquistados</string>
     <string name="progression_chapter_short">Cap. %1$d</string>
     <string name="progression_act_short">Ato %1$d</string>
     <string name="progression_explainer">Cada personagem tem um nível que cresce com o que ele vive: vínculos, riscos, perdas e escolhas, não só lutas. Medalhas marcam os feitos de um capítulo e o legado marca quem mudou um ato. Toque em um personagem no final para ler o que rendeu cada ponto. Dá para esconder tudo isso em Configurações.</string>

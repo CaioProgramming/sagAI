@@ -1256,7 +1256,6 @@
     <string name="progression_messages">Messages</string>
     <string name="progression_xp_progress">%1$d / %2$d XP to the next level</string>
     <string name="progression_xp_max">Maximum level</string>
-    <string name="progression_see_more_action">See more</string>
     <string name="progression_feat_log_title">Feat log</string>
     <string name="progression_legacy_title">Legacy</string>
     <string name="progression_skills_title">Skills</string>
@@ -1313,13 +1312,8 @@
         <item quantity="other">%1$d bonds</item>
     </plurals>
     <string name="progression_new_level">New level</string>
-    <string name="progression_level_up_caption">leveled up</string>
-    <string name="progression_medal_single">%1$s · new medal</string>
-    <string name="progression_medals_n">%1$s · %2$d medals</string>
-    <string name="progression_medals_gained">Medals earned</string>
     <string name="progression_legacy_single">%1$s · legacy</string>
     <string name="progression_legacy_gained">Legacy earned</string>
-    <string name="progression_legacies_gained">Legacies earned</string>
     <string name="progression_chapter_short">Ch. %1$d</string>
     <string name="progression_act_short">Act %1$d</string>
     <string name="progression_explainer">Every character has a level that grows with what they live through: bonds, risks, losses and choices, not only fights. Medals mark the deeds of a chapter and the legacy marks who changed an act. Tap a character at the end to read what earned each point. You can hide all of this in Settings.</string>
