@@ -8,6 +8,11 @@ sealed class OnboardingAction {
 
     data object Skip : OnboardingAction()
 
+    /** Jumps over the rest of a section to [page], for flows that chain several sections. */
+    data class SkipTo(
+        val page: Int,
+    ) : OnboardingAction()
+
     data object Dismiss : OnboardingAction()
 
     data class Finish(
@@ -25,6 +30,8 @@ sealed class OnboardingAction {
 data class OnboardingButton(
     val text: String,
     val action: OnboardingAction,
+    /** Runs before [action], for pages whose content holds something to commit on the way out. */
+    val onClick: (() -> Unit)? = null,
 )
 
 data class OnboardingUiPage(

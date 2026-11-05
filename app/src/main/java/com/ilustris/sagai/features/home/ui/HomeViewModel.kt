@@ -102,17 +102,8 @@ class HomeViewModel
                 HomeUiAction.OpenPremium -> stateManager.setShowPremiumOnboarding(true)
                 HomeUiAction.DismissPremiumOnboarding -> stateManager.setShowPremiumOnboarding(false)
                 HomeUiAction.CreateFakeSaga -> createFakeSaga()
-                is HomeUiAction.SaveName -> saveName(action.name)
             }
         }
-
-        private fun saveName(name: String) {
-            viewModelScope.launch {
-                _userIdentityUseCase.setName(name)
-            }
-        }
-
-        suspend fun shouldPromptName(): Boolean = userIdentityUseCase.shouldPromptName()
 
         private fun onCreateNewSaga() {
             // No cap any more. Three active sagas was a limit on our own inference bill, and that

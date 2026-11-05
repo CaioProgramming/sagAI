@@ -10,6 +10,9 @@ interface UserIdentityUseCase {
     suspend fun setName(name: String)
 
     suspend fun shouldPromptName(): Boolean
+
+    /** Records that the name question was answered with nothing, so it is never asked again. */
+    suspend fun skipNamePrompt()
 }
 
 

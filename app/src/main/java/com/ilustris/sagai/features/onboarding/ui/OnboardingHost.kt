@@ -182,7 +182,7 @@ fun OnboardingHost(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun OnboardingSheetPresentation(
+internal fun OnboardingSheetPresentation(
     state: OnboardingUiState.Content,
     genre: Genre?,
     isPurchaseInProgress: Boolean,
@@ -268,6 +268,38 @@ private fun OnboardingBillingOverlays(
         }
 
         BillingService.PurchaseFlowResult.Idle -> {
+            Unit
+        }
+    }
+}
+
+/**
+ * The first-access flow, shown while the app is gated on a missing key: intro, name and key as one
+ * pager in one sheet. Which of them appear is [decideSetupSteps]'s call.
+ */
+@Composable
+fun SetupOnboardingHost(onDismiss: () -> Unit) {
+    val viewModel: SetupOnboardingViewModel = hiltViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) { viewModel.load() }
+
+    when (val current = state) {
+        is OnboardingUiState.Content -> {
+            OnboardingSheetPresentation(
+                state = current,
+                genre = null,
+                isPurchaseInProgress = false,
+                dismissible = false,
+                onDismiss = onDismiss,
+            )
+        }
+
+        is OnboardingUiState.Error -> {
+            SideEffect { onDismiss() }
+        }
+
+        else -> {
             Unit
         }
     }

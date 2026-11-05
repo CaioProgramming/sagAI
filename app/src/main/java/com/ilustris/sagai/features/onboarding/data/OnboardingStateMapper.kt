@@ -17,6 +17,8 @@ import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.model.OnboardingContent
+import com.ilustris.sagai.features.onboarding.domain.SetupStep
+import com.ilustris.sagai.features.onboarding.ui.SetupNameContent
 import com.ilustris.sagai.features.onboarding.ui.MorphingGenresBackground
 import com.ilustris.sagai.features.onboarding.ui.OnboardingAction
 import com.ilustris.sagai.features.onboarding.ui.OnboardingButton
@@ -46,6 +48,7 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Singleton
 
 @Singleton
@@ -66,6 +69,68 @@ class OnboardingStateMapper
             return OnboardingUiState.Content(
                 type = type,
                 pages = uiPages,
+            )
+        }
+
+        /**
+         * The first-access flow as one pager: the sections [steps] asks for, back to back, so the
+         * progress dots and transitions are the same from the first screen to the key field.
+         *
+         * Each section keeps the pages it would have on its own; only the seams change. The intro
+         * stops being a finish line (its last page continues), and its skip jumps to the next
+         * section instead of the end of the whole flow, which would leap over the name.
+         */
+        suspend fun buildSetupState(
+            steps: List<SetupStep>,
+            intro: OnboardingContent,
+            keyPitch: OnboardingContent,
+            name: SetupNameStep,
+        ): OnboardingUiState.Content {
+            val continueText = stringResourceHelper.getString(R.string.continue_text)
+            val introPages =
+                if (SetupStep.INTRO in steps) buildPages(OnboardingType.APP_INTRO, intro, null) else emptyList()
+            val namePages =
+                if (SetupStep.NAME in steps) {
+                    listOf(
+                        OnboardingUiPage(
+                            background = {
+                                Box(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(Brush.verticalGradient(morphingGradient())),
+                                )
+                            },
+                            content = { SetupNameContent(name.draft) },
+                            primaryButton =
+                                OnboardingButton(continueText, OnboardingAction.Next, onClick = name.onCommit),
+                        ),
+                    )
+                } else {
+                    emptyList()
+                }
+            val keyPages = buildPages(OnboardingType.API_KEY_SETUP, keyPitch, null)
+
+            val firstAfterIntro = introPages.size
+            val seamlessIntro =
+                introPages.mapIndexed { index, page ->
+                    if (index == introPages.lastIndex) {
+                        page.copy(
+                            primaryButton = OnboardingButton(continueText, OnboardingAction.Next),
+                            secondaryButton = null,
+                        )
+                    } else {
+                        page.copy(
+                            secondaryButton =
+                                OnboardingButton(
+                                    stringResourceHelper.getString(R.string.onboarding_skip),
+                                    OnboardingAction.SkipTo(firstAfterIntro),
+                                ),
+                        )
+                    }
+                }
+            return OnboardingUiState.Content(
+                type = OnboardingType.API_KEY_SETUP,
+                pages = seamlessIntro + namePages + keyPages,
             )
         }
 
@@ -326,3 +391,9 @@ class OnboardingStateMapper
             }
         }
     }
+
+/** What the name page of the setup flow needs from its owner: the text being typed and the commit. */
+class SetupNameStep(
+    val draft: MutableStateFlow<String>,
+    val onCommit: () -> Unit,
+)
