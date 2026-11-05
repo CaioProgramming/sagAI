@@ -22,7 +22,7 @@ SHEET_FIELDS = ["name", "lastName", "nicknames", "backstory", "race", "gender", 
                 "uniqueOrSignatureTalents", "occupation", "personality", "artwork"]
 REVIEW_FIELDS = ["hair", "eyes", "mouth", "distinctiveMarks", "distinguishFeatures", "buildAndPosture",
                  "outfitDescription", "accessories", "personality", "artwork", "rationale"]
-SHOWN = ["gender", "hair", "outfitDescription", "accessories", "distinctiveMarks", "personality"]
+SHOWN = ["gender", "hair", "eyes", "mouth", "outfitDescription", "accessories", "distinctiveMarks", "personality", "artwork"]
 COLORS = ["coral", "teal", "mustard", "violet", "emerald", "crimson", "indigo", "amber", "magenta", "forest green"]
 
 
