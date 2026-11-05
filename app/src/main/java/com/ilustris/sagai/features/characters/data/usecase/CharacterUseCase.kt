@@ -22,6 +22,27 @@ interface CharacterUseCase {
 
     suspend fun insertCharacter(character: Character): Character
 
+    /**
+     * Audits a freshly generated [character] against the saga's cast and the seed [description] that
+     * asked for it, rewriting only the fields that fail. Never throws: when the review fails, the
+     * sheet comes back untouched.
+     */
+    suspend fun reviewCharacterDesign(
+        sagaContent: SagaContent,
+        character: Character,
+        description: String,
+    ): Character
+
+    /**
+     * The same audit as [reviewCharacterDesign], but a failure comes back as a failed result instead of the
+     * untouched sheet, so a screen that asked for the review can tell "passed" from "could not run".
+     */
+    suspend fun requestCharacterDesignReview(
+        sagaContent: SagaContent,
+        character: Character,
+        description: String,
+    ): RequestResult<Character>
+
     suspend fun updateCharacter(character: Character): Character
 
     suspend fun deleteCharacter(characterId: Int)
@@ -50,7 +71,7 @@ interface CharacterUseCase {
         description: String,
         sceneSummary: SceneSummary? = null,
         candidateName: String? = null,
-    ): Flow<StreamingState<GeneratedContent<Character>?>>
+    ): Flow<StreamingState<Character?>>
 
     suspend fun generateCharactersUpdate(
         timeline: Timeline,

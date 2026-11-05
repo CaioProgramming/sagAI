@@ -24,8 +24,10 @@ import com.ilustris.sagai.features.progression.domain.ProgressionConfigProvider
 import com.ilustris.sagai.features.progression.domain.withPlacement
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterDesignReview
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
 import com.ilustris.sagai.features.characters.data.model.NickNameGen
+import com.ilustris.sagai.features.characters.data.model.withDesignReview
 import com.ilustris.sagai.features.characters.data.source.CharacterArcDao
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
@@ -260,6 +262,41 @@ class CharacterUseCaseImpl
                     listOf("skillsAndProficiencies", "uniqueOrSignatureTalents")
                 }
 
+        /**
+         * Second pass over a fresh sheet: audits it against the saga's cast and the seed that asked for it
+         * and rewrites only the fields that failed. A failed review never blocks the creation, the sheet
+         * stays as it was generated.
+         */
+        override suspend fun reviewCharacterDesign(
+            sagaContent: SagaContent,
+            character: Character,
+            description: String,
+        ): Character =
+            requestCharacterDesignReview(sagaContent, character, description)
+                .onFailure {
+                    Timber.e(it, "reviewCharacterDesign: keeping the sheet as generated for ${character.name}")
+                }.getSuccess() ?: character
+
+        override suspend fun requestCharacterDesignReview(
+            sagaContent: SagaContent,
+            character: Character,
+            description: String,
+        ): RequestResult<Character> =
+            executeRequest(reportCrash = false) {
+                val genre = sagaContent.data.genre
+                val review =
+                    gemmaClient.generate<CharacterDesignReview>(
+                        promptSplit =
+                            CharacterPrompts
+                                .characterDesignReview(promptService, sagaContent, character, description)
+                                .mergeInstructions(genreConfigService.appearanceInstructions(genre)),
+                        requirement = ModelRequirement.MEDIUM,
+                        temperatureRandomness = .7f,
+                    )!!
+                Timber.d("reviewCharacterDesign: ${character.name} -> ${review.rationale}")
+                character.withDesignReview(review)
+            }
+
         private fun assertCharacterNotAlreadyInSaga(
             sagaContent: SagaContent,
             candidateName: String?,
@@ -320,7 +357,7 @@ class CharacterUseCaseImpl
                 }
                 val characterTransaction =
                     insertCharacter(
-                        newCharacter
+                        reviewCharacterDesign(sagaContent, newCharacter, description)
                             .copy(
                                 id = 0,
                                 sagaId = sagaContent.data.id,
@@ -344,7 +381,7 @@ class CharacterUseCaseImpl
             description: String,
             sceneSummary: SceneSummary?,
             candidateName: String?,
-        ): Flow<StreamingState<GeneratedContent<Character>?>> =
+        ): Flow<StreamingState<Character?>> =
             flow {
                 try {
                     assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
@@ -364,7 +401,7 @@ class CharacterUseCaseImpl
 
                     val request =
                         gemmaClient
-                            .generateStreaming<GeneratedContent<Character>>(
+                            .generateStreaming<Character>(
                                 promptSplit =
                                     prompt.mergeInstructions(
                                         genreConfigService.buildAesthetic(sagaContent.data.genre),
@@ -390,7 +427,7 @@ class CharacterUseCaseImpl
                             genre = sagaContent.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val newCharacter = state.data!!.data
+                                val newCharacter = state.data!!
                                 if (sagaContent.hasConflictingCharacterIdentity(newCharacter)) {
                                     emit(
                                         StreamingState
@@ -400,7 +437,7 @@ class CharacterUseCaseImpl
                                 }
                                 val characterTransaction =
                                     insertCharacter(
-                                        newCharacter
+                                        reviewCharacterDesign(sagaContent, newCharacter, description)
                                             .copy(
                                                 id = 0,
                                                 sagaId = sagaContent.data.id,
@@ -414,12 +451,7 @@ class CharacterUseCaseImpl
                                     generateCharacterImage(characterTransaction, sagaContent.data)
                                 }
                                 emit(
-                                    StreamingState.Success(
-                                        GeneratedContent(
-                                            characterTransaction,
-                                            state.data.finalMessage,
-                                        ),
-                                    ),
+                                    StreamingState.Success(characterTransaction),
                                 )
                             } else {
                                 emit(state)

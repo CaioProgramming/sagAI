@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.characters.ui
 import com.ilustris.sagai.features.progression.ui.LegacyBadge3D
+import com.ilustris.sagai.features.characters.ui.components.CharacterDesignReviewDialog
 import com.ilustris.sagai.features.characters.ui.components.CharacterStatusDialog
 import com.ilustris.sagai.features.progression.data.model.CharacterHonor
 import com.ilustris.sagai.features.progression.ui.HonorSheet
@@ -252,6 +253,7 @@ private fun CharacterDetailsLoaded(
         val progress by viewModel.progress.collectAsStateWithLifecycle()
         var showFeatLog by remember { mutableStateOf(false) }
         var showStatusDialog by remember { mutableStateOf(false) }
+        val designReviewState by viewModel.designReview.collectAsStateWithLifecycle()
         var honorSheet by remember { mutableStateOf<Pair<List<CharacterHonor>, Int>?>(null) }
         val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
         var showCharacterShare by remember { mutableStateOf(false) }
@@ -670,6 +672,13 @@ private fun CharacterDetailsLoaded(
                                         },
                                     )
                                 }
+                                IosStyleMenuItem(
+                                    text = stringResource(R.string.character_design_review_menu),
+                                    onClick = {
+                                        menuOpen = false
+                                        viewModel.reviewDesign(characterData)
+                                    },
+                                )
                                 if (BuildConfig.DEBUG) {
                                     IosStyleMenuItem(
                                         text = stringResource(R.string.debug_regenerate_image),
@@ -739,6 +748,16 @@ private fun CharacterDetailsLoaded(
                     onDismiss = { showStatusDialog = false },
                 )
             }
+
+            CharacterDesignReviewDialog(
+                state = designReviewState,
+                onApply = { redraw ->
+                    (designReviewState as? DesignReviewState.Proposal)?.let {
+                        viewModel.applyDesignReview(it, sagaInfo, redraw)
+                    }
+                },
+                onDismiss = viewModel::dismissDesignReview,
+            )
 
             honorSheet?.let { (honors, index) ->
                 HonorSheet(

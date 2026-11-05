@@ -106,6 +106,78 @@ object CharacterPrompts {
     const val KNOWLEDGE_UPDATE_BLUEPRINT = "knowledge_update_blueprint"
     const val REFINE_CHARACTER_DRAFT_BLUEPRINT = "refine_character_draft_blueprint"
     const val CHARACTER_ENRICHMENT_BLUEPRINT = "character_enrichment_blueprint"
+    const val CHARACTER_DESIGN_REVIEW_BLUEPRINT = "character_design_review_blueprint"
+
+    private const val DESIGN_ROSTER_FIELD_MAX_CHARS = 160
+
+    private val DESIGN_REVIEW_SHEET_EXCLUSIONS =
+        listOf(
+            "id",
+            "image",
+            "sagaId",
+            "joinedAt",
+            "knowledge",
+            "firstSceneId",
+            "emojified",
+            "hexColor",
+            "voice",
+            "voiceDirection",
+            "baseLevel",
+            "levelRationale",
+            "skills",
+            "status",
+            "statusNote",
+            "statusTimelineId",
+        )
+
+    /** The look and temper of every character already in the saga, short enough to compare a new sheet against all of them. */
+    fun designRoster(characters: List<Character>): List<Map<String, String>> =
+        characters.map {
+            mapOf(
+                "name" to it.fullName(),
+                "hair" to it.details.physicalTraits.facialDetails.hair.take(DESIGN_ROSTER_FIELD_MAX_CHARS),
+                "outfit" to it.details.clothing.outfitDescription.take(DESIGN_ROSTER_FIELD_MAX_CHARS),
+                "accessories" to it.details.clothing.accessories.take(DESIGN_ROSTER_FIELD_MAX_CHARS),
+                "marks" to
+                    listOf(
+                        it.details.physicalTraits.facialDetails.distinctiveMarks,
+                        it.details.physicalTraits.bodyFeatures.distinguishFeatures,
+                    ).filter { mark -> mark.isNotBlank() }
+                        .joinToString("; ")
+                        .take(DESIGN_ROSTER_FIELD_MAX_CHARS),
+                "personality" to it.profile.personality.take(DESIGN_ROSTER_FIELD_MAX_CHARS),
+            )
+        }
+
+    /** Audits a freshly generated [character] against the saga's cast and the seed that asked for it. */
+    suspend fun characterDesignReview(
+        promptService: PromptService,
+        saga: SagaContent,
+        character: Character,
+        description: String,
+    ): SplitPrompt {
+        val latestMessages =
+            saga
+                .flatMessages()
+                .sortedByDescending { it.message.timestamp }
+                .take(5)
+                .map { it.message }
+
+        return promptService.buildSplitBlueprint(
+            CHARACTER_DESIGN_REVIEW_BLUEPRINT,
+            mapOf(
+                "context" to
+                    buildMap {
+                        put("NewCharacterSheet", character.toAINormalize(DESIGN_REVIEW_SHEET_EXCLUSIONS))
+                        put("NewCharacterContext", description)
+                        put("CastLooks", designRoster(saga.characters.map { it.data }).toAINormalize())
+                        if (latestMessages.isNotEmpty()) {
+                            put("LatestMessages", latestMessages.normalizetoAIItems(excludingFields = messageExclusions))
+                        }
+                    },
+            ),
+        )
+    }
 
     suspend fun conversationalCharacterReply(
         promptService: PromptService,

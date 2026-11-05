@@ -45,6 +45,11 @@ data class PromptBlueprint(
     val directives: Map<String, String> = emptyMap(),
     val rules: Map<String, String> = emptyMap(),
     val examples: List<Map<String, String>> = emptyList(),
+    /**
+     * When set, only a random draw of this many [examples] is rendered each time the blueprint is
+     * built, so the model sees the range without a fixed set to copy.
+     */
+    val examplesPerCall: Int? = null,
     val omitHeaders: Boolean = false,
     /**
      * Additional static instruction buckets beyond the standard role/directives/rules.
@@ -64,3 +69,6 @@ data class PromptBlueprint(
      */
     val instructions: Map<String, Any>? = null,
 )
+
+/** The [PromptBlueprint.examples] to render now: all of them, or a fresh draw when [PromptBlueprint.examplesPerCall] is set. */
+fun PromptBlueprint.drawExamples(): List<Map<String, String>> = examplesPerCall?.let { examples.shuffled().take(it) } ?: examples

@@ -12,6 +12,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
+import com.ilustris.sagai.features.characters.data.model.designChangesTo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.progression.domain.CharacterProgress
@@ -51,6 +52,7 @@ class CharacterDetailsViewModel
         val isSummarizing = MutableStateFlow(false)
         val isEnriching = MutableStateFlow(false)
         val showPremiumSheet = MutableStateFlow(false)
+        val designReview = MutableStateFlow<DesignReviewState>(DesignReviewState.Idle)
         val completedActsCount = MutableStateFlow(0)
 
         private var currentCharacterId: Int? = null
@@ -185,6 +187,54 @@ class CharacterDetailsViewModel
                         sagaInfo.toSaga(),
                     ).collect { }
             }
+        }
+
+        /**
+         * Audits the character's design against the rest of the cast, the same second pass new characters get.
+         * Nothing is saved until [applyDesignReview]: the player sees what would change first.
+         */
+        fun reviewDesign(character: Character) {
+            if (designReview.value == DesignReviewState.Reviewing) return
+            designReview.value = DesignReviewState.Reviewing
+            viewModelScope.launch(Dispatchers.IO) {
+                val saga = sagaRepository.getSagaById(character.sagaId).first()
+                if (saga == null) {
+                    designReview.value = DesignReviewState.Failed
+                    return@launch
+                }
+                // The cast the sheet is compared with is everyone else: it would always match itself.
+                val others = saga.copy(characters = saga.characters.filterNot { it.data.id == character.id })
+                designReview.value =
+                    characterUseCase
+                        .requestCharacterDesignReview(others, character, character.backstory)
+                        .getSuccess()
+                        ?.let { reviewed ->
+                            val changes = character.designChangesTo(reviewed)
+                            if (changes.isEmpty()) {
+                                DesignReviewState.Passed
+                            } else {
+                                DesignReviewState.Proposal(reviewed, changes)
+                            }
+                        } ?: DesignReviewState.Failed
+            }
+        }
+
+        fun applyDesignReview(
+            proposal: DesignReviewState.Proposal,
+            sagaInfo: CharacterSagaInfo,
+            redrawImage: Boolean,
+        ) {
+            designReview.value = DesignReviewState.Idle
+            viewModelScope.launch(Dispatchers.IO) {
+                val saved = characterUseCase.updateCharacter(proposal.reviewed)
+                if (redrawImage) {
+                    characterUseCase.generateCharacterImageStream(saved, sagaInfo.toSaga()).collect { }
+                }
+            }
+        }
+
+        fun dismissDesignReview() {
+            designReview.value = DesignReviewState.Idle
         }
 
         override fun onCleared() {
