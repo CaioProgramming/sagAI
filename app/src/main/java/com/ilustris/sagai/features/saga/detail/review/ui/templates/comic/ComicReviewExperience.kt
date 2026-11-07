@@ -13,11 +13,11 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 private const val OPENING_PLATE_COUNT = 3
 
 /**
- * Heroes' motion-comic template — one pannable page of panels rather than a sequence of screens
- * (see [ReviewNavigationStyle.ComicBoard]).
+ * Heroes' motion-comic template — the review as the pages of a printed comic rather than a
+ * sequence of screens (see [ReviewNavigationStyle.ComicPages]).
  *
- * Deliberately drops the per-stage *hook* pages the other templates open each stage with. On a
- * comic page a hook belongs inside its stage's frame as a caption box, not as a frame of its own.
+ * Each stage's *hook* — the line the other templates give a whole screen — is a caption strip
+ * ([ComicHookPanel]) that hangs over the stage's first page of art, so it costs no page of its own.
  *
  * The organising rule is that a frame holds one thing. Where the default review shows a set — a
  * cast, a run of send-offs, a plate of chapter art — this template spends a frame per member and
@@ -27,7 +27,7 @@ private const val OPENING_PLATE_COUNT = 3
 class ComicReviewExperience(
     private val content: SagaContent,
 ) : ReviewExperience {
-    override val navigationStyle: ReviewNavigationStyle = ReviewNavigationStyle.ComicBoard
+    override val navigationStyle: ReviewNavigationStyle = ReviewNavigationStyle.ComicPages
 
     override val pages: List<ReviewPage>
         get() {
@@ -36,18 +36,22 @@ class ComicReviewExperience(
             val cast = content.rankedSupportingCast()
 
             return buildList {
-                // Cover first, and the emotional read straight after it: both ask for SPLASH, so
-                // layoutBoard seats them side by side in the opening band rather than stacking two
-                // cover-sized frames down the page.
+                // Cover first; the introduction's own hook is its strapline (see ComicCoverPanel).
                 add(ComicCoverPanel(content))
 
-                review.expressiveness?.let { add(ComicEmotionPanel(content, it)) }
+                review.expressiveness?.let { stage ->
+                    stage.hook?.let { add(ComicHookPanel(content, it, ReviewPageType.EXPRESSIVENESS)) }
+                    add(ComicEmotionPanel(content, stage))
+                }
 
                 review.introduction?.content?.let {
                     add(ComicNarrationPanel(content, it, ReviewPageType.INTRO))
                 }
 
-                review.playstyle?.content?.let { add(ComicPlaytimePanel(content, it)) }
+                review.playstyle?.let { stage ->
+                    stage.hook?.let { add(ComicHookPanel(content, it, ReviewPageType.PLAYSTYLE)) }
+                    stage.content?.let { add(ComicPlaytimePanel(content, it)) }
+                }
 
                 // The playstyle's prose rides across the plate that follows it rather than sitting
                 // in a box of its own. Captions travelling over a run of pictures is what ties the
@@ -73,6 +77,9 @@ class ComicReviewExperience(
                     )
                 }
 
+                review.topCharacters?.hook?.let {
+                    add(ComicHookPanel(content, it, ReviewPageType.CHARACTERS))
+                }
                 review.topCharacters?.content?.let { text ->
                     cast.firstOrNull()?.let { (character, count) ->
                         add(ComicCastLeadPanel(content, character, count, text))
@@ -82,10 +89,16 @@ class ComicReviewExperience(
                     }
                 }
 
+                review.actsInsight?.hook?.let {
+                    add(ComicHookPanel(content, it, ReviewPageType.JOURNEY))
+                }
                 review.actsInsight?.content?.let { journey ->
                     // Same again for the recap: the pictures carry it, with the writing stepping
                     // across them frame by frame instead of taking a panel of its own.
                     val closing = images.drop(OPENING_PLATE_COUNT)
+                    // A saga with too few pictures to spare has no plates to carry the recap, and
+                    // without them the writing would be lost: it takes a caption strip instead.
+                    if (closing.isEmpty()) add(ComicNarrationPanel(content, journey, ReviewPageType.JOURNEY))
                     val journeyBeats =
                         splitIntoBeats(
                             journey.subtitle.orEmpty(),
@@ -104,6 +117,9 @@ class ComicReviewExperience(
                     }
                 }
 
+                review.conclusion?.hook?.let {
+                    add(ComicHookPanel(content, it, ReviewPageType.CONCLUSION))
+                }
                 review.conclusion?.content?.let { add(ComicConclusionPanel(content, it)) }
 
                 // One frame per farewell, gridded evenly — no send-off outranks another.
@@ -119,8 +135,9 @@ class ComicReviewExperience(
                     )
                 }
 
+                // The back cover marks that nothing more is coming, so it waits for every stage.
                 if (review.isComplete()) {
-                    add(ComicSummaryPanel(content))
+                    add(ComicBackCoverPanel(content))
                 }
             }
         }

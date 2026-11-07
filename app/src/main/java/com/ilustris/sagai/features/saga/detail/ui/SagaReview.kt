@@ -67,7 +67,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.StoryProgressIndicator
 import com.ilustris.sagai.ui.genre.book.CowboyBurnMarks
 import com.ilustris.sagai.ui.genre.book.HorrorPoliceTapeOverlay
 import com.ilustris.sagai.ui.genre.book.ShinobiInkBlooms
-import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicBoardReviewContainer
+import com.ilustris.sagai.features.saga.detail.review.ui.templates.comic.ComicPagesReviewContainer
 import com.ilustris.sagai.features.saga.detail.review.ui.templates.crime.CorkboardReviewContainer
 import com.ilustris.sagai.ui.genre.terminal.TerminalBackground
 import com.ilustris.sagai.ui.genre.terminal.TerminalGlitchOverlay
@@ -184,13 +184,13 @@ fun SagaReview(
                     )
                 }
 
-                ReviewNavigationStyle.ComicBoard -> {
-                    ComicBoardReviewContainer(
+                ReviewNavigationStyle.ComicPages -> {
+                    ComicPagesReviewContainer(
                         pages = pages,
+                        hasLoadingSlot = hasLoadingSlot,
                         genre = genre,
                         onEnsureGeneration = onEnsureGeneration,
                         onDismiss = onDismiss,
-                        onShare = onShare,
                         onRegenerate = onRegenerate,
                     )
                 }
@@ -223,7 +223,7 @@ fun SagaReview(
 
 /** The story-morph icon shown while a pending review step is still generating. */
 @Composable
-private fun ReviewLoadingIcon(modifier: Modifier = Modifier) {
+internal fun ReviewLoadingIcon(modifier: Modifier = Modifier) {
     val brush = Brush.verticalGradient(morphingGradient(duration = 5.seconds))
     Icon(
         themePainter(),

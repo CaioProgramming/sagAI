@@ -20,6 +20,7 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPage
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewPageType
 import com.ilustris.sagai.ui.genre.comic.ComicBalloonSpec
+import com.ilustris.sagai.ui.genre.comic.rememberComicArmed
 import com.ilustris.sagai.ui.genre.comic.splitIntoBeats
 import com.ilustris.sagai.ui.genre.comic.ComicCaptionBox
 import com.ilustris.sagai.ui.genre.comic.ComicFadeIn
@@ -81,21 +82,25 @@ class ComicPlaytimePanel(
             modifier.fillMaxSize().padding(12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            AnimatedPlaytimeCounter(
-                playtimeMs = content.data.playTimeMs,
-                label = playstyle.title ?: stringResource(R.string.playtime_title),
-                isAnimated = canAnimate,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                textStyle =
-                    MaterialTheme.typography.displayMedium.copy(
-                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                        fontWeight = FontWeight.Black,
-                    ),
-                labelStyle =
-                    MaterialTheme.typography.labelMedium.copy(
-                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                    ),
-            )
+            // Held back until the page settles: the counter ticks up from zero on composition,
+            // and on a page still turning into view it would be mid-count before anyone saw it.
+            if (rememberComicArmed()) {
+                AnimatedPlaytimeCounter(
+                    playtimeMs = content.data.playTimeMs,
+                    label = playstyle.title ?: stringResource(R.string.playtime_title),
+                    isAnimated = canAnimate,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    textStyle =
+                        MaterialTheme.typography.displayMedium.copy(
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                            fontWeight = FontWeight.Black,
+                        ),
+                    labelStyle =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                        ),
+                )
+            }
         }
     }
 }
