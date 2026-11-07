@@ -84,7 +84,7 @@ class ImagenClientImpl
                                 imageType,
                                 context,
                             ).mergeInstructions(
-                                genreConfigService.renderingInstructions(genre),
+                                genreConfigService.imageInstructions(genre, imageType),
                             )
 
                     var finalStringPrompt: String? = null
@@ -173,7 +173,7 @@ class ImagenClientImpl
                             imageType,
                             context,
                         ).mergeInstructions(
-                            genreConfigService.renderingInstructions(genre),
+                            genreConfigService.imageInstructions(genre, imageType),
                         )
 
                 val finalStringPrompt =

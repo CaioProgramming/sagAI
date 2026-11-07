@@ -179,6 +179,8 @@ class SagaRepositoryImpl
                 curated.copy(
                     characterIds =
                         curated.characterIds
+                            .takeUnless { curated.noCharacters }
+                            .orEmpty()
                             .distinct()
                             .filter { id -> id > 0 && characters.any { it.id == id } }
                             .take(MAX_COVER_CHARACTERS),
@@ -207,27 +209,34 @@ class SagaRepositoryImpl
         ): String =
             buildString {
                 val artwork = saga.artwork?.takeUnless { it.isBlank() }
-                // The curator names who the cover needs; sagas curated before that show everyone.
+                // The curator names who the cover needs, or none when its subject is an object or a place;
+                // sagas curated before that show everyone.
                 val cover =
-                    artwork
-                        ?.characterIds
-                        .orEmpty()
-                        .let { ids -> characters.filter { it.id in ids } }
-                        .ifEmpty { characters }
-                appendLine("### CHARACTERS")
-                appendLine(
-                    cover.toAINormalize(
-                        listOf(
-                            "image",
-                            "sagaId",
-                            "joinedAt",
-                            "id",
-                            "emojified",
-                            "artwork",
+                    if (artwork?.noCharacters == true) {
+                        emptyList()
+                    } else {
+                        artwork
+                            ?.characterIds
+                            .orEmpty()
+                            .let { ids -> characters.filter { it.id in ids } }
+                            .ifEmpty { characters }
+                    }
+                if (cover.isNotEmpty()) {
+                    appendLine("### CHARACTERS")
+                    appendLine(
+                        cover.toAINormalize(
+                            listOf(
+                                "image",
+                                "sagaId",
+                                "joinedAt",
+                                "id",
+                                "emojified",
+                                "artwork",
+                            ),
                         ),
-                    ),
-                )
-                appendLine()
+                    )
+                    appendLine()
+                }
 
                 if (artwork != null) {
                     appendLine("### KEY ART CONCEPT")

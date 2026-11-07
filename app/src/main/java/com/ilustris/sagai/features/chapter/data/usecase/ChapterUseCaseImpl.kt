@@ -399,6 +399,8 @@ class ChapterUseCaseImpl
                 curated.copy(
                     characterIds =
                         curated.characterIds
+                            .takeUnless { curated.noCharacters }
+                            .orEmpty()
                             .distinct()
                             .filter { saga.findCharacter(it) != null }
                             .take(MAX_COVER_CHARACTERS),
@@ -454,12 +456,16 @@ class ChapterUseCaseImpl
                 }
             }
 
-        /** The characters the cover shows: the curator's pick, else the featured pair, else the protagonist. */
+        /**
+         * The characters the cover shows: none when the curator chose an object or a place, else its pick,
+         * else the featured pair, else the protagonist.
+         */
         private fun coverCharacters(
             chapter: Chapter,
             saga: SagaContent,
-        ): List<CharacterContent> =
-            chapter.artwork
+        ): List<CharacterContent> {
+            if (chapter.artwork?.noCharacters == true) return emptyList()
+            return chapter.artwork
                 ?.characterIds
                 .orEmpty()
                 .ifEmpty { chapter.featuredCharacters }
@@ -467,6 +473,7 @@ class ChapterUseCaseImpl
                 .mapNotNull { saga.findCharacter(it) }
                 .take(MAX_COVER_CHARACTERS)
                 .ifEmpty { listOfNotNull(saga.mainCharacter) }
+        }
 
         private fun buildCoverPromptContext(
             narrativeContext: String?,
@@ -485,41 +492,44 @@ class ChapterUseCaseImpl
                     }
                 }
 
-                appendLine("### CHARACTERS")
-                append("[")
-                appendLine(
-                    characters.joinToString {
-                        buildString {
-                            appendLine(it.data.fullName())
-                            appendLine(it.data.profile.toAINormalize())
-                            appendLine(
-                                it.data.details.physicalTraits
-                                    .toAINormalize(),
-                            )
-                            appendLine(
-                                it.data.details.clothing
-                                    .toAINormalize(),
-                            )
-                        }
-                    },
-                )
-                append("]")
+                // A cover the curator built around an object or a place has no cast to describe.
+                if (characters.isNotEmpty()) {
+                    appendLine("### CHARACTERS")
+                    append("[")
+                    appendLine(
+                        characters.joinToString {
+                            buildString {
+                                appendLine(it.data.fullName())
+                                appendLine(it.data.profile.toAINormalize())
+                                appendLine(
+                                    it.data.details.physicalTraits
+                                        .toAINormalize(),
+                                )
+                                appendLine(
+                                    it.data.details.clothing
+                                        .toAINormalize(),
+                                )
+                            }
+                        },
+                    )
+                    append("]")
 
-                val relationships =
-                    characters.flatMapIndexed { index, first ->
-                        characters.drop(index + 1).mapNotNull { second ->
-                            first.findRelationship(second.data.id)?.summarizeRelation(1)?.let {
-                                "${first.data.name} & ${second.data.name}: $it"
+                    val relationships =
+                        characters.flatMapIndexed { index, first ->
+                            characters.drop(index + 1).mapNotNull { second ->
+                                first.findRelationship(second.data.id)?.summarizeRelation(1)?.let {
+                                    "${first.data.name} & ${second.data.name}: $it"
+                                }
                             }
                         }
-                    }
-                if (relationships.isNotEmpty() || characters.size == 2) {
-                    appendLine()
-                    appendLine("### RELATIONSHIPS")
-                    if (relationships.isEmpty()) {
-                        appendLine("${characters[0].data.name} & ${characters[1].data.name}: Complex dynamic connection.")
-                    } else {
-                        relationships.forEach { appendLine(it) }
+                    if (relationships.isNotEmpty() || characters.size == 2) {
+                        appendLine()
+                        appendLine("### RELATIONSHIPS")
+                        if (relationships.isEmpty()) {
+                            appendLine("${characters[0].data.name} & ${characters[1].data.name}: Complex dynamic connection.")
+                        } else {
+                            relationships.forEach { appendLine(it) }
+                        }
                     }
                 }
 
