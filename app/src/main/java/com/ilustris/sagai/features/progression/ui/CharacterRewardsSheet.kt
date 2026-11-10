@@ -2,11 +2,11 @@ package com.ilustris.sagai.features.progression.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.EaseInCubic
 import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -17,7 +17,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -38,6 +37,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,10 +55,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -87,6 +91,8 @@ import com.ilustris.sagai.features.widgets.domain.WidgetInvitePolicy
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.gradient
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 private const val STEP_ENTER_MS = 450
 private const val STEP_EXIT_MS = 260
@@ -140,10 +146,6 @@ fun RewardsOverlay(
     /** Offered on the last page for one character; null keeps it out. */
     onAddWidget: ((Int) -> Unit)? = null,
 ) {
-    var index by remember(current) { mutableIntStateOf(0) }
-    val steps = current.steps
-    val step = steps[index.coerceIn(0, steps.lastIndex)]
-
     BackHandler(enabled = visible) { onFinish() }
 
     Box(Modifier.fillMaxSize()) {
@@ -168,44 +170,54 @@ fun RewardsOverlay(
             SagAITheme(current.genre) {
                 // No Surface here, so text without an explicit color would fall back to black.
                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
-                    RewardsSheet(
-                        rewards = current,
-                        index = index,
-                        step = step,
-                        onContinue = { if (index >= steps.lastIndex) onFinish() else index++ },
-                        onClose = onFinish,
-                        onOpenCharacter = { id ->
-                            onFinish()
-                            onOpenCharacter(id)
-                        },
-                        onAddWidget =
-                            onAddWidget?.let { add ->
-                                { id ->
-                                    onFinish()
-                                    add(id)
-                                }
+                    // A new flow starts from its first page, with nothing revealed.
+                    key(current) {
+                        RewardsSheet(
+                            rewards = current,
+                            onFinish = onFinish,
+                            onOpenCharacter = { id ->
+                                onFinish()
+                                onOpenCharacter(id)
                             },
-                    )
+                            onAddWidget =
+                                onAddWidget?.let { add ->
+                                    { id ->
+                                        onFinish()
+                                        add(id)
+                                    }
+                                },
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
+/**
+ * The pages sit in a pager so the player can swipe back to one already seen, and forward again. The pager only knows the
+ * pages reached so far ([reached] + 1): a page the player has not got to yet cannot be swiped to, so the only way ahead
+ * is Continue and no page is skipped. What counts as seen is still decided only by [onFinish].
+ */
 @Composable
 private fun RewardsSheet(
     rewards: CharacterRewards,
-    index: Int,
-    step: RewardStep,
-    onContinue: () -> Unit,
-    onClose: () -> Unit,
+    onFinish: () -> Unit,
     onOpenCharacter: (Int) -> Unit,
     onAddWidget: ((Int) -> Unit)?,
 ) {
     val genre = rewards.genre
     val steps = rewards.steps
+    var reached by remember { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState { reached + 1 }
+    val scope = rememberCoroutineScope()
+    val index = pagerState.currentPage
     val last = index >= steps.lastIndex
+
+    // Pages up to here already played their entrance and show as they are when swiped back to.
+    var revealed by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(index) { revealed = maxOf(revealed, index) }
+
     val shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
     Column(
         modifier =
@@ -226,34 +238,43 @@ private fun RewardsSheet(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        ProgressSegments(steps.size, index, genre)
-        AnimatedContent(
-            targetState = step,
+        ProgressSegments(steps.size, index)
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentAlignment = Alignment.Center,
-            transitionSpec = {
-                (
-                    fadeIn(tween(STEP_ENTER_MS, delayMillis = STEP_EXIT_MS / 2, easing = EaseOutCubic)) +
-                        slideInVertically(tween(STEP_ENTER_MS, delayMillis = STEP_EXIT_MS / 2, easing = EaseOutCubic)) { it / 8 } +
-                        scaleIn(tween(STEP_ENTER_MS, delayMillis = STEP_EXIT_MS / 2), initialScale = .94f)
-                ).togetherWith(
-                    fadeOut(tween(STEP_EXIT_MS, easing = EaseInCubic)) +
-                        slideOutVertically(tween(STEP_EXIT_MS, easing = EaseInCubic)) { -it / 10 } +
-                        scaleOut(tween(STEP_EXIT_MS), targetScale = .96f),
-                ).using(SizeTransform(clip = false))
-            },
-            label = "reward-step",
-        ) { target ->
-            Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+            pageSpacing = 16.dp,
+        ) { page ->
+            // Only a page met for the first time counts the level up; one swiped back to is already settled.
+            val firstTime = remember { page > revealed }
+            AnimatedVisibility(
+                visible = page <= revealed,
+                modifier = Modifier.fillMaxSize(),
+                enter = EnterTransition.None,
+                exit = ExitTransition.None,
             ) {
-                StepBody(target, rewards, onOpenCharacter)
+                Column(
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    StepBody(steps[page], rewards, firstTime, onOpenCharacter)
+                }
             }
         }
         Button(
-            onClick = onContinue,
+            onClick = {
+                val next = index + 1
+                if (next > steps.lastIndex) {
+                    onFinish()
+                } else {
+                    scope.launch {
+                        reached = maxOf(reached, next)
+                        // The page exists once the pager has been recomposed with the new count.
+                        snapshotFlow { pagerState.pageCount }.first { it > next }
+                        pagerState.animateScrollToPage(next)
+                    }
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
         ) {
@@ -267,11 +288,11 @@ private fun RewardsSheet(
             exit = fadeOut(tween(180)),
             modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
-            TextButton(onClick = onClose) {
+            TextButton(onClick = onFinish) {
                 Text(stringResource(R.string.progression_rewards_skip), color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f))
             }
         }
-        val widgetTarget = if (last && onAddWidget != null) step.widgetCharacter(rewards) else null
+        val widgetTarget = if (last && onAddWidget != null) steps[index].widgetCharacter(rewards) else null
         if (widgetTarget != null && onAddWidget != null) {
             TextButton(
                 onClick = { onAddWidget(widgetTarget.id) },
@@ -290,7 +311,6 @@ private fun RewardsSheet(
 private fun ProgressSegments(
     count: Int,
     index: Int,
-    genre: Genre,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
         repeat(count) { i ->
@@ -308,10 +328,10 @@ private fun ProgressSegments(
     }
 }
 
-// Items enter in a short cascade and leave in the same order, so a page comes and goes as one gesture.
+// Items of a page enter in a short cascade; they leave with the page, which the pager slides away.
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun AnimatedContentScope.Reveal(
+private fun AnimatedVisibilityScope.Reveal(
     order: Int,
     modifier: Modifier = Modifier,
     bouncy: Boolean = false,
@@ -328,7 +348,6 @@ private fun AnimatedContentScope.Reveal(
                         } else {
                             slideInVertically(tween(420, delayMillis = STEP_EXIT_MS / 2 + delay, easing = EaseOutCubic)) { it / 3 }
                         },
-                exit = fadeOut(tween(180, delayMillis = 30 * order)) + slideOutVertically(tween(220, delayMillis = 30 * order)) { -it / 5 },
             ),
         contentAlignment = Alignment.Center,
     ) { content() }
@@ -336,9 +355,10 @@ private fun AnimatedContentScope.Reveal(
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun AnimatedContentScope.StepBody(
+private fun AnimatedVisibilityScope.StepBody(
     step: RewardStep,
     rewards: CharacterRewards,
+    countUp: Boolean,
     onOpenCharacter: (Int) -> Unit,
 ) {
     val genre = rewards.genre
@@ -348,7 +368,7 @@ private fun AnimatedContentScope.StepBody(
             val who = character(step.characterId) ?: return
             Hero(who, genre, order = 0)
             Label(stringResource(R.string.progression_new_level), order = 2)
-            Reveal(3) { LevelNumber(step.from, step.to, genre) }
+            Reveal(3) { LevelNumber(step.from, step.to, genre, countUp) }
             Reveal(4) {
                 Text(
                     stringResource(R.string.progression_level_change, step.from, step.to),
@@ -464,7 +484,7 @@ private fun summaryLine(row: com.ilustris.sagai.features.progression.domain.Summ
 /** The character comes first and is the largest thing on the page: the reward is what happened to them. */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun AnimatedContentScope.Hero(
+private fun AnimatedVisibilityScope.Hero(
     character: Character,
     genre: Genre,
     order: Int,
@@ -495,7 +515,7 @@ private fun RewardAvatar(
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun AnimatedContentScope.Label(
+private fun AnimatedVisibilityScope.Label(
     text: String,
     order: Int,
 ) {
@@ -514,9 +534,11 @@ private fun LevelNumber(
     from: Int,
     to: Int,
     genre: Genre,
+    countUp: Boolean,
 ) {
-    var shown by remember { mutableIntStateOf(from) }
+    var shown by remember { mutableIntStateOf(if (countUp) from else to) }
     LaunchedEffect(to) {
+        if (!countUp) return@LaunchedEffect
         delay(750)
         shown = to
     }
