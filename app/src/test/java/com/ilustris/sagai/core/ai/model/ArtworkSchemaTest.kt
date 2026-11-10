@@ -7,10 +7,10 @@ import org.junit.Test
 
 class ArtworkSchemaTest {
     @Test
-    fun `the schema the model sees has only the three artwork fields`() {
+    fun `the schema the model sees has only the four artwork fields`() {
         val schema = JsonParser.parseString(toJsonMap(Artwork::class.java)).asJsonObject
 
         // A constant or companion on the class would be reflected here and echoed back by the model.
-        assertEquals(setOf("characterIds", "concept", "elements"), schema.keySet())
+        assertEquals(setOf("characterIds", "concept", "elements", "noCharacters"), schema.keySet())
     }
 }
