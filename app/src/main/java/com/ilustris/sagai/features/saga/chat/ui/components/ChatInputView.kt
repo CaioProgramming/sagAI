@@ -115,8 +115,8 @@ private val ChatInputCell = 48.dp
 private val ChatInputControlSize = 36.dp
 private const val SUGGESTION_WIDTH_FRACTION = 0.66f
 
-/** More opaque than the other glass: what the player types has to stay readable over the colored backdrop. */
-private const val ChatInputGlassAlpha = 0.7f
+/** Solid, unlike the other glass: what the player types has to stay readable over the messages scrolling behind it. */
+private const val ChatInputGlassAlpha = 1f
 
 /** The character count ring stays hidden until the message is this close to the limit. */
 private const val COUNTER_VISIBLE_FROM = 0.8f
