@@ -539,10 +539,15 @@ class MessageUseCaseImpl
 
             val fallout = result.getSuccess() ?: return
 
-            database.withTransaction {
-                handleAIReplyReactions(saga, replyMessage, fallout.replyReactions)
-                handleAIReplyReactions(saga, userMessage, fallout.userReactions)
-            }
+            // This runs in a fire-and-forget job, so nothing above it catches. The player may have
+            // deleted either message while the request ran — the reaction's messageId foreign key
+            // then fails the insert — and that must stay a quiet room, not a crash.
+            executeRequest {
+                database.withTransaction {
+                    handleAIReplyReactions(saga, replyMessage, fallout.replyReactions)
+                    handleAIReplyReactions(saga, userMessage, fallout.userReactions)
+                }
+            }.onFailure { Timber.w(it, "resolveReplyFallout: reactions dropped") }
 
             // Patched onto the scene the reply just wrote rather than written wholesale, so the
             // hook lands without clobbering the state the HIGH model established this turn.
@@ -551,20 +556,22 @@ class MessageUseCaseImpl
             // gemmaClient.generate(), and narrative progression may have moved currentEventId on
             // since.
             fallout.notificationHook?.takeIf { it.isNotBlank() }?.let { hook ->
-                val freshSaga = sagaRepository.getSagaMetadata(saga.data.id).first() ?: saga
-                freshSaga.getCurrentTimeLine()?.let { timeline ->
-                    timeline.data.sceneSummary?.let { scene ->
-                        timelineUseCase.updateTimeline(
-                            timeline.data.copy(
-                                sceneSummary =
-                                    scene.copy(
-                                        notificationHook = hook,
-                                        notificationCharacterName = fallout.notificationCharacterName,
-                                    ),
-                            ),
-                        )
+                executeRequest {
+                    val freshSaga = sagaRepository.getSagaMetadata(saga.data.id).first() ?: saga
+                    freshSaga.getCurrentTimeLine()?.let { timeline ->
+                        timeline.data.sceneSummary?.let { scene ->
+                            timelineUseCase.updateTimeline(
+                                timeline.data.copy(
+                                    sceneSummary =
+                                        scene.copy(
+                                            notificationHook = hook,
+                                            notificationCharacterName = fallout.notificationCharacterName,
+                                        ),
+                                ),
+                            )
+                        }
                     }
-                }
+                }.onFailure { Timber.w(it, "resolveReplyFallout: notification hook dropped") }
             }
         }
 
