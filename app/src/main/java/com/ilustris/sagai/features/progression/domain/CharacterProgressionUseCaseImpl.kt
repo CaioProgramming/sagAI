@@ -18,10 +18,6 @@ import com.ilustris.sagai.features.progression.data.model.MedalsOutput
 import com.ilustris.sagai.core.ai.prompts.ProgressionPrompts
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.globalshell.GlobalShellService
-import com.ilustris.sagai.core.globalshell.ProgressionEffect
-import com.ilustris.sagai.core.globalshell.ProgressionEffectKind
-import com.ilustris.sagai.core.globalshell.ProgressionRow
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -37,10 +33,6 @@ import com.ilustris.sagai.features.progression.data.model.FeatEvaluation
 import com.ilustris.sagai.features.progression.data.source.ProgressionDao
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -62,7 +54,7 @@ class CharacterProgressionUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val progressionConfigProvider: ProgressionConfigProvider,
-        private val globalShellService: GlobalShellService,
+        private val rewardsService: CharacterRewardsService,
         private val appLifecycleManager: com.ilustris.sagai.core.lifecycle.AppLifecycleManager,
         private val settingsUseCase: com.ilustris.sagai.features.settings.domain.SettingsUseCase,
     ) : CharacterProgressionUseCase {
@@ -722,90 +714,69 @@ class CharacterProgressionUseCaseImpl
             }
 
             val pendingEvents = saga.flatEvents().filter { it.data.experienceGenerated && !it.data.progressionAnnounced }
-            if (pendingEvents.isNotEmpty()) {
-                val firstId = pendingEvents.first().data.id
-                val lastId = pendingEvents.last().data.id
-                val feats = progressionDao.getFeatsBySaga(sagaId)
-                val rows =
-                    saga.characters
-                        .map { it.data }
-                        .mapNotNull { character ->
-                            val base = character.baseLevel ?: return@mapNotNull null
-                            val mine = feats.filter { it.characterId == character.id }
-                            val before = math.levelFor(base, mine.filter { it.timelineId < firstId }.sumOf { it.xp })
-                            val after = math.levelFor(base, mine.filter { it.timelineId <= lastId }.sumOf { it.xp })
-                            if (after <= before) return@mapNotNull null
-                            val inRange = mine.filter { it.timelineId in firstId..lastId }
-                            ProgressionRow(character = character, title = inRange.lastOrNull()?.title.orEmpty(), level = after, xp = inRange.sumOf { it.xp })
-                        }.sortedByDescending { it.level }
-                        .take(config.levelUpRowsMax)
-                pendingEvents.forEach { timelineRepository.updateTimeline(it.data.copy(progressionAnnounced = true)) }
-                if (rows.isNotEmpty()) {
-                    val explain = !settingsUseCase.getProgressionExplained().first()
-                    if (explain) settingsUseCase.setProgressionExplained()
-                    globalShellService.post(
-                        ProgressionEffect(
-                            showExplainer = explain,
-                            kind = ProgressionEffectKind.LEVEL_UP,
-                            announcementKey = "${sagaId}_${firstId}_$lastId",
-                            rows = rows,
-                            sagaId = sagaId,
-                            sagaTitle = saga.data.title,
-                            genre = saga.data.genre,
-                            deepLink = "saga://character_detail/${rows.first().character.id}",
-                            moreDeepLink = "saga://saga_events/$sagaId/$lastId",
-                        ),
-                    )
-                    scheduleFollowUp(sagaId)
-                    return
+            val pendingEventIds = pendingEvents.map { it.data.id }.toSet()
+            val unannouncedHonors = progressionDao.getUnannouncedHonors(sagaId)
+            val charactersById = saga.characters.associate { it.data.id to it.data }
+
+            val levelUps =
+                if (pendingEvents.isEmpty()) {
+                    emptyList()
+                } else {
+                    val firstId = pendingEventIds.min()
+                    val lastId = pendingEventIds.max()
+                    val feats = progressionDao.getFeatsBySaga(sagaId)
+                    charactersById.values.mapNotNull { character ->
+                        val base = character.baseLevel ?: return@mapNotNull null
+                        val mine = feats.filter { it.characterId == character.id }
+                        val before = math.levelFor(base, mine.filter { it.timelineId < firstId }.sumOf { it.xp })
+                        val after = math.levelFor(base, mine.filter { it.timelineId <= lastId }.sumOf { it.xp })
+                        if (after <= before) return@mapNotNull null
+                        val inRange = mine.filter { it.timelineId in firstId..lastId }
+                        LevelUpInput(character.id, before, after, inRange.lastOrNull()?.title.orEmpty(), inRange.sumOf { it.xp })
+                    }
                 }
+
+            // A bond is new when the first thing that ever happened to it belongs to an event not yet told.
+            val newRelations =
+                saga.relationships.filter { relation ->
+                    relation.relationshipEvents.minByOrNull { it.id }?.timelineId in pendingEventIds
+                }
+            val honors = unannouncedHonors.filter { it.characterId in charactersById }
+
+            val explain = levelUps.isNotEmpty() && !settingsUseCase.getProgressionExplained().first()
+            val steps =
+                RewardQueueBuilder.build(
+                    levelUps = levelUps,
+                    honors = honors,
+                    relations =
+                        newRelations.map {
+                            NewRelationInput(it.data.id, it.characterOne.id, it.characterTwo.id, it.data.title, it.data.emoji, it.data.description)
+                        },
+                    memorialIds = charactersById.values.filter { it.status == CharacterStatus.DEAD }.map { it.id }.toSet(),
+                    showExplainer = explain,
+                )
+
+            suspend fun markTold() {
+                pendingEvents.forEach { timelineRepository.updateTimeline(it.data.copy(progressionAnnounced = true)) }
+                progressionDao.markHonorsAnnounced(unannouncedHonors.map { it.id })
+                if (explain) settingsUseCase.setProgressionExplained()
             }
 
-            val groups =
-                progressionDao
-                    .getUnannouncedHonors(sagaId)
-                    .groupBy { it.kind to it.scopeId }
-                    .entries
-                    .sortedWith(compareBy({ it.key.first.ordinal }, { it.key.second }))
-            val group = groups.firstOrNull() ?: return
-            val (kind, scopeId) = group.key
-            val rows =
-                group.value.groupBy { it.characterId }.mapNotNull { (characterId, mine) ->
-                    val character = saga.characters.firstOrNull { it.data.id == characterId }?.data ?: return@mapNotNull null
-                    val latest = mine.last()
-                    ProgressionRow(
-                        character = character,
-                        title = latest.name,
-                        detail = latest.description,
-                        emoji = latest.emoji,
-                        extra = mine.size - 1,
-                        memorial = character.status == CharacterStatus.DEAD,
-                    )
-                }
-            progressionDao.markHonorsAnnounced(group.value.map { it.id })
-            if (rows.isEmpty()) return
-            val legacy = kind == HonorKind.TITLE
-            globalShellService.post(
-                ProgressionEffect(
-                    kind = if (legacy) ProgressionEffectKind.LEGACY else ProgressionEffectKind.MEDAL,
-                    announcementKey = "${sagaId}_${kind.name}_$scopeId",
-                    rows = rows,
-                    sagaId = sagaId,
-                    sagaTitle = saga.data.title,
-                    genre = saga.data.genre,
-                    deepLink = "saga://character_detail/${rows.first().character.id}",
-                    moreDeepLink = if (legacy) "saga://character_detail/${rows.first().character.id}" else "saga://saga_chapters/$sagaId/$scopeId",
+            if (steps.isEmpty()) {
+                markTold()
+                return
+            }
+
+            // Told only once the player has seen it: a flow that never opens (other screen, process death) is rebuilt next time.
+            rewardsService.offer(
+                CharacterRewards(
+                    saga = saga.data,
+                    characters = charactersById,
+                    steps = steps,
+                    onSeen = { markTold() },
+                    onNext = { announcePending(sagaId) },
                 ),
             )
-            if (groups.size > 1) scheduleFollowUp(sagaId)
-        }
-
-        /** The island holds one announcement at a time, so the next one comes after this one has had its moment. */
-        private fun scheduleFollowUp(sagaId: Int) {
-            followUps.launch {
-                delay(FOLLOW_UP_MS)
-                runCatching { announcePending(sagaId) }
-            }
         }
 
         /** Evaluated and told (or deliberately kept quiet): nothing is left to announce for this event. */
@@ -821,10 +792,7 @@ class CharacterProgressionUseCaseImpl
             }
         }
 
-        private val followUps = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
         private companion object {
-            const val FOLLOW_UP_MS = 18_000L
             const val CATCH_UP_BATCH = 3
             val catchingUp: MutableSet<Int> = java.util.concurrent.ConcurrentHashMap.newKeySet()
             const val STATUS_EVENTS_WINDOW = 15

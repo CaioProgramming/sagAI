@@ -97,6 +97,7 @@ import com.ilustris.sagai.features.chapter.data.model.GeneratedChoiceCard
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.progression.ui.RewardsOverlay
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
@@ -173,6 +174,7 @@ fun DesignSystemPreviewView(
     var showMoreDebugMenu by remember { mutableStateOf(false) }
     var showIslandMenu by remember { mutableStateOf(false) }
     var showVoicePicker by remember { mutableStateOf(false) }
+    var showRewardsPreview by remember { mutableStateOf(false) }
 
     LaunchedEffect(showStarryLoaderPreview) {
         if (showStarryLoaderPreview) {
@@ -507,7 +509,7 @@ fun DesignSystemPreviewView(
                         ).size(40.dp),
             ) {
                 Icon(
-                    painterResource(R.drawable.ic_back_left),
+                    painterResource(R.drawable.ic_chevron_left),
                     contentDescription = stringResource(R.string.back_button_description),
                     tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(20.dp),
@@ -555,6 +557,13 @@ fun DesignSystemPreviewView(
                                 },
                             )
                             IosStyleMenuItem(
+                                text = "Preview character rewards",
+                                onClick = {
+                                    showMoreDebugMenu = false
+                                    showRewardsPreview = true
+                                },
+                            )
+                            IosStyleMenuItem(
                                 text = "Preview voice picker",
                                 onClick = {
                                     showMoreDebugMenu = false
@@ -586,6 +595,15 @@ fun DesignSystemPreviewView(
             }
         }
     }
+
+    // Same overlay the app shows after a level-up, fed with mock rewards. Re-created per genre so the pager can compare themes.
+    RewardsOverlay(
+        current = remember(genre) { DesignSystemMocks.mockCharacterRewards(genre) },
+        visible = showRewardsPreview,
+        onFinish = { showRewardsPreview = false },
+        onOpenCharacter = {},
+        onAddWidget = {},
+    )
 
     if (showVoicePicker) {
         VoicePickerPreviewSheet(genre = genre, onDismiss = { showVoicePicker = false })
@@ -982,7 +1000,7 @@ private fun ShaderParamsTuningMenu(
                 )
             }
             Icon(
-                painterResource(if (expanded) R.drawable.ic_arrow_up else R.drawable.ic_arrow_down),
+                painterResource(if (expanded) R.drawable.ic_arrow_up else R.drawable.ic_chevron_down),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp),

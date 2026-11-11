@@ -1,6 +1,8 @@
 package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.model.GenreConfig
+import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.model.mergeInstructionBuckets
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.normalizetoAIItems
@@ -66,6 +68,27 @@ class GenreConfigService
                         "${genre.name.lowercase()}_rendering_blueprint",
                     ).renderInstructions(),
             )
+
+        /**
+         * The theme's `${genre}_cover_composition_blueprint` as instruction buckets: how its covers are composed
+         * and what may be their subject (a character, a key object, a place). Remote-only, so a theme without
+         * that key has none and covers fall back to the generic cover blueprint.
+         */
+        suspend fun coverCompositionInstructions(genre: Genre): Map<String, Any> {
+            val key = "${genre.name.lowercase()}_cover_composition_blueprint"
+            if (remoteConfigService.getString(key, false).isNullOrBlank()) return emptyMap()
+            return promptService.buildSplitBlueprint(key).renderInstructions()
+        }
+
+        /** Rendering instructions for an image; covers also get the theme's cover composition. */
+        suspend fun imageInstructions(
+            genre: Genre,
+            imageType: ImageType,
+        ): Map<String, Any> {
+            val rendering = renderingInstructions(genre)
+            if (imageType != ImageType.COVER) return rendering
+            return mergeInstructionBuckets(rendering, coverCompositionInstructions(genre))
+        }
 
         @Deprecated(
             message = "Use conversationInstructions() merged into SplitPrompt via mergeInstructions()",

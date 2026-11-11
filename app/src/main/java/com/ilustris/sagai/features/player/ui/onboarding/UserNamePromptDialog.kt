@@ -66,32 +66,9 @@ fun UserNamePromptDialog(
                 textAlign = TextAlign.Center,
             )
 
-            TextField(
+            PlayerNameField(
                 value = playerName,
                 onValueChange = { playerName = it },
-                placeholder = {
-                    Text(
-                        stringResource(R.string.player_name_hint),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                },
-                textStyle =
-                    MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                    ),
-                modifier = Modifier.fillMaxWidth(),
-                colors =
-                    TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    ),
-                singleLine = true,
             )
 
             Row(
@@ -126,4 +103,39 @@ fun UserNamePromptDialog(
             }
         }
     }
+}
+
+/** The name entry shared by the profile prompt and the first-access setup flow. */
+@Composable
+fun PlayerNameField(
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = {
+            Text(
+                stringResource(R.string.player_name_hint),
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        },
+        textStyle =
+            MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            ),
+        modifier = Modifier.fillMaxWidth(),
+        colors =
+            TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
+        singleLine = true,
+    )
 }

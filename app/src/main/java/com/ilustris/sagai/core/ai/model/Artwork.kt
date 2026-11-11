@@ -5,11 +5,14 @@ package com.ilustris.sagai.core.ai.model
  * generated. Field names are the whole schema the model sees, so they carry their own meaning:
  * [characterIds] are the characters the cover must show (chosen from the story, not a fixed
  * count) and [elements] are the concrete things from the story that the image draws on.
+ * [noCharacters] is true only when the curator decides the cover's subject is an object, a place or a
+ * trace and shows no character; artworks that predate it stay false and keep the character fallbacks.
  */
 data class Artwork(
     val concept: String = "",
     val characterIds: List<Int> = emptyList(),
     val elements: List<String> = emptyList(),
+    val noCharacters: Boolean = false,
 ) {
     fun isBlank() = concept.isBlank()
 }

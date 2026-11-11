@@ -77,6 +77,7 @@ class ArtworkConceptService
                                 "genreAesthetic" to genreConfigService.aesthetic(genre),
                                 "context" to context,
                             ),
+                        mergedInstructionMaps = listOf(genreConfigService.coverCompositionInstructions(genre)),
                         requirement = ModelRequirement.MEDIUM,
                     )!!
             }

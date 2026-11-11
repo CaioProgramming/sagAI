@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.characters.ui
 import com.ilustris.sagai.features.progression.ui.LegacyBadge3D
+import com.ilustris.sagai.features.characters.ui.components.CharacterDesignReviewDialog
 import com.ilustris.sagai.features.characters.ui.components.CharacterStatusDialog
 import com.ilustris.sagai.features.progression.data.model.CharacterHonor
 import com.ilustris.sagai.features.progression.ui.HonorSheet
@@ -24,6 +25,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -106,6 +108,9 @@ import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.widgets.ui.WidgetCreatorSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttachment
+import com.ilustris.sagai.features.imagegeneration.model.ImageTarget
+import com.ilustris.sagai.features.imagegeneration.ui.ImageGenerationSlot
+import com.ilustris.sagai.features.imagegeneration.ui.imageReveal
 import com.ilustris.sagai.ui.animations.imageStroke
 import com.ilustris.sagai.ui.animations.rememberStopMotionFrame
 import com.ilustris.sagai.ui.components.views.DepthLayout
@@ -125,6 +130,7 @@ import com.ilustris.sagai.ui.theme.shimmerize
 @Composable
 fun CharacterDetailsView(
     characterId: Int? = null,
+    openWidgetCreator: Boolean = false,
     onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     onOpenEpilogueChat: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
@@ -147,6 +153,9 @@ fun CharacterDetailsView(
         onDispose { viewModel.onCharacterScreenHidden() }
     }
 
+    // Asked once: a later re-emission of the data must not reopen the creator the player already closed.
+    var creatorRequested by remember(characterId) { mutableStateOf(openWidgetCreator) }
+
     SagAITheme(genre = genre) {
         AnimatedContent(detailData, transitionSpec = {
             fadeIn() togetherWith fadeOut()
@@ -154,6 +163,8 @@ fun CharacterDetailsView(
             if (it != null) {
                 CharacterDetailsContent(
                     it,
+                    openWidgetCreator = creatorRequested,
+                    onWidgetCreatorHandled = { creatorRequested = false },
                     onBack = onBack,
                     onOpenCharacterBrain = onOpenCharacterBrain,
                     onOpenEpilogueChat = onOpenEpilogueChat,
@@ -172,6 +183,8 @@ fun CharacterDetailsView(
 @Composable
 fun CharacterDetailsContent(
     detailData: CharacterDetailData,
+    openWidgetCreator: Boolean = false,
+    onWidgetCreatorHandled: () -> Unit = {},
     onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     onOpenEpilogueChat: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
@@ -184,6 +197,8 @@ fun CharacterDetailsContent(
 
     CharacterDetailsLoaded(
         detailData = detailData,
+        openWidgetCreator = openWidgetCreator,
+        onWidgetCreatorHandled = onWidgetCreatorHandled,
         openEvent = openEvent,
         onBack = onBack,
         onOpenCharacterBrain = onOpenCharacterBrain,
@@ -211,6 +226,8 @@ fun CharacterDetailsContent(
 @Composable
 private fun CharacterDetailsLoaded(
     detailData: CharacterDetailData,
+    openWidgetCreator: Boolean,
+    onWidgetCreatorHandled: () -> Unit,
     viewModel: CharacterDetailsViewModel,
     onBack: () -> Unit = {},
     onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
@@ -236,10 +253,12 @@ private fun CharacterDetailsLoaded(
         val progress by viewModel.progress.collectAsStateWithLifecycle()
         var showFeatLog by remember { mutableStateOf(false) }
         var showStatusDialog by remember { mutableStateOf(false) }
+        val designReviewState by viewModel.designReview.collectAsStateWithLifecycle()
         var honorSheet by remember { mutableStateOf<Pair<List<CharacterHonor>, Int>?>(null) }
         val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
         var showCharacterShare by remember { mutableStateOf(false) }
-        var showWidgetCreator by remember { mutableStateOf(false) }
+        var showWidgetCreator by remember { mutableStateOf(openWidgetCreator) }
+        LaunchedEffect(Unit) { if (openWidgetCreator) onWidgetCreatorHandled() }
 
         // Lite wrapper to satisfy legacy components that still need SagaContent
         val liteSagaContent =
@@ -254,6 +273,7 @@ private fun CharacterDetailsLoaded(
             },
         ) { characterData ->
             var imageError by remember { mutableStateOf(false) }
+            val portraitTarget = remember(characterData.id) { ImageTarget.Character(characterData.id) }
             val characterColor = characterData.hexColor.hexToColor() ?: resolvedColor
             val titleGradient =
                 remember(adaptiveTextColor, characterColor) {
@@ -335,6 +355,7 @@ private fun CharacterDetailsLoaded(
                             modifier =
                                 Modifier
                                     .fillMaxSize()
+                                    .imageReveal(portraitTarget)
                                     .blur(headerBlurRadius),
                         ) {
                             DepthLayout(
@@ -411,7 +432,22 @@ private fun CharacterDetailsLoaded(
                         state = listState,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        item { Spacer(Modifier.height(heroHeightDp)) }
+                        item {
+                            Box(Modifier.fillMaxWidth().height(heroHeightDp)) {
+                                AnimatedVisibility(
+                                    visible = characterData.image.isBlank() || imageError,
+                                    exit = fadeOut(tween(700)),
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    ImageGenerationSlot(
+                                        target = portraitTarget,
+                                        genre = genre,
+                                        onGenerate = { viewModel.regenerate(sagaInfo, characterData) },
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                }
+                            }
+                        }
 
                         item {
                             Column(
@@ -484,7 +520,7 @@ private fun CharacterDetailsLoaded(
                                         if (sagaInfo.isEnded && characterData.id != sagaInfo.mainCharacterId) {
                                             add(
                                                 SpecialAction(
-                                                    iconRes = R.drawable.talk_bubble,
+                                                    iconRes = R.drawable.ic_talk_bubble,
                                                     label = stringResource(R.string.character_action_talk),
                                                     onClick = { onOpenEpilogueChat(sagaInfo.id, characterData.id) },
                                                 ),
@@ -587,7 +623,7 @@ private fun CharacterDetailsLoaded(
                                 ),
                         ) {
                             Icon(
-                                painterResource(R.drawable.ic_back_left),
+                                painterResource(R.drawable.ic_chevron_left),
                                 contentDescription = stringResource(R.string.back_button_description),
                                 tint = adaptiveTextColor,
                             )
@@ -636,6 +672,13 @@ private fun CharacterDetailsLoaded(
                                         },
                                     )
                                 }
+                                IosStyleMenuItem(
+                                    text = stringResource(R.string.character_design_review_menu),
+                                    onClick = {
+                                        menuOpen = false
+                                        viewModel.reviewDesign(characterData)
+                                    },
+                                )
                                 if (BuildConfig.DEBUG) {
                                     IosStyleMenuItem(
                                         text = stringResource(R.string.debug_regenerate_image),
@@ -705,6 +748,16 @@ private fun CharacterDetailsLoaded(
                     onDismiss = { showStatusDialog = false },
                 )
             }
+
+            CharacterDesignReviewDialog(
+                state = designReviewState,
+                onApply = { redraw ->
+                    (designReviewState as? DesignReviewState.Proposal)?.let {
+                        viewModel.applyDesignReview(it, sagaInfo, redraw)
+                    }
+                },
+                onDismiss = viewModel::dismissDesignReview,
+            )
 
             honorSheet?.let { (honors, index) ->
                 HonorSheet(

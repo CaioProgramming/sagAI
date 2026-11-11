@@ -108,6 +108,25 @@ fun <T> parseAIGenerationFromJson(
         throw JsonSyntaxException("Missing 'data' or 'error' in AIGeneration JSON")
     }
 
+    // The model sometimes flattens a GeneratedContent<X> envelope into the AIGeneration root:
+    // `{"data": <X>, "finalMessage": "..."}` instead of `{"data": {"data": <X>, "finalMessage": ...}}`.
+    // Gson then builds a GeneratedContent whose non-null `data` is silently null, which only
+    // blows up later at the first use. Re-wrap it so both shapes read the same.
+    val isFlatGeneratedContent =
+        dataType is java.lang.reflect.ParameterizedType &&
+            dataType.rawType == GeneratedContent::class.java &&
+            dataElement.isJsonObject &&
+            !dataElement.asJsonObject.has("data") &&
+            obj.has("finalMessage")
+    if (isFlatGeneratedContent) {
+        val wrapped =
+            com.google.gson.JsonObject().apply {
+                add("data", dataElement)
+                add("finalMessage", obj.get("finalMessage"))
+            }
+        return AIGeneration(data = gson.fromJson<T>(wrapped, dataType), error = error)
+    }
+
     val data: T =
         when (dataType) {
             String::class.java -> {

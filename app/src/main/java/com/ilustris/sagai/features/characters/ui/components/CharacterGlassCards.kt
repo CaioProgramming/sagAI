@@ -114,7 +114,7 @@ fun RowSection(
 @Composable
 fun Chevron(modifier: Modifier = Modifier) {
     Icon(
-        painterResource(R.drawable.round_arrow_forward_ios_24),
+        painterResource(R.drawable.ic_chevron_right),
         contentDescription = null,
         tint = Color.White.copy(alpha = .45f),
         modifier = modifier.size(15.dp),

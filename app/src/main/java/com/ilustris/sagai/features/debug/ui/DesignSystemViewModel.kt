@@ -3,32 +3,27 @@ package com.ilustris.sagai.features.debug.ui
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.ai.model.ImageType
-import com.ilustris.sagai.core.ai.model.mergeInstructions
-import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.services.ArtworkConceptService
-import com.ilustris.sagai.core.ai.services.GenreConfigService
-import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.designChangesTo
+import com.ilustris.sagai.features.debug.data.CharacterPreviewGenerator
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.components.island.ChatIslandService
 import com.ilustris.sagai.ui.components.island.IslandContent
-import com.ilustris.sagai.ui.theme.utils.getRandomColorHex
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class CharacterPreviewState(
@@ -42,9 +37,7 @@ data class CharacterPreviewState(
 @HiltViewModel
 class DesignSystemViewModel @Inject constructor(
     private val chatIslandService: ChatIslandService,
-    private val promptService: PromptService,
-    private val genreConfigService: GenreConfigService,
-    private val gemmaClient: GemmaClient,
+    private val characterPreviewGenerator: CharacterPreviewGenerator,
     private val artworkConceptService: ArtworkConceptService,
     private val imageGenerationService: ImageGenerationService,
     val debugImageFallbackService: DebugImageFallbackService,
@@ -53,6 +46,10 @@ class DesignSystemViewModel @Inject constructor(
     fun testIsland(content: IslandContent?) {
         chatIslandService.setTop(content)
     }
+
+    /** Characters generated so far for [previewCastGenre]: the cast the next preview is generated against and reviewed with. */
+    private val previewCast = mutableListOf<Character>()
+    private var previewCastGenre: Genre? = null
 
     private val _characterPreviewState = MutableStateFlow(CharacterPreviewState())
     val characterPreviewState: StateFlow<CharacterPreviewState> = _characterPreviewState.asStateFlow()
@@ -65,31 +62,16 @@ class DesignSystemViewModel @Inject constructor(
     fun generateRandomCharacterPreview(genre: Genre) {
         viewModelScope.launch {
             _characterPreviewState.value = CharacterPreviewState(isGeneratingCharacter = true)
-            val sagaContent = DesignSystemMocks.mockSagaContent(genre)
-            val themeColor = getRandomColorHex()
+            if (previewCastGenre != genre) previewCast.clear()
+            previewCastGenre = genre
             val result =
                 executeRequest {
-                    val prompt =
-                        CharacterPrompts.characterGeneration(
-                            promptService,
-                            sagaContent,
-                            description = "A new character who could believably exist in this world.",
-                            themeColor = themeColor,
-                            sceneSummary = null,
-                            aesthetic = genreConfigService.aesthetic(genre),
-                        )
-                    gemmaClient.generate<Character>(
-                        promptSplit =
-                            prompt.mergeInstructions(
-                                genreConfigService.buildAesthetic(genre),
-                                genreConfigService.appearanceInstructions(genre),
-                            ),
-                        filterOutputFields =
-                            listOf("id", "image", "joinedAt", "sagaId", "voice", "hexColor", "firstSceneId"),
-                        requirement = ModelRequirement.HIGH,
-                        temperatureRandomness = 1f,
-                    )!!.copy(hexColor = themeColor, image = emptyString())
-                }
+                    val preview = characterPreviewGenerator.generate(genre, previewCast)
+                    preview.generated.designChangesTo(preview.reviewed).forEach { (field, before, after) ->
+                        Timber.tag("DesignReview").i("[$field]\n  BEFORE: $before\n  AFTER:  $after")
+                    }
+                    preview.reviewed
+                }.onSuccess { previewCast.add(it) }
             _characterPreviewState.value =
                 when (result) {
                     is RequestResult.Success -> CharacterPreviewState(character = result.value)

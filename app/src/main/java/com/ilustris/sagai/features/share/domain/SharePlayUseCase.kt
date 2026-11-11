@@ -20,7 +20,9 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.share.domain.model.ShareText
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
@@ -51,6 +53,19 @@ interface SharePlayUseCase {
         volume: String,
         pages: List<PageItem>,
     ): RequestResult<File>
+
+    suspend fun generateBookEpub(
+        book: com.ilustris.sagai.features.act.data.model.Book,
+        genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
+        volume: String,
+        pages: List<PageItem>,
+    ): RequestResult<File>
+
+    /** Copies [file] to a document the user picked with the system file picker. */
+    suspend fun saveToDocument(
+        file: File,
+        destination: Uri,
+    ): RequestResult<Unit>
 }
 
 class SharePlayUseCaseImpl
@@ -62,6 +77,7 @@ class SharePlayUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val pdfGenerator: PDFGenerator,
+        private val epubGenerator: EpubGenerator,
         private val sagaRepository: SagaRepository,
         private val playerProfileUseCase: PlayerProfileUseCase,
         private val playthroughUseCase: PlaythroughUseCase,
@@ -173,5 +189,28 @@ class SharePlayUseCaseImpl
         ): RequestResult<File> =
             executeRequest {
                 pdfGenerator.generateBookPDF(book, genre, volume, pages)!!
+            }
+
+        override suspend fun generateBookEpub(
+            book: com.ilustris.sagai.features.act.data.model.Book,
+            genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
+            volume: String,
+            pages: List<PageItem>,
+        ): RequestResult<File> =
+            executeRequest {
+                epubGenerator.generateBookEpub(book, genre, volume, pages)
+            }
+
+        override suspend fun saveToDocument(
+            file: File,
+            destination: Uri,
+        ): RequestResult<Unit> =
+            executeRequest {
+                withContext(Dispatchers.IO) {
+                    val output = context.contentResolver.openOutputStream(destination, "wt")
+                    checkNotNull(output) { "No output stream for $destination" }.use { out ->
+                        file.inputStream().use { it.copyTo(out) }
+                    }
+                }
             }
     }

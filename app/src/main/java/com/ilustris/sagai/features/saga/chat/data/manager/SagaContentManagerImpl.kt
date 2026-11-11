@@ -1297,6 +1297,14 @@ class SagaContentManagerImpl
                     postMilestoneEffect(milestone)
                 }
                 milestoneUpdate.emit(milestone)
+                // A new character is a passive toast: no screen resolves it, so without this it would hold
+                // the milestone gate until the overlay watchdog force-clears it 45s later.
+                if (milestone is SagaMilestone.NewCharacter) {
+                    managerScope.launch {
+                        delay(milestone.delay)
+                        if (milestoneUpdate.value === milestone) dismissMilestone()
+                    }
+                }
             }
         }
 
@@ -1430,7 +1438,7 @@ class SagaContentManagerImpl
                                 SagaMilestone.Introduction(
                                     type = IntroductionType.ACT,
                                     titleText = a.title,
-                                    introduction = message ?: a.introduction,
+                                    introduction = resolveIntroductionText(message, a.introduction),
                                     number = saga.actNumber(a.id).toRoman(),
                                     messageText = message,
                                 ),
@@ -1448,7 +1456,7 @@ class SagaContentManagerImpl
                             SagaMilestone.Introduction(
                                 type = IntroductionType.ACT,
                                 titleText = a.title,
-                                introduction = message ?: act.introduction,
+                                introduction = resolveIntroductionText(message, act.introduction),
                                 number = saga.actNumber(a.id).toRoman(),
                                 messageText = message,
                             ),
@@ -1465,7 +1473,7 @@ class SagaContentManagerImpl
                             SagaMilestone.Introduction(
                                 type = IntroductionType.CHAPTER,
                                 titleText = c.title,
-                                introduction = message ?: emptyString(),
+                                introduction = resolveIntroductionText(message, c.introduction),
                                 number = saga.chapterNumber(c.id).toRoman(),
                                 messageText = message,
                             ),
@@ -1499,7 +1507,7 @@ class SagaContentManagerImpl
                             SagaMilestone.Introduction(
                                 type = IntroductionType.CHAPTER,
                                 titleText = c.title,
-                                introduction = message ?: emptyString(),
+                                introduction = resolveIntroductionText(message, c.introduction),
                                 number = saga.chapterNumber(c.id).toRoman(),
                                 messageText = message,
                             ),
@@ -1569,7 +1577,12 @@ class SagaContentManagerImpl
                             // spending the cover's image generation call. handleChapterPostActions
                             // still calls generateChapterCover on continue as a fallback; its own
                             // guard skips it once this has already filled coverImage in.
-                            managerScope.launch { chapterUseCase.generateChapterCover(c.id) }
+                            managerScope.launch {
+                                chapterUseCase.generateChapterCover(c.id).onFailure {
+                                    // The story never waits on the cover; the continue tap retries it.
+                                    Timber.w(it, "Chapter ${c.id} cover generation failed")
+                                }
+                            }
                         }
                     } ?: dismissMilestone()
                 }
@@ -1664,7 +1677,7 @@ class SagaContentManagerImpl
                         )
                         fakeCharacter
                     } else {
-                        var generated: GeneratedContent<Character>? = null
+                        var generated: Character? = null
                         characterUseCase
                             .generateCharacterStream(
                                 currentSaga,
@@ -1690,7 +1703,7 @@ class SagaContentManagerImpl
                             }
 
                         val generatedCharacter =
-                            generated?.data ?: error("Failed to generate character")
+                            generated ?: error("Failed to generate character")
 
                         sagaThemeManager.showSnackBar(
                             context.getString(
@@ -1702,7 +1715,6 @@ class SagaContentManagerImpl
                         emitMilestone(
                             SagaMilestone.NewCharacter(
                                 generatedCharacter,
-                                generated!!.finalMessage,
                                 saga = currentSaga.data,
                             ),
                         )

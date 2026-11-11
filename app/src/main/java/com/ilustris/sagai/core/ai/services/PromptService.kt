@@ -3,6 +3,7 @@
 package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.model.PromptBlueprint
+import com.ilustris.sagai.core.ai.model.drawExamples
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.PromptDirectives
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -260,6 +261,7 @@ class PromptServiceImpl
         ): SplitPrompt {
             val blueprint =
                 remoteConfigService.getJson<PromptBlueprint>(remoteConfigKey, logEnabled)!!
+            val examples = blueprint.drawExamples()
 
             if (logEnabled) {
                 Timber
@@ -281,8 +283,8 @@ class PromptServiceImpl
                     }.toAINormalize()
             }
 
-            if (blueprint.examples.isNotEmpty()) {
-                buckets["examples"] = blueprint.examples.normalizetoAIItems(describeName = false)
+            if (examples.isNotEmpty()) {
+                buckets["examples"] = examples.normalizetoAIItems(describeName = false)
             }
 
             if (blueprint.rules.isNotEmpty()) {
@@ -339,6 +341,7 @@ class PromptServiceImpl
         ): SplitPrompt {
             val blueprint =
                 remoteConfigService.getJson<PromptBlueprint>(remoteConfigKey, logEnabled)!!
+            val examples = blueprint.drawExamples()
 
             if (logEnabled) {
                 Timber
@@ -369,9 +372,9 @@ class PromptServiceImpl
             // --- Build processed template (dynamic — placeholder substitution applied or automatic context) ---
             val processedTemplate =
                 buildString {
-                    if (blueprint.examples.isNotEmpty()) {
+                    if (examples.isNotEmpty()) {
                         appendLine("# FEW-SHOT EXAMPLES")
-                        blueprint.examples.forEachIndexed { index, example ->
+                        examples.forEachIndexed { index, example ->
                             appendLine("## EXAMPLE ${index + 1}")
                             appendLine(example.toJsonFormat())
                         }

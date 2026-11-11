@@ -28,14 +28,12 @@ sealed class ReviewNavigationStyle {
     data object ContinuousScroll : ReviewNavigationStyle()
 
     /**
-     * One comic page instead of a sequence of screens: every page is a frame laid out on a single
-     * board, and a camera flies from frame to frame. It plays through on its own, then settles on
-     * the whole page — from there a tap flies to a frame, a second tap pulls back out, and swipes
-     * walk the reading order. Free pan/zoom was tried first and made the page easy to lose;
-     * snapping the camera to a target keeps every gesture landing somewhere legible. Used by
+     * The review as the pages of a printed comic: panels are cut into pages (see `paginate`), the
+     * reader turns them by hand or an edge tap, and each page plays its own entrance as it
+     * settles. Opens on a cover, closes on a back cover, and turns itself after a pause. Used by
      * Heroes.
      */
-    data object ComicBoard : ReviewNavigationStyle()
+    data object ComicPages : ReviewNavigationStyle()
 
     /**
      * The saga spread out as photos on a table, panning steadily past: the saga icon, chapter
@@ -43,7 +41,7 @@ sealed class ReviewNavigationStyle {
      * red string — the travelling line across a map an Indiana Jones intro opens on, rather than
      * another simulated conversation.
      *
-     * Deliberately *not* [ComicBoard]'s camera. It started as a reuse of it, and the two genres
+     * Deliberately *not* a camera that flies between frames. It started as one, and the two genres
      * ended up moving identically; a constant, un-zooming drift is what makes this read as leafing
      * through an album instead of reading a comic page. Replaces Crime's old simulated-iMessage
      * thread template. Used by Crime.

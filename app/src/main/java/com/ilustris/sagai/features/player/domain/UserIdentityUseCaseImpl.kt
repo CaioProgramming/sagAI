@@ -20,6 +20,10 @@ class UserIdentityUseCaseImpl
 
     override suspend fun shouldPromptName(): Boolean =
         !dataStore.getBooleanNow("user_name_prompt_seen", false)
+
+    override suspend fun skipNamePrompt() {
+        dataStore.setBoolean("user_name_prompt_seen", true)
+    }
 }
 
 

@@ -15,6 +15,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import com.ilustris.sagai.ui.genre.comic.LocalComicPlayback
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -142,9 +145,11 @@ class ComicEmotionPanel(
         val portrait =
             remember(content) { content.mainCharacter?.data?.image?.takeIf { it.isNotBlank() } }
 
+        val armed = LocalComicPlayback.current
         var revealed by remember { mutableStateOf(!canAnimate) }
         LaunchedEffect(canAnimate) {
             if (canAnimate) {
+                snapshotFlow(armed).first { it }
                 delay(PORTRAIT_DELAY_MS.toLong())
                 revealed = true
             }

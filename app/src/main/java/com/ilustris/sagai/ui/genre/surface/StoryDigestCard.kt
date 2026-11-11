@@ -62,7 +62,7 @@ fun StoryDigestCard(
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
             )
             Icon(
-                painterResource(R.drawable.round_arrow_forward_ios_24),
+                painterResource(R.drawable.ic_chevron_right),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
                 modifier = Modifier.size(12.dp),

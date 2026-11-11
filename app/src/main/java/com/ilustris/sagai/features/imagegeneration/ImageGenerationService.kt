@@ -10,6 +10,8 @@ import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.globalshell.ImageGenerationWorkEffect
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
+import com.ilustris.sagai.features.imagegeneration.model.ImageTarget
+import com.ilustris.sagai.features.imagegeneration.model.ImageTargetState
 import com.ilustris.sagai.features.imagegeneration.model.IslandExpansion
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.CompletableDeferred
@@ -18,17 +20,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
+import kotlin.coroutines.cancellation.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -49,6 +56,9 @@ class ImageGenerationService
             // Crime's vintage print look makes the model draw a frame and a paper margin around
             // covers, against the full-bleed rule. Measured on sample outputs at 3-5% per edge.
             private const val CrimeCoverInsetFraction = 0.055f
+
+            // How long a target stays Revealing: enough for the screen's blur-to-sharp arrival to play.
+            private const val TargetRevealHoldMs = 1_200L
         }
 
         private val _uiState = MutableStateFlow<ImageGenerationUiState>(ImageGenerationUiState.Idle)
@@ -67,6 +77,52 @@ class ImageGenerationService
 
         private val queueMutex = Mutex()
         private val pendingCount = MutableStateFlow(0)
+
+        private val targetStates = MutableStateFlow<Map<ImageTarget, ImageTargetState>>(emptyMap())
+
+        /** What the screen showing [target]'s image should render; changes only on transitions. */
+        fun stateOf(target: ImageTarget): Flow<ImageTargetState> =
+            targetStates.map { it[target] ?: ImageTargetState.Idle }.distinctUntilChanged()
+
+        /**
+         * Runs [block] (the prompt preparation plus the [enqueue] that follows it) with [target]
+         * already shown as Queued, so the screen reacts the instant the user taps instead of
+         * after the first AI call returns. A [block] that throws leaves the target Failed; one that
+         * ends without the queue ever picking the request up (nothing to generate) clears it.
+         */
+        suspend fun <T> track(
+            target: ImageTarget,
+            block: suspend () -> T,
+        ): T {
+            setTargetState(target, ImageTargetState.Queued)
+            try {
+                return block()
+            } catch (e: CancellationException) {
+                setTargetState(target, ImageTargetState.Idle)
+                throw e
+            } catch (e: Exception) {
+                setTargetState(target, ImageTargetState.Failed(e.message))
+                throw e
+            } finally {
+                targetStates.update { if (it[target] is ImageTargetState.Queued) it - target else it }
+            }
+        }
+
+        private fun setTargetState(
+            target: ImageTarget?,
+            state: ImageTargetState,
+        ) {
+            if (target == null) return
+            targetStates.update { if (state is ImageTargetState.Idle) it - target else it + (target to state) }
+        }
+
+        private fun releaseRevealingAfterHold(target: ImageTarget?) {
+            if (target == null) return
+            scope.launch {
+                delay(TargetRevealHoldMs)
+                targetStates.update { if (it[target] is ImageTargetState.Revealing) it - target else it }
+            }
+        }
 
         private fun setPersistentWorkActive(
             active: Boolean,
@@ -125,6 +181,7 @@ class ImageGenerationService
         ): Result<T> {
             val deferred = CompletableDeferred<Result<T>>()
             pendingCount.update { it + 1 }
+            setTargetState(request.target, ImageTargetState.Queued)
             Timber.d(
                 "ImageGenerationService: enqueue request label=${request.label} showReveal=${request.showReveal} pending=${pendingCount.value}",
             )
@@ -156,6 +213,7 @@ class ImageGenerationService
         ): CompletableDeferred<Result<T>> {
             val deferred = CompletableDeferred<Result<T>>()
             pendingCount.update { it + 1 }
+            setTargetState(request.target, ImageTargetState.Queued)
             Timber.d("ImageGenerationService: enqueueAsync request label=${request.label} pending=${pendingCount.value}")
             val queued = QueuedWork(request, onBitmap, deferred)
             val result =
@@ -233,6 +291,7 @@ class ImageGenerationService
             }
 
             emitGenerating(request, reasoning = null)
+            setTargetState(request.target, ImageTargetState.Generating)
 
             val job =
                 scope.launch {
@@ -297,7 +356,11 @@ class ImageGenerationService
                                 generatedBitmap
                             }
 
+                        // Before persisting: the screen composes the new image the moment it is saved,
+                        // and must already know to animate its arrival rather than pop in.
+                        setTargetState(request.target, ImageTargetState.Revealing)
                         val persisted = work.onBitmap(bitmap)
+                        releaseRevealingAfterHold(request.target)
 
                         if (request.showReveal) {
                             // Keep panel expanded while the reveal is visible (GlobalShellHost
@@ -337,6 +400,10 @@ class ImageGenerationService
                         work.result.complete(Result.success(persisted))
                     } catch (e: Exception) {
                         Timber.e(e, "ImageGenerationService: job failed")
+                        setTargetState(
+                            request.target,
+                            if (e is CancellationException) ImageTargetState.Idle else ImageTargetState.Failed(e.message),
+                        )
                         _uiState.value = ImageGenerationUiState.Idle
                         setPersistentWorkActive(false)
                         work.result.complete(Result.failure(e))

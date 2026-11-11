@@ -513,6 +513,15 @@
     <string name="chat_generation_reasoning_placeholder">Thinking of a reply…</string>
     <string name="image_generation_reveal_icon">Character icon ready</string>
     <string name="image_generation_reveal_cover">Cover image ready</string>
+    <string name="image_generation_cta">Generate image</string>
+    <string name="image_generation_failed">Couldn\'t draw this one</string>
+    <string-array name="image_generation_phrases">
+        <item>Mixing the paints…</item>
+        <item>Sketching the first strokes…</item>
+        <item>Finding the right light…</item>
+        <item>Polishing the details…</item>
+        <item>Almost there…</item>
+    </string-array>
     <string name="image_generation_reveal_dismiss">Continue</string>
     <string name="image_generation_fallback_cancel">Cancel</string>
     <string name="image_generation_character_icon">Generating %1$s icon…</string>
@@ -533,7 +542,20 @@
     <string name="share_book_pdf_chooser">Share Book PDF</string>
     <string name="share_book_pdf_subject">Sharing %1$s from Sagas</string>
     <string name="regenerate_book_cd">Regenerate Book</string>
-    <string name="share_pdf_cd">Share PDF</string>
+    <string name="book_export_cd">Export book</string>
+    <string name="book_export_title">Export this volume</string>
+    <string name="book_export_subtitle">Pick the format. You can send it or keep it on your device when it is ready.</string>
+    <string name="book_export_pdf_title">PDF</string>
+    <string name="book_export_pdf_description">Opens anywhere and keeps every page exactly as you see it.</string>
+    <string name="book_export_epub_title">EPUB</string>
+    <string name="book_export_epub_description">Text that reflows to your screen. Needs a reader app such as Google Play Books.</string>
+    <string name="book_export_ready_title">Your book is ready</string>
+    <string name="book_export_send">Send</string>
+    <string name="book_export_save">Save to device</string>
+    <string name="book_export_saved">Saved to your device</string>
+    <string name="book_export_save_failed">Could not save the file</string>
+    <string name="book_export_done">Done</string>
+    <string name="book_export_failed_title">The export did not work</string>
     <string name="book_writing_prologue">Writing the prologue…</string>
     <string name="book_writing_chapter">Writing chapter %1$d of %2$d: %3$s…</string>
     <string name="book_writing_closure">Writing the author\'s note…</string>
@@ -543,6 +565,9 @@
     <string name="book_share_preparing">Preparing your chronicle for sharing…</string>
     <string name="book_share_error_uri">Failed to get file URI</string>
     <string name="book_share_error_pdf">Failed to generate PDF</string>
+    <string name="share_book_epub_chooser">Share Book EPUB</string>
+    <string name="book_share_error_epub">Failed to generate EPUB</string>
+    <string name="book_characters_title">Characters</string>
     <string name="act_not_found">Act not found</string>
 
     <!-- Settings -->
@@ -794,6 +819,11 @@
     <string name="milestone_overlay_important_characters_title">Most Important Characters</string>
     <string name="review_restart_button">Restart</string>
     <string name="review_regenerate_button">Regenerate review</string>
+    <string name="review_comic_page_indicator">Page %1$d of %2$d</string>
+    <string name="review_comic_next_page">Next page</string>
+    <string name="review_comic_previous_page">Previous page</string>
+    <string name="review_comic_the_end">The end</string>
+    <string name="review_comic_close">Close</string>
 
     <!-- Review Summary Page -->
     <string name="review_summary_title">Our Story, Retold</string>
@@ -1231,7 +1261,6 @@
     <string name="progression_messages">Messages</string>
     <string name="progression_xp_progress">%1$d / %2$d XP to the next level</string>
     <string name="progression_xp_max">Maximum level</string>
-    <string name="progression_see_more_action">See more</string>
     <string name="progression_feat_log_title">Feat log</string>
     <string name="progression_legacy_title">Legacy</string>
     <string name="progression_skills_title">Skills</string>
@@ -1271,17 +1300,28 @@
     <string name="archive_reminder_action">Back up</string>
     <string name="home_last_backup">Last backup: %1$s</string>
     <string name="home_last_backup_never">You haven\'t backed up your sagas yet. Tap to do it.</string>
+    <string name="progression_rewards_continue">Continue</string>
+    <string name="progression_rewards_skip">Skip</string>
+    <string name="progression_rewards_done">Done</string>
+    <string name="progression_rewards_caught_up">All caught up</string>
+    <string name="progression_rewards_open_hint">Tap a character to open their sheet</string>
+    <string name="progression_new_medal">New medal</string>
+    <string name="progression_new_bond">New bond</string>
+    <string name="progression_level_change">LV %1$d → LV %2$d</string>
+    <plurals name="progression_summary_medals">
+        <item quantity="one">%1$d medal</item>
+        <item quantity="other">%1$d medals</item>
+    </plurals>
+    <plurals name="progression_summary_bonds">
+        <item quantity="one">%1$d bond</item>
+        <item quantity="other">%1$d bonds</item>
+    </plurals>
     <string name="progression_new_level">New level</string>
-    <string name="progression_level_up_caption">leveled up</string>
-    <string name="progression_medal_single">%1$s · new medal</string>
-    <string name="progression_medals_n">%1$s · %2$d medals</string>
-    <string name="progression_medals_gained">Medals earned</string>
     <string name="progression_legacy_single">%1$s · legacy</string>
     <string name="progression_legacy_gained">Legacy earned</string>
-    <string name="progression_legacies_gained">Legacies earned</string>
     <string name="progression_chapter_short">Ch. %1$d</string>
     <string name="progression_act_short">Act %1$d</string>
-    <string name="progression_explainer">Every character has a level that grows with what they live through: bonds, risks, losses and choices, not only fights. Medals mark the deeds of a chapter and the legacy marks who changed an act. Tap See more to read what earned each point. You can hide all of this in Settings.</string>
+    <string name="progression_explainer">Every character has a level that grows with what they live through: bonds, risks, losses and choices, not only fights. Medals mark the deeds of a chapter and the legacy marks who changed an act. Tap a character at the end to read what earned each point. You can hide all of this in Settings.</string>
 
     <!-- Home screen widgets -->
     <string name="widget_continue_name">Continue saga</string>
@@ -1318,6 +1358,11 @@
     <string name="widget_discreet_objective">Your saga is waiting for you.</string>
     <string name="widget_discreet_character">Someone</string>
 
+    <string name="widget_invite_card_title">Keep your stories close</string>
+    <string name="widget_invite_card_subtitle">Add a widget and pick up any saga from your home screen.</string>
+    <string name="widget_invite_card_action">Add</string>
+    <string name="widget_invite_card_dismiss">Dismiss</string>
+    <string name="widget_invite_rewards_link">Keep %1$s on your home screen</string>
     <string name="widget_create_menu">Create widget</string>
     <string name="widget_create_title">Create widget</string>
     <string name="widget_create_style_title">What kind of widget?</string>
@@ -1355,4 +1400,23 @@
     <string name="widget_stories_empty">Start a saga and it will show up here.</string>
     <string name="widget_continue">Continue</string>
     <string name="widget_resize_hint">You can resize it on the home screen.</string>
+    <string name="character_design_review_menu">Review design</string>
+    <string name="character_design_review_title">Design review</string>
+    <string name="character_design_review_running">Reviewing the look against the rest of the cast…</string>
+    <string name="character_design_review_proposal">The review suggests these changes. Nothing is saved until you apply them.</string>
+    <string name="character_design_review_apply_redraw">Apply and redraw the art</string>
+    <string name="character_design_review_apply">Apply</string>
+    <string name="character_design_review_discard">Discard</string>
+    <string name="character_design_review_passed">This design stands out on its own. Nothing to change.</string>
+    <string name="character_design_review_failed">The review could not run right now. Try again in a moment.</string>
+    <string name="character_design_field_hair">Hair</string>
+    <string name="character_design_field_eyes">Eyes</string>
+    <string name="character_design_field_mouth">Mouth</string>
+    <string name="character_design_field_marks">Distinctive marks</string>
+    <string name="character_design_field_features">Distinguishing features</string>
+    <string name="character_design_field_build">Build and posture</string>
+    <string name="character_design_field_outfit">Outfit</string>
+    <string name="character_design_field_accessories">Accessories</string>
+    <string name="character_design_field_personality">Personality</string>
+    <string name="character_design_field_artwork">Artwork</string>
 </resources>

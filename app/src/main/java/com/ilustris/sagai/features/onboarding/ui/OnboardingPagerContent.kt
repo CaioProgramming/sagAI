@@ -105,7 +105,7 @@ fun OnboardingPagerContent(
             ) {
                 IconButton(onClick = onDismiss) {
                     Icon(
-                        painterResource(R.drawable.round_close_24),
+                        painterResource(R.drawable.ic_close),
                         contentDescription = "Close",
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
@@ -202,6 +202,7 @@ fun OnboardingPagerContent(
                     uiPage.primaryButton?.let { button ->
                         Button(
                             onClick = {
+                                button.onClick?.invoke()
                                 if (button.action is OnboardingAction.Next) {
                                     if (pagerState.currentPage < state.pages.size - 1) {
                                         scope.launch {
@@ -249,6 +250,12 @@ fun OnboardingPagerContent(
                                     is OnboardingAction.Skip -> {
                                         scope.launch {
                                             pagerState.animateScrollToPage(state.pages.size - 1)
+                                        }
+                                    }
+
+                                    is OnboardingAction.SkipTo -> {
+                                        scope.launch {
+                                            pagerState.animateScrollToPage(button.action.page)
                                         }
                                     }
 

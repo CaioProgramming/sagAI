@@ -161,6 +161,9 @@ class MilestoneViewModel
                         if (state is MilestoneUiState.Loading) {
                             viewModelScope.launch {
                                 delay(STUCK_WATCHDOG_DELAY_MS)
+                                // Loading while a generation is running is not stuck (the next
+                                // introduction can queue behind other AI calls): re-arm instead.
+                                while (isNarrativeGenerating()) delay(STUCK_WATCHDOG_DELAY_MS)
                                 requestStuckExit()
                             }
                         } else {
@@ -410,13 +413,15 @@ class MilestoneViewModel
          * read, so there is nothing to reevaluate: the exit is theirs to take, and it also covers
          * a step whose own controls never showed up.
          */
-        fun onCloseRequested() {
+        private fun isNarrativeGenerating(): Boolean {
             val narrativeState = sagaContentManager.narrativeUiState.value
-            val isGenerating =
-                narrativeState.isProcessing ||
-                    narrativeState.phase is NarrativePhase.Processing ||
-                    narrativeState.phase is NarrativePhase.BackgroundProcessing
-            if (isGenerating) {
+            return narrativeState.isProcessing ||
+                narrativeState.phase is NarrativePhase.Processing ||
+                narrativeState.phase is NarrativePhase.BackgroundProcessing
+        }
+
+        fun onCloseRequested() {
+            if (isNarrativeGenerating()) {
                 sagaThemeManager.showSnackBar(
                     stringResourceHelper.getString(R.string.milestone_close_still_generating),
                     durationMs = CLOSE_SNACKBAR_DURATION_MS,

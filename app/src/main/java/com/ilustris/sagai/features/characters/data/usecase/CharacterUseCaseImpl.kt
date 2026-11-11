@@ -24,8 +24,10 @@ import com.ilustris.sagai.features.progression.domain.ProgressionConfigProvider
 import com.ilustris.sagai.features.progression.domain.withPlacement
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterDesignReview
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
 import com.ilustris.sagai.features.characters.data.model.NickNameGen
+import com.ilustris.sagai.features.characters.data.model.withDesignReview
 import com.ilustris.sagai.features.characters.data.source.CharacterArcDao
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
@@ -42,6 +44,7 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.hasConflictingCharacterIdentity
 import com.ilustris.sagai.features.imagegeneration.ImageGenerationService
 import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationRequest
+import com.ilustris.sagai.features.imagegeneration.model.ImageTarget
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.voicing.VoiceCastingUseCase
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
@@ -100,43 +103,10 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest(true) {
-                val characterWithArtwork = ensureCharacterArtwork(character, saga)
-                val contextString = characterImageContext(characterWithArtwork)
                 val result =
-                    imageGenerationService.enqueue(
-                        ImageGenerationRequest(
-                            genre = saga.genre,
-                            imageReference = null,
-                            context = contextString,
-                            imageType = ImageType.ICON,
-                            variationId = saga.variationId,
-                            label = characterWithArtwork.name,
-                            showReveal = true,
-                        ),
-                    ) { bitmap ->
-                        val file =
-                            fileHelper.saveFile(
-                                characterWithArtwork.name,
-                                bitmap,
-                                path = "${saga.id}/characters/",
-                            ) ?: error("Failed to save generated image")
-                        val newCharacter = characterWithArtwork.copy(image = file.path)
-                        repository.updateCharacter(newCharacter)
-                        newCharacter
-                    }
-                val updatedCharacter = result.getOrThrow()
-                updatedCharacter to ""
-            }
-
-        override suspend fun generateCharacterImageStream(
-            character: Character,
-            saga: Saga,
-        ): Flow<StreamingState<GeneratedContent<Pair<Character, String>>>> =
-            flow {
-                try {
-                    val characterWithArtwork = ensureCharacterArtwork(character, saga)
-                    val contextString = characterImageContext(characterWithArtwork)
-                    val result =
+                    imageGenerationService.track(ImageTarget.Character(character.id)) {
+                        val characterWithArtwork = ensureCharacterArtwork(character, saga)
+                        val contextString = characterImageContext(characterWithArtwork)
                         imageGenerationService.enqueue(
                             ImageGenerationRequest(
                                 genre = saga.genre,
@@ -146,6 +116,7 @@ class CharacterUseCaseImpl
                                 variationId = saga.variationId,
                                 label = characterWithArtwork.name,
                                 showReveal = true,
+                                target = ImageTarget.Character(character.id),
                             ),
                         ) { bitmap ->
                             val file =
@@ -157,6 +128,44 @@ class CharacterUseCaseImpl
                             val newCharacter = characterWithArtwork.copy(image = file.path)
                             repository.updateCharacter(newCharacter)
                             newCharacter
+                        }
+                    }
+                val updatedCharacter = result.getOrThrow()
+                updatedCharacter to ""
+            }
+
+        override suspend fun generateCharacterImageStream(
+            character: Character,
+            saga: Saga,
+        ): Flow<StreamingState<GeneratedContent<Pair<Character, String>>>> =
+            flow {
+                try {
+                    val result =
+                        imageGenerationService.track(ImageTarget.Character(character.id)) {
+                            val characterWithArtwork = ensureCharacterArtwork(character, saga)
+                            val contextString = characterImageContext(characterWithArtwork)
+                            imageGenerationService.enqueue(
+                                ImageGenerationRequest(
+                                    genre = saga.genre,
+                                    imageReference = null,
+                                    context = contextString,
+                                    imageType = ImageType.ICON,
+                                    variationId = saga.variationId,
+                                    label = characterWithArtwork.name,
+                                    showReveal = true,
+                                    target = ImageTarget.Character(character.id),
+                                ),
+                            ) { bitmap ->
+                                val file =
+                                    fileHelper.saveFile(
+                                        characterWithArtwork.name,
+                                        bitmap,
+                                        path = "${saga.id}/characters/",
+                                    ) ?: error("Failed to save generated image")
+                                val newCharacter = characterWithArtwork.copy(image = file.path)
+                                repository.updateCharacter(newCharacter)
+                                newCharacter
+                            }
                         }
 
                     result.fold(
@@ -253,6 +262,41 @@ class CharacterUseCaseImpl
                     listOf("skillsAndProficiencies", "uniqueOrSignatureTalents")
                 }
 
+        /**
+         * Second pass over a fresh sheet: audits it against the saga's cast and the seed that asked for it
+         * and rewrites only the fields that failed. A failed review never blocks the creation, the sheet
+         * stays as it was generated.
+         */
+        override suspend fun reviewCharacterDesign(
+            sagaContent: SagaContent,
+            character: Character,
+            description: String,
+        ): Character =
+            requestCharacterDesignReview(sagaContent, character, description)
+                .onFailure {
+                    Timber.e(it, "reviewCharacterDesign: keeping the sheet as generated for ${character.name}")
+                }.getSuccess() ?: character
+
+        override suspend fun requestCharacterDesignReview(
+            sagaContent: SagaContent,
+            character: Character,
+            description: String,
+        ): RequestResult<Character> =
+            executeRequest(reportCrash = false) {
+                val genre = sagaContent.data.genre
+                val review =
+                    gemmaClient.generate<CharacterDesignReview>(
+                        promptSplit =
+                            CharacterPrompts
+                                .characterDesignReview(promptService, sagaContent, character, description)
+                                .mergeInstructions(genreConfigService.appearanceInstructions(genre)),
+                        requirement = ModelRequirement.MEDIUM,
+                        temperatureRandomness = .7f,
+                    )!!
+                Timber.d("reviewCharacterDesign: ${character.name} -> ${review.rationale}")
+                character.withDesignReview(review)
+            }
+
         private fun assertCharacterNotAlreadyInSaga(
             sagaContent: SagaContent,
             candidateName: String?,
@@ -313,7 +357,7 @@ class CharacterUseCaseImpl
                 }
                 val characterTransaction =
                     insertCharacter(
-                        newCharacter
+                        reviewCharacterDesign(sagaContent, newCharacter, description)
                             .copy(
                                 id = 0,
                                 sagaId = sagaContent.data.id,
@@ -337,7 +381,7 @@ class CharacterUseCaseImpl
             description: String,
             sceneSummary: SceneSummary?,
             candidateName: String?,
-        ): Flow<StreamingState<GeneratedContent<Character>?>> =
+        ): Flow<StreamingState<Character?>> =
             flow {
                 try {
                     assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
@@ -357,7 +401,7 @@ class CharacterUseCaseImpl
 
                     val request =
                         gemmaClient
-                            .generateStreaming<GeneratedContent<Character>>(
+                            .generateStreaming<Character>(
                                 promptSplit =
                                     prompt.mergeInstructions(
                                         genreConfigService.buildAesthetic(sagaContent.data.genre),
@@ -383,7 +427,7 @@ class CharacterUseCaseImpl
                             genre = sagaContent.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val newCharacter = state.data!!.data
+                                val newCharacter = state.data!!
                                 if (sagaContent.hasConflictingCharacterIdentity(newCharacter)) {
                                     emit(
                                         StreamingState
@@ -393,7 +437,7 @@ class CharacterUseCaseImpl
                                 }
                                 val characterTransaction =
                                     insertCharacter(
-                                        newCharacter
+                                        reviewCharacterDesign(sagaContent, newCharacter, description)
                                             .copy(
                                                 id = 0,
                                                 sagaId = sagaContent.data.id,
@@ -407,12 +451,7 @@ class CharacterUseCaseImpl
                                     generateCharacterImage(characterTransaction, sagaContent.data)
                                 }
                                 emit(
-                                    StreamingState.Success(
-                                        GeneratedContent(
-                                            characterTransaction,
-                                            state.data.finalMessage,
-                                        ),
-                                    ),
+                                    StreamingState.Success(characterTransaction),
                                 )
                             } else {
                                 emit(state)

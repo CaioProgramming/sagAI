@@ -40,7 +40,7 @@ fun RowHeader(
 
         IconButton(onClick = onClick, modifier = Modifier.size(24.dp)) {
             Icon(
-                painterResource(R.drawable.round_arrow_forward_ios_24),
+                painterResource(R.drawable.ic_chevron_right),
                 contentDescription = null,
             )
         }

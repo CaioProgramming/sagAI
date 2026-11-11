@@ -77,6 +77,10 @@ import com.ilustris.sagai.core.globalshell.GlobalShellService
 import com.ilustris.sagai.core.globalshell.ImageGenerationWorkEffect
 import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.core.navigation.SagaNavigationTracker
+import com.ilustris.sagai.core.globalshell.isMilestoneReveal
+import com.ilustris.sagai.features.progression.domain.CharacterRewardsService
+import com.ilustris.sagai.features.progression.ui.CharacterRewardsHost
+import com.ilustris.sagai.features.widgets.data.WidgetInvites
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.AdsConsentService
@@ -91,9 +95,7 @@ import com.ilustris.sagai.features.imagegeneration.model.ImageGenerationUiState
 import com.ilustris.sagai.features.live.data.LiveSessionTracker
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.features.onboarding.ui.OnboardingHost
-import com.ilustris.sagai.features.onboarding.ui.OnboardingPresentation
-import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyNamePrompt
+import com.ilustris.sagai.features.onboarding.ui.SetupOnboardingHost
 import com.ilustris.sagai.features.onboarding.ui.apikey.ApiKeyRequiredScreen
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.usecase.ChatGenerationService
@@ -118,8 +120,6 @@ import com.ilustris.sagai.ui.components.island.IslandContent
 import com.ilustris.sagai.ui.components.island.IslandInsets
 import com.ilustris.sagai.ui.components.island.LocalIslandInsets
 import com.ilustris.sagai.ui.components.island.NotificationIslandContent
-import com.ilustris.sagai.ui.components.island.ProgressionIslandContent
-import com.ilustris.sagai.core.globalshell.ProgressionEffect
 import com.ilustris.sagai.ui.components.island.islandPadding
 import com.ilustris.sagai.ui.navigation.ApiSettingsKey
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
@@ -225,6 +225,12 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var chatIslandService: ChatIslandService
+
+    @Inject
+    lateinit var characterRewardsService: CharacterRewardsService
+
+    @Inject
+    lateinit var widgetInvites: WidgetInvites
 
     override fun onCreate(savedInstanceState: Bundle?) {
         var holdSplash by mutableStateOf(true)
@@ -523,15 +529,6 @@ class MainActivity : ComponentActivity() {
                             ChatGenerationIslandContent(visibleChatGen)
                         }
 
-                        notificationEffect is ProgressionEffect -> {
-                            ProgressionIslandContent(
-                                effect = notificationEffect,
-                                context = this@MainActivity,
-                                onNavigate = { deepLink -> navigateDeepLink(deepLink) },
-                                onDismiss = { globalShellService.dismiss() },
-                            )
-                        }
-
                         notificationEffect != null -> {
                             NotificationIslandContent(
                                 effect = notificationEffect,
@@ -779,15 +776,10 @@ class MainActivity : ComponentActivity() {
                                             onConfigureClick = { showApiKeySheet = true },
                                         )
                                         if (showApiKeySheet) {
-                                            OnboardingHost(
-                                                type = OnboardingType.API_KEY_SETUP,
-                                                presentation = OnboardingPresentation.Sheet,
-                                                force = true,
-                                                dismissible = false,
+                                            SetupOnboardingHost(
                                                 onDismiss = { showApiKeySheet = false },
                                             )
                                         }
-                                        ApiKeyNamePrompt()
                                     } else {
                                         AppGateLoading()
                                     }
@@ -816,6 +808,16 @@ class MainActivity : ComponentActivity() {
                                 }
                                 islandExpanded = expanded
                             },
+                        )
+
+                        // What the characters earned (levels, medals, legacies, bonds): one sheet, only inside the saga's own screens.
+                        CharacterRewardsHost(
+                            service = characterRewardsService,
+                            navigationTracker = sagaNavigationTracker,
+                            blocked = chatTopIsland.isMilestoneReveal(),
+                            onOpenCharacter = { id -> navigateDeepLink("saga://character_detail/$id") },
+                            widgetInvites = widgetInvites,
+                            onAddWidget = { id -> navigateDeepLink("saga://character_widget/$id") },
                         )
 
                         if (activeSideEffect == SideEffect.ShowPremiumOnboarding) {

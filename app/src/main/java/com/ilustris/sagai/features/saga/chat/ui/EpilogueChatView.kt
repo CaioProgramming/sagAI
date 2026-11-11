@@ -334,7 +334,7 @@ private fun EpilogueRestartAction(
     var confirming by remember { mutableStateOf(false) }
     IconButton(onClick = { confirming = true }, enabled = enabled, modifier = Modifier.size(32.dp).padding(2.dp)) {
         Icon(
-            painterResource(R.drawable.baseline_refresh_24),
+            painterResource(R.drawable.ic_replay),
             contentDescription = stringResource(R.string.epilogue_restart),
             modifier = Modifier.fillMaxSize(),
         )

@@ -83,7 +83,7 @@ fun PreferencesContainer(
                         ),
                 ) {
                     Icon(
-                        painterResource(R.drawable.round_arrow_forward_ios_24),
+                        painterResource(R.drawable.ic_chevron_right),
                         null,
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
