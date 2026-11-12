@@ -139,6 +139,9 @@ class SagaDetailViewModel
                 return
             }
             fetchJob?.cancel()
+            // This ViewModel is activity-scoped and outlives each detail visit, so a
+            // previous saga's Error state must not leak into the next one.
+            _state.value = State.Success(Unit)
             sagaResume.value = null
             cachedIconPath = null
             cachedSegmentedImage = null
@@ -148,6 +151,8 @@ class SagaDetailViewModel
             fetchJob =
                 viewModelScope.launch {
                     sagaDetailUseCase.getSagaResume(sagaId).collectLatest { resume ->
+                        // A deleted saga comes back as an empty Saga(); never render it.
+                        if (resume.saga.id != sagaId) return@collectLatest
                         resume.let { data ->
                             this@SagaDetailViewModel.sagaResume.value = data
                             if (sagaImmersiveSession.isOwnerOnTop("saga_detail")) {
@@ -181,7 +186,17 @@ class SagaDetailViewModel
                     return@launch
                 }
                 _state.value = State.Loading
+                // Stop observing the saga before its rows disappear.
+                fetchJob?.cancel()
+                initialSectionJob?.cancel()
+                reviewGenerationJob?.cancel()
                 sagaDetailUseCase.deleteSaga(saga)
+                sagaResume.value = null
+                _initialSection.value = null
+                detailDrawer.value = null
+                imagePalette.value = null
+                cachedIconPath = null
+                cachedSegmentedImage = null
                 _state.value = State.Deleted
             }
         }
@@ -214,6 +229,9 @@ class SagaDetailViewModel
         fun onDetailScreenHidden() {
             sagaImmersiveSession.pop("saga_detail")
             pendingEntryVfxSagaId = null
+            // Deleted was already consumed (it navigated away); don't let the next
+            // detail visit re-trigger the post-delete navigation.
+            if (_state.value == State.Deleted) _state.value = State.Success(Unit)
         }
 
         private fun launchIntroSequence() {
