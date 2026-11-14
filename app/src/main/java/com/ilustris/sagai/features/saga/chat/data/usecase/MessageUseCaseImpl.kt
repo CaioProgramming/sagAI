@@ -53,6 +53,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.Reaction
 import com.ilustris.sagai.features.saga.chat.data.model.ReplyFallout
 import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.saga.chat.data.model.withNonNullLists
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.voicing.MessageVoicingUseCase
@@ -145,7 +146,7 @@ class MessageUseCaseImpl
                 gemmaClient.generate<SceneSummary>(
                     promptSplit = prompt,
                     requirement = ModelRequirement.LOW,
-                )
+                )?.withNonNullLists()
             }
 
         override suspend fun getMessages(sagaId: Int) = messageRepository.getMessages(sagaId)
@@ -354,7 +355,11 @@ class MessageUseCaseImpl
                                     ),
                                 )
                             } else {
-                                emit(StreamingState.Success(reply))
+                                emit(
+                                    StreamingState.Success(
+                                        reply.copy(sceneSummary = reply.sceneSummary?.withNonNullLists()),
+                                    ),
+                                )
                             }
                         }
                     reasoningSynthesizerService

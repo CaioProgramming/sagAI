@@ -14,9 +14,11 @@ class CharacterPresenceListConverter {
 
     @TypeConverter
     fun toCharacterPresenceList(value: String?): List<CharacterPresence>? {
-        if (value == null) return null
+        // SceneSummary.charactersPresent is non-null, but rows written while the model sent `null`
+        // hold SQL NULL (or "null"); handing that back crashes the whole timeline read.
+        if (value == null) return emptyList()
         return try {
-            gson.fromJson(value, gsonTypeOfList<CharacterPresence>())
+            gson.fromJson<List<CharacterPresence>?>(value, gsonTypeOfList<CharacterPresence>()) ?: emptyList()
         } catch (e: JsonSyntaxException) {
             // Pre-migration rows stored charactersPresent as a plain List<String>; the scene
             // summary regenerates on the next turn regardless, so drop the stale shape instead
