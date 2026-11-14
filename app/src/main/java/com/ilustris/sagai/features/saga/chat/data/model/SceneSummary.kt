@@ -28,6 +28,13 @@ data class SceneSummary(
     val notificationCharacterName: String? = null,
 )
 
+/**
+ * Gson fills model JSON through reflection, so a `null` the model sends for [SceneSummary.charactersPresent]
+ * lands in a non-null field. Normalize it to an empty list before the summary goes anywhere else.
+ */
+@Suppress("SENSELESS_COMPARISON")
+fun SceneSummary.withNonNullLists(): SceneSummary = if (charactersPresent == null) copy(charactersPresent = emptyList()) else this
+
 /** True when the summary can drive chat objectives and suggestions. */
 fun SceneSummary.isActive(): Boolean = immediateObjective?.isNotBlank() == true || currentLocation.isNotBlank()
 
